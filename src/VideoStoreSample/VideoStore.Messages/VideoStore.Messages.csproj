@@ -61,11 +61,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets">
   </Import>
-  <Import Project="..\..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.1\build\RippleRestoreTask.targets')" />
+  <Import Project="..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets')" />
 </Project>
