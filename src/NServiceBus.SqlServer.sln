@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transports.SQLServer", "NServiceBus.Transports.SQLServer\NServiceBus.Transports.SQLServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transports.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "IntegrationTests\IntegrationTests.csproj", "{DE2B752A-054D-4C14-8807-DBC43154480A}"
 EndProject
