@@ -76,6 +76,7 @@
   <ItemGroup>
     <None Include="App.config">
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
