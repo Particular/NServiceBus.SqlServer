@@ -66,7 +66,6 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
@@ -85,5 +84,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.2\build\RippleRestoreTask.targets')" />
+  <Import Project="..\..\packages\RippleRestoreTask.0.1.4\build\RippleRestoreTask.targets" Condition="Exists('..\..\packages\RippleRestoreTask.0.1.4\build\RippleRestoreTask.targets')" />
 </Project>
