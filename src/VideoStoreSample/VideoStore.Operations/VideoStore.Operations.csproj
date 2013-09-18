@@ -68,7 +68,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
-      <Name>NServiceBus.Transports.SQLServer</Name>
+      <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
       <Project>{59f2ba7e-4da5-49f8-9dbc-520fa99f4679}</Project>
@@ -82,5 +82,5 @@
     <StartProgram>$(ProjectDir)$(OutputPath)NServiceBus.Host.exe</StartProgram>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets"/>
+  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
 </Project>

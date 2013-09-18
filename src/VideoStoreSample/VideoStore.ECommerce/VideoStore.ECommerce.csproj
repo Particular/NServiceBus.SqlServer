@@ -16,6 +16,10 @@
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <RestorePackages>true</RestorePackages>
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -172,7 +176,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
-      <Name>NServiceBus.Transports.SQLServer</Name>
+      <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
     <ProjectReference Include="..\VideoStore.Messages\VideoStore.Messages.csproj">
       <Project>{59F2BA7E-4DA5-49F8-9DBC-520FA99F4679}</Project>
@@ -219,5 +223,5 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
-  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets"/>
+  <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
 </Project>
