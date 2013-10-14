@@ -30,5 +30,6 @@ Artifacts
 LogFiles
 csx
 *.ncrunchproject
+run-git.cmd
 *.ncrunchsolution
 _NCrunch_NServiceBus/*
