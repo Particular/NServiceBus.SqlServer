@@ -3,37 +3,23 @@
     using System;
     using System.Data;
     using System.Data.SqlClient;
-    using System.Threading;
     using Serializers.Json;
     using Unicast.Queuing;
 
     /// <summary>
     ///     SqlServer implementation of <see cref="ISendMessages" />.
     /// </summary>
-    public class SqlServerMessageSender : ISendMessages, IDisposable
+    public class SqlServerMessageSender : ISendMessages
     {
         const string SqlSend =
             @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
-        ThreadLocal<SqlTransaction> currentTransaction = new ThreadLocal<SqlTransaction>();
 
         public string ConnectionString { get; set; }
-
-
-        public void Dispose()
-        {
-            //Injected at compile time
-        }
-
-        public void DisposeManaged()
-        {
-            if (currentTransaction != null)
-            {
-                currentTransaction.Dispose();
-            }
-        }
+        
+        public UnitOfWork UnitOfWork { get; set; }
 
         /// <summary>
         ///     Sends the given <paramref name="message" /> to the <paramref name="address" />.
@@ -49,11 +35,11 @@
             try
             {
 
-                if (currentTransaction.IsValueCreated)
+                if (UnitOfWork.HasActiveTransaction())
                 {
                     using (
                         var command = new SqlCommand(string.Format(SqlSend, address.Queue),
-                                                     currentTransaction.Value.Connection, currentTransaction.Value)
+                                                     UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
                             {
                                 CommandType = CommandType.Text
                             })
@@ -95,16 +81,6 @@
             }
         }
 
-        /// <summary>
-        ///     Sets the native transaction.
-        /// </summary>
-        /// <param name="transaction">
-        ///     Native <see cref="SqlTransaction" />.
-        /// </param>
-        public void SetTransaction(SqlTransaction transaction)
-        {
-            currentTransaction.Value = transaction;
-        }
 
         private static void ThrowFailedToSendException(Address address, Exception ex)
         {

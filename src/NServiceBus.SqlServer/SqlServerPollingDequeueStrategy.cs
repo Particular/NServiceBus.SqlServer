@@ -11,7 +11,6 @@
     using Logging;
     using Serializers.Json;
     using Unicast.Transport;
-    using Utils;
     using IsolationLevel = System.Data.IsolationLevel;
 
     /// <summary>
@@ -30,9 +29,9 @@
         public bool PurgeOnStartup { get; set; }
 
         /// <summary>
-        /// SqlServer <see cref="ISendMessages"/>.
+        /// UOW to hold current transaction.
         /// </summary>
-        public SqlServerMessageSender MessageSender { get; set; }
+        public UnitOfWork UnitOfWork { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -255,10 +254,7 @@
 
                     try
                     {
-                        if (MessageSender != null)
-                        {
-                            MessageSender.SetTransaction(transaction);
-                        }
+                        UnitOfWork.SetTransaction(transaction);
 
                         if (tryProcessMessage(message))
                         {
@@ -268,18 +264,20 @@
                         {
                             transaction.Rollback();
                         }
-
                     }
                     catch (Exception ex)
                     {
                         result.Exception = ex;
                         transaction.Rollback();
                     }
+                    finally
+                    {
+                        UnitOfWork.ClearTransaction();
+                    }
 
                     return result;
                 }
             }
-
         }
 
         TransportMessage Receive()
