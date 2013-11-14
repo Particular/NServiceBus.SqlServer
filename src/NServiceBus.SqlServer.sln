@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transports.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "IntegrationTests\IntegrationTests.csproj", "{DE2B752A-054D-4C14-8807-DBC43154480A}"
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VideoStoreSample", "VideoStoreSample", "{821AFFBB-6629-4C52-B95C-8F058AEEF810}"
 EndProject
@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoStore.Operations", "Vi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoStore.Sales", "VideoStoreSample\VideoStore.Sales\VideoStore.Sales.csproj", "{C2D005B5-065F-4F81-BA1F-259F90E00AEE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.AcceptanceTests", "NServiceBus.SqlServer.AcceptanceTests\NServiceBus.SqlServer.AcceptanceTests.csproj", "{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,10 +31,6 @@ Global
 		{FA1193BF-325C-4201-BB78-484032E09809}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA1193BF-325C-4201-BB78-484032E09809}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA1193BF-325C-4201-BB78-484032E09809}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE2B752A-054D-4C14-8807-DBC43154480A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE2B752A-054D-4C14-8807-DBC43154480A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE2B752A-054D-4C14-8807-DBC43154480A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE2B752A-054D-4C14-8807-DBC43154480A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C90A7D6C-99BB-4736-B2E5-D6AEA04A8D0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C90A7D6C-99BB-4736-B2E5-D6AEA04A8D0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C90A7D6C-99BB-4736-B2E5-D6AEA04A8D0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -57,6 +55,10 @@ Global
 		{C2D005B5-065F-4F81-BA1F-259F90E00AEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2D005B5-065F-4F81-BA1F-259F90E00AEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2D005B5-065F-4F81-BA1F-259F90E00AEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
