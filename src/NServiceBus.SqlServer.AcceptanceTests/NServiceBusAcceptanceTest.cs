@@ -1,5 +1,6 @@
 namespace NServiceBus.AcceptanceTests
 {
+    using System;
     using AcceptanceTesting.Customization;
     using NUnit.Framework;
 
@@ -12,6 +13,8 @@ namespace NServiceBus.AcceptanceTests
         [SetUp]
         public void SetUp()
         {
+            Environment.SetEnvironmentVariable("Transport.UseSpecific", "SqlServer", EnvironmentVariableTarget.Process);
+
             Conventions.EndpointNamingConvention= t =>
                 {
                     var baseNs = typeof (NServiceBusAcceptanceTest).Namespace;
