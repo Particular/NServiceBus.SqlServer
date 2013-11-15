@@ -9,7 +9,7 @@
 
     public class When_sending_messages_within_an_ambient_transaction : NServiceBusAcceptanceTest
     {
-        [Test]
+        [Test, Ignore("This test isn't suitable for this transport - https://github.com/Particular/NServiceBus.SqlServer/issues/13")]
         public void Should_not_deliver_them_until_the_commit_phase()
         {
             Scenario.Define<Context>()
