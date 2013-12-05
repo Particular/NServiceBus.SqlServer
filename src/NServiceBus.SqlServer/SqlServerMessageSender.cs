@@ -60,7 +60,7 @@
                         var command = new SqlCommand(string.Format(SqlSend, address.Queue),
                                                         UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
                         {
-                            CommandType = CommandType.StoredProcedure
+                            CommandType = CommandType.Text
                         })
                     {
                         ExecuteQuery(message, command);
