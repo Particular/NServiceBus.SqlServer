@@ -1,9 +1,11 @@
 namespace NServiceBus.Features
 {
     using System;
+    using System.Linq;
     using Settings;
     using Transports;
     using Transports.SQLServer;
+    using System.Configuration;
 
     /// <summary>
     /// Configures NServiceBus to use SqlServer as the default transport
@@ -37,7 +39,7 @@ namespace NServiceBus.Features
                 .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
                 .ToDictionary<ConnectionStringSettings, string, string>(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
-            if (String.IsNullOrEmpty(connectionString))
+            if (String.IsNullOrEmpty(defaultConnectionString))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
@@ -45,14 +47,14 @@ namespace NServiceBus.Features
             NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
 
             NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, connectionString);
+                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
 
             NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
             NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, connectionString)
+                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
         }
 
