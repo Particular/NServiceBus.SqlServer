@@ -36,8 +36,7 @@ namespace NServiceBus.Features
 
             NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
 
-            NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, connectionString);
+            NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
             NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, connectionString);
