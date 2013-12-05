@@ -27,7 +27,15 @@ namespace NServiceBus.Features
             //Until we refactor the whole address system
             CustomizeAddress();
             
-            var connectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
+            var defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
+
+            //Load all connectionstrings 
+            var collection =
+                ConfigurationManager
+                .ConnectionStrings
+                .Cast<ConnectionStringSettings>()
+                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
+                .ToDictionary<ConnectionStringSettings, string, string>(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
             if (String.IsNullOrEmpty(connectionString))
             {
@@ -40,7 +48,8 @@ namespace NServiceBus.Features
                   .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, connectionString);
+                  .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
+                  .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
             NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, connectionString)

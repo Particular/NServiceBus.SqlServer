@@ -17,9 +17,16 @@
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
-        public string ConnectionString { get; set; }
-        
+        public string DefaultConnectionString { get; set; }
+
+        public Dictionary<string, string> ConnectionStringCollection { get; private set; }
+
         public UnitOfWork UnitOfWork { get; set; }
+        
+        public SqlServerMessageSender()
+        {
+            ConnectionStringCollection = new Dictionary<string, string>();
+        }
 
         /// <summary>
         ///     Sends the given <paramref name="message" /> to the <paramref name="address" />.
@@ -35,21 +42,32 @@
             try
             {
 
-                if (UnitOfWork.HasActiveTransaction())
+                //If there is a connectionstring configured for the queue, use that connectionstring
+                string queueConnectionString = DefaultConnectionString;
+                if (ConnectionStringCollection.Keys.Contains(address.Queue))
                 {
+                    queueConnectionString = ConnectionStringCollection[address.Queue];
+                }
+
+                //Refactor to HasAndCanUseActiveTransaction?
+                if (UnitOfWork.HasActiveTransaction() &&
+                    UnitOfWork.TransactionUsesTheSameConnectionString(queueConnectionString))
+                {
+                    //if there is an active transaction and the connectionstrings are equal, we can use the same transaction
                     using (
                         var command = new SqlCommand(string.Format(SqlSend, address.Queue),
-                                                     UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
-                            {
-                                CommandType = CommandType.Text
-                            })
+                                                        UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
+                        {
+                            CommandType = CommandType.StoredProcedure
+                        })
                     {
                         ExecuteQuery(message, command);
                     }
                 }
                 else
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
+                    //When there is no transaction or a DTC transaction we use a new connection
+                    using (var connection = new SqlConnection(queueConnectionString))
                     {
                         connection.Open();
                         using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), connection)

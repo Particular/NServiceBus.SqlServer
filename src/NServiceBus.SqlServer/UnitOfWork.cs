@@ -26,6 +26,11 @@
             return currentTransaction.IsValueCreated;
         }
 
+        public bool TransactionUsesTheSameConnectionString(string queueConnectionString)
+        {
+            return currentTransaction.Value.Connection.ConnectionString == queueConnectionString;
+        }
+
         public void ClearTransaction()
         {
             currentTransaction.Value = null;
