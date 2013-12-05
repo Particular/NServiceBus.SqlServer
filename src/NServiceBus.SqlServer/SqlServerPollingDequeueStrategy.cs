@@ -99,7 +99,7 @@
 
                 using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
                         {
-                            CommandType = CommandType.Text
+                            CommandType = CommandType.StoredProcedure
                         })
                 {
                     var numberOfPurgedRows = command.ExecuteNonQuery();
@@ -286,7 +286,7 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(sql, connection) { CommandType = CommandType.Text })
+                using (var command = new SqlCommand(sql, connection) { CommandType = CommandType.StoredProcedure })
                 {
                     return ExecuteReader(command);
                 }
@@ -295,7 +295,7 @@
 
         TransportMessage ReceiveWithNativeTransaction(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.Text })
+            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.StoredProcedure })
             {
                 return ExecuteReader(command);
             }
@@ -377,12 +377,8 @@
             public TransportMessage Message { get; set; }
         }
 
-        const string SqlReceive =
-         @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
-			DELETE FROM message 
-			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
-        const string SqlPurge = @"DELETE FROM [{0}]";
+        const string SqlReceive = @"[ReceiveFrom_{0}]";
+        const string SqlPurge = @"[PurgeFrom_{0}]";
 
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));

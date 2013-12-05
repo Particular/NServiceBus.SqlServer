@@ -11,9 +11,7 @@
     /// </summary>
     public class SqlServerMessageSender : ISendMessages
     {
-        const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+        const string SqlSend = @"[SendTo_{0}]";
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
@@ -41,7 +39,7 @@
                         var command = new SqlCommand(string.Format(SqlSend, address.Queue),
                                                      UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
                             {
-                                CommandType = CommandType.Text
+                                CommandType = CommandType.StoredProcedure
                             })
                     {
                         ExecuteQuery(message, command);
@@ -54,7 +52,7 @@
                         connection.Open();
                         using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), connection)
                             {
-                                CommandType = CommandType.Text
+                                CommandType = CommandType.StoredProcedure
                             })
                         {
                             ExecuteQuery(message, command);
