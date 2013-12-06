@@ -27,7 +27,7 @@
 
         public bool HasActiveTransaction(string connectionString)
         {
-            return currentTransactions.IsValueCreated;
+            return currentTransactions.Value.ContainsKey(connectionString);
         }
         
         public void ClearTransaction(string connectionString)
@@ -35,6 +35,7 @@
             currentTransactions.Value.Remove(connectionString);
         }
 
-        readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions = new ThreadLocal<Dictionary<string, SqlTransaction>>();
+        readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
+            = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>());
     }
 }
