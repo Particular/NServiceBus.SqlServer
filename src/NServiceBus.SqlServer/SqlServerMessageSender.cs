@@ -43,7 +43,6 @@
         {
             try
             {
-
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 string queueConnectionString = DefaultConnectionString;
                 if (ConnectionStringCollection.Keys.Contains(address.Queue))
@@ -51,14 +50,12 @@
                     queueConnectionString = ConnectionStringCollection[address.Queue];
                 }
 
-                //Refactor to HasAndCanUseActiveTransaction?
-                if (UnitOfWork.HasActiveTransaction() &&
-                    UnitOfWork.TransactionUsesTheSameConnectionString(queueConnectionString))
+                if (UnitOfWork.HasActiveTransaction(queueConnectionString))
                 {
-                    //if there is an active transaction and the connectionstrings are equal, we can use the same transaction
-                    using (
-                        var command = new SqlCommand(string.Format(SqlSend, address.Queue),
-                                                        UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
+                    //if there is an active transaction for the connection, we can use the same native transaction
+                    var transaction = UnitOfWork.GetTransaction(queueConnectionString);
+
+                    using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), transaction.Connection, transaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -68,7 +65,7 @@
                 }
                 else
                 {
-                    //When there is no transaction or a DTC transaction we use a new connection
+                    //When there is no transaction, a DTC transaction or not yet a native transaction we use a new (pooled) connection
                     using (var connection = new SqlConnection(queueConnectionString))
                     {
                         connection.Open();
