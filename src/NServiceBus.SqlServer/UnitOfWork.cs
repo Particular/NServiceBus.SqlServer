@@ -36,6 +36,6 @@
         }
 
         readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
-            = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>());
+            = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>(StringComparer.InvariantCultureIgnoreCase));
     }
 }

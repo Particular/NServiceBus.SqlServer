@@ -27,7 +27,7 @@
         
         public SqlServerMessageSender()
         {
-            ConnectionStringCollection = new Dictionary<string, string>();
+            ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
