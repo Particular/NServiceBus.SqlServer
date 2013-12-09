@@ -12,6 +12,7 @@
     using Serializers.Json;
     using Unicast.Transport;
     using IsolationLevel = System.Data.IsolationLevel;
+    using NServiceBus.Transports.SQLServer.DatabaseAccess;
 
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
@@ -32,6 +33,11 @@
         /// UOW to hold current transaction.
         /// </summary>
         public UnitOfWork UnitOfWork { get; set; }
+
+        /// <summary>
+        /// Information about database access
+        /// </summary>
+        public IDatabaseAccessInfo DatabaseAccessInfo { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -59,7 +65,7 @@
 
             tableName = address.Queue;
 
-            sql = string.Format(SqlReceive, tableName);
+            sql = string.Format(DatabaseAccessInfo.ReceiveCommand, tableName);
 
             if (PurgeOnStartup)
             {
@@ -97,9 +103,9 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
+                using (var command = new SqlCommand(string.Format(DatabaseAccessInfo.PurgeCommand, tableName), connection)
                         {
-                            CommandType = CommandType.StoredProcedure
+                            CommandType = DatabaseAccessInfo.CommandType
                         })
                 {
                     var numberOfPurgedRows = command.ExecuteNonQuery();
@@ -286,7 +292,7 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(sql, connection) { CommandType = CommandType.StoredProcedure })
+                using (var command = new SqlCommand(sql, connection) { CommandType = DatabaseAccessInfo.CommandType })
                 {
                     return ExecuteReader(command);
                 }
@@ -295,7 +301,7 @@
 
         TransportMessage ReceiveWithNativeTransaction(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.StoredProcedure })
+            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = DatabaseAccessInfo.CommandType })
             {
                 return ExecuteReader(command);
             }
@@ -376,10 +382,7 @@
             public Exception Exception { get; set; }
             public TransportMessage Message { get; set; }
         }
-
-        const string SqlReceive = @"[ReceiveFrom_{0}]";
-        const string SqlPurge = @"[PurgeFrom_{0}]";
-
+        
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 

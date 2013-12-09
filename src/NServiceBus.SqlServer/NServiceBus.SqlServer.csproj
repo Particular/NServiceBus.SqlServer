@@ -58,6 +58,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackOff.cs" />
+    <Compile Include="DatabaseAccess\IDatabaseAccessInfo.cs" />
+    <Compile Include="DatabaseAccess\InlineSqlAccesInfo.cs" />
+    <Compile Include="DatabaseAccess\StoredProceduresAccessInfo.cs" />
     <Compile Include="SqlServer.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

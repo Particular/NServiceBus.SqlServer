@@ -5,6 +5,7 @@
     using System.Data.SqlClient;
     using Serializers.Json;
     using Unicast.Queuing;
+    using DatabaseAccess;
 
     /// <summary>
     ///     SqlServer implementation of <see cref="ISendMessages" />.
@@ -18,6 +19,8 @@
         public string ConnectionString { get; set; }
         
         public UnitOfWork UnitOfWork { get; set; }
+
+        public IDatabaseAccessInfo DatabaseAccessInfo { get; set; }
 
         /// <summary>
         ///     Sends the given <paramref name="message" /> to the <paramref name="address" />.
@@ -36,10 +39,10 @@
                 if (UnitOfWork.HasActiveTransaction())
                 {
                     using (
-                        var command = new SqlCommand(string.Format(SqlSend, address.Queue),
+                        var command = new SqlCommand(string.Format(DatabaseAccessInfo.SendCommand, address.Queue),
                                                      UnitOfWork.Transaction.Connection, UnitOfWork.Transaction)
                             {
-                                CommandType = CommandType.StoredProcedure
+                                CommandType = DatabaseAccessInfo.CommandType
                             })
                     {
                         ExecuteQuery(message, command);
@@ -50,9 +53,9 @@
                     using (var connection = new SqlConnection(ConnectionString))
                     {
                         connection.Open();
-                        using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), connection)
+                        using (var command = new SqlCommand(string.Format(DatabaseAccessInfo.SendCommand, address.Queue), connection)
                             {
-                                CommandType = CommandType.StoredProcedure
+                                CommandType = DatabaseAccessInfo.CommandType
                             })
                         {
                             ExecuteQuery(message, command);

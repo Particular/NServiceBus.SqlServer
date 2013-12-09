@@ -4,6 +4,7 @@ namespace NServiceBus.Features
     using Settings;
     using Transports;
     using Transports.SQLServer;
+    using NServiceBus.Transports.SQLServer.DatabaseAccess;
 
     /// <summary>
     /// Configures NServiceBus to use SqlServer as the default transport
@@ -29,6 +30,9 @@ namespace NServiceBus.Features
             
             var connectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
 
+            //TODO: Select type based on configuration in the app.config/web.config?
+            var dbAccess = new StoredProceduresAccessInfo();
+
             if (String.IsNullOrEmpty(connectionString))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
@@ -36,14 +40,17 @@ namespace NServiceBus.Features
 
             NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
 
+            //TODO: What to do with this?
             NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
             NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, connectionString);
+                  .ConfigureProperty(p => p.ConnectionString, connectionString)
+                  .ConfigureProperty(p => p.DatabaseAccessInfo, dbAccess);
 
             NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, connectionString)
-                  .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
+                  .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested)
+                  .ConfigureProperty(p => p.DatabaseAccessInfo, dbAccess);
         }
 
         static void CustomizeAddress()
