@@ -254,7 +254,7 @@
 
                     try
                     {
-                        UnitOfWork.SetTransaction(transaction);
+                        UnitOfWork.SetTransaction(connection.ConnectionString, transaction);
 
                         if (tryProcessMessage(message))
                         {
@@ -272,7 +272,7 @@
                     }
                     finally
                     {
-                        UnitOfWork.ClearTransaction();
+                        UnitOfWork.ClearTransaction(connection.ConnectionString);
                     }
 
                     return result;

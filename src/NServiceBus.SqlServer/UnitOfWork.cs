@@ -1,36 +1,41 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading;
 
     public class UnitOfWork : IDisposable
     {
-        public SqlTransaction Transaction
-        {
-            get { return currentTransaction.Value; }
-        }
-
         public void Dispose()
         {
             //Injected
         }
 
-        public void SetTransaction(SqlTransaction transaction)
+        public SqlTransaction GetTransaction(string connectionString)
         {
-            currentTransaction.Value = transaction;
+            return currentTransactions.Value[connectionString];
         }
 
-        public bool HasActiveTransaction()
+        public void SetTransaction(string connectionString, SqlTransaction transaction)
         {
-            return currentTransaction.IsValueCreated;
+            if (currentTransactions.Value.ContainsKey(connectionString))
+                throw new InvalidOperationException("Transaction already exists for connection");
+
+            currentTransactions.Value.Add(connectionString, transaction);
         }
 
-        public void ClearTransaction()
+        public bool HasActiveTransaction(string connectionString)
         {
-            currentTransaction.Value = null;
+            return currentTransactions.Value.ContainsKey(connectionString);
+        }
+        
+        public void ClearTransaction(string connectionString)
+        {
+            currentTransactions.Value.Remove(connectionString);
         }
 
-        readonly ThreadLocal<SqlTransaction> currentTransaction = new ThreadLocal<SqlTransaction>();
+        readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
+            = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>(StringComparer.InvariantCultureIgnoreCase));
     }
 }
