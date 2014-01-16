@@ -3,6 +3,7 @@ build32
 binaries
 obj
 bin
+App_Packages
 .nu
 _ReSharper.*
 _UpgradeReport.*
