@@ -57,7 +57,7 @@
                     Timeout = transactionSettings.TransactionTimeout
                 };
 
-            tableName = address.Queue;
+            tableName = TableNameUtils.GetTableName(address);
 
             sql = string.Format(SqlReceive, tableName);
 

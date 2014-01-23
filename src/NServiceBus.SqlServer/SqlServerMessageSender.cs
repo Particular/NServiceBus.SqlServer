@@ -55,7 +55,7 @@
                     //if there is an active transaction for the connection, we can use the same native transaction
                     var transaction = UnitOfWork.GetTransaction(queueConnectionString);
 
-                    using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), transaction.Connection, transaction)
+                    using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), transaction.Connection, transaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -69,7 +69,7 @@
                     using (var connection = new SqlConnection(queueConnectionString))
                     {
                         connection.Open();
-                        using (var command = new SqlCommand(string.Format(SqlSend, address.Queue), connection)
+                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
                             {
                                 CommandType = CommandType.Text
                             })
