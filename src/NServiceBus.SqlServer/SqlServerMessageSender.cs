@@ -44,7 +44,7 @@
             try
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
-                string queueConnectionString = DefaultConnectionString;
+                var queueConnectionString = DefaultConnectionString;
                 if (ConnectionStringCollection.Keys.Contains(address.Queue))
                 {
                     queueConnectionString = ConnectionStringCollection[address.Queue];
