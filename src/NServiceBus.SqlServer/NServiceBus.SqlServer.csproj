@@ -64,6 +64,7 @@
     <Compile Include="SqlServerPollingDequeueStrategy.cs" />
     <Compile Include="SqlServerMessageSender.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="TableNameUtils.cs" />
     <Compile Include="UnitOfWork.cs" />
   </ItemGroup>
   <ItemGroup>

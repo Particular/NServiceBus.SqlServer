@@ -57,7 +57,7 @@
                     Timeout = transactionSettings.TransactionTimeout
                 };
 
-            tableName = address.Queue;
+            tableName = TableNameUtils.GetTableName(address);
 
             sql = string.Format(SqlReceive, tableName);
 
@@ -254,7 +254,7 @@
 
                     try
                     {
-                        UnitOfWork.SetTransaction(transaction);
+                        UnitOfWork.SetTransaction(transaction, connection.ConnectionString);
 
                         if (tryProcessMessage(message))
                         {
@@ -272,7 +272,7 @@
                     }
                     finally
                     {
-                        UnitOfWork.ClearTransaction();
+                        UnitOfWork.ClearTransaction(connection.ConnectionString);
                     }
 
                     return result;
