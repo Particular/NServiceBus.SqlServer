@@ -37,7 +37,7 @@ namespace NServiceBus.Features
                 .ConnectionStrings
                 .Cast<ConnectionStringSettings>()
                 .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                .ToDictionary<ConnectionStringSettings, string, string>(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
+                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
             if (String.IsNullOrEmpty(defaultConnectionString))
             {

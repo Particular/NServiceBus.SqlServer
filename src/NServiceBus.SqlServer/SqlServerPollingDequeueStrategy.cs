@@ -254,7 +254,7 @@
 
                     try
                     {
-                        UnitOfWork.SetTransaction(connection.ConnectionString, transaction);
+                        UnitOfWork.SetTransaction(transaction, connection.ConnectionString);
 
                         if (tryProcessMessage(message))
                         {
