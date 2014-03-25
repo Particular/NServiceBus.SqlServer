@@ -12,8 +12,6 @@
     /// </summary>
     public class SqlServerMessageSender : ISendMessages
     {
-        const string SqlSend = @"[SendTo_{0}]";
-
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
         public string ConnectionString { get; set; }

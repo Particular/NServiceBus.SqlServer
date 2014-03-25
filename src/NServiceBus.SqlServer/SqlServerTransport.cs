@@ -28,11 +28,14 @@ namespace NServiceBus.Features
             //Until we refactor the whole address system
             CustomizeAddress();
             
+            IDatabaseAccessInfo dbAccess;
+            var useStoredProcedures = SettingsHolder.Get<bool>("NServiceBus.Transport.UseStoredProcedures");
+            if (useStoredProcedures)
+                dbAccess = new StoredProceduresAccessInfo();
+            else
+                dbAccess = new InlineSqlAccesInfo();
+
             var connectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
-
-            //TODO: Select type based on configuration in the app.config/web.config?
-            var dbAccess = new StoredProceduresAccessInfo();
-
             if (String.IsNullOrEmpty(connectionString))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
