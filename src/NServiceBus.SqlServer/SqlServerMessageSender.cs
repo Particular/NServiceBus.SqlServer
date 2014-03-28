@@ -21,7 +21,7 @@
 
         public string DefaultConnectionString { get; set; }
 
-        public Dictionary<string, string> ConnectionStringCollection { get; private set; }
+        public Dictionary<string, string> ConnectionStringCollection { get; set; }
 
         public UnitOfWork UnitOfWork { get; set; }
         
