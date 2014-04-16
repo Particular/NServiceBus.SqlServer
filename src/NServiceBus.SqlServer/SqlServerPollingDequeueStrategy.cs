@@ -16,7 +16,7 @@
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
     /// </summary>
-    public class SqlServerPollingDequeueStrategy : IDequeueMessages
+    public class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         /// <summary>
         ///     The connection used to open the SQL Server database.
@@ -29,7 +29,7 @@
         public bool PurgeOnStartup { get; set; }
 
         /// <summary>
-        /// UOW to hold current transaction.
+        ///     UOW to hold current transaction.
         /// </summary>
         public UnitOfWork UnitOfWork { get; set; }
 
@@ -42,20 +42,21 @@
         /// </param>
         /// <param name="tryProcessMessage">Called when a message has been dequeued and is ready for processing.</param>
         /// <param name="endProcessMessage">
-        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the outcome was successful or not.
+        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the
+        ///     outcome was successful or not.
         /// </param>
         public void Init(Address address, TransactionSettings transactionSettings,
-                         Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
+            Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
         {
             this.tryProcessMessage = tryProcessMessage;
             this.endProcessMessage = endProcessMessage;
 
             settings = transactionSettings;
             transactionOptions = new TransactionOptions
-                {
-                    IsolationLevel = transactionSettings.IsolationLevel,
-                    Timeout = transactionSettings.TransactionTimeout
-                };
+            {
+                IsolationLevel = transactionSettings.IsolationLevel,
+                Timeout = transactionSettings.TransactionTimeout
+            };
 
             tableName = TableNameUtils.GetTableName(address);
 
@@ -76,6 +77,7 @@
         public void Start(int maximumConcurrencyLevel)
         {
             tokenSource = new CancellationTokenSource();
+            countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -89,18 +91,24 @@
         public void Stop()
         {
             tokenSource.Cancel();
+            countdownEvent.Wait();
         }
 
-        private void PurgeTable()
+        public void Dispose()
+        {
+            // Injected
+        }
+
+        void PurgeTable()
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
                 connection.Open();
 
                 using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
-                        {
-                            CommandType = CommandType.Text
-                        })
+                {
+                    CommandType = CommandType.Text
+                })
                 {
                     var numberOfPurgedRows = command.ExecuteNonQuery();
 
@@ -109,61 +117,74 @@
             }
         }
 
-        private void StartThread()
+        void StartThread()
         {
             var token = tokenSource.Token;
 
             Task.Factory
                 .StartNew(Action, token, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
+                {
+                    t.Exception.Handle(ex =>
                     {
-                        t.Exception.Handle(ex =>
-                            {
-                                Logger.Warn("Failed to connect to the configured SqlServer");
-                                circuitBreaker.Failure(ex);
-                                return true;
-                            });
+                        Logger.Warn("Failed to connect to the configured SqlServer");
+                        circuitBreaker.Failure(ex);
+                        return true;
+                    });
 
+                    if (!tokenSource.IsCancellationRequested)
+                    {
+                        countdownEvent.TryAddCount();
                         StartThread();
-                    }, TaskContinuationOptions.OnlyOnFaulted);
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        private void Action(object obj)
+        void Action(object obj)
         {
-            var cancellationToken = (CancellationToken)obj;
-            var backOff = new BackOff(1000);
-
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                var result = new ReceiveResult();
+                var cancellationToken = (CancellationToken) obj;
+                var backOff = new BackOff(1000);
 
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (settings.IsTransactional)
+                    var result = new ReceiveResult();
+
+                    try
                     {
-                        if (settings.DontUseDistributedTransactions)
+                        if (settings.IsTransactional)
                         {
-                            result = TryReceiveWithNativeTransaction();
+                            if (settings.DontUseDistributedTransactions)
+                            {
+                                result = TryReceiveWithNativeTransaction();
+                            }
+                            else
+                            {
+                                result = TryReceiveWithDTCTransaction();
+                            }
                         }
                         else
                         {
-                            result = TryReceiveWithDTCTransaction();
+                            result = TryReceiveWithNoTransaction();
                         }
                     }
-                    else
+                    finally
                     {
-                        result = TryReceiveWithNoTransaction();
+                        //since we're polling the message will be null when there was nothing in the queue
+                        if (result.Message != null)
+                        {
+                            endProcessMessage(result.Message, result.Exception);
+                        }
                     }
-                }
-                finally
-                {
-                    //since we're polling the message will be null when there was nothing in the queue
-                    if (result.Message != null)
-                        endProcessMessage(result.Message, result.Exception);
-                }
 
-                circuitBreaker.Success();
-                backOff.Wait(() => result.Message == null);
+                    circuitBreaker.Success();
+                    backOff.Wait(() => result.Message == null);
+                }
+            }
+            finally
+            {
+                countdownEvent.Signal();
             }
         }
 
@@ -174,13 +195,14 @@
             var message = Receive();
 
             if (message == null)
+            {
                 return result;
+            }
 
             result.Message = message;
             try
             {
                 tryProcessMessage(message);
-
             }
             catch (Exception ex)
             {
@@ -286,7 +308,10 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(sql, connection) { CommandType = CommandType.Text })
+                using (var command = new SqlCommand(sql, connection)
+                {
+                    CommandType = CommandType.Text
+                })
                 {
                     return ExecuteReader(command);
                 }
@@ -295,7 +320,10 @@
 
         TransportMessage ReceiveWithNativeTransaction(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.Text })
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
             {
                 return ExecuteReader(command);
             }
@@ -328,13 +356,13 @@
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
                     var replyToAddress = dataReader.IsDBNull(2) ? null : Address.Parse(dataReader.GetString(2));
 
-                    var message = new TransportMessage(id,headers)
-                        {
-                            CorrelationId = correlationId,
-                            ReplyToAddress = replyToAddress,
-                            Recoverable = recoverable,
-                            Body = body
-                        };
+                    var message = new TransportMessage(id, headers)
+                    {
+                        CorrelationId = correlationId,
+                        ReplyToAddress = replyToAddress,
+                        Recoverable = recoverable,
+                        Body = body
+                    };
 
                     if (expireDateTime.HasValue)
                     {
@@ -371,26 +399,23 @@
             return IsolationLevel.ReadCommitted;
         }
 
-        class ReceiveResult
-        {
-            public Exception Exception { get; set; }
-            public TransportMessage Message { get; set; }
-        }
-
         const string SqlReceive =
-         @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
+
         const string SqlPurge = @"DELETE FROM [{0}]";
 
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity", 
-                            TimeSpan.FromMinutes(2),
-                            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
-                            TimeSpan.FromSeconds(10));
+        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
+            TimeSpan.FromMinutes(2),
+            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
+            TimeSpan.FromSeconds(10));
+
+        CountdownEvent countdownEvent;
 
         Action<TransportMessage, Exception> endProcessMessage;
         TransactionSettings settings;
@@ -400,5 +425,10 @@
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
 
+        class ReceiveResult
+        {
+            public Exception Exception { get; set; }
+            public TransportMessage Message { get; set; }
+        }
     }
 }
