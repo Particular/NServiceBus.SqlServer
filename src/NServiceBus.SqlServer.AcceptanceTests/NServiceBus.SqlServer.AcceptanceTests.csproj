@@ -68,15 +68,6 @@
   <ItemGroup>
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <!--
-  <Target Name="BeforeBuild">
-    <ItemGroup>
-      <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
-    </ItemGroup>
-  </Target>-->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
 </Project>
