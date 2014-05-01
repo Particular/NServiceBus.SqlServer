@@ -9,6 +9,7 @@
     using System.Transactions;
     using CircuitBreakers;
     using Logging;
+    using Pipeline;
     using Serializers.Json;
     using Unicast.Transport;
     using IsolationLevel = System.Data.IsolationLevel;
@@ -28,10 +29,7 @@
         /// </summary>
         public bool PurgeOnStartup { get; set; }
 
-        /// <summary>
-        /// UOW to hold current transaction.
-        /// </summary>
-        public UnitOfWork UnitOfWork { get; set; }
+        public PipelineExecutor PipelineExecutor { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -229,10 +227,14 @@
 
             using (var connection = new SqlConnection(ConnectionString))
             {
+                PipelineExecutor.CurrentContext.Set(typeof(IDbConnection).FullName, connection);
+
                 connection.Open();
 
                 using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
                 {
+                    PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
+
                     TransportMessage message;
                     try
                     {
@@ -254,8 +256,6 @@
 
                     try
                     {
-                        UnitOfWork.SetTransaction(transaction, connection.ConnectionString);
-
                         if (tryProcessMessage(message))
                         {
                             transaction.Commit();
@@ -272,7 +272,7 @@
                     }
                     finally
                     {
-                        UnitOfWork.ClearTransaction(connection.ConnectionString);
+                        PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
                     }
 
                     return result;

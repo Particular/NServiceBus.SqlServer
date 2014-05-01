@@ -1,13 +1,14 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.Threading;
+    using Pipeline;
     using Settings;
 
     public class UnitOfWork : IDisposable
     {
+        public PipelineExecutor PipelineExecutor { get; set; }
+
         public UnitOfWork()
         {
             defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
@@ -25,7 +26,9 @@
 
         public SqlTransaction GetTransaction(string connectionString)
         {
-            return currentTransactions.Value[connectionString];
+            SqlTransaction transaction;
+            PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", connectionString), out transaction);
+            return transaction;
         }
 
         public void SetTransaction(SqlTransaction transaction)
@@ -35,12 +38,13 @@
 
         public void SetTransaction(SqlTransaction transaction, string connectionString)
         {
-            if (currentTransactions.Value.ContainsKey(connectionString))
+            SqlTransaction temp;
+            if(PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", connectionString), out temp))
             {
                 throw new InvalidOperationException("Transaction already exists for connection");
             }
 
-            currentTransactions.Value.Add(connectionString, transaction);
+            PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", connectionString), transaction);
         }
 
         public bool HasActiveTransaction()
@@ -50,7 +54,8 @@
 
         public bool HasActiveTransaction(string connectionString)
         {
-            return currentTransactions.Value.ContainsKey(connectionString);
+            SqlTransaction temp;
+            return PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", connectionString), out temp);
         }
 
         public void ClearTransaction()
@@ -60,11 +65,8 @@
 
         public void ClearTransaction(string connectionString)
         {
-            currentTransactions.Value.Remove(connectionString);
+            PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", connectionString));
         }
-
-        readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
-            = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>(StringComparer.InvariantCultureIgnoreCase));
 
         string defaultConnectionString;
     }
