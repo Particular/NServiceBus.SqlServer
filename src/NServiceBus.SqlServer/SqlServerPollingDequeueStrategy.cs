@@ -17,7 +17,7 @@
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
     /// </summary>
-    public class SqlServerPollingDequeueStrategy : IDequeueMessages
+    class SqlServerPollingDequeueStrategy : IDequeueMessages
     {
         /// <summary>
         ///     The connection used to open the SQL Server database.
@@ -157,7 +157,9 @@
                 {
                     //since we're polling the message will be null when there was nothing in the queue
                     if (result.Message != null)
+                    {
                         endProcessMessage(result.Message, result.Exception);
+                    }
                 }
 
                 circuitBreaker.Success();
@@ -172,7 +174,9 @@
             var message = Receive();
 
             if (message == null)
+            {
                 return result;
+            }
 
             result.Message = message;
             try
