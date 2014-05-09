@@ -145,7 +145,7 @@
                         }
                         else
                         {
-                            result = TryReceiveWithDTCTransaction();
+                            result = TryReceiveWithTransactionScope();
                         }
                     }
                     else
@@ -192,13 +192,26 @@
             return result;
         }
 
-        ReceiveResult TryReceiveWithDTCTransaction()
+        ReceiveResult TryReceiveWithTransactionScope()
         {
             var result = new ReceiveResult();
 
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
+            using (var connection = new SqlConnection(ConnectionString))
             {
-                var message = Receive();
+                PipelineExecutor.CurrentContext.Set(typeof(IDbConnection).FullName, connection);
+
+                connection.Open();
+
+                TransportMessage message;
+
+                using (var command = new SqlCommand(sql, connection)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    message = ExecuteReader(command);
+                }
 
                 if (message == null)
                 {
