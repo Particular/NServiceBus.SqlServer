@@ -199,7 +199,7 @@
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
             using (var connection = new SqlConnection(ConnectionString))
             {
-                PipelineExecutor.CurrentContext.Set(typeof(IDbConnection).FullName, connection);
+                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
                 connection.Open();
 
@@ -244,7 +244,7 @@
 
             using (var connection = new SqlConnection(ConnectionString))
             {
-                PipelineExecutor.CurrentContext.Set(typeof(IDbConnection).FullName, connection);
+                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
                 connection.Open();
 
