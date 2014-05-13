@@ -4,6 +4,7 @@
     using System.Linq;
     using System.Data;
     using System.Data.SqlClient;
+    using Pipeline;
     using Serializers.Json;
     using Unicast.Queuing;
     using System.Collections.Generic;
@@ -11,7 +12,7 @@
     /// <summary>
     ///     SqlServer implementation of <see cref="ISendMessages" />.
     /// </summary>
-    public class SqlServerMessageSender : ISendMessages
+    class SqlServerMessageSender : ISendMessages
     {
         const string SqlSend =
             @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
@@ -23,7 +24,7 @@
 
         public Dictionary<string, string> ConnectionStringCollection { get; set; }
 
-        public UnitOfWork UnitOfWork { get; set; }
+        public PipelineExecutor PipelineExecutor { get; set; }
         
         public SqlServerMessageSender()
         {
@@ -50,12 +51,12 @@
                     queueConnectionString = ConnectionStringCollection[address.Queue];
                 }
 
-                if (UnitOfWork.HasActiveTransaction(queueConnectionString))
-                {
-                    //if there is an active transaction for the connection, we can use the same native transaction
-                    var transaction = UnitOfWork.GetTransaction(queueConnectionString);
+                SqlTransaction currentTransaction;
 
-                    using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), transaction.Connection, transaction)
+
+                if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
+                {
+                    using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -65,17 +66,20 @@
                 }
                 else
                 {
-                    //When there is no transaction, a DTC transaction or not yet a native transaction we use a new (pooled) connection
-                    using (var connection = new SqlConnection(queueConnectionString))
+                    SqlConnection currentConnection;
+
+                    if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
                     {
-                        connection.Open();
-                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
-                            {
-                                CommandType = CommandType.Text
-                            })
+                        ExecuteSendCommand(message, address, currentConnection);
+                    }
+                    else
+                    {
+                        using (var connection = new SqlConnection(queueConnectionString))
                         {
-                            ExecuteQuery(message, command);
+                            connection.Open();
+                            ExecuteSendCommand(message, address, connection);
                         }
+                        
                     }
                 }
             }
@@ -95,6 +99,17 @@
             catch (Exception ex)
             {
                 ThrowFailedToSendException(address, ex);
+            }
+        }
+
+        static void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection)
+        {
+            using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
+            {
+                CommandType = CommandType.Text
+            })
+            {
+                ExecuteQuery(message, command);
             }
         }
 

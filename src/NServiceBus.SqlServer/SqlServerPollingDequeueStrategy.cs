@@ -9,6 +9,7 @@
     using System.Transactions;
     using CircuitBreakers;
     using Logging;
+    using Pipeline;
     using Serializers.Json;
     using Unicast.Transport;
     using IsolationLevel = System.Data.IsolationLevel;
@@ -16,7 +17,7 @@
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
     /// </summary>
-    public class SqlServerPollingDequeueStrategy : IDequeueMessages
+    class SqlServerPollingDequeueStrategy : IDequeueMessages
     {
         /// <summary>
         ///     The connection used to open the SQL Server database.
@@ -28,10 +29,7 @@
         /// </summary>
         public bool PurgeOnStartup { get; set; }
 
-        /// <summary>
-        /// UOW to hold current transaction.
-        /// </summary>
-        public UnitOfWork UnitOfWork { get; set; }
+        public PipelineExecutor PipelineExecutor { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -147,7 +145,7 @@
                         }
                         else
                         {
-                            result = TryReceiveWithDTCTransaction();
+                            result = TryReceiveWithTransactionScope();
                         }
                     }
                     else
@@ -159,7 +157,9 @@
                 {
                     //since we're polling the message will be null when there was nothing in the queue
                     if (result.Message != null)
+                    {
                         endProcessMessage(result.Message, result.Exception);
+                    }
                 }
 
                 circuitBreaker.Success();
@@ -174,7 +174,9 @@
             var message = Receive();
 
             if (message == null)
+            {
                 return result;
+            }
 
             result.Message = message;
             try
@@ -190,13 +192,26 @@
             return result;
         }
 
-        ReceiveResult TryReceiveWithDTCTransaction()
+        ReceiveResult TryReceiveWithTransactionScope()
         {
             var result = new ReceiveResult();
 
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
+            using (var connection = new SqlConnection(ConnectionString))
             {
-                var message = Receive();
+                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+
+                connection.Open();
+
+                TransportMessage message;
+
+                using (var command = new SqlCommand(sql, connection)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    message = ExecuteReader(command);
+                }
 
                 if (message == null)
                 {
@@ -229,10 +244,14 @@
 
             using (var connection = new SqlConnection(ConnectionString))
             {
+                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+
                 connection.Open();
 
                 using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
                 {
+                    PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
+
                     TransportMessage message;
                     try
                     {
@@ -254,8 +273,6 @@
 
                     try
                     {
-                        UnitOfWork.SetTransaction(transaction, connection.ConnectionString);
-
                         if (tryProcessMessage(message))
                         {
                             transaction.Commit();
@@ -272,7 +289,7 @@
                     }
                     finally
                     {
-                        UnitOfWork.ClearTransaction(connection.ConnectionString);
+                        PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
                     }
 
                     return result;

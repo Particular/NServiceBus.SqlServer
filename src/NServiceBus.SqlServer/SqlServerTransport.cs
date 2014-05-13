@@ -44,8 +44,6 @@ namespace NServiceBus.Features
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
 
-            NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
-
             NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
 
