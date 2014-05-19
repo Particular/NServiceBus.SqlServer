@@ -2,7 +2,6 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
-    using Settings;
     using Transports;
     using Transports.SQLServer;
     using System.Configuration;
@@ -24,12 +23,12 @@ namespace NServiceBus.Features
             Enable<MessageDrivenSubscriptions>();
         }
 
-        public override void Initialize()
+        public override void Initialize(Configure config)
         {
             //Until we refactor the whole address system
-            CustomizeAddress();
-            
-            var defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
+            CustomizeAddress(config);
+
+            var defaultConnectionString = config.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
 
             //Load all connectionstrings 
             var collection =
@@ -43,24 +42,24 @@ namespace NServiceBus.Features
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
-
-            NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
+            var configurer = config.Configurer;
+            configurer.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
 
-            NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
+            configurer.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
-            NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
+            configurer.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
         }
 
-        static void CustomizeAddress()
+        static void CustomizeAddress(Configure config)
         {
             Address.IgnoreMachineName();
 
-            if (!SettingsHolder.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+            if (!config.Settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
             {
                 Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
             }
