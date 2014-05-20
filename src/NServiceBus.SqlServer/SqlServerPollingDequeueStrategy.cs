@@ -40,20 +40,21 @@
         /// </param>
         /// <param name="tryProcessMessage">Called when a message has been dequeued and is ready for processing.</param>
         /// <param name="endProcessMessage">
-        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the outcome was successful or not.
+        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the
+        ///     outcome was successful or not.
         /// </param>
         public void Init(Address address, TransactionSettings transactionSettings,
-                         Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
+            Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
         {
             this.tryProcessMessage = tryProcessMessage;
             this.endProcessMessage = endProcessMessage;
 
             settings = transactionSettings;
             transactionOptions = new TransactionOptions
-                {
-                    IsolationLevel = transactionSettings.IsolationLevel,
-                    Timeout = transactionSettings.TransactionTimeout
-                };
+            {
+                IsolationLevel = transactionSettings.IsolationLevel,
+                Timeout = transactionSettings.TransactionTimeout
+            };
 
             tableName = TableNameUtils.GetTableName(address);
 
@@ -89,16 +90,16 @@
             tokenSource.Cancel();
         }
 
-        private void PurgeTable()
+        void PurgeTable()
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
                 connection.Open();
 
                 using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
-                        {
-                            CommandType = CommandType.Text
-                        })
+                {
+                    CommandType = CommandType.Text
+                })
                 {
                     var numberOfPurgedRows = command.ExecuteNonQuery();
 
@@ -107,28 +108,28 @@
             }
         }
 
-        private void StartThread()
+        void StartThread()
         {
             var token = tokenSource.Token;
 
             Task.Factory
                 .StartNew(Action, token, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
+                {
+                    t.Exception.Handle(ex =>
                     {
-                        t.Exception.Handle(ex =>
-                            {
-                                Logger.Warn("Failed to connect to the configured SqlServer");
-                                circuitBreaker.Failure(ex);
-                                return true;
-                            });
+                        Logger.Warn("Failed to connect to the configured SqlServer");
+                        circuitBreaker.Failure(ex);
+                        return true;
+                    });
 
-                        StartThread();
-                    }, TaskContinuationOptions.OnlyOnFaulted);
+                    StartThread();
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        private void Action(object obj)
+        void Action(object obj)
         {
-            var cancellationToken = (CancellationToken)obj;
+            var cancellationToken = (CancellationToken) obj;
             var backOff = new BackOff(1000);
 
             while (!cancellationToken.IsCancellationRequested)
@@ -182,7 +183,6 @@
             try
             {
                 tryProcessMessage(message);
-
             }
             catch (Exception ex)
             {
@@ -199,73 +199,25 @@
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
             using (var connection = new SqlConnection(ConnectionString))
             {
-                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
-
-                connection.Open();
-
-                TransportMessage message;
-
-                using (var command = new SqlCommand(sql, connection)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    message = ExecuteReader(command);
-                }
-
-                if (message == null)
-                {
-                    scope.Complete();
-                    return result;
-                }
-
-                result.Message = message;
-
                 try
                 {
-                    if (tryProcessMessage(message))
-                    {
-                        scope.Complete();
-                        scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
-                    }
-                }
-                catch (Exception ex)
-                {
-                    result.Exception = ex;
-                }
+                    PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
-                return result;
-            }
-        }
-
-        ReceiveResult TryReceiveWithNativeTransaction()
-        {
-            var result = new ReceiveResult();
-
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
-
-                connection.Open();
-
-                using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
-                {
-                    PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
+                    connection.Open();
 
                     TransportMessage message;
-                    try
+
+                    using (var command = new SqlCommand(sql, connection)
                     {
-                        message = ReceiveWithNativeTransaction(connection, transaction);
-                    }
-                    catch (Exception)
+                        CommandType = CommandType.Text
+                    })
                     {
-                        transaction.Rollback();
-                        throw;
+                        message = ExecuteReader(command);
                     }
 
                     if (message == null)
                     {
-                        transaction.Commit();
+                        scope.Complete();
                         return result;
                     }
 
@@ -275,24 +227,89 @@
                     {
                         if (tryProcessMessage(message))
                         {
-                            transaction.Commit();
-                        }
-                        else
-                        {
-                            transaction.Rollback();
+                            scope.Complete();
+                            scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
                         }
                     }
                     catch (Exception ex)
                     {
                         result.Exception = ex;
-                        transaction.Rollback();
-                    }
-                    finally
-                    {
-                        PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
                     }
 
                     return result;
+                }
+                finally
+                {
+                    PipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
+                }
+            }
+        }
+
+        ReceiveResult TryReceiveWithNativeTransaction()
+        {
+            var result = new ReceiveResult();
+
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+
+                    connection.Open();
+
+                    using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
+                    {
+                        try
+                        {
+                            PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
+
+                            TransportMessage message;
+                            try
+                            {
+                                message = ReceiveWithNativeTransaction(connection, transaction);
+                            }
+                            catch (Exception)
+                            {
+                                transaction.Rollback();
+                                throw;
+                            }
+
+                            if (message == null)
+                            {
+                                transaction.Commit();
+                                return result;
+                            }
+
+                            result.Message = message;
+
+                            try
+                            {
+                                if (tryProcessMessage(message))
+                                {
+                                    transaction.Commit();
+                                }
+                                else
+                                {
+                                    transaction.Rollback();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                result.Exception = ex;
+                                transaction.Rollback();
+                            }
+
+                            return result;
+                        }
+                        finally
+                        {
+                            PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
+                        }
+                    }
+                }
+                finally
+                {
+                    PipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
                 }
             }
         }
@@ -303,7 +320,10 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(sql, connection) { CommandType = CommandType.Text })
+                using (var command = new SqlCommand(sql, connection)
+                {
+                    CommandType = CommandType.Text
+                })
                 {
                     return ExecuteReader(command);
                 }
@@ -312,7 +332,10 @@
 
         TransportMessage ReceiveWithNativeTransaction(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.Text })
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
             {
                 return ExecuteReader(command);
             }
@@ -345,13 +368,13 @@
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
                     var replyToAddress = dataReader.IsDBNull(2) ? null : Address.Parse(dataReader.GetString(2));
 
-                    var message = new TransportMessage(id,headers)
-                        {
-                            CorrelationId = correlationId,
-                            ReplyToAddress = replyToAddress,
-                            Recoverable = recoverable,
-                            Body = body
-                        };
+                    var message = new TransportMessage(id, headers)
+                    {
+                        CorrelationId = correlationId,
+                        ReplyToAddress = replyToAddress,
+                        Recoverable = recoverable,
+                        Body = body
+                    };
 
                     if (expireDateTime.HasValue)
                     {
@@ -388,26 +411,21 @@
             return IsolationLevel.ReadCommitted;
         }
 
-        class ReceiveResult
-        {
-            public Exception Exception { get; set; }
-            public TransportMessage Message { get; set; }
-        }
-
         const string SqlReceive =
-         @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
+
         const string SqlPurge = @"DELETE FROM [{0}]";
 
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity", 
-                            TimeSpan.FromMinutes(2),
-                            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
-                            TimeSpan.FromSeconds(10));
+        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
+            TimeSpan.FromMinutes(2),
+            ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
+            TimeSpan.FromSeconds(10));
 
         Action<TransportMessage, Exception> endProcessMessage;
         TransactionSettings settings;
@@ -417,5 +435,10 @@
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
 
+        class ReceiveResult
+        {
+            public Exception Exception { get; set; }
+            public TransportMessage Message { get; set; }
+        }
     }
 }
