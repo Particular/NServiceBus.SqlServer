@@ -26,8 +26,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\NServiceBus.Transports.SQLServer.xml</DocumentationFile>
-    <NoWarn>1591,1572,1571,1573,1587,1570</NoWarn>
+    <NoWarn>
+    </NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -37,8 +39,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\NServiceBus.Transports.SQLServer.xml</DocumentationFile>
-    <NoWarn>1591,1572,1571,1573,1587,1570</NoWarn>
+    <NoWarn>
+    </NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Janitor">

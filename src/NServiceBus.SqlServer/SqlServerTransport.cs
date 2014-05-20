@@ -9,7 +9,7 @@ namespace NServiceBus.Features
     /// <summary>
     /// Configures NServiceBus to use SqlServer as the default transport
     /// </summary>
-    public class SqlServerTransport : ConfigureTransport<SqlServer>
+    class SqlServerTransport : ConfigureTransport<SqlServer>
     {
         protected override string ExampleConnectionStringForErrorMessage
         {

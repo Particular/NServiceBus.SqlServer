@@ -4,7 +4,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Security.Cryptography;
     using System.Text;
 
-    public static class TableNameUtils
+    static class TableNameUtils
     {
         public static string GetTableName(Address address)
         {
