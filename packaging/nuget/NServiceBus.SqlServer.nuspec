@@ -20,6 +20,6 @@
   <files>
     <file src="..\..\src\NServiceBus.SqlServer\bin\Release\NServiceBus.Transports.SqlServer.???" target="lib\net45" />
     <file src="tools\install.ps1" target="tools" />
-	<file src="..\..\src\NServiceBus.SqlServer\**\*.cs" target="src" />
+    <file src="..\..\src\NServiceBus.SqlServer\**\*.cs" target="src" />
   </files>
 </package>
