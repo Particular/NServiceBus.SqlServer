@@ -373,7 +373,7 @@
                         CorrelationId = correlationId,
                         ReplyToAddress = replyToAddress,
                         Recoverable = recoverable,
-                        Body = body
+                        Body = body ?? new byte[0]
                     };
 
                     if (expireDateTime.HasValue)
