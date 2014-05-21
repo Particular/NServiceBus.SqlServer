@@ -3,7 +3,7 @@ namespace NServiceBus
     using Transports;
 
     /// <summary>
-    /// TransportDefinition for SqlServer
+    /// SqlServer Transport
     /// </summary>
     public class SqlServer : TransportDefinition
     {
