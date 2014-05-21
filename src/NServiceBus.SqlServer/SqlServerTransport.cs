@@ -18,9 +18,9 @@ namespace NServiceBus.Features
 
         protected override void InternalConfigure(Configure config)
         {
-            
             Enable<SqlServerTransport>();
             Enable<MessageDrivenSubscriptions>();
+            EnableByDefault<StorageDrivenPublisher>();
         }
 
         public override void Initialize(Configure config)
