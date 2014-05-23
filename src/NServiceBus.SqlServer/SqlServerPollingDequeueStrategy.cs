@@ -368,10 +368,9 @@
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
                     var replyToAddress = dataReader.IsDBNull(2) ? null : Address.Parse(dataReader.GetString(2));
 
-                    var message = new TransportMessage(id, headers)
+                    var message = new TransportMessage(id, headers, replyToAddress)
                     {
                         CorrelationId = correlationId,
-                        ReplyToAddress = replyToAddress,
                         Recoverable = recoverable,
                         Body = body ?? new byte[0]
                     };

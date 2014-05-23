@@ -6,6 +6,7 @@
     using System.Data.SqlClient;
     using Pipeline;
     using Serializers.Json;
+    using Unicast;
     using Unicast.Queuing;
     using System.Collections.Generic;
 
@@ -31,30 +32,23 @@
             ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
-        /// <summary>
-        ///     Sends the given <paramref name="message" /> to the <paramref name="address" />.
-        /// </summary>
-        /// <param name="message">
-        ///     <see cref="TransportMessage" /> to send.
-        /// </param>
-        /// <param name="address">
-        ///     Destination <see cref="Address" />.
-        /// </param>
-        public void Send(TransportMessage message, Address address)
+        public void Send(TransportMessage message, SendOptions sendOptions)
         {
+            var address = sendOptions.Destination;
+            var queue = address.Queue;
             try
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(address.Queue))
+                if (ConnectionStringCollection.Keys.Contains(queue))
                 {
-                    queueConnectionString = ConnectionStringCollection[address.Queue];
+                    queueConnectionString = ConnectionStringCollection[queue];
                 }
 
                 SqlTransaction currentTransaction;
 
 
-                if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
+                if (sendOptions.EnlistInReceiveTransaction && PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
                 {
                     using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
                         {
