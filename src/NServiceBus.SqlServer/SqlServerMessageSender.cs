@@ -55,7 +55,7 @@
                             CommandType = CommandType.Text
                         })
                     {
-                        ExecuteQuery(message, command);
+                        ExecuteQuery(message, command, sendOptions);
                     }
                 }
                 else
@@ -64,14 +64,14 @@
 
                     if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
                     {
-                        ExecuteSendCommand(message, address, currentConnection);
+                        ExecuteSendCommand(message, address, currentConnection, sendOptions);
                     }
                     else
                     {
                         using (var connection = new SqlConnection(queueConnectionString))
                         {
                             connection.Open();
-                            ExecuteSendCommand(message, address, connection);
+                            ExecuteSendCommand(message, address, connection, sendOptions);
                         }
                         
                     }
@@ -96,14 +96,14 @@
             }
         }
 
-        static void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection)
+        static void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection, SendOptions sendOptions)
         {
             using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
             {
                 CommandType = CommandType.Text
             })
             {
-                ExecuteQuery(message, command);
+                ExecuteQuery(message, command, sendOptions);
             }
         }
 
@@ -117,19 +117,24 @@
                 string.Format("Failed to send message to address: {0}@{1}", address.Queue, address.Machine), ex);
         }
 
-        private static void ExecuteQuery(TransportMessage message, SqlCommand command)
+        private static void ExecuteQuery(TransportMessage message, SqlCommand command, SendOptions sendOptions)
         {
             command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = Guid.Parse(message.Id);
             command.Parameters.Add("CorrelationId", SqlDbType.VarChar).Value =
                 GetValue(message.CorrelationId);
-            if (message.ReplyToAddress == null) // SendOnly endpoint
+            if(sendOptions.ReplyToAddress != null)
             {
-                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value = DBNull.Value;
+                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value =
+                    sendOptions.ReplyToAddress.ToString();
             }
-            else
+            else if (message.ReplyToAddress != null)
             {
                 command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value =
                     message.ReplyToAddress.ToString();
+            }
+            else
+            {
+                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value = DBNull.Value;
             }
             command.Parameters.Add("Recoverable", SqlDbType.Bit).Value = message.Recoverable;
             if (message.TimeToBeReceived == TimeSpan.MaxValue)
