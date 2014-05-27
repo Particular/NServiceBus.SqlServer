@@ -387,7 +387,7 @@
             return null;
         }
 
-        IsolationLevel GetSqlIsolationLevel(System.Transactions.IsolationLevel isolationLevel)
+        static IsolationLevel GetSqlIsolationLevel(System.Transactions.IsolationLevel isolationLevel)
         {
             switch (isolationLevel)
             {

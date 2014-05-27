@@ -1,36 +1,31 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Linq;
+    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
+    using System.Linq;
+    using System.Transactions;
     using Pipeline;
     using Serializers.Json;
     using Unicast;
     using Unicast.Queuing;
-    using System.Collections.Generic;
 
     /// <summary>
     ///     SqlServer implementation of <see cref="ISendMessages" />.
     /// </summary>
     class SqlServerMessageSender : ISendMessages
     {
-        const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
-
-        static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
+        public SqlServerMessageSender()
+        {
+            ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        }
 
         public string DefaultConnectionString { get; set; }
 
         public Dictionary<string, string> ConnectionStringCollection { get; set; }
 
         public PipelineExecutor PipelineExecutor { get; set; }
-        
-        public SqlServerMessageSender()
-        {
-            ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        }
 
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
@@ -45,35 +40,50 @@
                     queueConnectionString = ConnectionStringCollection[queue];
                 }
 
-                SqlTransaction currentTransaction;
-
-
-                if (sendOptions.EnlistInReceiveTransaction && PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
+                if (sendOptions.EnlistInReceiveTransaction)
                 {
-                    using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
+                    SqlTransaction currentTransaction;
+
+                    if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
+                    {
+                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
                         {
                             CommandType = CommandType.Text
                         })
-                    {
-                        ExecuteQuery(message, command, sendOptions);
-                    }
-                }
-                else
-                {
-                    SqlConnection currentConnection;
-
-                    if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
-                    {
-                        ExecuteSendCommand(message, address, currentConnection, sendOptions);
+                        {
+                            ExecuteQuery(message, command, sendOptions);
+                        }
                     }
                     else
+                    {
+                        SqlConnection currentConnection;
+
+                        if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
+                        {
+                            ExecuteSendCommand(message, address, currentConnection, sendOptions);
+                        }
+                        else
+                        {
+                            using (var connection = new SqlConnection(queueConnectionString))
+                            {
+                                connection.Open();
+                                ExecuteSendCommand(message, address, connection, sendOptions);
+                            }
+                        }
+                    }
+                }
+                else 
+                {
+                    // Suppress so that even if DTC is on, we won't escalate
+                    using (var tx = new TransactionScope(TransactionScopeOption.Suppress))
                     {
                         using (var connection = new SqlConnection(queueConnectionString))
                         {
                             connection.Open();
                             ExecuteSendCommand(message, address, connection, sendOptions);
                         }
-                        
+
+                        tx.Complete();
                     }
                 }
             }
@@ -82,8 +92,8 @@
                 if (ex.Number == 208)
                 {
                     var msg = address == null
-                                     ? "Failed to send message. Target address is null."
-                                     : string.Format("Failed to send message to address: [{0}]", address);
+                        ? "Failed to send message. Target address is null."
+                        : string.Format("Failed to send message to address: [{0}]", address);
 
                     throw new QueueNotFoundException(address, msg, ex);
                 }
@@ -107,22 +117,23 @@
             }
         }
 
-
-        private static void ThrowFailedToSendException(Address address, Exception ex)
+        static void ThrowFailedToSendException(Address address, Exception ex)
         {
             if (address == null)
+            {
                 throw new FailedToSendMessageException("Failed to send message.", ex);
+            }
 
             throw new FailedToSendMessageException(
                 string.Format("Failed to send message to address: {0}@{1}", address.Queue, address.Machine), ex);
         }
 
-        private static void ExecuteQuery(TransportMessage message, SqlCommand command, SendOptions sendOptions)
+        static void ExecuteQuery(TransportMessage message, SqlCommand command, SendOptions sendOptions)
         {
             command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = Guid.Parse(message.Id);
             command.Parameters.Add("CorrelationId", SqlDbType.VarChar).Value =
                 GetValue(message.CorrelationId);
-            if(sendOptions.ReplyToAddress != null)
+            if (sendOptions.ReplyToAddress != null)
             {
                 command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value =
                     sendOptions.ReplyToAddress.ToString();
@@ -160,9 +171,15 @@
             command.ExecuteNonQuery();
         }
 
-        private static object GetValue(object value)
+        static object GetValue(object value)
         {
             return value ?? DBNull.Value;
         }
+
+        const string SqlSend =
+            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+
+        static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
     }
 }
