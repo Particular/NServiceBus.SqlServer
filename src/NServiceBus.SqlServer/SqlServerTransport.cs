@@ -2,6 +2,7 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using Settings;
     using Transports;
     using Transports.SQLServer;
     using System.Configuration;
@@ -18,17 +19,19 @@ namespace NServiceBus.Features
 
         protected override void InternalConfigure(Configure config)
         {
-            Enable<SqlServerTransport>();
-            Enable<MessageDrivenSubscriptions>();
-            EnableByDefault<StorageDrivenPublisher>();
+            config.Features(f => f.Enable<SqlServerTransport>())
+                  .Features(f => f.Enable<MessageDrivenSubscriptions>());
+
+            config.Settings.EnableFeatureByDefault<StorageDrivenPublishing>();
+            config.Settings.EnableFeatureByDefault<TimeoutManager>();
         }
 
-        public override void Initialize(Configure config)
+        protected override void Setup(FeatureConfigurationContext context)
         {
             //Until we refactor the whole address system
-            CustomizeAddress(config);
+            CustomizeAddress(context.Settings);
 
-            var defaultConnectionString = config.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
+            var defaultConnectionString = context.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
 
             //Load all connectionstrings 
             var collection =
@@ -42,24 +45,24 @@ namespace NServiceBus.Features
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
-            var configurer = config.Configurer;
-            configurer.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
+            var container = context.Container;
+            container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
 
-            configurer.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
+            container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
-            configurer.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
+            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                   .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
                   .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
         }
 
-        static void CustomizeAddress(Configure config)
+        static void CustomizeAddress(ReadOnlySettings settings)
         {
             Address.IgnoreMachineName();
 
-            if (!config.Settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
             {
                 Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
             }
