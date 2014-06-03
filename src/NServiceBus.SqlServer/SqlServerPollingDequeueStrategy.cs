@@ -140,7 +140,7 @@
                 {
                     if (settings.IsTransactional)
                     {
-                        if (settings.DontUseDistributedTransactions)
+                        if (settings.SuppressDistributedTransactions)
                         {
                             result = TryReceiveWithNativeTransaction();
                         }
