@@ -2,6 +2,7 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using Pipeline;
     using Settings;
     using Transports;
     using Transports.SQLServer;
@@ -40,10 +41,10 @@ namespace NServiceBus.Features
             //Load all connectionstrings 
             var collection =
                 ConfigurationManager
-                .ConnectionStrings
-                .Cast<ConnectionStringSettings>()
-                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
+                    .ConnectionStrings
+                    .Cast<ConnectionStringSettings>()
+                    .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
+                    .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
             if (String.IsNullOrEmpty(defaultConnectionString))
             {
@@ -51,15 +52,18 @@ namespace NServiceBus.Features
             }
             var container = context.Container;
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
+                .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
 
             container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
-                  .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+                .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
+                .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
-                  .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
+                .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
+                .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
+
+            context.Container.ConfigureComponent(b => new CurrentContextSqlServerDatabaseProperties(b.Build<PipelineExecutor>(), defaultConnectionString), DependencyLifecycle.InstancePerUnitOfWork);
+
         }
 
         static void CustomizeAddress(ReadOnlySettings settings)
@@ -70,7 +74,8 @@ namespace NServiceBus.Features
             {
                 Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
             }
-         
+
         }
     }
+
 }

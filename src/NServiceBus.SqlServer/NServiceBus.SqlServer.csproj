@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackOff.cs" />
+    <Compile Include="CurrentContextSqlServerDatabaseProperties.cs" />
     <Compile Include="SqlServer.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="AssemblyInfo.cs" />
