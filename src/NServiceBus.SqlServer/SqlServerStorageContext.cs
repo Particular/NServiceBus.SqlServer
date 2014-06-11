@@ -7,12 +7,12 @@ namespace NServiceBus.Transports.SQLServer
     /// <summary>
     /// Provides users with access to the current SqlServer transport <see cref="IDbConnection"/>. 
     /// </summary>
-    public class CurrentContextSqlServerDatabaseProperties
+    public class SqlServerStorageContext
     {
         readonly PipelineExecutor pipelineExecutor;
         readonly string connectionString;
 
-        internal CurrentContextSqlServerDatabaseProperties(PipelineExecutor pipelineExecutor, string connectionString)
+        internal SqlServerStorageContext(PipelineExecutor pipelineExecutor, string connectionString)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.connectionString = connectionString;

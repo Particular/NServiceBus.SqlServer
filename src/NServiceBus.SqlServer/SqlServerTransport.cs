@@ -62,7 +62,7 @@ namespace NServiceBus.Features
                 .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
                 .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
 
-            context.Container.ConfigureComponent(b => new CurrentContextSqlServerDatabaseProperties(b.Build<PipelineExecutor>(), defaultConnectionString), DependencyLifecycle.InstancePerUnitOfWork);
+            context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), defaultConnectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
         }
 
