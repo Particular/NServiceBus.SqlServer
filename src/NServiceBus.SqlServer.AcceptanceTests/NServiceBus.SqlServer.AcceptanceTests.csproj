@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
     <Compile Include="When_handling_current_message_later.cs" />
+    <Compile Include="When_publishing_an_event_with_the_subscriber_scaled_out.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)..\BuildSupport\RippleRestoreTask.targets" />
