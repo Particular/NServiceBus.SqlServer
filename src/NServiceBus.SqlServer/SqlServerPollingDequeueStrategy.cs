@@ -366,14 +366,21 @@
                     var correlationId = dataReader.IsDBNull(1) ? null : dataReader.GetString(1);
                     var recoverable = dataReader.GetBoolean(3);
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
-                    var replyToAddress = dataReader.IsDBNull(2) ? null : Address.Parse(dataReader.GetString(2));
+                    
 
-                    var message = new TransportMessage(id, headers, replyToAddress)
+                    var message = new TransportMessage(id, headers)
                     {
                         CorrelationId = correlationId,
                         Recoverable = recoverable,
                         Body = body ?? new byte[0]
                     };
+
+                    var replyToAddress = dataReader.IsDBNull(2) ? null : dataReader.GetString(2);
+
+                    if (!string.IsNullOrEmpty(replyToAddress))
+                    {
+                        message.Headers[Headers.ReplyToAddress] = replyToAddress;
+                    }
 
                     if (expireDateTime.HasValue)
                     {
