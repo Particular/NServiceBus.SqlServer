@@ -362,7 +362,7 @@
                         return null;
                     }
 
-                    var headers = Serializer.DeserializeObject<Dictionary<string, string>>(dataReader.GetString(5));
+                    var headers = (Dictionary<string, string>)Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
                     var correlationId = dataReader.IsDBNull(1) ? null : dataReader.GetString(1);
                     var recoverable = dataReader.GetBoolean(3);
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
