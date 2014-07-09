@@ -20,13 +20,9 @@ namespace NServiceBus.Features
 
         protected override void InternalConfigure(Configure config)
         {
-            config.Features(f =>
-            {
-                f.Enable<SqlServerTransport>();
-                f.Enable<MessageDrivenSubscriptions>();
-                f.Enable<TimeoutManagerBasedDeferral>();
-            });
-
+            config.EnableFeature<SqlServerTransport>();
+            config.EnableFeature<MessageDrivenSubscriptions>();
+            config.EnableFeature<TimeoutManagerBasedDeferral>();
             config.Settings.EnableFeatureByDefault<StorageDrivenPublishing>();
             config.Settings.EnableFeatureByDefault<TimeoutManager>();
         }
