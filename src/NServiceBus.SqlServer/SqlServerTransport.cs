@@ -70,8 +70,6 @@ namespace NServiceBus.Features
             {
                 Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
             }
-
         }
     }
-
 }
