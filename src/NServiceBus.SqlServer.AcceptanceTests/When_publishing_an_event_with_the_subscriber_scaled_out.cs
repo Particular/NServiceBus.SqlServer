@@ -31,32 +31,26 @@
                         .When(c => c.NumberOfSubscriptionsReceived >= 2, (bus, c) =>
                         {
 #pragma warning disable 0618
-                            c.SubscribersOfTheEvent = Configure.Instance.Builder.Build<ISubscriptionStorage>()
+                            var subscriptionStorage = Configure.Instance.Builder.Build<ISubscriptionStorage>();
+                            c.SubscribersOfTheEvent = subscriptionStorage
                                                               .GetSubscriberAddressesForMessage(new[] { new MessageType(typeof(MyEvent)) }).Select(a => a.ToString()).ToList();
+                            c.Done = true;
 #pragma warning restore 0618
-                            })
+                        })
                      )
                     .WithEndpoint<Subscriber1>(b => b.Given((bus, context) => bus.Subscribe<MyEvent>()))
                       .WithEndpoint<Subscriber2>(b => b.Given((bus, context) => bus.Subscribe<MyEvent>()))
-                    .Done(c => c.SubscribersOfTheEvent != null)
-
+                    .Done(c => c.Done)
                     .Repeat(r => r.For(Transports.Default))
- 
-
                     .Should(c => Assert.AreEqual(1, c.SubscribersOfTheEvent.Count, "There should only be one logical subscriber"))
                     .Run();
         }
 
         public class Context : ScenarioContext
         {
-            public Context()
-            {
-                SubscribersOfTheEvent = new string[0];
-            }
-
             public int NumberOfSubscriptionsReceived { get; set; }
-
             public IList<string> SubscribersOfTheEvent { get; set; }
+            public bool Done { get; set; }
         }
 
         public class Publisher : EndpointConfigurationBuilder
