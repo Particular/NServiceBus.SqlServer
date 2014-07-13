@@ -118,7 +118,7 @@
                 {
                     t.Exception.Handle(ex =>
                     {
-                        Logger.Warn("Failed to connect to the configured SqlServer");
+                        Logger.Warn("An exception occurred when connecting to the configured SqlServer", ex);
                         circuitBreaker.Failure(ex);
                         return true;
                     });
