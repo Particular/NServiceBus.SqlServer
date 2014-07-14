@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>NServiceBus.SqlServer</id>
     <title>NServiceBus SqlServer</title>
-    <version>4.0.0-alpha0</version>
+    <version>5.0.0-Beta0001</version>
     <authors>NServiceBus Ltd</authors>
     <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
     <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
@@ -15,6 +15,7 @@
     <copyright>Copyright 2010-2014 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
+	  <dependency id="NServiceBus" version="[5.0.0-Beta0002, 6.0.0.0)" />
     </dependencies>
   </metadata>
   <files>
