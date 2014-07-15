@@ -186,8 +186,14 @@
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Transactions\When_sending_a_message_from_a_non_transactional_endpoint_with_a_ambient_transaction_enabled.cs" />
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Transactions\When_sending_messages_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
-    <Compile Include="When_handling_current_message_later.cs" />
+    <Compile Include="When_sharing_the_receive_connection.cs" />
     <Compile Include="When_publishing_an_event_with_the_subscriber_scaled_out.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
+      <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
+      <Name>NServiceBus.SqlServer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

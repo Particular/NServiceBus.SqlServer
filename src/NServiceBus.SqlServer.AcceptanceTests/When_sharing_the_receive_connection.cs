@@ -21,7 +21,6 @@
             Assert.False(context.IsDtcTransaction);
         }
 
-     
         public class Context : ScenarioContext
         {
             public bool Done { get; set; }
@@ -41,7 +40,6 @@
                 EndpointSetup<DefaultServer>();
             }
 
-          
             class FirstHandler : IHandleMessages<StartMessage>
             {
                 public Context Context { get; set; }
@@ -58,7 +56,6 @@
             class SecondHandler : IHandleMessages<AnotherMessage>
             {
                 public Context Context { get; set; }
-                public IBus Bus { get; set; }
 
                 public void Handle(AnotherMessage message)
                 {
