@@ -19,17 +19,22 @@
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages
     {
+        readonly PipelineExecutor pipelineExecutor;
+
         /// <summary>
         ///     The connection used to open the SQL Server database.
         /// </summary>
         public string ConnectionString { get; set; }
 
-        /// <summary>
-        ///     Determines if the queue should be purged when the transport starts.
-        /// </summary>
-        public bool PurgeOnStartup { get; set; }
-
-        public PipelineExecutor PipelineExecutor { get; set; }
+        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config)
+        {
+            this.pipelineExecutor = pipelineExecutor;
+            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
+                TimeSpan.FromMinutes(2),
+                ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
+                TimeSpan.FromSeconds(10));
+            purgeOnStartup = config.PurgeOnStartup();
+        }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -60,7 +65,7 @@
 
             sql = string.Format(SqlReceive, tableName);
 
-            if (PurgeOnStartup)
+            if (purgeOnStartup)
             {
                 PurgeTable();
             }
@@ -201,7 +206,7 @@
             {
                 try
                 {
-                    PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+                    pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
                     connection.Open();
 
@@ -240,7 +245,7 @@
                 }
                 finally
                 {
-                    PipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
+                    pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
                 }
             }
         }
@@ -253,7 +258,7 @@
             {
                 try
                 {
-                    PipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+                    pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
                     connection.Open();
 
@@ -261,7 +266,7 @@
                     {
                         try
                         {
-                            PipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
+                            pipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
 
                             TransportMessage message;
                             try
@@ -303,13 +308,13 @@
                         }
                         finally
                         {
-                            PipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
+                            pipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
                         }
                     }
                 }
                 finally
                 {
-                    PipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
+                    pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
                 }
             }
         }
@@ -341,7 +346,7 @@
             }
         }
 
-        static TransportMessage ExecuteReader(SqlCommand command)
+        TransportMessage ExecuteReader(SqlCommand command)
         {
             using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
             {
@@ -425,13 +430,10 @@
 
         const string SqlPurge = @"DELETE FROM [{0}]";
 
-        static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
+        readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
-            TimeSpan.FromMinutes(2),
-            ex => ConfigureCriticalErrorAction.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
-            TimeSpan.FromSeconds(10));
+        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
 
         Action<TransportMessage, Exception> endProcessMessage;
         TransactionSettings settings;
@@ -440,6 +442,7 @@
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
+        bool purgeOnStartup;
 
         class ReceiveResult
         {
