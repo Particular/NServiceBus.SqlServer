@@ -21,25 +21,10 @@
         {
             Scenario.Define<Context>()
                     .WithEndpoint<Publisher>(b =>
-                        b.Given((bus, context) => SubscriptionBehavior.OnEndpointSubscribed(s =>
-                            {
-                                if (s.SubscriberReturnAddress.Queue != "MyEndpoint")
-                                    return;
-
-                                context.NumberOfSubscriptionsReceived++;
-                            }))
-                        .When(c => c.NumberOfSubscriptionsReceived >= 2, (bus, c) =>
-                        {
-#pragma warning disable 0618
-                            var subscriptionStorage = Configure.Instance.Builder.Build<ISubscriptionStorage>();
-                            c.SubscribersOfTheEvent = subscriptionStorage
-                                                              .GetSubscriberAddressesForMessage(new[] { new MessageType(typeof(MyEvent)) }).Select(a => a.ToString()).ToList();
-                            c.Done = true;
-#pragma warning restore 0618
-                        })
+                        b.When(c => c.NumberOfSubscriptionsReceived >= 2, (bus, c) => bus.SendLocal(new ListSubscribers()))
                      )
                     .WithEndpoint<Subscriber1>(b => b.Given((bus, context) => bus.Subscribe<MyEvent>()))
-                      .WithEndpoint<Subscriber2>(b => b.Given((bus, context) => bus.Subscribe<MyEvent>()))
+                    .WithEndpoint<Subscriber2>(b => b.Given((bus, context) => bus.Subscribe<MyEvent>()))
                     .Done(c => c.Done)
                     .Repeat(r => r.For(Transports.Default))
                     .Should(c => Assert.AreEqual(1, c.SubscribersOfTheEvent.Count, "There should only be one logical subscriber"))
@@ -57,7 +42,28 @@
         {
             public Publisher()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultPublisher>(b => b.OnEndpointSubscribed<Context>((args, context) =>
+                {
+                    if (args.SubscriberReturnAddress.Queue != "MyEndpoint")
+                    {
+                        return;
+                    }
+
+                    context.NumberOfSubscriptionsReceived++;
+                }));
+            }
+
+            public class ListSubscribersHandler : IHandleMessages<ListSubscribers>
+            {
+                public ISubscriptionStorage SubscriptionStorage { get; set; }
+                public Context Context { get; set; }
+
+                public void Handle(ListSubscribers message)
+                {
+                    Context.SubscribersOfTheEvent = SubscriptionStorage
+                                                              .GetSubscriberAddressesForMessage(new[] { new MessageType(typeof(MyEvent)) }).Select(a => a.ToString()).ToList();
+                    Context.Done = true;
+                }
             }
         }
 
@@ -103,6 +109,11 @@
 
         [Serializable]
         public class MyEvent : IEvent
+        {
+        }
+
+        [Serializable]
+        public class ListSubscribers : ICommand
         {
         }
     }

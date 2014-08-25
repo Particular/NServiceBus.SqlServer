@@ -24,8 +24,6 @@ namespace NServiceBus.Features
             //Until we refactor the whole address system
             CustomizeAddress(context.Settings);
 
-            var defaultConnectionString = context.Settings.Get<string>("NServiceBus.Transport.ConnectionString");
-
             //Load all connectionstrings 
             var collection =
                 ConfigurationManager
@@ -34,22 +32,22 @@ namespace NServiceBus.Features
                     .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
                     .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
-            if (String.IsNullOrEmpty(defaultConnectionString))
+            if (String.IsNullOrEmpty(connectionString))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
             var container = context.Container;
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
+                .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
                 .ConfigureProperty(p => p.ConnectionStringCollection, collection);
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
-            context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), defaultConnectionString), DependencyLifecycle.InstancePerUnitOfWork);
+            context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
         }
 
         void CustomizeAddress(ReadOnlySettings settings)
