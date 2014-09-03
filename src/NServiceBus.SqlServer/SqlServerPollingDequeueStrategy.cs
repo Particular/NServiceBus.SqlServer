@@ -17,7 +17,7 @@
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
     /// </summary>
-    class SqlServerPollingDequeueStrategy : IDequeueMessages
+    class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         readonly PipelineExecutor pipelineExecutor;
 
@@ -80,6 +80,7 @@
         public void Start(int maximumConcurrencyLevel)
         {
             tokenSource = new CancellationTokenSource();
+            countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -93,6 +94,12 @@
         public void Stop()
         {
             tokenSource.Cancel();
+            countdownEvent.Wait();
+        }
+
+        public void Dispose()
+        {
+            // Injected
         }
 
         void PurgeTable()
@@ -128,48 +135,59 @@
                         return true;
                     });
 
-                    StartThread();
+                    if (!tokenSource.IsCancellationRequested)
+                    {
+                        countdownEvent.TryAddCount();
+                        StartThread();
+                    }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         void Action(object obj)
         {
-            var cancellationToken = (CancellationToken) obj;
-            var backOff = new BackOff(1000);
-
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                var result = new ReceiveResult();
+                var cancellationToken = (CancellationToken)obj;
+                var backOff = new BackOff(1000);
 
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (settings.IsTransactional)
+                    var result = new ReceiveResult();
+
+                    try
                     {
-                        if (settings.SuppressDistributedTransactions)
+                        if (settings.IsTransactional)
                         {
-                            result = TryReceiveWithNativeTransaction();
+                            if (settings.SuppressDistributedTransactions)
+                            {
+                                result = TryReceiveWithNativeTransaction();
+                            }
+                            else
+                            {
+                                result = TryReceiveWithTransactionScope();
+                            }
                         }
                         else
                         {
-                            result = TryReceiveWithTransactionScope();
+                            result = TryReceiveWithNoTransaction();
                         }
                     }
-                    else
+                    finally
                     {
-                        result = TryReceiveWithNoTransaction();
+                        //since we're polling the message will be null when there was nothing in the queue
+                        if (result.Message != null)
+                        {
+                            endProcessMessage(result.Message, result.Exception);
+                        }
                     }
-                }
-                finally
-                {
-                    //since we're polling the message will be null when there was nothing in the queue
-                    if (result.Message != null)
-                    {
-                        endProcessMessage(result.Message, result.Exception);
-                    }
-                }
 
-                circuitBreaker.Success();
-                backOff.Wait(() => result.Message == null);
+                    circuitBreaker.Success();
+                    backOff.Wait(() => result.Message == null);
+                }
+            }
+            finally
+            {
+                countdownEvent.Signal();
             }
         }
 
@@ -434,6 +452,8 @@
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
+
+        CountdownEvent countdownEvent;
 
         Action<TransportMessage, Exception> endProcessMessage;
         TransactionSettings settings;
