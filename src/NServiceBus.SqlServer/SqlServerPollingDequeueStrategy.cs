@@ -8,6 +8,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using CircuitBreakers;
+    using Janitor;
     using Logging;
     using Pipeline;
     using Serializers.Json;
@@ -19,13 +20,6 @@
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
-        readonly PipelineExecutor pipelineExecutor;
-
-        /// <summary>
-        ///     The connection used to open the SQL Server database.
-        /// </summary>
-        public string ConnectionString { get; set; }
-
         public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config)
         {
             this.pipelineExecutor = pipelineExecutor;
@@ -35,6 +29,11 @@
                 TimeSpan.FromSeconds(10));
             purgeOnStartup = config.PurgeOnStartup();
         }
+
+        /// <summary>
+        ///     The connection used to open the SQL Server database.
+        /// </summary>
+        public string ConnectionString { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -80,7 +79,8 @@
         public void Start(int maximumConcurrencyLevel)
         {
             tokenSource = new CancellationTokenSource();
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel);
+            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
+            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -93,7 +93,13 @@
         /// </summary>
         public void Stop()
         {
+            if (tokenSource == null)
+            {
+                return;
+            }
+
             tokenSource.Cancel();
+            countdownEvent.Signal();
             countdownEvent.Wait();
         }
 
@@ -137,8 +143,10 @@
 
                     if (!tokenSource.IsCancellationRequested)
                     {
-                        countdownEvent.TryAddCount();
-                        StartThread();
+                        if (countdownEvent.TryAddCount())
+                        {
+                            StartThread();                            
+                        }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -147,7 +155,7 @@
         {
             try
             {
-                var cancellationToken = (CancellationToken)obj;
+                var cancellationToken = (CancellationToken) obj;
                 var backOff = new BackOff(1000);
 
                 while (!cancellationToken.IsCancellationRequested)
@@ -220,50 +228,52 @@
             var result = new ReceiveResult();
 
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
-            using (var connection = new SqlConnection(ConnectionString))
             {
-                try
+                using (var connection = new SqlConnection(ConnectionString))
                 {
-                    pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
-
-                    connection.Open();
-
-                    TransportMessage message;
-
-                    using (var command = new SqlCommand(sql, connection)
-                    {
-                        CommandType = CommandType.Text
-                    })
-                    {
-                        message = ExecuteReader(command);
-                    }
-
-                    if (message == null)
-                    {
-                        scope.Complete();
-                        return result;
-                    }
-
-                    result.Message = message;
-
                     try
                     {
-                        if (tryProcessMessage(message))
+                        pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
+
+                        connection.Open();
+
+                        TransportMessage message;
+
+                        using (var command = new SqlCommand(sql, connection)
+                        {
+                            CommandType = CommandType.Text
+                        })
+                        {
+                            message = ExecuteReader(command);
+                        }
+
+                        if (message == null)
                         {
                             scope.Complete();
-                            scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
+                            return result;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Exception = ex;
-                    }
 
-                    return result;
-                }
-                finally
-                {
-                    pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
+                        result.Message = message;
+
+                        try
+                        {
+                            if (tryProcessMessage(message))
+                            {
+                                scope.Complete();
+                                scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            result.Exception = ex;
+                        }
+
+                        return result;
+                    }
+                    finally
+                    {
+                        pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
+                    }
                 }
             }
         }
@@ -385,11 +395,10 @@
                         return null;
                     }
 
-                    var headers = (Dictionary<string, string>)Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
+                    var headers = (Dictionary<string, string>) Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
                     var correlationId = dataReader.IsDBNull(1) ? null : dataReader.GetString(1);
                     var recoverable = dataReader.GetBoolean(3);
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
-                    
 
                     var message = new TransportMessage(id, headers)
                     {
@@ -448,21 +457,21 @@
 
         const string SqlPurge = @"DELETE FROM [{0}]";
 
-        readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
+        readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         CountdownEvent countdownEvent;
-
         Action<TransportMessage, Exception> endProcessMessage;
+        [SkipWeaving]
+        readonly PipelineExecutor pipelineExecutor;
+        bool purgeOnStartup;
         TransactionSettings settings;
         string sql;
         string tableName;
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
-        bool purgeOnStartup;
 
         class ReceiveResult
         {
