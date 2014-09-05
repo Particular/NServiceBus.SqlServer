@@ -19,10 +19,25 @@ namespace NServiceBus.Features
             get { return @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; }
         }
 
+        protected override string GetLocalAddress(SettingsHolder settingsHolder)
+        {
+            return GetLocalAddress(settingsHolder);
+        }
+
+        protected string GetLocalAddress(ReadOnlySettings settings)
+        {
+            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+            {
+                return settings.EndpointName() + "." + RuntimeEnvironment.MachineName;
+            }
+
+            return null;
+        }
+
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
             //Until we refactor the whole address system
-            CustomizeAddress(context.Settings);
+            Address.IgnoreMachineName();
 
             //Load all connectionstrings 
             var collection =
@@ -48,16 +63,6 @@ namespace NServiceBus.Features
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
-        }
-
-        void CustomizeAddress(ReadOnlySettings settings)
-        {
-            Address.IgnoreMachineName();
-
-            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
-            {
-                LocalAddress(settings.EndpointName() + "." + RuntimeEnvironment.MachineName);
-            }
         }
     }
 }
