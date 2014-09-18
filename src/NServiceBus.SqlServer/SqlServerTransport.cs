@@ -19,12 +19,7 @@ namespace NServiceBus.Features
             get { return @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; }
         }
 
-        protected override string GetLocalAddress(SettingsHolder settingsHolder)
-        {
-            return GetLocalAddress(settingsHolder);
-        }
-
-        protected string GetLocalAddress(ReadOnlySettings settings)
+        protected override string GetLocalAddress(ReadOnlySettings settings)
         {
             if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
             {
