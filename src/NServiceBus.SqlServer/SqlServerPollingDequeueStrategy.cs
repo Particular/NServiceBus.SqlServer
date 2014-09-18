@@ -35,6 +35,9 @@
         /// </summary>
         public string ConnectionString { get; set; }
 
+        public Address CallbackQueueAddress { get; set; }
+        public string MainQueueName { get; set; }
+
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
         /// </summary>
@@ -60,13 +63,19 @@
                 Timeout = transactionSettings.TransactionTimeout
             };
 
-            tableName = TableNameUtils.GetTableName(address);
+            tableNames.Add(TableNameUtils.GetTableName(address));
 
-            sql = string.Format(SqlReceive, tableName);
+            if (MainQueueName.Equals(address.Queue, StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (CallbackQueueAddress != null)
+                {
+                    tableNames.Add(TableNameUtils.GetTableName(CallbackQueueAddress));
+                }
+            }
 
             if (purgeOnStartup)
             {
-                PurgeTable();
+                PurgeTable(tableNames);
             }
         }
 
@@ -108,20 +117,23 @@
             // Injected
         }
 
-        void PurgeTable()
+        void PurgeTable(IEnumerable<string> tableNames)
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
+                foreach (var tableName in tableNames)
                 {
-                    CommandType = CommandType.Text
-                })
-                {
-                    var numberOfPurgedRows = command.ExecuteNonQuery();
+                    using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        var numberOfPurgedRows = command.ExecuteNonQuery();
 
-                    Logger.InfoFormat("{0} messages was purged from table {1}", numberOfPurgedRows, tableName);
+                        Logger.InfoFormat("{0} messages was purged from table {1}", numberOfPurgedRows, tableName);
+                    }
                 }
             }
         }
@@ -157,6 +169,14 @@
             {
                 var cancellationToken = (CancellationToken) obj;
                 var backOff = new BackOff(1000);
+                var queries = new LinkedList<string>();
+
+                foreach (var tableName in tableNames)
+                {
+                    queries.AddLast(string.Format(SqlReceive, tableName));                    
+                }
+
+                var currentNode = queries.First;
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -168,16 +188,16 @@
                         {
                             if (settings.SuppressDistributedTransactions)
                             {
-                                result = TryReceiveWithNativeTransaction();
+                                result = TryReceiveWithNativeTransaction(currentNode.Value);
                             }
                             else
                             {
-                                result = TryReceiveWithTransactionScope();
+                                result = TryReceiveWithTransactionScope(currentNode.Value);
                             }
                         }
                         else
                         {
-                            result = TryReceiveWithNoTransaction();
+                            result = TryReceiveWithNoTransaction(currentNode.Value);
                         }
                     }
                     finally
@@ -191,6 +211,8 @@
 
                     circuitBreaker.Success();
                     backOff.Wait(() => result.Message == null);
+
+                    currentNode = currentNode.Next ?? currentNode.List.First;
                 }
             }
             finally
@@ -199,11 +221,11 @@
             }
         }
 
-        ReceiveResult TryReceiveWithNoTransaction()
+        ReceiveResult TryReceiveWithNoTransaction(string sql)
         {
             var result = new ReceiveResult();
 
-            var message = Receive();
+            var message = Receive(sql);
 
             if (message == null)
             {
@@ -223,7 +245,7 @@
             return result;
         }
 
-        ReceiveResult TryReceiveWithTransactionScope()
+        ReceiveResult TryReceiveWithTransactionScope(string sql)
         {
             var result = new ReceiveResult();
 
@@ -278,7 +300,7 @@
             }
         }
 
-        ReceiveResult TryReceiveWithNativeTransaction()
+        ReceiveResult TryReceiveWithNativeTransaction(string sql)
         {
             var result = new ReceiveResult();
 
@@ -299,7 +321,7 @@
                             TransportMessage message;
                             try
                             {
-                                message = ReceiveWithNativeTransaction(connection, transaction);
+                                message = ReceiveWithNativeTransaction(sql, connection, transaction);
                             }
                             catch (Exception)
                             {
@@ -347,7 +369,7 @@
             }
         }
 
-        TransportMessage Receive()
+        TransportMessage Receive(string sql)
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
@@ -363,7 +385,7 @@
             }
         }
 
-        TransportMessage ReceiveWithNativeTransaction(SqlConnection connection, SqlTransaction transaction)
+        TransportMessage ReceiveWithNativeTransaction(string sql, SqlConnection connection, SqlTransaction transaction)
         {
             using (var command = new SqlCommand(sql, connection, transaction)
             {
@@ -467,11 +489,10 @@
         readonly PipelineExecutor pipelineExecutor;
         bool purgeOnStartup;
         TransactionSettings settings;
-        string sql;
-        string tableName;
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
+        List<string> tableNames = new List<string>(2);
 
         class ReceiveResult
         {

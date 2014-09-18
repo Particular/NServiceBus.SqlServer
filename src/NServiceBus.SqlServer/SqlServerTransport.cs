@@ -14,6 +14,11 @@ namespace NServiceBus.Features
     /// </summary>
     class SqlServerTransport : ConfigureTransport
     {
+        public SqlServerTransport()
+        {
+            Defaults(s => s.SetDefault("SqlServer.UseCallbackReceiver", true));
+        }
+
         protected override string ExampleConnectionStringForErrorMessage
         {
             get { return @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; }
@@ -21,18 +26,18 @@ namespace NServiceBus.Features
 
         protected override string GetLocalAddress(ReadOnlySettings settings)
         {
-            if (!settings.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
-            {
-                return settings.EndpointName() + "." + RuntimeEnvironment.MachineName;
-            }
-
-            return null;
+            return settings.EndpointName();
         }
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
             //Until we refactor the whole address system
             Address.IgnoreMachineName();
+
+            var useCallbackReceiver = context.Settings.Get<bool>("SqlServer.UseCallbackReceiver");
+
+            var queueName = GetLocalAddress(context.Settings);
+            var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
 
             //Load all connectionstrings 
             var collection =
@@ -46,18 +51,35 @@ namespace NServiceBus.Features
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
+
             var container = context.Container;
+
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
-                .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+                .ConfigureProperty(p => p.ConnectionStringCollection, collection)
+                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
 
-            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString);
+            var dequeuerConfig = container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ConnectionString, connectionString)
+                .ConfigureProperty(p => p.MainQueueName, queueName);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
+
+            if (useCallbackReceiver)
+            {
+                var callbackAddress = Address.Parse(callbackQueue);
+
+                dequeuerConfig.ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
+
+                context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
+                    .ConfigureProperty(p => p.Enabled, true)
+                    .ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
+
+                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
+            }
         }
     }
 }
