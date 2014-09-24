@@ -67,7 +67,13 @@
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="IReceiveStrategy.cs" />
+    <Compile Include="NativeTransactionReceiveStrategy.cs" />
+    <Compile Include="NoTransactionReceiveStrategy.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="ReceiveResult.cs" />
+    <Compile Include="ReceiveStrategyBase.cs" />
+    <Compile Include="ReceiveStrategyFactory.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
@@ -79,6 +85,8 @@
     <Compile Include="SqlServerMessageSender.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
     <Compile Include="TableNameUtils.cs" />
+    <Compile Include="TransactionScopeReceiveStrategy.cs" />
+    <Compile Include="TransportMessageReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml">
