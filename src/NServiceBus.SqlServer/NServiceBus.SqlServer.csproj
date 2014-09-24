@@ -67,10 +67,12 @@
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="IPurgeQueues.cs" />
     <Compile Include="IReceiveStrategy.cs" />
     <Compile Include="NativeTransactionReceiveStrategy.cs" />
     <Compile Include="NoTransactionReceiveStrategy.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="QueuePurger.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveStrategyBase.cs" />
     <Compile Include="ReceiveStrategyFactory.cs" />

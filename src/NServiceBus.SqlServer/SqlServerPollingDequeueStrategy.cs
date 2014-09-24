@@ -1,9 +1,6 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Collections.Generic;
-    using System.Data;
-    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using CircuitBreakers;
@@ -18,15 +15,15 @@
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
-        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, SecondaryReceiveConfiguration secondaryReceiveConfiguration, IPurgeQueues queuePurger)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
+            this.queuePurger = queuePurger;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
                 TimeSpan.FromMinutes(2),
                 ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
                 TimeSpan.FromSeconds(10));
-            purgeOnStartup = config.PurgeOnStartup();
         }
 
         /// <summary>
@@ -57,21 +54,8 @@
             primaryAddress = address;
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
 
-            if (purgeOnStartup)
-            {
-                PurgeTable(AllTables());
-            }
+            queuePurger.Purge(address);
         }
-
-        IEnumerable<string> AllTables()
-        {
-            yield return primaryAddress.GetTableName();
-            if (SecondaryReceiveSettings.IsEnabled)
-            {
-                yield return SecondaryReceiveSettings.ReceiveQueue;
-            }
-        }
-
 
         /// <summary>
         ///     Starts the dequeuing of message using the specified <paramref name="maximumConcurrencyLevel" />.
@@ -120,27 +104,6 @@
         public void Dispose()
         {
             // Injected
-        }
-
-        void PurgeTable(IEnumerable<string> tableNames)
-        {
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                connection.Open();
-
-                foreach (var tableName in tableNames)
-                {
-                    using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
-                    {
-                        CommandType = CommandType.Text
-                    })
-                    {
-                        var numberOfPurgedRows = command.ExecuteNonQuery();
-
-                        Logger.InfoFormat("{0} messages was purged from table {1}", numberOfPurgedRows, tableName);
-                    }
-                }
-            }
         }
 
         void StartReceiveThread(string tableName)
@@ -233,8 +196,6 @@
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
-        const string SqlPurge = @"DELETE FROM [{0}]";
-
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
@@ -244,9 +205,9 @@
         readonly PipelineExecutor pipelineExecutor;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
+        readonly IPurgeQueues queuePurger;
         IReceiveStrategy receiveStrategy;
         SecondaryReceiveSettings secondaryReceiveSettings;
-        bool purgeOnStartup;
         Address primaryAddress;
         CancellationTokenSource tokenSource;
     }

@@ -73,6 +73,17 @@ namespace NServiceBus.Features
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 
+            bool purgeOnStartup;
+            if (context.Settings.TryGet("Transport.PurgeOnStartup", out purgeOnStartup) && purgeOnStartup)
+            {
+                container.ConfigureComponent<QueuePurger>(DependencyLifecycle.SingleInstance)
+                    .ConfigureProperty(p => p.ConnectionString, connectionString);
+            }
+            else
+            {
+                container.ConfigureComponent<NullQueuePurger>(DependencyLifecycle.SingleInstance);
+            }
+
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
             if (useCallbackReceiver)

@@ -6,6 +6,7 @@
     using NServiceBus.Configuration.AdvanceExtensibility;
     using NServiceBus.Features;
     using NServiceBus.Settings;
+    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
     using SqlServerTransport = NServiceBus.SqlServerTransport;
 
@@ -56,6 +57,28 @@
             Assert.AreEqual(7, receiveConfig.GetSettings("Endpoint").MaximumConcurrencyLevel);
         }
 
+        [Test]
+        public void By_default_queue_purging_is_disabled()
+        {
+            Configure();
+
+            var queuePurger = config.Builder.Build<IPurgeQueues>();
+
+            Assert.IsInstanceOf<NullQueuePurger>(queuePurger);
+        }
+
+        [Test]
+        public void Queue_purging_can_be_enabled()
+        {
+            busConfiguration.PurgeOnStartup(true);
+
+            Configure();
+
+            var queuePurger = config.Builder.Build<IPurgeQueues>();
+
+            Assert.IsInstanceOf<QueuePurger>(queuePurger);
+        }
+
         void Configure()
         {
             configure.Invoke(transport, new object[] { context, "ConnString" });
@@ -64,10 +87,10 @@
         [SetUp]
         public void Prepare()
         {
-            var builder = new BusConfiguration();
-            var settings = builder.GetSettings();
+            busConfiguration = new BusConfiguration();
+            var settings = busConfiguration.GetSettings();
             settings.Set("EndpointName", "Endpoint");
-            config = (Configure)buildConfiguration.Invoke(builder, new object[0]);
+            config = (Configure)buildConfiguration.Invoke(busConfiguration, new object[0]);
             context = (FeatureConfigurationContext)featureConfigContextCtor.Invoke(new object[] { config });
 
             transport = new Features.SqlServerTransport();
@@ -91,6 +114,6 @@
         Configure config;
         Features.SqlServerTransport transport;
         FeatureConfigurationContext context;
-
+        BusConfiguration busConfiguration;
     }
 }
