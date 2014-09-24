@@ -67,6 +67,8 @@
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="SecondaryReceiveConfiguration.cs" />
+    <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
     <Compile Include="SqlServerStorageContext.cs" />
     <Compile Include="SqlServer.cs" />

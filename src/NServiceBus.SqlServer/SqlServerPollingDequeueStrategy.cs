@@ -10,6 +10,7 @@
     using CircuitBreakers;
     using Janitor;
     using Logging;
+    using NServiceBus.Features;
     using Pipeline;
     using Serializers.Json;
     using Unicast.Transport;
@@ -20,9 +21,10 @@
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
-        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config)
+        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
             this.pipelineExecutor = pipelineExecutor;
+            this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
                 TimeSpan.FromMinutes(2),
                 ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
@@ -34,9 +36,6 @@
         ///     The connection used to open the SQL Server database.
         /// </summary>
         public string ConnectionString { get; set; }
-
-        public Address CallbackQueueAddress { get; set; }
-        public string MainQueueName { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -62,22 +61,24 @@
                 IsolationLevel = transactionSettings.IsolationLevel,
                 Timeout = transactionSettings.TransactionTimeout
             };
-
-            tableNames.Add(TableNameUtils.GetTableName(address));
-
-            if (MainQueueName.Equals(address.Queue, StringComparison.InvariantCultureIgnoreCase))
-            {
-                if (CallbackQueueAddress != null)
-                {
-                    tableNames.Add(TableNameUtils.GetTableName(CallbackQueueAddress));
-                }
-            }
+            primaryAddress = address;
+            secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
 
             if (purgeOnStartup)
             {
-                PurgeTable(tableNames);
+                PurgeTable(AllTables());
             }
         }
+
+        private IEnumerable<string> AllTables()
+        {
+            yield return primaryAddress.GetTableName();
+            if (SecondaryReceiveSettings.IsEnabled)
+            {
+                yield return SecondaryReceiveSettings.ReceiveQueue;
+            }
+        }
+
 
         /// <summary>
         ///     Starts the dequeuing of message using the specified <paramref name="maximumConcurrencyLevel" />.
@@ -87,14 +88,22 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
+            var actualConcurrencyLevel = maximumConcurrencyLevel + SecondaryReceiveSettings.MaximumConcurrencyLevel;
             tokenSource = new CancellationTokenSource();
+
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(maximumConcurrencyLevel + 1);
+            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartThread();
+                StartReceiveThread(primaryAddress.GetTableName());
             }
+            for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
+            {
+                StartReceiveThread(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
+            }
+            Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", SecondaryReceiveSettings.ReceiveQueue, SecondaryReceiveSettings.MaximumConcurrencyLevel);
+
         }
 
         /// <summary>
@@ -138,12 +147,12 @@
             }
         }
 
-        void StartThread()
+        void StartReceiveThread(string tableName)
         {
             var token = tokenSource.Token;
 
             Task.Factory
-                .StartNew(Action, token, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                .StartNew(ReceiveLoop, new object[] { token, tableName }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -157,26 +166,21 @@
                     {
                         if (countdownEvent.TryAddCount())
                         {
-                            StartThread();                            
+                            StartReceiveThread(tableName);
                         }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        void Action(object obj)
+        void ReceiveLoop(object obj)
         {
             try
             {
-                var cancellationToken = (CancellationToken) obj;
+                var argArray = (object[])obj;
+                var cancellationToken = (CancellationToken)argArray[0];
+                var tableName = (string)argArray[1];
                 var backOff = new BackOff(1000);
-                var queries = new LinkedList<string>();
-
-                foreach (var tableName in tableNames)
-                {
-                    queries.AddLast(string.Format(SqlReceive, tableName));                    
-                }
-
-                var currentNode = queries.First;
+                var query = string.Format(SqlReceive, tableName);
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -188,16 +192,16 @@
                         {
                             if (settings.SuppressDistributedTransactions)
                             {
-                                result = TryReceiveWithNativeTransaction(currentNode.Value);
+                                result = TryReceiveWithNativeTransaction(query);
                             }
                             else
                             {
-                                result = TryReceiveWithTransactionScope(currentNode.Value);
+                                result = TryReceiveWithTransactionScope(query);
                             }
                         }
                         else
                         {
-                            result = TryReceiveWithNoTransaction(currentNode.Value);
+                            result = TryReceiveWithNoTransaction(query);
                         }
                     }
                     finally
@@ -211,8 +215,6 @@
 
                     circuitBreaker.Success();
                     backOff.Wait(() => result.Message == null);
-
-                    currentNode = currentNode.Next ?? currentNode.List.First;
                 }
             }
             finally
@@ -417,7 +419,7 @@
                         return null;
                     }
 
-                    var headers = (Dictionary<string, string>) Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
+                    var headers = (Dictionary<string, string>)Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
                     var correlationId = dataReader.IsDBNull(1) ? null : dataReader.GetString(1);
                     var recoverable = dataReader.GetBoolean(3);
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
@@ -471,6 +473,19 @@
             return IsolationLevel.ReadCommitted;
         }
 
+
+        SecondaryReceiveSettings SecondaryReceiveSettings
+        {
+            get
+            {
+                if (secondaryReceiveSettings == null)
+                {
+                    throw new InvalidOperationException("Cannot get secondary receive settings before Init was called.");
+                }
+                return secondaryReceiveSettings;
+            }
+        }
+
         const string SqlReceive =
             @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
@@ -487,12 +502,15 @@
         Action<TransportMessage, Exception> endProcessMessage;
         [SkipWeaving]
         readonly PipelineExecutor pipelineExecutor;
+
+        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
+        SecondaryReceiveSettings secondaryReceiveSettings;
         bool purgeOnStartup;
+        Address primaryAddress;
         TransactionSettings settings;
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
-        List<string> tableNames = new List<string>(2);
 
         class ReceiveResult
         {

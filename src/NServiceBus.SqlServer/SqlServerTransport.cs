@@ -16,7 +16,11 @@ namespace NServiceBus.Features
     {
         public SqlServerTransport()
         {
-            Defaults(s => s.SetDefault("SqlServer.UseCallbackReceiver", true));
+            Defaults(s =>
+            {
+                s.SetDefault("SqlServer.UseCallbackReceiver", true);
+                s.SetDefault("SqlServer.MaxConcurrencyForCallbackReceiver", 1);
+            });
         }
 
         protected override string ExampleConnectionStringForErrorMessage
@@ -35,6 +39,7 @@ namespace NServiceBus.Features
             Address.IgnoreMachineName();
 
             var useCallbackReceiver = context.Settings.Get<bool>("SqlServer.UseCallbackReceiver");
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>("SqlServer.MaxConcurrencyForCallbackReceiver");
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
@@ -62,9 +67,8 @@ namespace NServiceBus.Features
                 .ConfigureProperty(p => p.ConnectionStringCollection, collection)
                 .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
 
-            var dequeuerConfig = container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString)
-                .ConfigureProperty(p => p.MainQueueName, queueName);
+            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
@@ -72,14 +76,22 @@ namespace NServiceBus.Features
             {
                 var callbackAddress = Address.Parse(callbackQueue);
 
-                dequeuerConfig.ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
-
                 context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
                     .ConfigureProperty(p => p.Enabled, true)
                     .ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
 
                 context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
             }
+            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return SecondaryReceiveSettings.Disabled();
+                }
+
+                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+            }));
         }
     }
 }

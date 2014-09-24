@@ -6,14 +6,19 @@ namespace NServiceBus.Transports.SQLServer
 
     static class TableNameUtils
     {
-        public static string GetTableName(Address address)
+        public static string GetTableName(this Address address)
         {
-            if (address.Queue.Length > 128)
+            return GetTableName(address.Queue);
+        }
+        
+        public static string GetTableName(this string queueName)
+        {
+            if (queueName.Length > 128)
             {
-                return DeterministicGuidBuilder(address.Queue).ToString();
+                return DeterministicGuidBuilder(queueName).ToString();
             }
 
-            return address.Queue;
+            return queueName;
         }
 
         private static Guid DeterministicGuidBuilder(string input)
