@@ -14,12 +14,15 @@ namespace NServiceBus.Features
     /// </summary>
     class SqlServerTransport : ConfigureTransport
     {
+        public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
+        public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+
         public SqlServerTransport()
         {
             Defaults(s =>
             {
-                s.SetDefault("SqlServer.UseCallbackReceiver", true);
-                s.SetDefault("SqlServer.MaxConcurrencyForCallbackReceiver", 1);
+                s.SetDefault(UseCallbackReceiverSettingKey, true);
+                s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
             });
         }
 
@@ -38,8 +41,8 @@ namespace NServiceBus.Features
             //Until we refactor the whole address system
             Address.IgnoreMachineName();
 
-            var useCallbackReceiver = context.Settings.Get<bool>("SqlServer.UseCallbackReceiver");
-            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>("SqlServer.MaxConcurrencyForCallbackReceiver");
+            var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiverSettingKey);
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);

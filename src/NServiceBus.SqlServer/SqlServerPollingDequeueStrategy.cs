@@ -70,7 +70,7 @@
             }
         }
 
-        private IEnumerable<string> AllTables()
+        IEnumerable<string> AllTables()
         {
             yield return primaryAddress.GetTableName();
             if (SecondaryReceiveSettings.IsEnabled)
@@ -102,7 +102,10 @@
             {
                 StartReceiveThread(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
             }
-            Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", SecondaryReceiveSettings.ReceiveQueue, SecondaryReceiveSettings.MaximumConcurrencyLevel);
+            if (SecondaryReceiveSettings.IsEnabled)
+            {
+                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", SecondaryReceiveSettings.ReceiveQueue, SecondaryReceiveSettings.MaximumConcurrencyLevel);
+            }
 
         }
 
@@ -152,7 +155,7 @@
             var token = tokenSource.Token;
 
             Task.Factory
-                .StartNew(ReceiveLoop, new object[] { token, tableName }, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, tableName), token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -172,17 +175,27 @@
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        class ReceiveLoppArgs
+        {
+            public readonly CancellationToken Token;
+            public readonly string TableName;
+
+            public ReceiveLoppArgs(CancellationToken token, string tableName)
+            {
+                Token = token;
+                TableName = tableName;
+            }
+        }
+
         void ReceiveLoop(object obj)
         {
             try
             {
-                var argArray = (object[])obj;
-                var cancellationToken = (CancellationToken)argArray[0];
-                var tableName = (string)argArray[1];
+                var args = (ReceiveLoppArgs)obj;
                 var backOff = new BackOff(1000);
-                var query = string.Format(SqlReceive, tableName);
+                var query = string.Format(SqlReceive, args.TableName);
 
-                while (!cancellationToken.IsCancellationRequested)
+                while (!args.Token.IsCancellationRequested)
                 {
                     var result = new ReceiveResult();
 
