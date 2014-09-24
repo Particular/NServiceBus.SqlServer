@@ -14,7 +14,7 @@ namespace NServiceBus.Transports.SQLServer
             pipelineContext = string.Format("SqlConnection-{0}", connectionString);
         }
 
-        public ReceiveResult TryReceive(string sql)
+        public ReceiveResult TryReceiveFrom(string tableName)
         {
             var result = new ReceiveResult();
 
@@ -30,7 +30,7 @@ namespace NServiceBus.Transports.SQLServer
 
                         TransportMessage message;
 
-                        using (var command = new SqlCommand(sql, connection)
+                        using (var command = new SqlCommand(GetQueryForTable(tableName), connection)
                         {
                             CommandType = CommandType.Text
                         })

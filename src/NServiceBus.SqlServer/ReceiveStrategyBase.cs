@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Globalization;
     using System.Transactions;
     using NServiceBus.Pipeline;
 
@@ -14,6 +15,17 @@
             this.pipelineExecutor = pipelineExecutor;
             this.transactionOptions = transactionOptions;
         }
+
+        protected string GetQueryForTable(string tableName)
+        {
+            return string.Format(CultureInfo.InvariantCulture, SqlReceive, tableName);
+        }
+
+        const string SqlReceive =
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+			DELETE FROM message 
+			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
+			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
         protected Func<TransportMessage, bool> tryProcessMessage;
         protected TransportMessageReader transportMessageReader;

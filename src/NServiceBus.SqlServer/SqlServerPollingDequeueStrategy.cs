@@ -149,7 +149,6 @@
             {
                 var args = (ReceiveLoppArgs)obj;
                 var backOff = new BackOff(1000);
-                var query = string.Format(SqlReceive, args.TableName);
 
                 while (!args.Token.IsCancellationRequested)
                 {
@@ -157,7 +156,7 @@
 
                     try
                     {
-                        result = receiveStrategy.TryReceive(query);
+                        result = receiveStrategy.TryReceiveFrom(args.TableName);
                     }
                     finally
                     {
@@ -189,12 +188,6 @@
                 return secondaryReceiveSettings;
             }
         }
-
-        const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
-			DELETE FROM message 
-			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 

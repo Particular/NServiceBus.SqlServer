@@ -13,11 +13,11 @@
         {
         }
 
-        public ReceiveResult TryReceive(string sql)
+        public ReceiveResult TryReceiveFrom(string tableName)
         {
             var result = new ReceiveResult();
 
-            var message = Receive(sql);
+            var message = Receive(GetQueryForTable(tableName));
 
             if (message == null)
             {

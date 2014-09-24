@@ -17,7 +17,7 @@ namespace NServiceBus.Transports.SQLServer
             pipelineTransactionContext = string.Format("SqlTransaction-{0}", base.connectionString);
         }
 
-        public ReceiveResult TryReceive(string sql)
+        public ReceiveResult TryReceiveFrom(string tableName)
         {
             var result = new ReceiveResult();
 
@@ -38,7 +38,7 @@ namespace NServiceBus.Transports.SQLServer
                             TransportMessage message;
                             try
                             {
-                                message = ReceiveWithNativeTransaction(sql, connection, transaction);
+                                message = ReceiveWithNativeTransaction(GetQueryForTable(tableName), connection, transaction);
                             }
                             catch (Exception)
                             {

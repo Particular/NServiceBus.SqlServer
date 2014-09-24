@@ -2,6 +2,6 @@
 {
     interface IReceiveStrategy
     {
-        ReceiveResult TryReceive(string sql);
+        ReceiveResult TryReceiveFrom(string tableName);
     }
 }
