@@ -27,9 +27,23 @@
 
         public PipelineExecutor PipelineExecutor { get; set; }
 
+        public string CallbackQueue { get; set; }
+
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
             var address = sendOptions.Destination;
+
+            string callbackAddress;
+
+            if (message.MessageIntent == MessageIntentEnum.Reply &&
+                message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
+            {
+                address = Address.Parse(callbackAddress);
+            }
+
+            //set our callback address
+            message.Headers[CallbackHeaderKey] = CallbackQueue;
+
             var queue = address.Queue;
             try
             {
@@ -179,6 +193,8 @@
         const string SqlSend =
             @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+
+        public const string CallbackHeaderKey = "NServiceBus.SqlServer.CallbackQueue";
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
     }
