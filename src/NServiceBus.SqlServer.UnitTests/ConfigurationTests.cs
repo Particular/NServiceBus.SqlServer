@@ -24,6 +24,16 @@
         }
 
         [Test]
+        public void Callbacks_are_disabled_for_satellites()
+        {
+            Configure();
+
+            var receiveConfig = config.Builder.Build<SecondaryReceiveConfiguration>();
+
+            Assert.IsFalse(receiveConfig.GetSettings("Endpoint.Satellite").IsEnabled);
+        }
+
+        [Test]
         public void By_default_there_is_one_callback_thread()
         {
             Configure();

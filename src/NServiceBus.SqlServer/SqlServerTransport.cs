@@ -2,6 +2,7 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using NServiceBus.ObjectBuilder;
     using Pipeline;
     using Settings;
     using Support;
@@ -73,16 +74,7 @@ namespace NServiceBus.Features
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 
-            bool purgeOnStartup;
-            if (context.Settings.TryGet("Transport.PurgeOnStartup", out purgeOnStartup) && purgeOnStartup)
-            {
-                container.ConfigureComponent<QueuePurger>(DependencyLifecycle.SingleInstance)
-                    .ConfigureProperty(p => p.ConnectionString, connectionString);
-            }
-            else
-            {
-                container.ConfigureComponent<NullQueuePurger>(DependencyLifecycle.SingleInstance);
-            }
+            ConfigurePurging(context.Settings, container, connectionString);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
@@ -106,6 +98,20 @@ namespace NServiceBus.Features
 
                 return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
+        }
+
+        static void ConfigurePurging(ReadOnlySettings settings, IConfigureComponents container, string connectionString)
+        {
+            bool purgeOnStartup;
+            if (settings.TryGet("Transport.PurgeOnStartup", out purgeOnStartup) && purgeOnStartup)
+            {
+                container.ConfigureComponent<QueuePurger>(DependencyLifecycle.SingleInstance)
+                    .ConfigureProperty(p => p.ConnectionString, connectionString);
+            }
+            else
+            {
+                container.ConfigureComponent<NullQueuePurger>(DependencyLifecycle.SingleInstance);
+            }
         }
     }
 }
