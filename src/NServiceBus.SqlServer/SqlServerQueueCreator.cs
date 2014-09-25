@@ -3,7 +3,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data;
     using System.Data.SqlClient;
 
-    public class SqlServerQueueCreator : ICreateQueues
+    class SqlServerQueueCreator : ICreateQueues
     {
         const string Ddl =
             @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{0}]') AND type in (N'U'))

@@ -2,7 +2,9 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using Pipeline;
     using Settings;
+    using Support;
     using Transports;
     using Transports.SQLServer;
     using System.Configuration;
@@ -10,63 +12,89 @@ namespace NServiceBus.Features
     /// <summary>
     /// Configures NServiceBus to use SqlServer as the default transport
     /// </summary>
-    public class SqlServerTransport : ConfigureTransport<SqlServer>
+    class SqlServerTransport : ConfigureTransport
     {
+        public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
+        public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+
+        public SqlServerTransport()
+        {
+            Defaults(s =>
+            {
+                s.SetDefault(UseCallbackReceiverSettingKey, true);
+                s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
+            });
+        }
+
         protected override string ExampleConnectionStringForErrorMessage
         {
             get { return @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; }
         }
 
-        protected override void InternalConfigure(Configure config)
+        protected override string GetLocalAddress(ReadOnlySettings settings)
         {
-            
-            Enable<SqlServerTransport>();
-            Enable<MessageDrivenSubscriptions>();
+            return settings.EndpointName();
         }
 
-        public override void Initialize()
+        protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
             //Until we refactor the whole address system
-            CustomizeAddress();
-            
-            var defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
+            Address.IgnoreMachineName();
+
+            var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
+            var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiverSettingKey);
+
+            var queueName = GetLocalAddress(context.Settings);
+            var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
 
             //Load all connectionstrings 
             var collection =
                 ConfigurationManager
-                .ConnectionStrings
-                .Cast<ConnectionStringSettings>()
-                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
+                    .ConnectionStrings
+                    .Cast<ConnectionStringSettings>()
+                    .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
+                    .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
 
-            if (String.IsNullOrEmpty(defaultConnectionString))
+            if (String.IsNullOrEmpty(connectionString))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
 
-            NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
+            var container = context.Container;
 
-            NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
+            container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
-            NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
-                  .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+            container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
+                .ConfigureProperty(p => p.ConnectionStringCollection, collection)
+                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
 
-            NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
-                  .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
-        }
+            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
-        static void CustomizeAddress()
-        {
-            Address.IgnoreMachineName();
+            context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
-            if (!SettingsHolder.GetOrDefault<bool>("ScaleOut.UseSingleBrokerQueue"))
+            if (useCallbackReceiver)
             {
-                Address.InitializeLocalAddress(Address.Local.Queue + "." + Address.Local.Machine);
+                var callbackAddress = Address.Parse(callbackQueue);
+
+                context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
+                    .ConfigureProperty(p => p.Enabled, true)
+                    .ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
+
+                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
             }
-         
+            context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
+            {
+                //if this isn't the main queue we shouldn't use callback receiver
+                if (!useCallbackReceiver || workQueue != queueName)
+                {
+                    return SecondaryReceiveSettings.Disabled();
+                }
+
+                return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
+            }));
         }
     }
 }
