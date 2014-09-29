@@ -22,7 +22,7 @@
                         })))
                     .WithEndpoint<Receiver>()
                     .Done(context => context.ReceivedPayload != null)
-                    .Repeat(r => r.For<AllSerializers>())
+                    .Repeat(r => r.For(Transports.Default))
                     .Should(c => Assert.AreEqual(PayloadToSend, c.ReceivedPayload, "The large payload should be marshalled correctly using the databus"))
                     .Run();
             File.Delete(MyDataBus.GetTempPath());
