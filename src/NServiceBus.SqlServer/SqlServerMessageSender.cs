@@ -42,8 +42,10 @@
             }
 
             //set our callback address
-            message.Headers[CallbackHeaderKey] = CallbackQueue;
-
+            if (!string.IsNullOrEmpty(CallbackQueue))
+            {
+                message.Headers[CallbackHeaderKey] = CallbackQueue;
+            }
             var queue = address.Queue;
             try
             {

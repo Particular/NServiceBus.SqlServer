@@ -62,10 +62,10 @@ namespace NServiceBus.Features
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 
-            container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
+            var senderConfig = container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
-                .ConfigureProperty(p => p.ConnectionStringCollection, collection)
-                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
+                .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+                
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
@@ -74,6 +74,8 @@ namespace NServiceBus.Features
 
             if (useCallbackReceiver)
             {
+                senderConfig.ConfigureProperty(p => p.CallbackQueue, callbackQueue);
+
                 var callbackAddress = Address.Parse(callbackQueue);
 
                 context.Container.ConfigureComponent<CallbackQueueCreator>(DependencyLifecycle.InstancePerCall)
