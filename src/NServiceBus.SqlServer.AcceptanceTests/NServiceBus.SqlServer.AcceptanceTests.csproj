@@ -63,6 +63,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="When_a_replymessage_is_audited.cs" />
     <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Audit\When_a_message_is_audited.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Audit\When_using_auditing_as_a_feature.cs" />
