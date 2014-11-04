@@ -15,7 +15,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> DisableCallbackReceiver(this TransportExtensions<SqlServerTransport> transportExtensions) 
         {
-            transportExtensions.GetSettings().Set(Features.SqlServerTransport.UseCallbackReceiverSettingKey, false);
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.UseCallbackReceiverSettingKey, false);
             return transportExtensions;
         }
 
@@ -32,7 +32,7 @@
             {
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.","maxConcurrency");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransport.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
             return transportExtensions;
         }
     }

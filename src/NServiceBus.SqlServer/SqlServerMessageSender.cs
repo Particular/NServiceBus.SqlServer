@@ -35,15 +35,17 @@
 
             string callbackAddress;
 
-            if (message.MessageIntent == MessageIntentEnum.Reply &&
+            if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
                 message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
             {
                 address = Address.Parse(callbackAddress);
             }
 
             //set our callback address
-            message.Headers[CallbackHeaderKey] = CallbackQueue;
-
+            if (!string.IsNullOrEmpty(CallbackQueue))
+            {
+                message.Headers[CallbackHeaderKey] = CallbackQueue;
+            }
             var queue = address.Queue;
             try
             {
