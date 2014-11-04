@@ -28,6 +28,7 @@
         public PipelineExecutor PipelineExecutor { get; set; }
 
         public string CallbackQueue { get; set; }
+        public bool SchemaAwareAddressing { get; set; }
 
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
@@ -60,7 +61,7 @@
 
                     if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
                     {
-                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
+                        using (var command = new SqlCommand(string.Format(SqlSend, address.GetTableName(SchemaAwareAddressing)), currentTransaction.Connection, currentTransaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -120,9 +121,9 @@
             }
         }
 
-        static void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection, SendOptions sendOptions)
+        void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection, SendOptions sendOptions)
         {
-            using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
+            using (var command = new SqlCommand(string.Format(SqlSend, address.GetTableName(SchemaAwareAddressing)), connection)
             {
                 CommandType = CommandType.Text
             })
@@ -191,7 +192,7 @@
         }
 
         const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO {0} ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         public const string CallbackHeaderKey = "NServiceBus.SqlServer.CallbackQueue";
