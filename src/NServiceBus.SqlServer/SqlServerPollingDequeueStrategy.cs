@@ -38,6 +38,11 @@
         public string ConnectionString { get; set; }
 
         /// <summary>
+        /// The name of the schema to use or null to use user's default schema.
+        /// </summary>
+        public string SchemaName { get; set; }
+
+        /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
         /// </summary>
         /// <param name="address">The address to listen on.</param>
@@ -72,7 +77,7 @@
 
         IEnumerable<string> AllTables()
         {
-            yield return primaryAddress.GetTableName();
+            yield return primaryAddress.Queue.GetTableName(SchemaName);
             if (SecondaryReceiveSettings.IsEnabled)
             {
                 yield return SecondaryReceiveSettings.ReceiveQueue;
@@ -96,11 +101,11 @@
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(primaryAddress.GetTableName());
+                StartReceiveThread(primaryAddress.Queue.GetTableName(SchemaName));
             }
             for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
+                StartReceiveThread(SecondaryReceiveSettings.ReceiveQueue.GetTableName(SchemaName));
             }
             if (SecondaryReceiveSettings.IsEnabled)
             {
@@ -499,13 +504,14 @@
             }
         }
 
+
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
-        const string SqlPurge = @"DELETE FROM [{0}]";
+        const string SqlPurge = @"DELETE FROM {0}";
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
         readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);

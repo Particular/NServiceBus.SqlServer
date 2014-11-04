@@ -9,7 +9,10 @@ namespace NServiceBus
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
-        internal SqlServerTransport()
+        /// <summary>
+        /// 
+        /// </summary>
+        public SqlServerTransport()
         {
             RequireOutboxConsent = true;
         }

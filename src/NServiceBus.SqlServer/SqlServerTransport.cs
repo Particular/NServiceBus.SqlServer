@@ -2,6 +2,7 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using NServiceBus.Logging;
     using Pipeline;
     using Settings;
     using Support;
@@ -16,6 +17,8 @@ namespace NServiceBus.Features
     {
         public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+        public const string SchemaName = "SqlServer.SchemaName";
+        public const string SchemaAwareAddressing = "SqlServer.SchemaAwareAddressing";
 
         public SqlServerTransport()
         {
@@ -23,6 +26,8 @@ namespace NServiceBus.Features
             {
                 s.SetDefault(UseCallbackReceiverSettingKey, true);
                 s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
+                s.SetDefault(SchemaName, null);
+                s.SetDefault(SchemaAwareAddressing, null);
             });
         }
 
@@ -43,6 +48,14 @@ namespace NServiceBus.Features
 
             var useCallbackReceiver = context.Settings.Get<bool>(UseCallbackReceiverSettingKey);
             var maxConcurrencyForCallbackReceiver = context.Settings.Get<int>(MaxConcurrencyForCallbackReceiverSettingKey);
+            var schemaName = context.Settings.GetOrDefault<string>(SchemaName);
+            var schemaAwareAddressing = context.Settings.GetOrDefault<bool?>(SchemaAwareAddressing);
+            if (!schemaAwareAddressing.HasValue && schemaName != null)
+            {
+                Logger.Warn("Endpoint uses non-default schema but schema-aware addressing has not been enabled (disabled by default). " 
+                    + "This endpoint WILL NOT be able to send messages to endpoints that use non-default schema. "
+                    + "If this is a desired behavior, disable schama-aware addressing by calling EnableSchemaAwareAddressing(false).");
+            }
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
@@ -63,15 +76,19 @@ namespace NServiceBus.Features
             var container = context.Container;
 
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString)
+                .ConfigureProperty(p => p.SchemaName, schemaName);
 
             container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
                 .ConfigureProperty(p => p.ConnectionStringCollection, collection)
-                .ConfigureProperty(p => p.CallbackQueue, callbackQueue);
+                .ConfigureProperty(p => p.CallbackQueue, callbackQueue)
+                .ConfigureProperty(p => p.SchemaAwareAddressing, schemaAwareAddressing.HasValue && schemaAwareAddressing.Value);
+
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString)
+                .ConfigureProperty(p => p.SchemaName, schemaName);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
@@ -96,5 +113,7 @@ namespace NServiceBus.Features
                 return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
         }
+
+        static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerTransport));
     }
 }
