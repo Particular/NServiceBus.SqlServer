@@ -12,11 +12,13 @@
         {
             get
             {
-                if (availableTransports == null)
+                lock (lockObject)
                 {
-                    availableTransports = GetAllAvailable().ToList();
+                    if (availableTransports == null)
+                    {
+                        availableTransports = GetAllAvailable().ToList();
+                    }
                 }
-
                 return availableTransports;
             }
         }
@@ -31,7 +33,7 @@
                 if (!string.IsNullOrEmpty(specificTransport))
                     return AllAvailable.Single(r => r.Key == specificTransport);
 
-                var transportsOtherThanMsmq = AllAvailable.Where(t => t != Msmq);
+                var transportsOtherThanMsmq = AllAvailable.Where(t => t != Msmq).ToList();
 
                 if (transportsOtherThanMsmq.Count() == 1)
                     return transportsOtherThanMsmq.First();
@@ -83,6 +85,7 @@
         }
 
         static IList<RunDescriptor> availableTransports;
+        static readonly object lockObject = new object();
 
         static readonly Dictionary<string, string> DefaultConnectionStrings = new Dictionary<string, string>
             {

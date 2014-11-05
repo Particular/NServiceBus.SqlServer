@@ -13,6 +13,7 @@ namespace NServiceBus.Features
     {
         public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+        public const string DeadLetterQueueName = "SqlServer.DeadLetterQueueName";
 
         public SqlServerTransportFeature()
         {
@@ -20,6 +21,7 @@ namespace NServiceBus.Features
             {
                 s.SetDefault(UseCallbackReceiverSettingKey, true);
                 s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
+                s.SetDefault(DeadLetterQueueName, null);
             });
         }
 
@@ -43,6 +45,7 @@ namespace NServiceBus.Features
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
+            var deadLetterQueue =  context.Settings.Get<string>(DeadLetterQueueName) ?? string.Format("{0}.DLQ", queueName);
 
             //Load all connectionstrings 
             var collection =
@@ -68,9 +71,14 @@ namespace NServiceBus.Features
                 
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString)
+                .ConfigureProperty(p => p.DeadLetterQueue, deadLetterQueue);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
+
+            context.Container.ConfigureComponent<DeadLetterQueueCreator>(DependencyLifecycle.InstancePerCall)
+                    .ConfigureProperty(p => p.Enabled, true)
+                    .ConfigureProperty(p => p.DeadLetterQueueAddress, Address.Parse(deadLetterQueue));
 
             if (useCallbackReceiver)
             {

@@ -66,6 +66,8 @@
   <ItemGroup>
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
+    <Compile Include="DeadLetterQueueCreator.cs" />
+    <Compile Include="MessageReadResult.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
