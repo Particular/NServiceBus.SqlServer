@@ -11,9 +11,7 @@ namespace NServiceBus.AcceptanceTests.ScenarioDescriptors
         {
             Key = "DistributedTransaction",
             Settings =
-                new Dictionary<string, string>
-                {
-                }
+                new Dictionary<string, string>()
         };
 
         public static readonly RunDescriptor LocalTransaction = new RunDescriptor
