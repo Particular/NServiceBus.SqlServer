@@ -37,7 +37,7 @@
         public string ConnectionString { get; set; }
 
         /// <summary>
-        /// The name of the dead letter queue
+        /// The name of the error queue
         /// </summary>
         public Address ErrorQueue { get; set; }
 
@@ -436,10 +436,6 @@
             }
         }
 
-
-        const string SqlMoveToDlq =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-            VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         const string SqlPurge = @"DELETE FROM [{0}]";
 

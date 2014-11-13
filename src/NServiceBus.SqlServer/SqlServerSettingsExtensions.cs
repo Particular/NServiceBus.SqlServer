@@ -35,21 +35,5 @@
             transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
             return transportExtensions;
         }
-
-        /// <summary>
-        /// Overrides default dead letter queue name.
-        /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <param name="queueName">Name of dead letter queue.</param>
-        /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> DeadLetterQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName)
-        {
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException("Dead letter queue name can not be empty string.","queueName");
-            }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.DeadLetterQueueName, queueName);
-            return transportExtensions;
-        }
     }
 }

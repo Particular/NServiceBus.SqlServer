@@ -13,7 +13,6 @@ namespace NServiceBus.Features
     {
         public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
-        public const string DeadLetterQueueName = "SqlServer.DeadLetterQueueName";
 
         public SqlServerTransportFeature()
         {
@@ -21,7 +20,6 @@ namespace NServiceBus.Features
             {
                 s.SetDefault(UseCallbackReceiverSettingKey, true);
                 s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
-                s.SetDefault(DeadLetterQueueName, null);
             });
         }
 

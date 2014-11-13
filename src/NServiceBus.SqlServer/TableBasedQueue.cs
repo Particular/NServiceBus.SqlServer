@@ -31,6 +31,10 @@ namespace NServiceBus.Transports.SQLServer
 
         public void Send(object[] messageData, SqlConnection connection, SqlTransaction transaction = null)
         {
+            if (messageData.Length != Parameters.Length)
+            {
+                throw new InvalidOperationException("The length of message data array must match the name of Parameters array.");
+            }
             using (var command = new SqlCommand(string.Format(SqlSend, tableName), connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -41,7 +45,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         static void ExecuteSendQuery(object[] messageData, SqlCommand command)
-        {
+        {            
             for (var i = 0; i < messageData.Length; i++)
             {
                 command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
@@ -77,7 +81,7 @@ namespace NServiceBus.Transports.SQLServer
             {
                 data[TimeToBeReceivedColumn] = DateTime.UtcNow.Add(message.TimeToBeReceived);
             }
-            data[HeadersColumn] = Serializer.SerializeObject(message.Headers);
+            data[HeadersColumn] = HeaderSerializer.SerializeObject(message.Headers);
             if (message.Body == null)
             {
                 data[BodyColumn] = DBNull.Value;
@@ -113,6 +117,7 @@ namespace NServiceBus.Transports.SQLServer
                 if (dataReader.Read())
                 {
                     rowData = new object[dataReader.FieldCount];
+// ReSharper disable once ReturnValueOfPureMethodIsNotUsed
                     dataReader.GetValues(rowData);
                 }
                 else
@@ -138,7 +143,7 @@ namespace NServiceBus.Transports.SQLServer
                     return MessageReadResult.NoMessage;
                 }
 
-                var headers = (Dictionary<string, string>)Serializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
+                var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
                 var correlationId = GetNullableValue<string>(rowData[CorrelationIdColumn]);
                 var recoverable = (bool)rowData[RecoverableColumn];
                 var body = GetNullableValue<byte[]>(rowData[BodyColumn]);
@@ -166,7 +171,7 @@ namespace NServiceBus.Transports.SQLServer
             }
             catch (Exception ex)
             {
-                Logger.Error("Error receiving message. Probable message metadata corruption. Moving to dead letter queue.", ex);
+                Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
                 return MessageReadResult.Poison(rowData);
             }
         }
@@ -188,7 +193,7 @@ namespace NServiceBus.Transports.SQLServer
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
 
         readonly string tableName;
-        static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
+        static  readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 
         static readonly string[] Parameters = { "Id", "CorrelationId", "ReplyToAddress", "Recoverable", "Expires", "Headers", "Body" };
 
