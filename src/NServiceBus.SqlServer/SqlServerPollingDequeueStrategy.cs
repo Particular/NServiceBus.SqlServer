@@ -12,7 +12,6 @@
     using Logging;
     using NServiceBus.Features;
     using Pipeline;
-    using Serializers.Json;
     using Unicast.Transport;
     using IsolationLevel = System.Data.IsolationLevel;
 
@@ -36,6 +35,11 @@
         ///     The connection used to open the SQL Server database.
         /// </summary>
         public string ConnectionString { get; set; }
+
+        /// <summary>
+        /// The name of the error queue
+        /// </summary>
+        public Address ErrorQueue { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -63,6 +67,7 @@
             };
             primaryAddress = address;
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
+            errorQueue = new TableBasedQueue(ErrorQueue);
 
             if (purgeOnStartup)
             {
@@ -96,11 +101,11 @@
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(primaryAddress.GetTableName());
+                StartReceiveThread(new TableBasedQueue(primaryAddress));
             }
             for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
+                StartReceiveThread(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName()));
             }
             if (SecondaryReceiveSettings.IsEnabled)
             {
@@ -150,12 +155,12 @@
             }
         }
 
-        void StartReceiveThread(string tableName)
+        void StartReceiveThread(TableBasedQueue queue)
         {
             var token = tokenSource.Token;
 
             Task.Factory
-                .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, tableName), token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, queue), token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     t.Exception.Handle(ex =>
@@ -169,7 +174,7 @@
                     {
                         if (countdownEvent.TryAddCount())
                         {
-                            StartReceiveThread(tableName);
+                            StartReceiveThread(queue);
                         }
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
@@ -178,12 +183,12 @@
         class ReceiveLoppArgs
         {
             public readonly CancellationToken Token;
-            public readonly string TableName;
+            public readonly TableBasedQueue Queue;
 
-            public ReceiveLoppArgs(CancellationToken token, string tableName)
+            public ReceiveLoppArgs(CancellationToken token, TableBasedQueue queue)
             {
                 Token = token;
-                TableName = tableName;
+                Queue = queue;
             }
         }
 
@@ -193,7 +198,6 @@
             {
                 var args = (ReceiveLoppArgs)obj;
                 var backOff = new BackOff(1000);
-                var query = string.Format(SqlReceive, args.TableName);
 
                 while (!args.Token.IsCancellationRequested)
                 {
@@ -205,16 +209,16 @@
                         {
                             if (settings.SuppressDistributedTransactions)
                             {
-                                result = TryReceiveWithNativeTransaction(query);
+                                result = TryReceiveWithNativeTransaction(args.Queue);
                             }
                             else
                             {
-                                result = TryReceiveWithTransactionScope(query);
+                                result = TryReceiveWithTransactionScope(args.Queue);
                             }
                         }
                         else
                         {
-                            result = TryReceiveWithNoTransaction(query);
+                            result = TryReceiveWithNoTransaction(args.Queue);
                         }
                     }
                     finally
@@ -236,21 +240,30 @@
             }
         }
 
-        ReceiveResult TryReceiveWithNoTransaction(string sql)
+        ReceiveResult TryReceiveWithNoTransaction(TableBasedQueue queue)
         {
             var result = new ReceiveResult();
+            MessageReadResult readResult;
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                connection.Open();
+                readResult = queue.TryReceive(connection);
+                if (readResult.IsPoison)
+                {
+                    errorQueue.Send(readResult.DataRecord, connection);
+                    return result;
+                }
+            }
 
-            var message = Receive(sql);
-
-            if (message == null)
+            if (!readResult.Successful)
             {
                 return result;
             }
 
-            result.Message = message;
+            result.Message = readResult.Message;
             try
             {
-                tryProcessMessage(message);
+                tryProcessMessage(readResult.Message);
             }
             catch (Exception ex)
             {
@@ -260,7 +273,7 @@
             return result;
         }
 
-        ReceiveResult TryReceiveWithTransactionScope(string sql)
+        ReceiveResult TryReceiveWithTransactionScope(TableBasedQueue queue)
         {
             var result = new ReceiveResult();
 
@@ -270,31 +283,28 @@
                 {
                     try
                     {
+                        connection.Open();
                         pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
 
-                        connection.Open();
-
-                        TransportMessage message;
-
-                        using (var command = new SqlCommand(sql, connection)
+                        var readResult = queue.TryReceive(connection);
+                        if (readResult.IsPoison)
                         {
-                            CommandType = CommandType.Text
-                        })
-                        {
-                            message = ExecuteReader(command);
+                            errorQueue.Send(readResult.DataRecord, connection);
+                            scope.Complete();
+                            return result;
                         }
 
-                        if (message == null)
+                        if (!readResult.Successful)
                         {
                             scope.Complete();
                             return result;
                         }
 
-                        result.Message = message;
+                        result.Message = readResult.Message;
 
                         try
                         {
-                            if (tryProcessMessage(message))
+                            if (tryProcessMessage(readResult.Message))
                             {
                                 scope.Complete();
                                 scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
@@ -315,7 +325,7 @@
             }
         }
 
-        ReceiveResult TryReceiveWithNativeTransaction(string sql)
+        ReceiveResult TryReceiveWithNativeTransaction(TableBasedQueue queue)
         {
             var result = new ReceiveResult();
 
@@ -333,10 +343,10 @@
                         {
                             pipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
 
-                            TransportMessage message;
+                            MessageReadResult readResult;
                             try
                             {
-                                message = ReceiveWithNativeTransaction(sql, connection, transaction);
+                                readResult = queue.TryReceive(connection, transaction);
                             }
                             catch (Exception)
                             {
@@ -344,17 +354,24 @@
                                 throw;
                             }
 
-                            if (message == null)
+                            if (readResult.IsPoison)
+                            {
+                                errorQueue.Send(readResult.DataRecord, connection, transaction);
+                                transaction.Commit();
+                                return result;
+                            }
+
+                            if (!readResult.Successful)
                             {
                                 transaction.Commit();
                                 return result;
                             }
 
-                            result.Message = message;
+                            result.Message = readResult.Message;
 
                             try
                             {
-                                if (tryProcessMessage(message))
+                                if (tryProcessMessage(readResult.Message))
                                 {
                                     transaction.Commit();
                                 }
@@ -384,85 +401,6 @@
             }
         }
 
-        TransportMessage Receive(string sql)
-        {
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                connection.Open();
-
-                using (var command = new SqlCommand(sql, connection)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    return ExecuteReader(command);
-                }
-            }
-        }
-
-        TransportMessage ReceiveWithNativeTransaction(string sql, SqlConnection connection, SqlTransaction transaction)
-        {
-            using (var command = new SqlCommand(sql, connection, transaction)
-            {
-                CommandType = CommandType.Text
-            })
-            {
-                return ExecuteReader(command);
-            }
-        }
-
-        TransportMessage ExecuteReader(SqlCommand command)
-        {
-            using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
-            {
-                if (dataReader.Read())
-                {
-                    var id = dataReader.GetGuid(0).ToString();
-
-                    DateTime? expireDateTime = null;
-                    if (!dataReader.IsDBNull(4))
-                    {
-                        expireDateTime = dataReader.GetDateTime(4);
-                    }
-
-                    //Has message expired?
-                    if (expireDateTime.HasValue && expireDateTime.Value < DateTime.UtcNow)
-                    {
-                        Logger.InfoFormat("Message with ID={0} has expired. Removing it from queue.", id);
-                        return null;
-                    }
-
-                    var headers = (Dictionary<string, string>)Serializer.DeserializeObject(dataReader.GetString(5), typeof(Dictionary<string, string>));
-                    var correlationId = dataReader.IsDBNull(1) ? null : dataReader.GetString(1);
-                    var recoverable = dataReader.GetBoolean(3);
-                    var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
-
-                    var message = new TransportMessage(id, headers)
-                    {
-                        CorrelationId = correlationId,
-                        Recoverable = recoverable,
-                        Body = body ?? new byte[0]
-                    };
-
-                    var replyToAddress = dataReader.IsDBNull(2) ? null : dataReader.GetString(2);
-
-                    if (!string.IsNullOrEmpty(replyToAddress))
-                    {
-                        message.Headers[Headers.ReplyToAddress] = replyToAddress;
-                    }
-
-                    if (expireDateTime.HasValue)
-                    {
-                        message.TimeToBeReceived = TimeSpan.FromTicks(expireDateTime.Value.Ticks - DateTime.UtcNow.Ticks);
-                    }
-
-                    return message;
-                }
-            }
-
-            return null;
-        }
-
         static IsolationLevel GetSqlIsolationLevel(System.Transactions.IsolationLevel isolationLevel)
         {
             switch (isolationLevel)
@@ -486,7 +424,6 @@
             return IsolationLevel.ReadCommitted;
         }
 
-
         SecondaryReceiveSettings SecondaryReceiveSettings
         {
             get
@@ -499,16 +436,10 @@
             }
         }
 
-        const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
-			DELETE FROM message 
-			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
         const string SqlPurge = @"DELETE FROM [{0}]";
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
-        readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         CountdownEvent countdownEvent;
@@ -520,6 +451,7 @@
         SecondaryReceiveSettings secondaryReceiveSettings;
         bool purgeOnStartup;
         Address primaryAddress;
+        TableBasedQueue errorQueue;
         TransactionSettings settings;
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;

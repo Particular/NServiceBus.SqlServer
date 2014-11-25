@@ -43,6 +43,7 @@ namespace NServiceBus.Features
 
             var queueName = GetLocalAddress(context.Settings);
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
+            var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
 
             //Load all connectionstrings 
             var collection =
@@ -68,7 +69,8 @@ namespace NServiceBus.Features
                 
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString);
+                .ConfigureProperty(p => p.ConnectionString, connectionString)
+                .ConfigureProperty(p => p.ErrorQueue, errorQueue);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 

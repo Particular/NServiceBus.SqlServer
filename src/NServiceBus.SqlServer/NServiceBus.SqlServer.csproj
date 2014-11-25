@@ -66,6 +66,8 @@
   <ItemGroup>
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
+    <Compile Include="ErrorQueueSettings.cs" />
+    <Compile Include="MessageReadResult.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="SqlServerPollingDequeueStrategy.cs" />
     <Compile Include="SqlServerMessageSender.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="TableBasedQueue.cs" />
     <Compile Include="TableNameUtils.cs" />
   </ItemGroup>
   <ItemGroup>

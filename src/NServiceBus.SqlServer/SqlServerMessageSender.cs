@@ -2,12 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Transactions;
     using Pipeline;
-    using Serializers.Json;
     using Unicast;
     using Unicast.Queuing;
 
@@ -46,29 +44,23 @@
             {
                 message.Headers[CallbackHeaderKey] = CallbackQueue;
             }
-            var queue = address.Queue;
+            var queueName = address.Queue;
             try
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(queue))
+                if (ConnectionStringCollection.Keys.Contains(queueName))
                 {
-                    queueConnectionString = ConnectionStringCollection[queue];
+                    queueConnectionString = ConnectionStringCollection[queueName];
                 }
-
+                var queue = new TableBasedQueue(address);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
 
                     if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
                     {
-                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), currentTransaction.Connection, currentTransaction)
-                        {
-                            CommandType = CommandType.Text
-                        })
-                        {
-                            ExecuteQuery(message, command, sendOptions);
-                        }
+                        queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
                     }
                     else
                     {
@@ -76,14 +68,14 @@
 
                         if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
                         {
-                            ExecuteSendCommand(message, address, currentConnection, sendOptions);
+                            queue.Send(message, sendOptions, currentConnection);
                         }
                         else
                         {
                             using (var connection = new SqlConnection(queueConnectionString))
                             {
                                 connection.Open();
-                                ExecuteSendCommand(message, address, connection, sendOptions);
+                                queue.Send(message, sendOptions, connection);
                             }
                         }
                     }
@@ -96,7 +88,7 @@
                         using (var connection = new SqlConnection(queueConnectionString))
                         {
                             connection.Open();
-                            ExecuteSendCommand(message, address, connection, sendOptions);
+                            queue.Send(message, sendOptions, connection);
                         }
 
                         tx.Complete();
@@ -122,17 +114,6 @@
             }
         }
 
-        static void ExecuteSendCommand(TransportMessage message, Address address, SqlConnection connection, SendOptions sendOptions)
-        {
-            using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
-            {
-                CommandType = CommandType.Text
-            })
-            {
-                ExecuteQuery(message, command, sendOptions);
-            }
-        }
-
         static void ThrowFailedToSendException(Address address, Exception ex)
         {
             if (address == null)
@@ -144,60 +125,6 @@
                 string.Format("Failed to send message to address: {0}@{1}", address.Queue, address.Machine), ex);
         }
 
-        static void ExecuteQuery(TransportMessage message, SqlCommand command, SendOptions sendOptions)
-        {
-            command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = Guid.Parse(message.Id);
-            command.Parameters.Add("CorrelationId", SqlDbType.VarChar).Value =
-                GetValue(message.CorrelationId);
-            if (sendOptions.ReplyToAddress != null)
-            {
-                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value =
-                    sendOptions.ReplyToAddress.ToString();
-            }
-            else if (message.ReplyToAddress != null)
-            {
-                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value =
-                    message.ReplyToAddress.ToString();
-            }
-            else
-            {
-                command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value = DBNull.Value;
-            }
-            command.Parameters.Add("Recoverable", SqlDbType.Bit).Value = message.Recoverable;
-            if (message.TimeToBeReceived == TimeSpan.MaxValue)
-            {
-                command.Parameters.Add("Expires", SqlDbType.DateTime).Value = DBNull.Value;
-            }
-            else
-            {
-                command.Parameters.Add("Expires", SqlDbType.DateTime).Value =
-                    DateTime.UtcNow.Add(message.TimeToBeReceived);
-            }
-            command.Parameters.Add("Headers", SqlDbType.VarChar).Value =
-                Serializer.SerializeObject(message.Headers);
-            if (message.Body == null)
-            {
-                command.Parameters.Add("Body", SqlDbType.VarBinary).Value = DBNull.Value;
-            }
-            else
-            {
-                command.Parameters.Add("Body", SqlDbType.VarBinary).Value = message.Body;
-            }
-
-            command.ExecuteNonQuery();
-        }
-
-        static object GetValue(object value)
-        {
-            return value ?? DBNull.Value;
-        }
-
-        const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
-
         public const string CallbackHeaderKey = "NServiceBus.SqlServer.CallbackQueue";
-
-        static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
     }
 }
