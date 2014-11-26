@@ -39,11 +39,6 @@
                 message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
             {
                 address = Address.Parse(callbackAddress);
-                // User has specified a completely different callback address, i.e. callback queue is not endpoint.server 
-                if (!address.Queue.StartsWith(connectionStringKey))
-                {
-                    connectionStringKey = address.Queue;
-                }
             }
 
             //set our callback address
