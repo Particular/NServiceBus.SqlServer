@@ -32,13 +32,18 @@
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
             var address = sendOptions.Destination;
-
+            var connectionStringKey = sendOptions.Destination.Queue;
             string callbackAddress;
 
             if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
                 message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
             {
                 address = Address.Parse(callbackAddress);
+                // User has specified a completely different callback address, i.e. callback queue is not endpoint.server 
+                if (!address.Queue.StartsWith(connectionStringKey))
+                {
+                    connectionStringKey = address.Queue;
+                }
             }
 
             //set our callback address
@@ -51,9 +56,9 @@
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(sendOptions.Destination.Queue))
+                if (ConnectionStringCollection.Keys.Contains(connectionStringKey))
                 {
-                    queueConnectionString = ConnectionStringCollection[sendOptions.Destination.Queue];
+                    queueConnectionString = ConnectionStringCollection[connectionStringKey];
                 }
 
                 if (sendOptions.EnlistInReceiveTransaction)
