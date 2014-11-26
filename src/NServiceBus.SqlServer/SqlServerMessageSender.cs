@@ -30,7 +30,7 @@
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
             var address = sendOptions.Destination;
-
+            var connectionStringKey = sendOptions.Destination.Queue;
             string callbackAddress;
 
             if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
@@ -44,14 +44,13 @@
             {
                 message.Headers[CallbackHeaderKey] = CallbackQueue;
             }
-            var queueName = address.Queue;
             try
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(queueName))
+                if (ConnectionStringCollection.Keys.Contains(connectionStringKey))
                 {
-                    queueConnectionString = ConnectionStringCollection[queueName];
+                    queueConnectionString = ConnectionStringCollection[connectionStringKey];
                 }
                 var queue = new TableBasedQueue(address);
                 if (sendOptions.EnlistInReceiveTransaction)
