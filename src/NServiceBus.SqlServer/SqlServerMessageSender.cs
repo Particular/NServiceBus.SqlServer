@@ -51,9 +51,9 @@
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(queue))
+                if (ConnectionStringCollection.Keys.Contains(sendOptions.Destination.Queue))
                 {
-                    queueConnectionString = ConnectionStringCollection[queue];
+                    queueConnectionString = ConnectionStringCollection[sendOptions.Destination.Queue];
                 }
 
                 if (sendOptions.EnlistInReceiveTransaction)
