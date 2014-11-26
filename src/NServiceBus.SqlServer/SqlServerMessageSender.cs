@@ -51,7 +51,6 @@
             {
                 message.Headers[CallbackHeaderKey] = CallbackQueue;
             }
-            var queue = address.Queue;
             try
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
