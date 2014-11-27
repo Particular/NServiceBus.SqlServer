@@ -25,7 +25,7 @@
             Address destination = null;
             try
             {
-                destination = DetermineDestination(message, sendOptions);
+                destination = DetermineDestination(sendOptions);
                 SetCallbackAddress(message);
             
                 var queueConnectionString = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
@@ -96,9 +96,9 @@
             }
         }
 
-        static Address DetermineDestination(TransportMessage message, SendOptions sendOptions)
+        Address DetermineDestination(SendOptions sendOptions)
         {
-            return RequestorProvidedCallbackAddress(message, sendOptions) ?? SenderProvidedDestination(sendOptions);
+            return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
         }
 
         static Address SenderProvidedDestination(SendOptions sendOptions)
@@ -106,11 +106,10 @@
             return sendOptions.Destination;
         }
 
-        static Address RequestorProvidedCallbackAddress(TransportMessage message, SendOptions sendOptions)
+        Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
         {
-            string callbackAddress;
-            return IsReply(sendOptions) && message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress) 
-                ? Address.Parse(callbackAddress) 
+            return IsReply(sendOptions) 
+                ? PipelineExecutor.CurrentContext.TryGetCallbackAddress() 
                 : null;
         }
 

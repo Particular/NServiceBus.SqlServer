@@ -44,7 +44,7 @@
         }
 
         [SkipWeaving]
-        private class ContextItemRemovalDisposable : IDisposable
+        class ContextItemRemovalDisposable : IDisposable
         {
             readonly string contextKey;
             readonly PipelineExecutor pipelineExecutor;

@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
+    <Compile Include="CallbackQueuePipelineContextExtensions.cs" />
     <Compile Include="CollectionConnectionStringProvider.cs" />
     <Compile Include="CompositeConnectionStringProvider.cs" />
     <Compile Include="DefaultConnectionStringProvider.cs" />
@@ -76,7 +77,7 @@
     <Compile Include="EndpointConnectionString.cs" />
     <Compile Include="NullConnectionStringProvider.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
-    <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="ReadCallbackAddressBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />

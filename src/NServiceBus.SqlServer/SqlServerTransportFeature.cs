@@ -75,7 +75,7 @@ namespace NServiceBus.Features
                     .ConfigureProperty(p => p.Enabled, true)
                     .ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
 
-                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
+                context.Pipeline.Register<ReadCallbackAddressBehavior.Registration>();
             }
             context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
             {
