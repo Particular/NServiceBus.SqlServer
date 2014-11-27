@@ -281,11 +281,9 @@
             {
                 using (var connection = new SqlConnection(ConnectionString))
                 {
-                    try
+                    connection.Open();
+                    using (pipelineExecutor.SetConnection(ConnectionString, connection))
                     {
-                        connection.Open();
-                        pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
-
                         var readResult = queue.TryReceive(connection);
                         if (readResult.IsPoison)
                         {
@@ -317,10 +315,6 @@
 
                         return result;
                     }
-                    finally
-                    {
-                        pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
-                    }
                 }
             }
         }
@@ -331,18 +325,13 @@
 
             using (var connection = new SqlConnection(ConnectionString))
             {
-                try
+                connection.Open();
+                using (pipelineExecutor.SetConnection(ConnectionString, connection))
                 {
-                    pipelineExecutor.CurrentContext.Set(string.Format("SqlConnection-{0}", ConnectionString), connection);
-
-                    connection.Open();
-
                     using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
                     {
-                        try
+                        using (pipelineExecutor.SetTransaction(ConnectionString, transaction))
                         {
-                            pipelineExecutor.CurrentContext.Set(string.Format("SqlTransaction-{0}", ConnectionString), transaction);
-
                             MessageReadResult readResult;
                             try
                             {
@@ -388,15 +377,7 @@
 
                             return result;
                         }
-                        finally
-                        {
-                            pipelineExecutor.CurrentContext.Remove(string.Format("SqlTransaction-{0}", ConnectionString));
-                        }
                     }
-                }
-                finally
-                {
-                    pipelineExecutor.CurrentContext.Remove(string.Format("SqlConnection-{0}", ConnectionString));
                 }
             }
         }

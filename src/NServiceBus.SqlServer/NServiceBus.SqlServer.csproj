@@ -68,6 +68,7 @@
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="ErrorQueueSettings.cs" />
     <Compile Include="MessageReadResult.cs" />
+    <Compile Include="PipelineExecutorExtensions.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
