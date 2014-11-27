@@ -66,8 +66,15 @@
   <ItemGroup>
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
+    <Compile Include="CollectionConnectionStringProvider.cs" />
+    <Compile Include="CompositeConnectionStringProvider.cs" />
+    <Compile Include="DefaultConnectionStringProvider.cs" />
+    <Compile Include="DelegateConnectionStringProvider.cs" />
     <Compile Include="ErrorQueueSettings.cs" />
+    <Compile Include="IConnectionStringProvider.cs" />
     <Compile Include="MessageReadResult.cs" />
+    <Compile Include="EndpointConnectionString.cs" />
+    <Compile Include="NullConnectionStringProvider.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
     <Compile Include="PromoteCallbackQueueBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />

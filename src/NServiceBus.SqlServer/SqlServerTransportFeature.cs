@@ -13,6 +13,7 @@ namespace NServiceBus.Features
     {
         public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+        public const string PerEndpointConnectrionStringsSettingKey = "SqlServer.PerEndpointConnectrionStrings";
 
         public SqlServerTransportFeature()
         {
@@ -20,6 +21,7 @@ namespace NServiceBus.Features
             {
                 s.SetDefault(UseCallbackReceiverSettingKey, true);
                 s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
+                s.SetDefault(PerEndpointConnectrionStringsSettingKey, new NullConnectionStringProvider());
             });
         }
 
@@ -45,18 +47,7 @@ namespace NServiceBus.Features
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
             var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
 
-            //Load all connectionstrings 
-            var collection =
-                ConfigurationManager
-                    .ConnectionStrings
-                    .Cast<ConnectionStringSettings>()
-                    .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                    .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
-
-            if (String.IsNullOrEmpty(connectionString))
-            {
-                throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
-            }
+            var connectionStringProvider = ConfigureConnectionStringProvider(context, connectionString);
 
             var container = context.Container;
 
@@ -65,7 +56,7 @@ namespace NServiceBus.Features
 
             var senderConfig = container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
-                .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+                .ConfigureProperty(p => p.ConnectionStringProvider, connectionStringProvider);
                 
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
@@ -96,6 +87,32 @@ namespace NServiceBus.Features
 
                 return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
+        }
+
+        static CompositeConnectionStringProvider ConfigureConnectionStringProvider(FeatureConfigurationContext context, string connectionString)
+        {
+            if (String.IsNullOrEmpty(connectionString))
+            {
+                throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
+            }
+
+            const string transportConnectionStringPrefix = "NServiceBus/Transport/";
+            var configConnectionStrings =
+                ConfigurationManager
+                    .ConnectionStrings
+                    .Cast<ConnectionStringSettings>()
+                    .Where(x => x.Name.StartsWith(transportConnectionStringPrefix))
+                    .Select(x => new EndpointConnectionString(x.Name.Replace(transportConnectionStringPrefix, String.Empty), x.ConnectionString));
+
+            var configProvidedPerEndpointConnectionStrings = new CollectionConnectionStringProvider(configConnectionStrings);
+            var programmaticallyProvidedPerEndpointConnectionStrings = context.Settings.Get<IConnectionStringProvider>(PerEndpointConnectrionStringsSettingKey);
+
+            var connectionStringProvider = new CompositeConnectionStringProvider(
+                programmaticallyProvidedPerEndpointConnectionStrings,
+                configProvidedPerEndpointConnectionStrings,
+                new DefaultConnectionStringProvider(connectionString)
+                );
+            return connectionStringProvider;
         }
     }
 }

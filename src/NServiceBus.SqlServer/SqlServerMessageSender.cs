@@ -1,9 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.Linq;
     using System.Transactions;
     using Pipeline;
     using Unicast;
@@ -14,14 +12,9 @@
     /// </summary>
     class SqlServerMessageSender : ISendMessages
     {
-        public SqlServerMessageSender()
-        {
-            ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        }
-
         public string DefaultConnectionString { get; set; }
 
-        public Dictionary<string, string> ConnectionStringCollection { get; set; }
+        public IConnectionStringProvider ConnectionStringProvider { get; set; }
 
         public PipelineExecutor PipelineExecutor { get; set; }
 
@@ -30,7 +23,6 @@
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
             var address = sendOptions.Destination;
-            var connectionStringKey = sendOptions.Destination.Queue;
             string callbackAddress;
 
             if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
@@ -46,12 +38,7 @@
             }
             try
             {
-                //If there is a connectionstring configured for the queue, use that connectionstring
-                var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(connectionStringKey))
-                {
-                    queueConnectionString = ConnectionStringCollection[connectionStringKey];
-                }
+                var queueConnectionString = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
                 var queue = new TableBasedQueue(address);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
