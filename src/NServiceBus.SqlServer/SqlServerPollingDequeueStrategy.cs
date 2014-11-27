@@ -6,23 +6,20 @@
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Transactions;
     using CircuitBreakers;
-    using Janitor;
     using Logging;
     using NServiceBus.Features;
     using Pipeline;
     using Unicast.Transport;
-    using IsolationLevel = System.Data.IsolationLevel;
 
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
-        public SqlServerPollingDequeueStrategy(PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+        public SqlServerPollingDequeueStrategy(ReceiveStrategyFactory receiveStrategyFactory, PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
-            this.pipelineExecutor = pipelineExecutor;
+            this.receiveStrategyFactory = receiveStrategyFactory;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
                 TimeSpan.FromMinutes(2),
@@ -35,11 +32,6 @@
         ///     The connection used to open the SQL Server database.
         /// </summary>
         public string ConnectionString { get; set; }
-
-        /// <summary>
-        /// The name of the error queue
-        /// </summary>
-        public Address ErrorQueue { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -56,19 +48,11 @@
         public void Init(Address address, TransactionSettings transactionSettings,
             Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
         {
-            this.tryProcessMessage = tryProcessMessage;
             this.endProcessMessage = endProcessMessage;
 
-            settings = transactionSettings;
-            transactionOptions = new TransactionOptions
-            {
-                IsolationLevel = transactionSettings.IsolationLevel,
-                Timeout = transactionSettings.TransactionTimeout
-            };
             primaryAddress = address;
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
-            errorQueue = new TableBasedQueue(ErrorQueue);
-
+            receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
             if (purgeOnStartup)
             {
                 PurgeTable(AllTables());
@@ -205,21 +189,7 @@
 
                     try
                     {
-                        if (settings.IsTransactional)
-                        {
-                            if (settings.SuppressDistributedTransactions)
-                            {
-                                result = TryReceiveWithNativeTransaction(args.Queue);
-                            }
-                            else
-                            {
-                                result = TryReceiveWithTransactionScope(args.Queue);
-                            }
-                        }
-                        else
-                        {
-                            result = TryReceiveWithNoTransaction(args.Queue);
-                        }
+                        result = receiveStrategy.TryReceiveFrom(args.Queue);
                     }
                     finally
                     {
@@ -238,171 +208,6 @@
             {
                 countdownEvent.Signal();
             }
-        }
-
-        ReceiveResult TryReceiveWithNoTransaction(TableBasedQueue queue)
-        {
-            var result = new ReceiveResult();
-            MessageReadResult readResult;
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                connection.Open();
-                readResult = queue.TryReceive(connection);
-                if (readResult.IsPoison)
-                {
-                    errorQueue.Send(readResult.DataRecord, connection);
-                    return result;
-                }
-            }
-
-            if (!readResult.Successful)
-            {
-                return result;
-            }
-
-            result.Message = readResult.Message;
-            try
-            {
-                tryProcessMessage(readResult.Message);
-            }
-            catch (Exception ex)
-            {
-                result.Exception = ex;
-            }
-
-            return result;
-        }
-
-        ReceiveResult TryReceiveWithTransactionScope(TableBasedQueue queue)
-        {
-            var result = new ReceiveResult();
-
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
-            {
-                using (var connection = new SqlConnection(ConnectionString))
-                {
-                    connection.Open();
-                    using (pipelineExecutor.SetConnection(ConnectionString, connection))
-                    {
-                        var readResult = queue.TryReceive(connection);
-                        if (readResult.IsPoison)
-                        {
-                            errorQueue.Send(readResult.DataRecord, connection);
-                            scope.Complete();
-                            return result;
-                        }
-
-                        if (!readResult.Successful)
-                        {
-                            scope.Complete();
-                            return result;
-                        }
-
-                        result.Message = readResult.Message;
-
-                        try
-                        {
-                            if (tryProcessMessage(readResult.Message))
-                            {
-                                scope.Complete();
-                                scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            result.Exception = ex;
-                        }
-
-                        return result;
-                    }
-                }
-            }
-        }
-
-        ReceiveResult TryReceiveWithNativeTransaction(TableBasedQueue queue)
-        {
-            var result = new ReceiveResult();
-
-            using (var connection = new SqlConnection(ConnectionString))
-            {
-                connection.Open();
-                using (pipelineExecutor.SetConnection(ConnectionString, connection))
-                {
-                    using (var transaction = connection.BeginTransaction(GetSqlIsolationLevel(settings.IsolationLevel)))
-                    {
-                        using (pipelineExecutor.SetTransaction(ConnectionString, transaction))
-                        {
-                            MessageReadResult readResult;
-                            try
-                            {
-                                readResult = queue.TryReceive(connection, transaction);
-                            }
-                            catch (Exception)
-                            {
-                                transaction.Rollback();
-                                throw;
-                            }
-
-                            if (readResult.IsPoison)
-                            {
-                                errorQueue.Send(readResult.DataRecord, connection, transaction);
-                                transaction.Commit();
-                                return result;
-                            }
-
-                            if (!readResult.Successful)
-                            {
-                                transaction.Commit();
-                                return result;
-                            }
-
-                            result.Message = readResult.Message;
-
-                            try
-                            {
-                                if (tryProcessMessage(readResult.Message))
-                                {
-                                    transaction.Commit();
-                                }
-                                else
-                                {
-                                    transaction.Rollback();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                result.Exception = ex;
-                                transaction.Rollback();
-                            }
-
-                            return result;
-                        }
-                    }
-                }
-            }
-        }
-
-        static IsolationLevel GetSqlIsolationLevel(System.Transactions.IsolationLevel isolationLevel)
-        {
-            switch (isolationLevel)
-            {
-                case System.Transactions.IsolationLevel.Serializable:
-                    return IsolationLevel.Serializable;
-                case System.Transactions.IsolationLevel.RepeatableRead:
-                    return IsolationLevel.RepeatableRead;
-                case System.Transactions.IsolationLevel.ReadCommitted:
-                    return IsolationLevel.ReadCommitted;
-                case System.Transactions.IsolationLevel.ReadUncommitted:
-                    return IsolationLevel.ReadUncommitted;
-                case System.Transactions.IsolationLevel.Snapshot:
-                    return IsolationLevel.Snapshot;
-                case System.Transactions.IsolationLevel.Chaos:
-                    return IsolationLevel.Chaos;
-                case System.Transactions.IsolationLevel.Unspecified:
-                    return IsolationLevel.Unspecified;
-            }
-
-            return IsolationLevel.ReadCommitted;
         }
 
         SecondaryReceiveSettings SecondaryReceiveSettings
@@ -425,23 +230,13 @@
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         CountdownEvent countdownEvent;
         Action<TransportMessage, Exception> endProcessMessage;
-        [SkipWeaving]
-        readonly PipelineExecutor pipelineExecutor;
+        readonly ReceiveStrategyFactory receiveStrategyFactory;
+        IReceiveStrategy receiveStrategy;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
         SecondaryReceiveSettings secondaryReceiveSettings;
         bool purgeOnStartup;
         Address primaryAddress;
-        TableBasedQueue errorQueue;
-        TransactionSettings settings;
         CancellationTokenSource tokenSource;
-        TransactionOptions transactionOptions;
-        Func<TransportMessage, bool> tryProcessMessage;
-
-        class ReceiveResult
-        {
-            public Exception Exception { get; set; }
-            public TransportMessage Message { get; set; }
-        }
     }
 }

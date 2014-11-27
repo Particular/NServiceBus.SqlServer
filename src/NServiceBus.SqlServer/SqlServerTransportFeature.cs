@@ -57,11 +57,13 @@ namespace NServiceBus.Features
             var senderConfig = container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
                 .ConfigureProperty(p => p.ConnectionStringProvider, connectionStringProvider);
-                
+
+            container.ConfigureComponent<ReceiveStrategyFactory>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ErrorQueue, errorQueue)
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString)
-                .ConfigureProperty(p => p.ErrorQueue, errorQueue);
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
