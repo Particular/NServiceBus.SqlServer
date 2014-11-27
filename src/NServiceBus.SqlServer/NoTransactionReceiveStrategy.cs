@@ -18,7 +18,6 @@ namespace NServiceBus.Transports.SQLServer
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
-            var result = new ReceiveResult();
             MessageReadResult readResult;
             using (var connection = new SqlConnection(connectionString))
             {
@@ -27,26 +26,25 @@ namespace NServiceBus.Transports.SQLServer
                 if (readResult.IsPoison)
                 {
                     errorQueue.Send(readResult.DataRecord, connection);
-                    return result;
+                    return ReceiveResult.NoMessage();
                 }
             }
 
             if (!readResult.Successful)
             {
-                return result;
+                return ReceiveResult.NoMessage();
             }
 
-            result.Message = readResult.Message;
+            var result = ReceiveResult.Received(readResult.Message);
             try
             {
                 tryProcessMessageCallback(readResult.Message);
+                return result;
             }
             catch (Exception ex)
             {
-                result.Exception = ex;
+                return result.FailedProcessing(ex);
             }
-
-            return result;
         }
     }
 }

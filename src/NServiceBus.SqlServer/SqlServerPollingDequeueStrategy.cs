@@ -9,7 +9,6 @@
     using CircuitBreakers;
     using Logging;
     using NServiceBus.Features;
-    using Pipeline;
     using Unicast.Transport;
 
     /// <summary>
@@ -17,7 +16,7 @@
     /// </summary>
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
-        public SqlServerPollingDequeueStrategy(ReceiveStrategyFactory receiveStrategyFactory, PipelineExecutor pipelineExecutor, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+        public SqlServerPollingDequeueStrategy(ReceiveStrategyFactory receiveStrategyFactory, CriticalError criticalError, Configure config, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
@@ -185,23 +184,21 @@
 
                 while (!args.Token.IsCancellationRequested)
                 {
-                    var result = new ReceiveResult();
-
+                    var result = ReceiveResult.NoMessage();
                     try
                     {
                         result = receiveStrategy.TryReceiveFrom(args.Queue);
                     }
                     finally
                     {
-                        //since we're polling the message will be null when there was nothing in the queue
-                        if (result.Message != null)
+                        if (result.HasReceivedMessage)
                         {
                             endProcessMessage(result.Message, result.Exception);
                         }
                     }
 
                     circuitBreaker.Success();
-                    backOff.Wait(() => result.Message == null);
+                    backOff.Wait(() => !result.HasReceivedMessage);
                 }
             }
             finally

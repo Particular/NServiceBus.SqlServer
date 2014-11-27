@@ -25,8 +25,6 @@ namespace NServiceBus.Transports.SQLServer
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
-            var result = new ReceiveResult();
-
             using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();
@@ -51,20 +49,19 @@ namespace NServiceBus.Transports.SQLServer
                             {
                                 errorQueue.Send(readResult.DataRecord, connection, transaction);
                                 transaction.Commit();
-                                return result;
+                                return ReceiveResult.NoMessage();
                             }
 
                             if (!readResult.Successful)
                             {
                                 transaction.Commit();
-                                return result;
+                                return ReceiveResult.NoMessage();
                             }
 
-                            result.Message = readResult.Message;
-
+                            var result = ReceiveResult.Received(readResult.Message);
                             try
                             {
-                                if (tryProcessMessageCallback(readResult.Message))
+                                if (tryProcessMessageCallback(result.Message))
                                 {
                                     transaction.Commit();
                                 }
@@ -72,14 +69,13 @@ namespace NServiceBus.Transports.SQLServer
                                 {
                                     transaction.Rollback();
                                 }
+                                return result;
                             }
                             catch (Exception ex)
                             {
-                                result.Exception = ex;
                                 transaction.Rollback();
+                                return result.FailedProcessing(ex);
                             }
-
-                            return result;
                         }
                     }
                 }
