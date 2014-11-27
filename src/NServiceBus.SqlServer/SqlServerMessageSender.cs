@@ -22,24 +22,14 @@
 
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
-            var address = sendOptions.Destination;
-            string callbackAddress;
-
-            if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
-                message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
-            {
-                address = Address.Parse(callbackAddress);
-            }
-
-            //set our callback address
-            if (!string.IsNullOrEmpty(CallbackQueue))
-            {
-                message.Headers[CallbackHeaderKey] = CallbackQueue;
-            }
+            Address destination = null;
             try
             {
+                destination = DetermineDestination(message, sendOptions);
+                SetCallbackAddress(message);
+            
                 var queueConnectionString = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
-                var queue = new TableBasedQueue(address);
+                var queue = new TableBasedQueue(destination);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
@@ -83,19 +73,50 @@
             {
                 if (ex.Number == 208)
                 {
-                    var msg = address == null
+                    var msg = destination == null
                         ? "Failed to send message. Target address is null."
-                        : string.Format("Failed to send message to address: [{0}]", address);
+                        : string.Format("Failed to send message to address: [{0}]", destination);
 
-                    throw new QueueNotFoundException(address, msg, ex);
+                    throw new QueueNotFoundException(destination, msg, ex);
                 }
 
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(destination, ex);
             }
             catch (Exception ex)
             {
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(destination, ex);
             }
+        }
+
+        void SetCallbackAddress(TransportMessage message)
+        {
+            if (!string.IsNullOrEmpty(CallbackQueue))
+            {
+                message.Headers[CallbackHeaderKey] = CallbackQueue;
+            }
+        }
+
+        static Address DetermineDestination(TransportMessage message, SendOptions sendOptions)
+        {
+            return RequestorProvidedCallbackAddress(message, sendOptions) ?? SenderProvidedDestination(sendOptions);
+        }
+
+        static Address SenderProvidedDestination(SendOptions sendOptions)
+        {
+            return sendOptions.Destination;
+        }
+
+        static Address RequestorProvidedCallbackAddress(TransportMessage message, SendOptions sendOptions)
+        {
+            string callbackAddress;
+            return IsReply(sendOptions) && message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress) 
+                ? Address.Parse(callbackAddress) 
+                : null;
+        }
+
+        static bool IsReply(SendOptions sendOptions)
+        {
+            return sendOptions.GetType().FullName.EndsWith("ReplyOptions");
         }
 
         static void ThrowFailedToSendException(Address address, Exception ex)
