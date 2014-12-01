@@ -55,6 +55,18 @@
                 new CollectionConnectionStringProvider(connectionStrings));
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Provides per-endpoint connection strings for multi-database support.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="connectionStrings">A collection of endpoint-connection string pairs</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
+            this TransportExtensions<SqlServerTransport> transportExtensions, params EndpointConnectionString[] connectionStrings)
+        {
+            return UseDifferentConnectionStringsForEndpoints(transportExtensions, (IEnumerable<EndpointConnectionString>) connectionStrings);
+        }
         
         /// <summary>
         /// Provides per-endpoint connection strings for multi-database support.

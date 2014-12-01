@@ -10,8 +10,6 @@ namespace NServiceBus.Transports.SQLServer
 
     class TableBasedQueue
     {
-
-
         public TableBasedQueue(Address address)
         {
             tableName = address.GetTableName();

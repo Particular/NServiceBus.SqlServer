@@ -73,11 +73,7 @@
             {
                 if (ex.Number == 208)
                 {
-                    var msg = destination == null
-                        ? "Failed to send message. Target address is null."
-                        : string.Format("Failed to send message to address: [{0}]", destination);
-
-                    throw new QueueNotFoundException(destination, msg, ex);
+                    ThrowQueueNotFoundException(destination, ex);
                 }
 
                 ThrowFailedToSendException(destination, ex);
@@ -86,6 +82,15 @@
             {
                 ThrowFailedToSendException(destination, ex);
             }
+        }
+
+        static void ThrowQueueNotFoundException(Address destination, SqlException ex)
+        {
+            var msg = destination == null
+                ? "Failed to send message. Target address is null."
+                : string.Format("Failed to send message to address: [{0}]", destination);
+
+            throw new QueueNotFoundException(destination, msg, ex);
         }
 
         void SetCallbackAddress(TransportMessage message)
