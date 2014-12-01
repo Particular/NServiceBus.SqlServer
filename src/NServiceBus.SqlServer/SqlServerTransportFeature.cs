@@ -112,8 +112,8 @@ namespace NServiceBus.Features
             var programmaticallyProvidedPerEndpointConnectionStrings = context.Settings.Get<IConnectionStringProvider>(PerEndpointConnectrionStringsSettingKey);
 
             var connectionStringProvider = new CompositeConnectionStringProvider(
-                programmaticallyProvidedPerEndpointConnectionStrings,
                 configProvidedPerEndpointConnectionStrings,
+                programmaticallyProvidedPerEndpointConnectionStrings,
                 new DefaultConnectionStringProvider(connectionString)
                 );
             return connectionStringProvider;
