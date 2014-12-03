@@ -56,11 +56,11 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
-            var actualConcurrencyLevel = maximumConcurrencyLevel + SecondaryReceiveSettings.MaximumConcurrencyLevel;
+            actualConcurrencyLevel = maximumConcurrencyLevel + SecondaryReceiveSettings.MaximumConcurrencyLevel;
             tokenSource = new CancellationTokenSource();
 
             // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
+            concurrencyControl = new SemaphoreSlim(actualConcurrencyLevel, actualConcurrencyLevel);
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
@@ -88,8 +88,18 @@
             }
 
             tokenSource.Cancel();
-            countdownEvent.Signal();
-            countdownEvent.Wait();
+            DrainStopSemaphore();
+        }
+
+        void DrainStopSemaphore()
+        {
+            for (var index = 0; index < actualConcurrencyLevel; index++)
+            {
+                concurrencyControl.Wait();
+            }
+
+            concurrencyControl.Release(actualConcurrencyLevel);
+            concurrencyControl.Dispose();
         }
 
         public void Dispose()
@@ -114,10 +124,7 @@
 
                     if (!tokenSource.IsCancellationRequested)
                     {
-                        if (countdownEvent.TryAddCount())
-                        {
-                            StartReceiveThread(queue);
-                        }
+                        StartReceiveThread(queue);
                     }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -138,6 +145,8 @@
         {
             try
             {
+                concurrencyControl.Wait();
+
                 var args = (ReceiveLoppArgs)obj;
                 var backOff = new BackOff(1000);
 
@@ -162,7 +171,7 @@
             }
             finally
             {
-                countdownEvent.Signal();
+                concurrencyControl.Release();
             }
         }
 
@@ -182,7 +191,8 @@
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        CountdownEvent countdownEvent;
+        SemaphoreSlim concurrencyControl;
+        int actualConcurrencyLevel;
         Action<TransportMessage, Exception> endProcessMessage;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
