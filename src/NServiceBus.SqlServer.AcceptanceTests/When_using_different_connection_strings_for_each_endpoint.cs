@@ -5,6 +5,7 @@
     using System.Reflection;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
 
     public class When_using_different_connection_strings_for_each_endpoint : NServiceBusAcceptanceTest
@@ -23,7 +24,7 @@
 
             Scenario.Define(context)
                    .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", ClientConnectionString)))
-                   .WithEndpoint<Sender>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", ServerConnectionString)).Given((bus, c) => bus.Send(new MyRequest
+                   .WithEndpoint<Sender>(b => b.Given((bus, c) => bus.Send(new MyRequest
                    {
                        ContextId = c.Id
                    })))
@@ -52,7 +53,10 @@
             {
                 public void Configure(BusConfiguration busConfiguration)
                 {
-                    busConfiguration.UseTransport<SqlServerTransport>().ConnectionString(ClientConnectionString);
+                    busConfiguration.UseTransport<SqlServerTransport>()
+                        //Use programmatic configuration
+                        .UseDifferentConnectionStringsForEndpoints(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ServerConnectionString : null)
+                        .ConnectionString(ClientConnectionString);
                 }
             }
 
@@ -83,7 +87,10 @@
             {
                 public void Configure(BusConfiguration busConfiguration)
                 {
-                    busConfiguration.UseTransport<SqlServerTransport>().ConnectionString(ServerConnectionString);
+                    busConfiguration.UseTransport<SqlServerTransport>()
+                        .UseDifferentConnectionStringsForEndpoints(
+                            new EndpointConnectionString("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport","ToBeOverridenViaConfig"))
+                        .ConnectionString(ServerConnectionString);
                     busConfiguration.Transactions().DisableDistributedTransactions();
                 }
             }

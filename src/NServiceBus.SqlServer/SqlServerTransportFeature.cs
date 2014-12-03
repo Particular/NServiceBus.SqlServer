@@ -2,6 +2,7 @@ namespace NServiceBus.Features
 {
     using System;
     using System.Linq;
+    using NServiceBus.ObjectBuilder;
     using Pipeline;
     using Settings;
     using Support;
@@ -13,6 +14,7 @@ namespace NServiceBus.Features
     {
         public const string UseCallbackReceiverSettingKey = "SqlServer.UseCallbackReceiver";
         public const string MaxConcurrencyForCallbackReceiverSettingKey = "SqlServer.MaxConcurrencyForCallbackReceiver";
+        public const string PerEndpointConnectrionStringsSettingKey = "SqlServer.PerEndpointConnectrionStrings";
 
         public SqlServerTransportFeature()
         {
@@ -20,6 +22,7 @@ namespace NServiceBus.Features
             {
                 s.SetDefault(UseCallbackReceiverSettingKey, true);
                 s.SetDefault(MaxConcurrencyForCallbackReceiverSettingKey, 1);
+                s.SetDefault(PerEndpointConnectrionStringsSettingKey, new NullConnectionStringProvider());
             });
         }
 
@@ -45,18 +48,7 @@ namespace NServiceBus.Features
             var callbackQueue = string.Format("{0}.{1}", queueName, RuntimeEnvironment.MachineName);
             var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
 
-            //Load all connectionstrings 
-            var collection =
-                ConfigurationManager
-                    .ConnectionStrings
-                    .Cast<ConnectionStringSettings>()
-                    .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                    .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
-
-            if (String.IsNullOrEmpty(connectionString))
-            {
-                throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
-            }
+            var connectionStringProvider = ConfigureConnectionStringProvider(context, connectionString);
 
             var container = context.Container;
 
@@ -65,12 +57,15 @@ namespace NServiceBus.Features
 
             var senderConfig = container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.DefaultConnectionString, connectionString)
-                .ConfigureProperty(p => p.ConnectionStringCollection, collection);
-                
+                .ConfigureProperty(p => p.ConnectionStringProvider, connectionStringProvider);
 
-            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                .ConfigureProperty(p => p.ConnectionString, connectionString)
-                .ConfigureProperty(p => p.ErrorQueue, errorQueue);
+            container.ConfigureComponent<ReceiveStrategyFactory>(DependencyLifecycle.InstancePerCall)
+                .ConfigureProperty(p => p.ErrorQueue, errorQueue)
+                .ConfigureProperty(p => p.ConnectionString, connectionString);
+
+            container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
+
+            ConfigurePurging(context.Settings, container, connectionString);
 
             context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), connectionString), DependencyLifecycle.InstancePerUnitOfWork);
 
@@ -84,7 +79,7 @@ namespace NServiceBus.Features
                     .ConfigureProperty(p => p.Enabled, true)
                     .ConfigureProperty(p => p.CallbackQueueAddress, callbackAddress);
 
-                context.Pipeline.Register<PromoteCallbackQueueBehavior.Registration>();
+                context.Pipeline.Register<ReadCallbackAddressBehavior.Registration>();
             }
             context.Container.RegisterSingleton(new SecondaryReceiveConfiguration(workQueue =>
             {
@@ -96,6 +91,46 @@ namespace NServiceBus.Features
 
                 return SecondaryReceiveSettings.Enabled(callbackQueue, maxConcurrencyForCallbackReceiver);
             }));
+        }
+
+        static CompositeConnectionStringProvider ConfigureConnectionStringProvider(FeatureConfigurationContext context, string connectionString)
+        {
+            if (String.IsNullOrEmpty(connectionString))
+            {
+                throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
+            }
+
+            const string transportConnectionStringPrefix = "NServiceBus/Transport/";
+            var configConnectionStrings =
+                ConfigurationManager
+                    .ConnectionStrings
+                    .Cast<ConnectionStringSettings>()
+                    .Where(x => x.Name.StartsWith(transportConnectionStringPrefix))
+                    .Select(x => new EndpointConnectionString(x.Name.Replace(transportConnectionStringPrefix, String.Empty), x.ConnectionString));
+
+            var configProvidedPerEndpointConnectionStrings = new CollectionConnectionStringProvider(configConnectionStrings);
+            var programmaticallyProvidedPerEndpointConnectionStrings = context.Settings.Get<IConnectionStringProvider>(PerEndpointConnectrionStringsSettingKey);
+
+            var connectionStringProvider = new CompositeConnectionStringProvider(
+                configProvidedPerEndpointConnectionStrings,
+                programmaticallyProvidedPerEndpointConnectionStrings,
+                new DefaultConnectionStringProvider(connectionString)
+                );
+            return connectionStringProvider;
+        }
+
+        static void ConfigurePurging(ReadOnlySettings settings, IConfigureComponents container, string connectionString)
+        {
+            bool purgeOnStartup;
+            if (settings.TryGet("Transport.PurgeOnStartup", out purgeOnStartup) && purgeOnStartup)
+            {
+                container.ConfigureComponent<QueuePurger>(DependencyLifecycle.SingleInstance)
+                    .ConfigureProperty(p => p.ConnectionString, connectionString);
+            }
+            else
+            {
+                container.ConfigureComponent<NullQueuePurger>(DependencyLifecycle.SingleInstance);
+            }
         }
     }
 }

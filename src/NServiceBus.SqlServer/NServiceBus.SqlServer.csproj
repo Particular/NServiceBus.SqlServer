@@ -64,11 +64,29 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AmbientTransactionReceiveStrategy.cs" />
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
+    <Compile Include="CallbackQueuePipelineContextExtensions.cs" />
+    <Compile Include="CollectionConnectionStringProvider.cs" />
+    <Compile Include="CompositeConnectionStringProvider.cs" />
+    <Compile Include="DefaultConnectionStringProvider.cs" />
+    <Compile Include="DelegateConnectionStringProvider.cs" />
     <Compile Include="ErrorQueueSettings.cs" />
+    <Compile Include="IConnectionStringProvider.cs" />
+    <Compile Include="IQueuePurger.cs" />
+    <Compile Include="IReceiveStrategy.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="PromoteCallbackQueueBehavior.cs" />
+    <Compile Include="EndpointConnectionString.cs" />
+    <Compile Include="NativeTransactionReceiveStrategy.cs" />
+    <Compile Include="NoTransactionReceiveStrategy.cs" />
+    <Compile Include="NullConnectionStringProvider.cs" />
+    <Compile Include="NullQueuePurger.cs" />
+    <Compile Include="PipelineExecutorExtensions.cs" />
+    <Compile Include="QueuePurger.cs" />
+    <Compile Include="ReadCallbackAddressBehavior.cs" />
+    <Compile Include="ReceiveResult.cs" />
+    <Compile Include="ReceiveStrategyFactory.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />

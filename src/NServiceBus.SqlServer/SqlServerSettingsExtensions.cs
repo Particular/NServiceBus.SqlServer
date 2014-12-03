@@ -1,7 +1,9 @@
 ﻿namespace NServiceBus
 {
     using System;
+    using System.Collections.Generic;
     using Configuration.AdvanceExtensibility;
+    using NServiceBus.Transports.SQLServer;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -33,6 +35,54 @@
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.","maxConcurrency");
             }
             transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Provides per-endpoint connection strings for multi-database support.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="connectionStrings">A collection of endpoint-connection string pairs</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
+            this TransportExtensions<SqlServerTransport> transportExtensions, IEnumerable<EndpointConnectionString> connectionStrings)
+        {
+            if (connectionStrings == null)
+            {
+                throw new ArgumentNullException("connectionStrings");
+            }
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectrionStringsSettingKey, 
+                new CollectionConnectionStringProvider(connectionStrings));
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Provides per-endpoint connection strings for multi-database support.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="connectionStrings">A collection of endpoint-connection string pairs</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
+            this TransportExtensions<SqlServerTransport> transportExtensions, params EndpointConnectionString[] connectionStrings)
+        {
+            return UseDifferentConnectionStringsForEndpoints(transportExtensions, (IEnumerable<EndpointConnectionString>) connectionStrings);
+        }
+        
+        /// <summary>
+        /// Provides per-endpoint connection strings for multi-database support.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="connectionStringProvider">A function that gets the endpoint name and returns connection string or null if not found.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
+            this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> connectionStringProvider)
+        {
+            if (connectionStringProvider == null)
+            {
+                throw new ArgumentNullException("connectionStringProvider");
+            }
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectrionStringsSettingKey, 
+                new DelegateConnectionStringProvider(connectionStringProvider));
             return transportExtensions;
         }
     }

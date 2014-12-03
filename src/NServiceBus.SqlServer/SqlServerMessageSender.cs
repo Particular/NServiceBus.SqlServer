@@ -1,9 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.Linq;
     using System.Transactions;
     using Pipeline;
     using Unicast;
@@ -14,14 +12,9 @@
     /// </summary>
     class SqlServerMessageSender : ISendMessages
     {
-        public SqlServerMessageSender()
-        {
-            ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-        }
-
         public string DefaultConnectionString { get; set; }
 
-        public Dictionary<string, string> ConnectionStringCollection { get; set; }
+        public IConnectionStringProvider ConnectionStringProvider { get; set; }
 
         public PipelineExecutor PipelineExecutor { get; set; }
 
@@ -29,43 +22,25 @@
 
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
-            var address = sendOptions.Destination;
-            var connectionStringKey = sendOptions.Destination.Queue;
-            string callbackAddress;
-
-            if (sendOptions.GetType().FullName.EndsWith("ReplyOptions") &&
-                message.Headers.TryGetValue(CallbackHeaderKey, out callbackAddress))
-            {
-                address = Address.Parse(callbackAddress);
-            }
-
-            //set our callback address
-            if (!string.IsNullOrEmpty(CallbackQueue))
-            {
-                message.Headers[CallbackHeaderKey] = CallbackQueue;
-            }
+            Address destination = null;
             try
             {
-                //If there is a connectionstring configured for the queue, use that connectionstring
-                var queueConnectionString = DefaultConnectionString;
-                if (ConnectionStringCollection.Keys.Contains(connectionStringKey))
-                {
-                    queueConnectionString = ConnectionStringCollection[connectionStringKey];
-                }
-                var queue = new TableBasedQueue(address);
+                destination = DetermineDestination(sendOptions);
+                SetCallbackAddress(message);
+            
+                var queueConnectionString = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
+                var queue = new TableBasedQueue(destination);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
-
-                    if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", queueConnectionString), out currentTransaction))
+                    if (PipelineExecutor.TryGetTransaction(queueConnectionString, out currentTransaction))
                     {
                         queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
                     }
                     else
                     {
                         SqlConnection currentConnection;
-
-                        if (PipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", queueConnectionString), out currentConnection))
+                        if (PipelineExecutor.TryGetConnection(queueConnectionString, out currentConnection))
                         {
                             queue.Send(message, sendOptions, currentConnection);
                         }
@@ -98,19 +73,54 @@
             {
                 if (ex.Number == 208)
                 {
-                    var msg = address == null
-                        ? "Failed to send message. Target address is null."
-                        : string.Format("Failed to send message to address: [{0}]", address);
-
-                    throw new QueueNotFoundException(address, msg, ex);
+                    ThrowQueueNotFoundException(destination, ex);
                 }
 
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(destination, ex);
             }
             catch (Exception ex)
             {
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(destination, ex);
             }
+        }
+
+        static void ThrowQueueNotFoundException(Address destination, SqlException ex)
+        {
+            var msg = destination == null
+                ? "Failed to send message. Target address is null."
+                : string.Format("Failed to send message to address: [{0}]", destination);
+
+            throw new QueueNotFoundException(destination, msg, ex);
+        }
+
+        void SetCallbackAddress(TransportMessage message)
+        {
+            if (!string.IsNullOrEmpty(CallbackQueue))
+            {
+                message.Headers[CallbackHeaderKey] = CallbackQueue;
+            }
+        }
+
+        Address DetermineDestination(SendOptions sendOptions)
+        {
+            return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
+        }
+
+        static Address SenderProvidedDestination(SendOptions sendOptions)
+        {
+            return sendOptions.Destination;
+        }
+
+        Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
+        {
+            return IsReply(sendOptions) 
+                ? PipelineExecutor.CurrentContext.TryGetCallbackAddress() 
+                : null;
+        }
+
+        static bool IsReply(SendOptions sendOptions)
+        {
+            return sendOptions.GetType().FullName.EndsWith("ReplyOptions");
         }
 
         static void ThrowFailedToSendException(Address address, Exception ex)
