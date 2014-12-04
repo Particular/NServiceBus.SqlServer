@@ -13,13 +13,13 @@
             this.rampUpCallback = rampUpCallback;
         }
 
-        public void ReadSucceeded()
+        public void Succeeded()
         {
             consecutiveSuccesses++;
             consecutiveFailures = 0;
         }
 
-        public void ReadFailed()
+        public void Failed()
         {
             consecutiveFailures++;
             consecutiveSuccesses = 0;
