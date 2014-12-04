@@ -56,22 +56,15 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
-            actualConcurrencyLevel = maximumConcurrencyLevel + SecondaryReceiveSettings.MaximumConcurrencyLevel;
             tokenSource = new CancellationTokenSource();
 
-            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            concurrencyControl = new SemaphoreSlim(actualConcurrencyLevel, actualConcurrencyLevel);
+            primaryReceiveTaskTracker = new ReceiveTaskTracker(maximumConcurrencyLevel);
+            secondaryReceiveTaskTracker = new ReceiveTaskTracker(SecondaryReceiveSettings.MaximumConcurrencyLevel);
 
-            for (var i = 0; i < maximumConcurrencyLevel; i++)
-            {
-                StartReceiveThread(new TableBasedQueue(primaryAddress));
-            }
-            for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
-            {
-                StartReceiveThread(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName()));
-            }
+            StartReceiveTask(new TableBasedQueue(primaryAddress), primaryReceiveTaskTracker);
             if (SecondaryReceiveSettings.IsEnabled)
             {
+                StartReceiveTask(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName()), secondaryReceiveTaskTracker);
                 Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", SecondaryReceiveSettings.ReceiveQueue, SecondaryReceiveSettings.MaximumConcurrencyLevel);
             }
 
@@ -88,18 +81,8 @@
             }
 
             tokenSource.Cancel();
-            DrainStopSemaphore();
-        }
-
-        void DrainStopSemaphore()
-        {
-            for (var index = 0; index < actualConcurrencyLevel; index++)
-            {
-                concurrencyControl.Wait();
-            }
-
-            concurrencyControl.Release(actualConcurrencyLevel);
-            concurrencyControl.Dispose();
+            primaryReceiveTaskTracker.ShutdownAll();
+            secondaryReceiveTaskTracker.ShutdownAll();
         }
 
         public void Dispose()
@@ -107,71 +90,81 @@
             // Injected
         }
 
-        void StartReceiveThread(TableBasedQueue queue)
+        void StartReceiveTask(TableBasedQueue queue, ReceiveTaskTracker taskTracker)
         {
             var token = tokenSource.Token;
 
-            Task.Factory
-                .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, queue), token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-                .ContinueWith(t =>
+            taskTracker.StartAndTrack(() =>
+            {
+                var receiveTask = Task.Factory
+                    .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, queue, new RampUpController(() => StartReceiveTask(queue, taskTracker))), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                receiveTask.ContinueWith(t =>
                 {
-                    t.Exception.Handle(ex =>
+                    if (t.IsFaulted)
                     {
-                        Logger.Warn("An exception occurred when connecting to the configured SqlServer", ex);
-                        circuitBreaker.Failure(ex);
-                        return true;
-                    });
-
-                    if (!tokenSource.IsCancellationRequested)
-                    {
-                        StartReceiveThread(queue);
+                        t.Exception.Handle(ex =>
+                        {
+                            Logger.Warn("An exception occurred when connecting to the configured SqlServer", ex);
+                            circuitBreaker.Failure(ex);
+                            return true;
+                        });
                     }
-                }, TaskContinuationOptions.OnlyOnFaulted);
+                    taskTracker.Forget(t);
+                    if (taskTracker.HasNoTasks)
+                    {
+                        StartReceiveTask(queue, taskTracker);
+                    }
+                });
+                return receiveTask;
+            });
         }
 
         class ReceiveLoppArgs
         {
             public readonly CancellationToken Token;
             public readonly TableBasedQueue Queue;
+            public readonly RampUpController RampUpController;
 
-            public ReceiveLoppArgs(CancellationToken token, TableBasedQueue queue)
+            public ReceiveLoppArgs(CancellationToken token, TableBasedQueue queue, RampUpController rampUpController)
             {
                 Token = token;
                 Queue = queue;
+                RampUpController = rampUpController;
             }
         }
 
         void ReceiveLoop(object obj)
         {
-            try
+            var args = (ReceiveLoppArgs)obj;
+            var backOff = new BackOff(1000);
+            var rampUpController = args.RampUpController;
+
+            while (!args.Token.IsCancellationRequested && rampUpController.HasEnoughWork)
             {
-                concurrencyControl.Wait();
-
-                var args = (ReceiveLoppArgs)obj;
-                var backOff = new BackOff(1000);
-
-                while (!args.Token.IsCancellationRequested)
+                rampUpController.RampUpIfTooMuchWork();
+                var result = ReceiveResult.NoMessage();
+                try
                 {
-                    var result = ReceiveResult.NoMessage();
-                    try
+                    result = receiveStrategy.TryReceiveFrom(args.Queue);
+                    if (result.HasReceivedMessage)
                     {
-                        result = receiveStrategy.TryReceiveFrom(args.Queue);
+                        rampUpController.ReadSucceeded();
                     }
-                    finally
+                    else
                     {
-                        if (result.HasReceivedMessage)
-                        {
-                            endProcessMessage(result.Message, result.Exception);
-                        }
+                        rampUpController.ReadFailed();
                     }
-
-                    circuitBreaker.Success();
-                    backOff.Wait(() => !result.HasReceivedMessage);
                 }
-            }
-            finally
-            {
-                concurrencyControl.Release();
+                finally
+                {
+                    if (result.HasReceivedMessage)
+                    {
+                        endProcessMessage(result.Message, result.Exception);
+                    }
+                }
+
+                circuitBreaker.Success();
+                backOff.Wait(() => !result.HasReceivedMessage);
             }
         }
 
@@ -190,9 +183,9 @@
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
+        ReceiveTaskTracker primaryReceiveTaskTracker;
+        ReceiveTaskTracker secondaryReceiveTaskTracker;
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        SemaphoreSlim concurrencyControl;
-        int actualConcurrencyLevel;
         Action<TransportMessage, Exception> endProcessMessage;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;

@@ -84,9 +84,11 @@
     <Compile Include="NullQueuePurger.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
     <Compile Include="QueuePurger.cs" />
+    <Compile Include="RampUpController.cs" />
     <Compile Include="ReadCallbackAddressBehavior.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveStrategyFactory.cs" />
+    <Compile Include="ReceiveTaskTracker.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
