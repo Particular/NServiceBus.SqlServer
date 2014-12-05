@@ -4,16 +4,21 @@ namespace NServiceBus.Transports.SQLServer
 
     class DelegateConnectionStringProvider : IConnectionStringProvider
     {
-        readonly Func<string, string> connectionStringProvider;
+        readonly Func<string, ConnectionInfo> connectionStringProvider;
+        readonly ConnectionParams defaultConnectionParams;
 
-        public DelegateConnectionStringProvider(Func<string, string> connectionStringProvider)
+        public DelegateConnectionStringProvider(Func<string, ConnectionInfo> connectionStringProvider, ConnectionParams defaultConnectionParams)
         {
             this.connectionStringProvider = connectionStringProvider;
+            this.defaultConnectionParams = defaultConnectionParams;
         }
 
-        public string GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(Address destination)
         {
-            return connectionStringProvider(destination.Queue);
+            var connectionInfo = connectionStringProvider(destination.Queue);
+            return connectionInfo != null 
+                ? connectionInfo.CreateConnectionParams(defaultConnectionParams) 
+                : null;
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     class NullConnectionStringProvider : IConnectionStringProvider
     {
-        public string GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(Address destination)
         {
             return null;
         }

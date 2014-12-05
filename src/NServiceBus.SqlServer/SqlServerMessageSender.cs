@@ -12,8 +12,6 @@
     /// </summary>
     class SqlServerMessageSender : ISendMessages
     {
-        public string DefaultConnectionString { get; set; }
-
         public IConnectionStringProvider ConnectionStringProvider { get; set; }
 
         public PipelineExecutor PipelineExecutor { get; set; }
@@ -28,25 +26,25 @@
                 destination = DetermineDestination(sendOptions);
                 SetCallbackAddress(message);
             
-                var queueConnectionString = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
-                var queue = new TableBasedQueue(destination);
+                var connectionInfo = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
+                var queue = new TableBasedQueue(destination, connectionInfo.Schema);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
-                    if (PipelineExecutor.TryGetTransaction(queueConnectionString, out currentTransaction))
+                    if (PipelineExecutor.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
                     {
                         queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
                     }
                     else
                     {
                         SqlConnection currentConnection;
-                        if (PipelineExecutor.TryGetConnection(queueConnectionString, out currentConnection))
+                        if (PipelineExecutor.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
                         {
                             queue.Send(message, sendOptions, currentConnection);
                         }
                         else
                         {
-                            using (var connection = new SqlConnection(queueConnectionString))
+                            using (var connection = new SqlConnection(connectionInfo.ConnectionString))
                             {
                                 connection.Open();
                                 queue.Send(message, sendOptions, connection);
@@ -59,7 +57,7 @@
                     // Suppress so that even if DTC is on, we won't escalate
                     using (var tx = new TransactionScope(TransactionScopeOption.Suppress))
                     {
-                        using (var connection = new SqlConnection(queueConnectionString))
+                        using (var connection = new SqlConnection(connectionInfo.ConnectionString))
                         {
                             connection.Open();
                             queue.Send(message, sendOptions, connection);

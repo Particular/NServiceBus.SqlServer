@@ -10,14 +10,15 @@ namespace NServiceBus.Transports.SQLServer
 
     class TableBasedQueue
     {
-        public TableBasedQueue(Address address)
+        public TableBasedQueue(Address address, string schema)
+            : this(address.GetTableName(), schema)
         {
-            tableName = address.GetTableName();
         }
 
-        public TableBasedQueue(string tableName)
+        public TableBasedQueue(string tableName, string schema)
         {
             this.tableName = tableName;
+            this.schema = schema;
         }
 
         public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
@@ -33,7 +34,7 @@ namespace NServiceBus.Transports.SQLServer
             {
                 throw new InvalidOperationException("The length of message data array must match the name of Parameters array.");
             }
-            using (var command = new SqlCommand(string.Format(SqlSend, tableName), connection, transaction)
+            using (var command = new SqlCommand(string.Format(SqlSend, schema, tableName), connection, transaction)
             {
                 CommandType = CommandType.Text
             })
@@ -93,7 +94,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public MessageReadResult TryReceive(SqlConnection connection, SqlTransaction transaction = null)
         {
-            return ReceiveWithNativeTransaction(string.Format(SqlReceive, tableName), connection, transaction);
+            return ReceiveWithNativeTransaction(string.Format(SqlReceive, schema, tableName), connection, transaction);
         }
 
         MessageReadResult ReceiveWithNativeTransaction(string sql, SqlConnection connection, SqlTransaction transaction)
@@ -191,6 +192,7 @@ namespace NServiceBus.Transports.SQLServer
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
 
         readonly string tableName;
+        readonly string schema;
         static  readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 
         static readonly string[] Parameters = { "Id", "CorrelationId", "ReplyToAddress", "Recoverable", "Expires", "Headers", "Body" };
@@ -209,11 +211,11 @@ namespace NServiceBus.Transports.SQLServer
 
 
         const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";

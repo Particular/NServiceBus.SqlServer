@@ -12,9 +12,9 @@
             this.components = components;
         }
 
-        public string GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(Address destination)
         {
-            return components.Select(x => x.GetForDestination(destination)).FirstOrDefault(x => x != null);
+            return components.Select(x => x.GetForDestination(destination)).First(x => x != null);
         }
     }
 }

@@ -28,7 +28,9 @@
         /// <param name="transportExtensions"></param>
         /// <param name="maxConcurrency">The new value for concurrency</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> CallbackReceiverMaxConcurrency(this TransportExtensions<SqlServerTransport> transportExtensions, int maxConcurrency)
+        public static TransportExtensions<SqlServerTransport> CallbackReceiverMaxConcurrency(
+            this TransportExtensions<SqlServerTransport> transportExtensions, 
+            int maxConcurrency)
         {
             if (maxConcurrency <= 0)
             {
@@ -42,17 +44,17 @@
         /// Provides per-endpoint connection strings for multi-database support.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="connectionStrings">A collection of endpoint-connection string pairs</param>
+        /// <param name="connectionInformationCollection">A collection of endpoint-connection info pairs</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
-            this TransportExtensions<SqlServerTransport> transportExtensions, IEnumerable<EndpointConnectionString> connectionStrings)
+        public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
+            this TransportExtensions<SqlServerTransport> transportExtensions, 
+            IEnumerable<EndpointConnectionInfo> connectionInformationCollection)
         {
-            if (connectionStrings == null)
+            if (connectionInformationCollection == null)
             {
-                throw new ArgumentNullException("connectionStrings");
+                throw new ArgumentNullException("connectionInformationCollection");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectrionStringsSettingKey, 
-                new CollectionConnectionStringProvider(connectionStrings));
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection);
             return transportExtensions;
         }
 
@@ -60,29 +62,46 @@
         /// Provides per-endpoint connection strings for multi-database support.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="connectionStrings">A collection of endpoint-connection string pairs</param>
+        /// <param name="connectionInformationCollection">A collection of endpoint-connection info pairs</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
-            this TransportExtensions<SqlServerTransport> transportExtensions, params EndpointConnectionString[] connectionStrings)
+        public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
+            this TransportExtensions<SqlServerTransport> transportExtensions,
+            params EndpointConnectionInfo[] connectionInformationCollection)
         {
-            return UseDifferentConnectionStringsForEndpoints(transportExtensions, (IEnumerable<EndpointConnectionString>) connectionStrings);
+            return UseSpecificConnectionInformation(transportExtensions, (IEnumerable<EndpointConnectionInfo>)connectionInformationCollection);
         }
         
         /// <summary>
         /// Provides per-endpoint connection strings for multi-database support.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="connectionStringProvider">A function that gets the endpoint name and returns connection string or null if not found.</param>
+        /// <param name="connectionInformationProvider">A function that gets the endpoint name and returns connection information or null if default.</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> UseDifferentConnectionStringsForEndpoints(
-            this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> connectionStringProvider)
+        public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
+            this TransportExtensions<SqlServerTransport> transportExtensions, 
+            Func<string, ConnectionInfo> connectionInformationProvider)
         {
-            if (connectionStringProvider == null)
+            if (connectionInformationProvider == null)
             {
-                throw new ArgumentNullException("connectionStringProvider");
+                throw new ArgumentNullException("connectionInformationProvider");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectrionStringsSettingKey, 
-                new DelegateConnectionStringProvider(connectionStringProvider));
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectionStringsCallbackSettingKey, connectionInformationProvider);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default schema (dbo) used for queue tables.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="schemaName">Name of the schema to use instead do dbo</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> DefaultSchema( this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
+        {
+            if (schemaName == null)
+            {
+                throw new ArgumentNullException("schemaName");
+            }
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.DefaultSchemaSettingsKey, schemaName);
             return transportExtensions;
         }
     }

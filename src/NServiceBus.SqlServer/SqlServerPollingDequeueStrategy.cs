@@ -26,6 +26,11 @@
         }
 
         /// <summary>
+        /// Name of the schema where queues are located
+        /// </summary>
+        public string SchemaName { get; set; }
+
+        /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
         /// </summary>
         /// <param name="address">The address to listen on.</param>
@@ -64,11 +69,11 @@
 
             for (var i = 0; i < maximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(new TableBasedQueue(primaryAddress));
+                StartReceiveThread(new TableBasedQueue(primaryAddress, SchemaName));
             }
             for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
             {
-                StartReceiveThread(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName()));
+                StartReceiveThread(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), SchemaName));
             }
             if (SecondaryReceiveSettings.IsEnabled)
             {

@@ -8,7 +8,7 @@ namespace NServiceBus.Transports.SQLServer
 
     class QueuePurger : IQueuePurger
     {
-        public string ConnectionString { get; set; }
+        public ConnectionParams ConnectionInfo { get; set; }
 
         public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
@@ -22,13 +22,13 @@ namespace NServiceBus.Transports.SQLServer
 
         void Purge(IEnumerable<string> tableNames)
         {
-            using (var connection = new SqlConnection(ConnectionString))
+            using (var connection = new SqlConnection(ConnectionInfo.ConnectionString))
             {
                 connection.Open();
 
                 foreach (var tableName in tableNames)
                 {
-                    using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
+                    using (var command = new SqlCommand(string.Format(SqlPurge, ConnectionInfo.Schema, tableName), connection)
                     {
                         CommandType = CommandType.Text
                     })
@@ -51,7 +51,7 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        const string SqlPurge = @"DELETE FROM [{0}]";
+        const string SqlPurge = @"DELETE FROM [{0}].[{1}]";
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(QueuePurger));
 
