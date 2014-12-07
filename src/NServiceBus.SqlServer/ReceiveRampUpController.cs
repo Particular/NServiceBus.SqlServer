@@ -2,15 +2,19 @@
 {
     using System;
 
-    class RampUpController
+    class ReceiveRampUpController : IRampUpController
     {
         int consecutiveSuccesses;
         int consecutiveFailures;
         readonly Action rampUpCallback;
+        readonly TransportNotifications transportNotifications;
+        readonly string queueName;
 
-        public RampUpController(Action rampUpCallback)
+        public ReceiveRampUpController(Action rampUpCallback, TransportNotifications transportNotifications, string queueName)
         {
             this.rampUpCallback = rampUpCallback;
+            this.transportNotifications = transportNotifications;
+            this.queueName = queueName;
         }
 
         public void Succeeded()
@@ -25,15 +29,21 @@
             consecutiveSuccesses = 0;
         }
 
-        public bool HasEnoughWork
+        public bool CheckHasEnoughWork()
         {
-            get { return consecutiveFailures < 3; }
+            var result = consecutiveFailures < 7;
+            if (!result)
+            {
+                transportNotifications.InvokeTooLittleWork(queueName);
+            }
+            return result;
         }
 
         public void RampUpIfTooMuchWork()
         {
             if (HasTooMuchWork)
             {
+                transportNotifications.InvokeTooMuchWork(queueName);
                 rampUpCallback();
                 consecutiveSuccesses = 0;
                 consecutiveFailures = 0;

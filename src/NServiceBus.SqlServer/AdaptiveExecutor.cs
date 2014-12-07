@@ -11,6 +11,8 @@
         protected abstract T Try(T initialValue, out bool success);
         protected abstract void Finally(T value);
         protected abstract void HandleException(Exception ex);
+        protected abstract IRampUpController CreateRampUpController(Action rampUpCallback);
+        protected abstract ITaskTracker CreateTaskTracker(int maximumConcurrency);
 
         protected AdaptiveExecutor(RepeatedFailuresOverTimeCircuitBreaker circuitBreaker)
         {
@@ -24,7 +26,7 @@
                 throw new InvalidOperationException("The executor has already been started. Use Stop() to stop it.");
             }
             this.tokenSource = tokenSource;
-            taskTracker = new ReceiveTaskTracker(maximumConcurrency);
+            taskTracker = CreateTaskTracker(maximumConcurrency);
             StartTask();
         }
 
@@ -67,9 +69,9 @@
         void ReceiveLoop(object obj)
         {
             var backOff = new BackOff(1000);
-            var rampUpController = new RampUpController(StartTask);
+            var rampUpController = CreateRampUpController(StartTask);
 
-            while (!tokenSource.IsCancellationRequested && rampUpController.HasEnoughWork)
+            while (!tokenSource.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
             {
                 bool success;
                 rampUpController.RampUpIfTooMuchWork();
@@ -98,7 +100,7 @@
 
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         CancellationTokenSource tokenSource;
-        ReceiveTaskTracker taskTracker;
+        ITaskTracker taskTracker;
 
     }
 }

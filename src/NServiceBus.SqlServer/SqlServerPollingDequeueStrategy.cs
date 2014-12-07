@@ -3,6 +3,7 @@
     using System;
     using System.Threading;
     using CircuitBreakers;
+    using Janitor;
     using NServiceBus.Features;
     using Unicast.Transport;
 
@@ -12,11 +13,16 @@
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         public SqlServerPollingDequeueStrategy(
-            ReceiveStrategyFactory receiveStrategyFactory, IQueuePurger queuePurger, CriticalError criticalError, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+            ReceiveStrategyFactory receiveStrategyFactory, 
+            IQueuePurger queuePurger, 
+            CriticalError criticalError, 
+            SecondaryReceiveConfiguration secondaryReceiveConfiguration,
+            TransportNotifications transportNotifications)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
+            this.transportNotifications = transportNotifications;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
                 TimeSpan.FromMinutes(2),
                 ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
@@ -43,12 +49,12 @@
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
             var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
 
-            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress), endProcessMessage, circuitBreaker);
+            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress), endProcessMessage, circuitBreaker, transportNotifications);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
                 var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
-                secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker);
+                secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
             }
             else
             {
@@ -110,6 +116,8 @@
         readonly IQueuePurger queuePurger;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
+        [SkipWeaving] //Do not dispose with dequeue strategy
+        readonly TransportNotifications transportNotifications;
         SecondaryReceiveSettings secondaryReceiveSettings;
         CancellationTokenSource tokenSource;
     }
