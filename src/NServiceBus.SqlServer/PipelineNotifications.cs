@@ -84,6 +84,8 @@
         Observable<TooLittleWork> tooLittleWork = new Observable<TooLittleWork>();
     }
 
+// ReSharper disable NotAccessedField.Global
+
     /// <summary>
     /// Notifies of starting a new receive task in the transport receiver.
     /// </summary>
@@ -219,3 +221,4 @@
         }
     }
 }
+// ReSharper restore NotAccessedField.Global
