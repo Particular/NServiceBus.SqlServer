@@ -188,6 +188,11 @@ namespace NServiceBus.Transports.SQLServer
             return (T)value;
         }
 
+        public override string ToString()
+        {
+            return tableName;
+        }
+
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
 
         readonly string tableName;

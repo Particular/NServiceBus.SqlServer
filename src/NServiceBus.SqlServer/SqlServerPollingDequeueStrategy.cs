@@ -2,9 +2,8 @@
 {
     using System;
     using System.Threading;
-    using System.Threading.Tasks;
     using CircuitBreakers;
-    using Logging;
+    using Janitor;
     using NServiceBus.Features;
     using Unicast.Transport;
 
@@ -14,11 +13,16 @@
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         public SqlServerPollingDequeueStrategy(
-            ReceiveStrategyFactory receiveStrategyFactory, IQueuePurger queuePurger, CriticalError criticalError, SecondaryReceiveConfiguration secondaryReceiveConfiguration)
+            ReceiveStrategyFactory receiveStrategyFactory, 
+            IQueuePurger queuePurger, 
+            CriticalError criticalError, 
+            SecondaryReceiveConfiguration secondaryReceiveConfiguration,
+            TransportNotifications transportNotifications)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
+            this.transportNotifications = transportNotifications;
             circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
                 TimeSpan.FromMinutes(2),
                 ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
@@ -28,7 +32,7 @@
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
         /// </summary>
-        /// <param name="address">The address to listen on.</param>
+        /// <param name="primaryAddress">The address to listen on.</param>
         /// <param name="transactionSettings">
         ///     The <see cref="TransactionSettings" /> to be used by <see cref="IDequeueMessages" />.
         /// </param>
@@ -37,15 +41,25 @@
         ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the
         ///     outcome was successful or not.
         /// </param>
-        public void Init(Address address, TransactionSettings transactionSettings,
+        public void Init(Address primaryAddress, TransactionSettings transactionSettings,
             Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
         {
-            this.endProcessMessage = endProcessMessage;
+            queuePurger.Purge(primaryAddress);
 
-            primaryAddress = address;
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
-            receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
-            queuePurger.Purge(address);
+            var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
+
+            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress), endProcessMessage, circuitBreaker, transportNotifications);
+
+            if (secondaryReceiveSettings.IsEnabled)
+            {
+                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
+                secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
+            }
+            else
+            {
+                secondaryReceiver = new NullExecutor();
+            }
         }
 
         /// <summary>
@@ -56,25 +70,10 @@
         /// </param>
         public void Start(int maximumConcurrencyLevel)
         {
-            var actualConcurrencyLevel = maximumConcurrencyLevel + SecondaryReceiveSettings.MaximumConcurrencyLevel;
             tokenSource = new CancellationTokenSource();
 
-            // We need to add an extra one because if we fail and the count is at zero already, it doesn't allow us to add one more.
-            countdownEvent = new CountdownEvent(actualConcurrencyLevel + 1);
-
-            for (var i = 0; i < maximumConcurrencyLevel; i++)
-            {
-                StartReceiveThread(new TableBasedQueue(primaryAddress));
-            }
-            for (var i = 0; i < SecondaryReceiveSettings.MaximumConcurrencyLevel; i++)
-            {
-                StartReceiveThread(new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName()));
-            }
-            if (SecondaryReceiveSettings.IsEnabled)
-            {
-                Logger.InfoFormat("Secondary receiver for queue '{0}' initiated with concurrency '{1}'", SecondaryReceiveSettings.ReceiveQueue, SecondaryReceiveSettings.MaximumConcurrencyLevel);
-            }
-
+            primaryReceiver.Start(maximumConcurrencyLevel, tokenSource);
+            secondaryReceiver.Start(SecondaryReceiveSettings.MaximumConcurrencyLevel, tokenSource);
         }
 
         /// <summary>
@@ -88,82 +87,14 @@
             }
 
             tokenSource.Cancel();
-            countdownEvent.Signal();
-            countdownEvent.Wait();
+
+            primaryReceiver.Stop();
+            secondaryReceiver.Stop();
         }
 
         public void Dispose()
         {
             // Injected
-        }
-
-        void StartReceiveThread(TableBasedQueue queue)
-        {
-            var token = tokenSource.Token;
-
-            Task.Factory
-                .StartNew(ReceiveLoop, new ReceiveLoppArgs(token, queue), token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-                .ContinueWith(t =>
-                {
-                    t.Exception.Handle(ex =>
-                    {
-                        Logger.Warn("An exception occurred when connecting to the configured SqlServer", ex);
-                        circuitBreaker.Failure(ex);
-                        return true;
-                    });
-
-                    if (!tokenSource.IsCancellationRequested)
-                    {
-                        if (countdownEvent.TryAddCount())
-                        {
-                            StartReceiveThread(queue);
-                        }
-                    }
-                }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-
-        class ReceiveLoppArgs
-        {
-            public readonly CancellationToken Token;
-            public readonly TableBasedQueue Queue;
-
-            public ReceiveLoppArgs(CancellationToken token, TableBasedQueue queue)
-            {
-                Token = token;
-                Queue = queue;
-            }
-        }
-
-        void ReceiveLoop(object obj)
-        {
-            try
-            {
-                var args = (ReceiveLoppArgs)obj;
-                var backOff = new BackOff(1000);
-
-                while (!args.Token.IsCancellationRequested)
-                {
-                    var result = ReceiveResult.NoMessage();
-                    try
-                    {
-                        result = receiveStrategy.TryReceiveFrom(args.Queue);
-                    }
-                    finally
-                    {
-                        if (result.HasReceivedMessage)
-                        {
-                            endProcessMessage(result.Message, result.Exception);
-                        }
-                    }
-
-                    circuitBreaker.Success();
-                    backOff.Wait(() => !result.HasReceivedMessage);
-                }
-            }
-            finally
-            {
-                countdownEvent.Signal();
-            }
         }
 
         SecondaryReceiveSettings SecondaryReceiveSettings
@@ -178,19 +109,16 @@
             }
         }
 
-
-        static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
-
+        IExecutor primaryReceiver;
+        IExecutor secondaryReceiver;
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        CountdownEvent countdownEvent;
-        Action<TransportMessage, Exception> endProcessMessage;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
-        IReceiveStrategy receiveStrategy;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
+        [SkipWeaving] //Do not dispose with dequeue strategy
+        readonly TransportNotifications transportNotifications;
         SecondaryReceiveSettings secondaryReceiveSettings;
-        Address primaryAddress;
         CancellationTokenSource tokenSource;
     }
 }

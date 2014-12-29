@@ -52,6 +52,8 @@ namespace NServiceBus.Features
 
             var container = context.Container;
 
+            container.ConfigureComponent<TransportNotifications>(DependencyLifecycle.SingleInstance);
+
             container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
                 .ConfigureProperty(p => p.ConnectionString, connectionString);
 

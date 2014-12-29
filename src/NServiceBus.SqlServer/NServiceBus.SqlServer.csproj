@@ -64,6 +64,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AdaptiveExecutor.cs" />
+    <Compile Include="AdaptivePollingReceiver.cs" />
     <Compile Include="AmbientTransactionReceiveStrategy.cs" />
     <Compile Include="BackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
@@ -74,19 +76,26 @@
     <Compile Include="DelegateConnectionStringProvider.cs" />
     <Compile Include="ErrorQueueSettings.cs" />
     <Compile Include="IConnectionStringProvider.cs" />
+    <Compile Include="IExecutor.cs" />
     <Compile Include="IQueuePurger.cs" />
+    <Compile Include="IRampUpController.cs" />
     <Compile Include="IReceiveStrategy.cs" />
+    <Compile Include="ITaskTracker.cs" />
     <Compile Include="MessageReadResult.cs" />
     <Compile Include="EndpointConnectionString.cs" />
     <Compile Include="NativeTransactionReceiveStrategy.cs" />
     <Compile Include="NoTransactionReceiveStrategy.cs" />
     <Compile Include="NullConnectionStringProvider.cs" />
     <Compile Include="NullQueuePurger.cs" />
+    <Compile Include="Observable.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
+    <Compile Include="PipelineNotifications.cs" />
     <Compile Include="QueuePurger.cs" />
+    <Compile Include="ReceiveRampUpController.cs" />
     <Compile Include="ReadCallbackAddressBehavior.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveStrategyFactory.cs" />
+    <Compile Include="ReceiveTaskTracker.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
