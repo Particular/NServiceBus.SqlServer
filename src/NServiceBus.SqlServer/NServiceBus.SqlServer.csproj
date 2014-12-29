@@ -72,8 +72,12 @@
     <Compile Include="CallbackQueuePipelineContextExtensions.cs" />
     <Compile Include="CollectionConnectionStringProvider.cs" />
     <Compile Include="CompositeConnectionStringProvider.cs" />
+    <Compile Include="ConnectionInfo.cs" />
+    <Compile Include="ConnectionParams.cs" />
+    <Compile Include="ConnectionStringExtensions.cs" />
     <Compile Include="DefaultConnectionStringProvider.cs" />
     <Compile Include="DelegateConnectionStringProvider.cs" />
+    <Compile Include="EndpointConnectionInfo.cs" />
     <Compile Include="ErrorQueueSettings.cs" />
     <Compile Include="IConnectionStringProvider.cs" />
     <Compile Include="IExecutor.cs" />
@@ -82,7 +86,6 @@
     <Compile Include="IReceiveStrategy.cs" />
     <Compile Include="ITaskTracker.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="EndpointConnectionString.cs" />
     <Compile Include="NativeTransactionReceiveStrategy.cs" />
     <Compile Include="NoTransactionReceiveStrategy.cs" />
     <Compile Include="NullConnectionStringProvider.cs" />

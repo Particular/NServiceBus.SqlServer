@@ -30,6 +30,11 @@
         }
 
         /// <summary>
+        /// Name of the schema where queues are located
+        /// </summary>
+        public string SchemaName { get; set; }
+
+        /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
         /// </summary>
         /// <param name="primaryAddress">The address to listen on.</param>
@@ -49,11 +54,11 @@
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
             var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
 
-            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress), endProcessMessage, circuitBreaker, transportNotifications);
+            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress, SchemaName), endProcessMessage, circuitBreaker, transportNotifications);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
-                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName());
+                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), SchemaName);
                 secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
             }
             else

@@ -2,6 +2,6 @@
 {
     interface IConnectionStringProvider
     {
-        string GetForDestination(Address destination);
+        ConnectionParams GetForDestination(Address destination);
     }
 }

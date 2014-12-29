@@ -10,8 +10,9 @@
 
     public class When_using_different_connection_strings_for_each_endpoint : NServiceBusAcceptanceTest
     {
-        const string ClientConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus1;Trusted_Connection=True;";
-        const string ServerConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus2;Trusted_Connection=True;";
+        const string SenderConnectionStringWithSchema = @"Server=localhost\sqlexpress;Database=nservicebus1;Trusted_Connection=True;Queue Schema=nsb";
+        const string ReceiverConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus2;Trusted_Connection=True;";
+        const string ReceiverConnectionStringWithSchema = @"Server=localhost\sqlexpress;Database=nservicebus2;Trusted_Connection=True;Queue Schema=nsb";
 
         [Test]
         public void Should_use_configured_connection_string_when_replying()
@@ -23,7 +24,7 @@
             };
 
             Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", ClientConnectionString)))
+                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", SenderConnectionStringWithSchema)))
                    .WithEndpoint<Sender>(b => b.Given((bus, c) => bus.Send(new MyRequest
                    {
                        ContextId = c.Id
@@ -54,9 +55,8 @@
                 public void Configure(BusConfiguration busConfiguration)
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
-                        //Use programmatic configuration
-                        .UseDifferentConnectionStringsForEndpoints(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ServerConnectionString : null)
-                        .ConnectionString(ClientConnectionString);
+                        .UseSpecificConnectionInformation(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
+                        .ConnectionString(SenderConnectionStringWithSchema);
                 }
             }
 
@@ -88,9 +88,10 @@
                 public void Configure(BusConfiguration busConfiguration)
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
-                        .UseDifferentConnectionStringsForEndpoints(
-                            new EndpointConnectionString("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport","ToBeOverridenViaConfig"))
-                        .ConnectionString(ServerConnectionString);
+                        .UseSpecificConnectionInformation(
+                            EndpointConnectionInfo.For("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
+                        .ConnectionString(ReceiverConnectionStringWithSchema);
+
                     busConfiguration.Transactions().DisableDistributedTransactions();
                 }
             }

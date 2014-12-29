@@ -13,21 +13,21 @@ namespace NServiceBus.Transports.SQLServer
             this.pipelineExecutor = pipelineExecutor;
         }
 
-        public string ConnectionString { get; set; }
+        public ConnectionParams ConnectionInfo { get; set; }
         public Address ErrorQueue { get; set; }
 
         public IReceiveStrategy Create(TransactionSettings settings, Func<TransportMessage, bool> tryProcessMessageCallback)
         {
-            var errorQueue = new TableBasedQueue(ErrorQueue);
+            var errorQueue = new TableBasedQueue(ErrorQueue, ConnectionInfo.Schema);
             if (settings.IsTransactional)
             {
                 if (settings.SuppressDistributedTransactions)
                 {
-                    return new NativeTransactionReceiveStrategy(ConnectionString, errorQueue, tryProcessMessageCallback, pipelineExecutor, settings);
+                    return new NativeTransactionReceiveStrategy(ConnectionInfo.ConnectionString, errorQueue, tryProcessMessageCallback, pipelineExecutor, settings);
                 }
-                return new AmbientTransactionReceiveStrategy(ConnectionString, errorQueue, tryProcessMessageCallback, pipelineExecutor, settings);
+                return new AmbientTransactionReceiveStrategy(ConnectionInfo.ConnectionString, errorQueue, tryProcessMessageCallback, pipelineExecutor, settings);
             }
-            return new NoTransactionReceiveStrategy(ConnectionString, errorQueue, tryProcessMessageCallback);
+            return new NoTransactionReceiveStrategy(ConnectionInfo.ConnectionString, errorQueue, tryProcessMessageCallback);
         }
     }
 }
