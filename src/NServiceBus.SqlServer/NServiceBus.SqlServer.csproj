@@ -50,9 +50,8 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NServiceBus.5.0.0\lib\net45\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Core">
+      <HintPath>..\packages\NServiceBus.5.2.0-extending\lib\net45\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -64,10 +63,9 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdaptiveExecutor.cs" />
-    <Compile Include="AdaptivePollingReceiver.cs" />
-    <Compile Include="AmbientTransactionReceiveStrategy.cs" />
-    <Compile Include="BackOff.cs" />
+    <Compile Include="AmbientTransactionReceiveBehavior.cs" />
+    <Compile Include="MessageAvailabilitySignaller.cs" />
+    <Compile Include="NativeTransactionReceiveBehavior.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="CallbackQueuePipelineContextExtensions.cs" />
     <Compile Include="CollectionConnectionStringProvider.cs" />
@@ -94,20 +92,20 @@
     <Compile Include="ICallbackAddressSetter.cs" />
     <Compile Include="ITaskTracker.cs" />
     <Compile Include="LocalConnectionParams.cs" />
+    <Compile Include="IQueuePurger.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="NativeTransactionReceiveStrategy.cs" />
-    <Compile Include="NoTransactionReceiveStrategy.cs" />
+    <Compile Include="NoTransactionReceiveBehavior.cs" />
     <Compile Include="NullConnectionStringProvider.cs" />
     <Compile Include="NullQueuePurger.cs" />
     <Compile Include="Observable.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
-    <Compile Include="PipelineNotifications.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="ReceiveRampUpController.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveStrategyFactory.cs" />
     <Compile Include="ReceiveTaskTracker.cs" />
+    <Compile Include="ReadCallbackAddressBehavior.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />

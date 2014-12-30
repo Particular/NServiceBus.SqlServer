@@ -10,15 +10,16 @@ namespace NServiceBus.Transports.SQLServer
 
     class TableBasedQueue
     {
-        public TableBasedQueue(Address address, string schema)
-            : this(address.GetTableName(), schema)
+        public TableBasedQueue(string queueName, string schema)
         {
+            tableName = queueName.GetTableName();
+            this.queueName = queueName;
+            this.schema = schema;
         }
 
-        public TableBasedQueue(string tableName, string schema)
+        public string QueueName
         {
-            this.tableName = tableName;
-            this.schema = schema;
+            get { return queueName; }
         }
 
         public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
@@ -197,6 +198,7 @@ namespace NServiceBus.Transports.SQLServer
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
 
         readonly string tableName;
+        readonly string queueName;
         readonly string schema;
         static  readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 

@@ -1,11 +1,10 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using CircuitBreakers;
-    using Janitor;
     using NServiceBus.Features;
-    using Unicast.Transport;
 
     /// <summary>
     ///     A polling implementation of <see cref="IDequeueMessages" />.
@@ -14,65 +13,43 @@
     {
         public SqlServerPollingDequeueStrategy(
             LocalConnectionParams locaConnectionParams,
-            ReceiveStrategyFactory receiveStrategyFactory, 
             IQueuePurger queuePurger, 
-            SecondaryReceiveConfiguration secondaryReceiveConfiguration,
-            TransportNotifications transportNotifications, 
-            RepeatedFailuresOverTimeCircuitBreaker circuitBreaker)
+            SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {
-            this.locaConnectionParams = locaConnectionParams;
-            this.receiveStrategyFactory = receiveStrategyFactory;
+            this.localConnectionParams = localConnectionParams;
             this.queuePurger = queuePurger;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
-            this.transportNotifications = transportNotifications;
             this.circuitBreaker = circuitBreaker;
         }
 
-        /// <summary>
-        ///     Initializes the <see cref="IDequeueMessages" />.
-        /// </summary>
-        /// <param name="primaryAddress">The address to listen on.</param>
-        /// <param name="transactionSettings">
-        ///     The <see cref="TransactionSettings" /> to be used by <see cref="IDequeueMessages" />.
-        /// </param>
-        /// <param name="tryProcessMessage">Called when a message has been dequeued and is ready for processing.</param>
-        /// <param name="endProcessMessage">
-        ///     Needs to be called by <see cref="IDequeueMessages" /> after the message has been processed regardless if the
-        ///     outcome was successful or not.
-        /// </param>
-        public void Init(Address primaryAddress, TransactionSettings transactionSettings,
-            Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage)
+        public void Init(DequeueSettings settings)
         {
-            queuePurger.Purge(primaryAddress);
+            queuePurger.Purge(settings.QueueName);
 
-            secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
-            var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
+            secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(settings.QueueName);
 
-            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress, locaConnectionParams.Schema), endProcessMessage, circuitBreaker, transportNotifications);
+            var primaryQueue = new TableBasedQueue(settings.QueueName, localConnectionParams.Schema);
+            availabilitySignallers.Add(new MessageAvailabilitySignaller(primaryQueue, observable));
 
             if (secondaryReceiveSettings.IsEnabled)
             {
-                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), locaConnectionParams.Schema);
-                secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
-            }
-            else
-            {
-                secondaryReceiver = new NullExecutor();
+                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue, localConnectionParams.Schema);
+                availabilitySignallers.Add(new MessageAvailabilitySignaller(secondaryQueue, observable));
             }
         }
 
-        /// <summary>
-        ///     Starts the dequeuing of message using the specified <paramref name="maximumConcurrencyLevel" />.
-        /// </summary>
-        /// <param name="maximumConcurrencyLevel">
-        ///     Indicates the maximum concurrency level this <see cref="IDequeueMessages" /> is able to support.
-        /// </param>
-        public void Start(int maximumConcurrencyLevel)
+        public void Start()
         {
             tokenSource = new CancellationTokenSource();
+            foreach (var signaller in availabilitySignallers)
+            {
+                signaller.StartSignalling(tokenSource.Token);
+            }
+        }
 
-            primaryReceiver.Start(maximumConcurrencyLevel, tokenSource);
-            secondaryReceiver.Start(SecondaryReceiveSettings.MaximumConcurrencyLevel, tokenSource);
+        public IDisposable Subscribe(IObserver<MessageAvailable> observer)
+        {
+            return observable.Subscribe(observer);
         }
 
         /// <summary>
@@ -86,9 +63,6 @@
             }
 
             tokenSource.Cancel();
-
-            primaryReceiver.Stop();
-            secondaryReceiver.Stop();
         }
 
         public void Dispose()
@@ -108,17 +82,16 @@
             }
         }
 
-        IExecutor primaryReceiver;
-        IExecutor secondaryReceiver;
+        readonly List<MessageAvailabilitySignaller> availabilitySignallers = new List<MessageAvailabilitySignaller>();
+
+        Observable<MessageAvailable> observable = new Observable<MessageAvailable>();
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        readonly LocalConnectionParams locaConnectionParams;
-        readonly ReceiveStrategyFactory receiveStrategyFactory;
+        readonly ConnectionParams localConnectionParams;
         readonly IQueuePurger queuePurger;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
-        [SkipWeaving] //Do not dispose with dequeue strategy
-        readonly TransportNotifications transportNotifications;
         SecondaryReceiveSettings secondaryReceiveSettings;
         CancellationTokenSource tokenSource;
+
     }
 }

@@ -26,7 +26,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlConnection connection;
-                return pipelineExecutor.TryGetConnection(connectionString, out connection) 
+                return pipelineExecutor.CurrentContext.TryGetConnection(connectionString, out connection) 
                     ? connection 
                     : null;
             }
@@ -40,7 +40,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlTransaction transaction;
-                return pipelineExecutor.TryGetTransaction(connectionString, out transaction) 
+                return pipelineExecutor.CurrentContext.TryGetTransaction(connectionString, out transaction) 
                     ? transaction 
                     : null;
             }

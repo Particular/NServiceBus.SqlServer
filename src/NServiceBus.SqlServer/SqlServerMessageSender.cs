@@ -26,7 +26,7 @@
                 destination = DetermineDestination(sendOptions);
             
                 var connectionInfo = connectionStringProvider.GetForDestination(sendOptions.Destination);
-                var queue = new TableBasedQueue(destination, connectionInfo.Schema);
+                var queue = new TableBasedQueue(destination.Queue, connectionInfo.Schema);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
