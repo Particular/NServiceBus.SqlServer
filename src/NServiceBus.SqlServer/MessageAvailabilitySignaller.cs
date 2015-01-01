@@ -1,5 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
@@ -14,12 +15,14 @@ namespace NServiceBus.Transports.SQLServer
         CancellationToken stopToken;
         readonly TableBasedQueue queue;
         readonly Observable<MessageAvailable> observable;
-        readonly BlockingCollection<bool> signalBuffer = new BlockingCollection<bool>(20); 
+        readonly BlockingCollection<bool> signalBuffer = new BlockingCollection<bool>(5);
+        readonly int pollInterval;
 
-        public MessageAvailabilitySignaller(TableBasedQueue queue, Observable<MessageAvailable> observable)
+        public MessageAvailabilitySignaller(TableBasedQueue queue, Observable<MessageAvailable> observable, int pollInterval)
         {
             this.queue = queue;
             this.observable = observable;
+            this.pollInterval = pollInterval;
         }
 
         public void StartSignalling(CancellationToken stopToken)
@@ -37,22 +40,29 @@ namespace NServiceBus.Transports.SQLServer
         void Loop()
         {
             var signals = signalBuffer.GetConsumingEnumerable(stopToken);
-// ReSharper disable once UnusedVariable
-            foreach (var signal in signals)
+            try
             {
-                observable.OnNext(new MessageAvailable(c =>
+                // ReSharper disable once UnusedVariable
+                foreach (var signal in signals)
                 {
-                    c.Set(queue);
-                    c.SetPublicReceiveAddress(queue.QueueName);
-                    c.Set<IMessageAvailabilitySignaller>(this);
-                }));
+                    observable.OnNext(new MessageAvailable(queue.QueueName, c =>
+                    {
+                        c.Set(queue);
+                        c.Set<IMessageAvailabilitySignaller>(this);
+                    }));
+                }
             }
+            catch (OperationCanceledException)
+            {
+                //Shutting down
+            }
+
         }
 
         void Poll()
         {
             MessageAvailable();
-            Task.Delay(500, stopToken).ContinueWith(task =>
+            Task.Delay(pollInterval, stopToken).ContinueWith(task =>
             {
                 if (!task.IsCanceled)
                 {

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.AcceptanceTests.Retries
 {
     using System;
-    using Faults;
     using EndpointTemplates;
     using AcceptanceTesting;
     using NServiceBus.Config;
@@ -40,29 +39,25 @@
         {
             public RetryEndpoint()
             {
-                EndpointSetup<DefaultServer>(
-                    b => b.RegisterComponents(r => r.ConfigureComponent<CustomFaultManager>(DependencyLifecycle.SingleInstance)))
+                EndpointSetup<DefaultServer>()
                     .WithConfig<TransportConfig>(c => c.MaxRetries = maxretries);
             }
 
-            class CustomFaultManager : IManageMessageFailures
+            class ErrorNotificationSpy : IWantToRunWhenBusStartsAndStops
             {
                 public Context Context { get; set; }
 
-                public void SerializationFailedForMessage(TransportMessage message, Exception e)
-                {
+                public BusNotifications BusNotifications { get; set; }
 
+                public void Start()
+                {
+                    BusNotifications.Errors.MessageSentToErrorQueue.Subscribe(e =>
+                    {
+                        Context.GaveUpOnRetries = true;
+                    });
                 }
 
-                public void ProcessingAlwaysFailsForMessage(TransportMessage message, Exception e)
-                {
-                    Context.GaveUpOnRetries = true;
-                }
-
-                public void Init(Address address)
-                {
-
-                }
+                public void Stop() { }
             }
 
             class MessageToBeRetriedHandler : IHandleMessages<MessageToBeRetried>

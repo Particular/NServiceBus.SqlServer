@@ -4,7 +4,6 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Config;
-    using NServiceBus.Faults;
     using NServiceBus.Features;
     using NServiceBus.UnitOfWork;
     using NUnit.Framework;
@@ -60,11 +59,11 @@ at NServiceBus.UnitOfWorkBehavior.AppendEndExceptionsAndRethrow(Exception initia
                 {
                     b.RegisterComponents(c =>
                     {
-                        c.ConfigureComponent<CustomFaultManager>(DependencyLifecycle.SingleInstance);
                         c.ConfigureComponent<UnitOfWorkThatThrows1>(DependencyLifecycle.InstancePerUnitOfWork);
                         c.ConfigureComponent<UnitOfWorkThatThrows2>(DependencyLifecycle.InstancePerUnitOfWork);
                     });
                     b.DisableFeature<TimeoutManager>();
+                    b.DisableFeature<SecondLevelRetries>();
                 })
                     .WithConfig<TransportConfig>(c =>
                     {
@@ -72,30 +71,28 @@ at NServiceBus.UnitOfWorkBehavior.AppendEndExceptionsAndRethrow(Exception initia
                     });
             }
 
-            class CustomFaultManager : IManageMessageFailures
+            class ErrorNotificationSpy : IWantToRunWhenBusStartsAndStops
             {
                 public Context Context { get; set; }
 
-                public void SerializationFailedForMessage(TransportMessage message, Exception e)
+                public BusNotifications BusNotifications { get; set; }
+
+                public void Start()
                 {
+                    BusNotifications.Errors.MessageSentToErrorQueue.Subscribe(e =>
+                    {
+                        var aggregateException = (AggregateException)e.Exception;
+                        Context.StackTrace = aggregateException.StackTrace;
+                        var innerExceptions = aggregateException.InnerExceptions;
+                        Context.InnerExceptionOneStackTrace = innerExceptions[0].StackTrace;
+                        Context.InnerExceptionTwoStackTrace = innerExceptions[1].StackTrace;
+                        Context.InnerExceptionOneType = innerExceptions[0].GetType();
+                        Context.InnerExceptionTwoType = innerExceptions[1].GetType();
+                        Context.ExceptionReceived = true;
+                    });
                 }
 
-                public void ProcessingAlwaysFailsForMessage(TransportMessage message, Exception e)
-                {
-                    var aggregateException = (AggregateException)e;
-                    Context.StackTrace = aggregateException.StackTrace;
-                    var innerExceptions = aggregateException.InnerExceptions;
-                    Context.InnerExceptionOneStackTrace = innerExceptions[0].StackTrace;
-                    Context.InnerExceptionTwoStackTrace = innerExceptions[1].StackTrace;
-                    Context.InnerExceptionOneType = innerExceptions[0].GetType();
-                    Context.InnerExceptionTwoType = innerExceptions[1].GetType();
-                    Context.ExceptionReceived = true;
-                }
-
-                public void Init(Address address)
-                {
-
-                }
+                public void Stop() { }
             }
 
             public class UnitOfWorkThatThrows1 : IManageUnitsOfWork

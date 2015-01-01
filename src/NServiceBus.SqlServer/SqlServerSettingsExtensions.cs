@@ -13,6 +13,18 @@
     public static class SqlServerSettingsExtensions
     {
         /// <summary>
+        /// Configures the poll interval for the main (primary) receiver.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="pollInterval">Interval in milliseconds</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> PollInterval(this TransportExtensions<SqlServerTransport> transportExtensions, int pollInterval)
+        {
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PrimaryPollIntervalSettingsKey, pollInterval);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Disables the separate receiver that pulls messages from the machine specific callback queue.
         /// </summary>
         /// <param name="transportExtensions"></param>
@@ -23,22 +35,15 @@
             return transportExtensions;
         }
 
-
         /// <summary>
-        /// Changes the number of threads that should be used for the callback receiver. The default is 1
+        /// Configures the poll interval for the callback (secondary) receiver.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="maxConcurrency">The new value for concurrency</param>
+        /// <param name="pollInterval">Interval in milliseconds</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> CallbackReceiverMaxConcurrency(
-            this TransportExtensions<SqlServerTransport> transportExtensions, 
-            int maxConcurrency)
+        public static TransportExtensions<SqlServerTransport> CallbackReceiverPollInterval(this TransportExtensions<SqlServerTransport> transportExtensions, int pollInterval)
         {
-            if (maxConcurrency <= 0)
-            {
-                throw new ArgumentException("Maximum concurrency value must be greater than zero.","maxConcurrency");
-            }
-            transportExtensions.GetSettings().Set(CallbackConfig.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
+            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.SecondaryPollIntervalSettingsKey, pollInterval);
             return transportExtensions;
         }
 

@@ -1,6 +1,5 @@
 namespace NServiceBus.Features
 {
-    using System;
     using System.Configuration;
     using System.Reflection;
     using NServiceBus.Config;
@@ -30,7 +29,7 @@ namespace NServiceBus.Features
             }
             else
             {
-                var regRederType = Type.GetType("NServiceBus.Utils.RegistryReader, NServiceBus.Core", true);
+                var regRederType = typeof(Address).Assembly.GetType("NServiceBus.Utils.RegistryReader", true);
                 var readMethod = regRederType.GetMethod("Read", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
                 var registryErrorQueue = (string)readMethod.Invoke(null,new object[]{"ErrorQueue", null});
                 if (!string.IsNullOrWhiteSpace(registryErrorQueue))

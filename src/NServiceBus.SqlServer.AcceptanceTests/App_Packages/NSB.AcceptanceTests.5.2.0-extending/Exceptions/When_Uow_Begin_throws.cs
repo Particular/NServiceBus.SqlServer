@@ -4,7 +4,6 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Config;
-    using NServiceBus.Faults;
     using NServiceBus.Features;
     using NServiceBus.UnitOfWork;
     using NUnit.Framework;
@@ -46,12 +45,9 @@ at NServiceBus.Unicast.Transport.TransportReceiver.TryProcess(TransportMessage m
             {
                 EndpointSetup<DefaultServer>(b =>
                 {
-                    b.RegisterComponents(c =>
-                    {
-                        c.ConfigureComponent<CustomFaultManager>(DependencyLifecycle.SingleInstance);
-                        c.ConfigureComponent<UnitOfWorkThatThrowsInBegin>(DependencyLifecycle.InstancePerUnitOfWork);
-                    });
+                    b.RegisterComponents(c => c.ConfigureComponent<UnitOfWorkThatThrowsInBegin>(DependencyLifecycle.InstancePerUnitOfWork));
                     b.DisableFeature<TimeoutManager>();
+                    b.DisableFeature<SecondLevelRetries>();
                 })
                     .WithConfig<TransportConfig>(c =>
                     {
@@ -59,25 +55,25 @@ at NServiceBus.Unicast.Transport.TransportReceiver.TryProcess(TransportMessage m
                     });
             }
 
-            class CustomFaultManager : IManageMessageFailures
+
+
+            class ErrorNotificationSpy : IWantToRunWhenBusStartsAndStops
             {
                 public Context Context { get; set; }
 
-                public void SerializationFailedForMessage(TransportMessage message, Exception e)
+                public BusNotifications BusNotifications { get; set; }
+
+                public void Start()
                 {
+                    BusNotifications.Errors.MessageSentToErrorQueue.Subscribe(e =>
+                    {
+                        Context.ExceptionType = e.Exception.GetType();
+                        Context.StackTrace = e.Exception.StackTrace;
+                        Context.ExceptionReceived = true;
+                    });
                 }
 
-                public void ProcessingAlwaysFailsForMessage(TransportMessage message, Exception e)
-                {
-                    Context.ExceptionType = e.GetType();
-                    Context.StackTrace = e.StackTrace;
-                    Context.ExceptionReceived = true;
-                }
-
-                public void Init(Address address)
-                {
-
-                }
+                public void Stop() { }
             }
 
             public class UnitOfWorkThatThrowsInBegin : IManageUnitsOfWork

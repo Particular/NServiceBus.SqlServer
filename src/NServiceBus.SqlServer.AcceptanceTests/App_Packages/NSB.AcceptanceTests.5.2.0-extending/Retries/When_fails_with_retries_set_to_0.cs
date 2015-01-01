@@ -1,8 +1,6 @@
 ﻿namespace NServiceBus.AcceptanceTests.Retries
 {
     using System;
-    using System.Collections.Generic;
-    using Faults;
     using EndpointTemplates;
     using AcceptanceTesting;
     using NServiceBus.Config;
@@ -33,45 +31,34 @@
             public int NumberOfTimesInvoked { get; set; }
 
             public bool GaveUp { get; set; }
-
-            public Dictionary<string, string> HeadersOfTheFailedMessage { get; set; }
         }
 
         public class RetryEndpoint : EndpointConfigurationBuilder
         {
             public RetryEndpoint()
             {
-                EndpointSetup<DefaultServer>(
-                    b =>
-                    {
-                        b.RegisterComponents(r => r.ConfigureComponent<CustomFaultManager>(DependencyLifecycle.SingleInstance));
-                        b.DisableFeature<Features.SecondLevelRetries>();
-                    })
+                EndpointSetup<DefaultServer>(b => b.DisableFeature<Features.SecondLevelRetries>())
                     .WithConfig<TransportConfig>(c =>
                     {
                         c.MaxRetries = 0;
                     });
             }
 
-            class CustomFaultManager: IManageMessageFailures
+            class ErrorNotificationSpy: IWantToRunWhenBusStartsAndStops
             {
                 public Context  Context { get; set; }
 
-                public void SerializationFailedForMessage(TransportMessage message, Exception e)
+                public BusNotifications BusNotifications { get; set; }
+
+                public void Start()
                 {
-                    
+                    BusNotifications.Errors.MessageSentToErrorQueue.Subscribe(e =>
+                    {
+                        Context.GaveUp = true;
+                    });
                 }
 
-                public void ProcessingAlwaysFailsForMessage(TransportMessage message, Exception e)
-                {
-                    Context.GaveUp = true;
-                    Context.HeadersOfTheFailedMessage = message.Headers;
-                }
-
-                public void Init(Address address)
-                {
-                    
-                }
+                public void Stop(){}
             }
 
             class MessageToBeRetriedHandler:IHandleMessages<MessageToBeRetried>

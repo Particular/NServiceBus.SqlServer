@@ -54,7 +54,7 @@
 
             public class TransportThatDoesntSetADefaultDiscriminatorConfigurator : ConfigureTransport
             {
-                protected override RegisterStep GetReceiveBehaviorRegistration(ReadOnlySettings settings)
+                protected override RegisterStep GetReceiveBehaviorRegistration(ReceiveOptions settings)
                 {
                     throw new NotImplementedException();
                 }

@@ -29,12 +29,12 @@
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(settings.QueueName);
 
             var primaryQueue = new TableBasedQueue(settings.QueueName, localConnectionParams.Schema);
-            availabilitySignallers.Add(new MessageAvailabilitySignaller(primaryQueue, observable));
+            availabilitySignallers.Add(new MessageAvailabilitySignaller(primaryQueue, observable, localConnectionParams.PrimaryPollInterval));
 
             if (secondaryReceiveSettings.IsEnabled)
             {
                 var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue, localConnectionParams.Schema);
-                availabilitySignallers.Add(new MessageAvailabilitySignaller(secondaryQueue, observable));
+                availabilitySignallers.Add(new MessageAvailabilitySignaller(secondaryQueue, observable, localConnectionParams.SecondaryPollInterval));
             }
         }
 
@@ -86,7 +86,7 @@
 
         Observable<MessageAvailable> observable = new Observable<MessageAvailable>();
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        readonly ConnectionParams localConnectionParams;
+        readonly LocalConnectionParams localConnectionParams;
         readonly IQueuePurger queuePurger;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;

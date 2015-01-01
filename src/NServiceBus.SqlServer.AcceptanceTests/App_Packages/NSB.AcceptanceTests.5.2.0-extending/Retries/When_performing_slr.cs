@@ -2,7 +2,6 @@
 {
     using System;
     using System.Linq;
-    using Faults;
     using EndpointTemplates;
     using AcceptanceTesting;
     using MessageMutator;
@@ -10,7 +9,7 @@
     using NUnit.Framework;
     using Unicast.Messages;
 
-    public class When_sending_to_slr : NServiceBusAcceptanceTest
+    public class When_performing_slr : NServiceBusAcceptanceTest
     {
         [Test]
         public void Should_preserve_the_original_body_for_regular_exceptions()
@@ -62,8 +61,7 @@
         {
             public RetryEndpoint()
             {
-                EndpointSetup<DefaultServer>(
-                    b => b.RegisterComponents(r => r.ConfigureComponent<CustomFaultManager>(DependencyLifecycle.SingleInstance)))
+                EndpointSetup<DefaultServer>()
                     .WithConfig<TransportConfig>(c =>
                     {
                         c.MaxRetries = 0;
@@ -107,26 +105,22 @@
                 }
             }
 
-            class CustomFaultManager : IManageMessageFailures
+            class ErrorNotificationSpy : IWantToRunWhenBusStartsAndStops
             {
                 public Context Context { get; set; }
 
-                public void SerializationFailedForMessage(TransportMessage message, Exception e)
+                public BusNotifications BusNotifications { get; set; }
+
+                public void Start()
                 {
-                    Context.FaultManagerInvoked = true;
-                    Context.SlrChecksum = Checksum(message.Body);
+                    BusNotifications.Errors.MessageSentToErrorQueue.Subscribe(e =>
+                    {
+                        Context.FaultManagerInvoked = true;
+                        Context.SlrChecksum = Checksum(e.Body);
+                    });
                 }
 
-                public void ProcessingAlwaysFailsForMessage(TransportMessage message, Exception e)
-                {
-                    Context.FaultManagerInvoked = true;
-                    Context.SlrChecksum = Checksum(message.Body);
-                }
-
-                public void Init(Address address)
-                {
-
-                }
+                public void Stop() { }
             }
 
             class MessageToBeRetriedHandler : IHandleMessages<MessageToBeRetried>

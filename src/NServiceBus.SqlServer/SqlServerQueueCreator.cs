@@ -5,9 +5,9 @@ namespace NServiceBus.Transports.SQLServer
 
     class SqlServerQueueCreator : ICreateQueues
     {
-        readonly ConnectionParams localConnectionParams;
+        readonly LocalConnectionParams localConnectionParams;
 
-        public SqlServerQueueCreator(ConnectionParams localConnectionParams)
+        public SqlServerQueueCreator(LocalConnectionParams localConnectionParams)
         {
             this.localConnectionParams = localConnectionParams;
         }

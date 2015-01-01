@@ -37,30 +37,37 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.AcceptanceTesting">
+    <Reference Include="NServiceBus.AcceptanceTesting, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NServiceBus.AcceptanceTesting.5.2.0-extending\lib\net45\NServiceBus.AcceptanceTesting.dll</HintPath>
     </Reference>
-    <Reference Include="NServiceBus.Core">
+    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NServiceBus.5.2.0-extending\lib\net45\NServiceBus.Core.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Reactive.Core">
+    <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
     </Reference>
-    <Reference Include="System.Reactive.Interfaces">
+    <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="System.Reactive.Linq">
+    <Reference Include="System.Reactive.Linq, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
     </Reference>
-    <Reference Include="System.Reactive.PlatformServices">
+    <Reference Include="System.Reactive.PlatformServices, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
@@ -166,7 +173,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_doing_flr_with_native_transactions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_fails_flr.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_fails_with_retries_set_to_0.cs" />
-    <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_sending_to_slr.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_performing_slr.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Retries\When_Subscribing_to_errors.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Sagas\Issue_1819.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Sagas\Issue_2044.cs" />
@@ -226,6 +233,9 @@
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
       <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

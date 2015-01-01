@@ -114,7 +114,7 @@ namespace NServiceBus.Transports.SQLServer
                 InsertBeforeIfExists(WellKnownStep.ExecuteLogicalMessages);
                 ContainerRegistration((builder, settings) =>
                 {
-                    var connectionInfo = builder.Build<ConnectionParams>();
+                    var connectionInfo = builder.Build<LocalConnectionParams>();
                     var errorQueue = new TableBasedQueue(errorQueueAddress, connectionInfo.Schema);
 
                     return new NativeTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue, transactionOptions);
