@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using Configuration.AdvanceExtensibility;
     using NServiceBus.Transports.SQLServer;
+    using NServiceBus.Transports.SQLServer.Config;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -17,7 +18,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> DisableCallbackReceiver(this TransportExtensions<SqlServerTransport> transportExtensions) 
         {
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.UseCallbackReceiverSettingKey, false);
+            transportExtensions.GetSettings().Set(CallbackConfig.UseCallbackReceiverSettingKey, false);
             return transportExtensions;
         }
 
@@ -36,7 +37,7 @@
             {
                 throw new ArgumentException("Maximum concurrency value must be greater than zero.","maxConcurrency");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
+            transportExtensions.GetSettings().Set(CallbackConfig.MaxConcurrencyForCallbackReceiverSettingKey, maxConcurrency);
             return transportExtensions;
         }
 
@@ -54,7 +55,12 @@
             {
                 throw new ArgumentNullException("connectionInformationCollection");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection);
+            if (transportExtensions.GetSettings().HasExplicitValue(ConnectionConfig.PerEndpointConnectionStringsCallbackSettingKey)
+                || transportExtensions.GetSettings().HasExplicitValue(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey))
+            {
+                throw new InvalidOperationException("Per-endpoint connection information can be specified only once, either by passing a collection or a callback.");
+            }
+            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection);
             return transportExtensions;
         }
 
@@ -85,7 +91,12 @@
             {
                 throw new ArgumentNullException("connectionInformationProvider");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PerEndpointConnectionStringsCallbackSettingKey, connectionInformationProvider);
+            if (transportExtensions.GetSettings().HasExplicitValue(ConnectionConfig.PerEndpointConnectionStringsCallbackSettingKey)
+                || transportExtensions.GetSettings().HasExplicitValue(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey))
+            {
+                throw new InvalidOperationException("Per-endpoint connection information can be specified only once, either by passing a collection or a callback.");
+            }
+            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCallbackSettingKey, connectionInformationProvider);
             return transportExtensions;
         }
 
@@ -101,7 +112,32 @@
             {
                 throw new ArgumentNullException("schemaName");
             }
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.DefaultSchemaSettingsKey, schemaName);
+            transportExtensions.GetSettings().Set(ConnectionConfig.DefaultSchemaSettingsKey, schemaName);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure in case there are numerous errors
+        /// while trying to receive messages.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="waitTime">Time to wait before triggering the circuit breaker</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
+        {
+            transportExtensions.GetSettings().Set(CircuitBreakerConfig.CircuitBreakerTimeToWaitBeforeTriggeringSettingsKey, waitTime);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default time to pause after a failure while trying to receive a message.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="pauseTime">Time to pause after failure while receiving a message.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> PauseAfterReceiveFailure(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan pauseTime)
+        {
+            transportExtensions.GetSettings().Set(CircuitBreakerConfig.CircuitBreakerDelayAfterFailureSettingsKey, pauseTime);
             return transportExtensions;
         }
     }

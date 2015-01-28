@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{5EC71D
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.UnitTests", "NServiceBus.SqlServer.UnitTests\NServiceBus.SqlServer.UnitTests.csproj", "{E7F3CFFC-9577-4868-AB8B-D839C02786EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,10 @@ Global
 		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7F3CFFC-9577-4868-AB8B-D839C02786EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7F3CFFC-9577-4868-AB8B-D839C02786EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7F3CFFC-9577-4868-AB8B-D839C02786EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7F3CFFC-9577-4868-AB8B-D839C02786EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

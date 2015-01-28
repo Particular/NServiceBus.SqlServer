@@ -8,7 +8,7 @@
         readonly string schemaName;
         readonly string connectionString;
 
-        private ConnectionInfo(string connectionString, string schemaName)
+        internal ConnectionInfo(string connectionString, string schemaName)
         {
             this.connectionString = connectionString;
             this.schemaName = schemaName;

@@ -13,26 +13,20 @@
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         public SqlServerPollingDequeueStrategy(
+            ConnectionParams locaConnectionParams,
             ReceiveStrategyFactory receiveStrategyFactory, 
             IQueuePurger queuePurger, 
-            CriticalError criticalError, 
             SecondaryReceiveConfiguration secondaryReceiveConfiguration,
-            TransportNotifications transportNotifications)
+            TransportNotifications transportNotifications, 
+            RepeatedFailuresOverTimeCircuitBreaker circuitBreaker)
         {
+            this.locaConnectionParams = locaConnectionParams;
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             this.transportNotifications = transportNotifications;
-            circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
-                TimeSpan.FromMinutes(2),
-                ex => criticalError.Raise("Repeated failures when communicating with SqlServer", ex),
-                TimeSpan.FromSeconds(10));
+            this.circuitBreaker = circuitBreaker;
         }
-
-        /// <summary>
-        /// Name of the schema where queues are located
-        /// </summary>
-        public string SchemaName { get; set; }
 
         /// <summary>
         ///     Initializes the <see cref="IDequeueMessages" />.
@@ -54,11 +48,11 @@
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
             var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
 
-            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress, SchemaName), endProcessMessage, circuitBreaker, transportNotifications);
+            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress, locaConnectionParams.Schema), endProcessMessage, circuitBreaker, transportNotifications);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
-                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), SchemaName);
+                var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), locaConnectionParams.Schema);
                 secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
             }
             else
@@ -117,6 +111,7 @@
         IExecutor primaryReceiver;
         IExecutor secondaryReceiver;
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
+        readonly ConnectionParams locaConnectionParams;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
 

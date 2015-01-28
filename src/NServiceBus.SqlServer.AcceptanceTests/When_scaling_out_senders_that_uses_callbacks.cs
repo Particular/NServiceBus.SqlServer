@@ -86,7 +86,7 @@
         {
             public ServerThatRespondsToCallbacks()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(c => c.UseTransport<SqlServerTransport>().DisableCallbackReceiver());
             }
 
             class MyEventHandler : IHandleMessages<MyRequest>
