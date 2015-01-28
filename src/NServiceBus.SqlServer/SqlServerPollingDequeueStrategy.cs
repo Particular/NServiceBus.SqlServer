@@ -13,7 +13,7 @@
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         public SqlServerPollingDequeueStrategy(
-            ConnectionParams locaConnectionParams,
+            LocalConnectionParams locaConnectionParams,
             ReceiveStrategyFactory receiveStrategyFactory, 
             IQueuePurger queuePurger, 
             SecondaryReceiveConfiguration secondaryReceiveConfiguration,
@@ -111,7 +111,7 @@
         IExecutor primaryReceiver;
         IExecutor secondaryReceiver;
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        readonly ConnectionParams locaConnectionParams;
+        readonly LocalConnectionParams locaConnectionParams;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
 

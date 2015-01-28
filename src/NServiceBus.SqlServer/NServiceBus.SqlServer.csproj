@@ -92,6 +92,7 @@
     <Compile Include="IReceiveStrategy.cs" />
     <Compile Include="ICallbackAddressSetter.cs" />
     <Compile Include="ITaskTracker.cs" />
+    <Compile Include="LocalConnectionParams.cs" />
     <Compile Include="MessageReadResult.cs" />
     <Compile Include="NativeTransactionReceiveStrategy.cs" />
     <Compile Include="NoTransactionReceiveStrategy.cs" />

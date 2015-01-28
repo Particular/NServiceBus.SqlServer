@@ -5,12 +5,12 @@
 
     class CollectionConnectionStringProvider : IConnectionStringProvider
     {
-        readonly ConnectionParams defaultConnectionParams;
+        readonly LocalConnectionParams localConnectionParams;
         readonly IEnumerable<EndpointConnectionInfo> connectionStrings;
 
-        public CollectionConnectionStringProvider(IEnumerable<EndpointConnectionInfo> connectionStrings, ConnectionParams defaultConnectionParams)
+        public CollectionConnectionStringProvider(IEnumerable<EndpointConnectionInfo> connectionStrings, LocalConnectionParams localConnectionParams)
         {
-            this.defaultConnectionParams = defaultConnectionParams;
+            this.localConnectionParams = localConnectionParams;
             this.connectionStrings = connectionStrings.ToList();
         }
 
@@ -18,7 +18,7 @@
         {
             var found = connectionStrings.FirstOrDefault(x => x.Endpoint == destination.Queue);
             return found != null
-                ? found.CreateConnectionParams(defaultConnectionParams)
+                ? found.CreateConnectionParams(localConnectionParams)
                 : null;
         }
     }

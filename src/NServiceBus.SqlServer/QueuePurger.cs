@@ -8,9 +8,9 @@ namespace NServiceBus.Transports.SQLServer
 
     class QueuePurger : IQueuePurger
     {
-        readonly ConnectionParams localConnectionParams;
+        readonly LocalConnectionParams localConnectionParams;
 
-        public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration, ConnectionParams localConnectionParams)
+        public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration, LocalConnectionParams localConnectionParams)
         {
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             this.localConnectionParams = localConnectionParams;

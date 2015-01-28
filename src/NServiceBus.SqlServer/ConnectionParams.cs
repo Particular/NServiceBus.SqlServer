@@ -19,11 +19,6 @@
             schema = specificSchema ?? defaultSchema ?? DefaultSchema;
         }
 
-        public ConnectionParams MakeSpecific(string specificConnectionString, string specificSchema)
-        {
-            return new ConnectionParams(specificConnectionString, specificSchema, ConnectionString, Schema);
-        }
-
         public string ConnectionString
         {
             get { return connectionString; }

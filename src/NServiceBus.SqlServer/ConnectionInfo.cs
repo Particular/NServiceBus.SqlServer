@@ -43,9 +43,9 @@
             return new ConnectionInfo(connectionString, schemaName);
         }
 
-        internal ConnectionParams CreateConnectionParams(ConnectionParams defaultConnectionParams)
+        internal ConnectionParams CreateConnectionParams(LocalConnectionParams localConnectionParams)
         {
-            return defaultConnectionParams.MakeSpecific(connectionString, schemaName);
+            return localConnectionParams.MakeSpecific(connectionString, schemaName);
         }
     }
 }

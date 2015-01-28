@@ -2,16 +2,16 @@
 {
     class DefaultConnectionStringProvider : IConnectionStringProvider
     {
-        readonly ConnectionParams defaultConnectionInfo;
+        readonly LocalConnectionParams localConnectionParams;
 
-        public DefaultConnectionStringProvider(ConnectionParams defaultConnectionInfo)
+        public DefaultConnectionStringProvider(LocalConnectionParams localConnectionParams)
         {
-            this.defaultConnectionInfo = defaultConnectionInfo;
+            this.localConnectionParams = localConnectionParams;
         }
 
         public ConnectionParams GetForDestination(Address destination)
         {
-            return defaultConnectionInfo;
+            return localConnectionParams;
         }
     }
 }
