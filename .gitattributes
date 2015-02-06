@@ -74,3 +74,12 @@
 
 
 *.approved.* binary
+
+*.ncrunchproject
+*.ncrunchsolution
+_NCrunch_NServiceBus/*
+logs
+src/Chocolatey/Build/*
+installer/[F|f]iles
+installer/[C|c]ustom[A|a]ctions
+installer/ServiceControl-cache
