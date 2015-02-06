@@ -25,13 +25,10 @@ namespace NServiceBus.Transports.SQLServer
         {
             get
             {
-                IDbConnection connection;
-                if (pipelineExecutor.CurrentContext.TryGet(string.Format("SqlConnection-{0}", connectionString), out connection))
-                {
-                    return connection;
-                }
-
-                return null;
+                SqlConnection connection;
+                return pipelineExecutor.TryGetConnection(connectionString, out connection) 
+                    ? connection 
+                    : null;
             }
         }
 
@@ -43,12 +40,9 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlTransaction transaction;
-                if (pipelineExecutor.CurrentContext.TryGet(string.Format("SqlTransaction-{0}", connectionString), out transaction))
-                {
-                    return transaction;
-                }
-
-                return null;
+                return pipelineExecutor.TryGetTransaction(connectionString, out transaction) 
+                    ? transaction 
+                    : null;
             }
         }
     }

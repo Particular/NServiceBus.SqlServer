@@ -8,7 +8,7 @@ Before doing anything else, make sure you have SQL Server up and running in your
 
 1. Add NServiceBus.SqlServer to your project(s). The easiest way to do that is by installing the [NServiceBus.SqlServer nuget package](https://www.nuget.org/packages/NServiceBus.SqlServer).
 
-2. In your app.config make sure to provides the necessary connection information needed to communicate to the RabbitMQ server. A typical setup would be:
+2. In your app.config make sure to provides the necessary connection information needed to communicate to SQL server. A typical setup would be:
 
 ````xml
 <connectionStrings>

@@ -43,6 +43,7 @@
             builder.CustomConfigurationSource(configSource);
             builder.EnableInstallers();
             builder.DefineTransport(settings, endpointConfiguration.BuilderType);
+			builder.DefineTransactions(settings);
             builder.DefineBuilder(settings);
             builder.RegisterComponents(r =>
             {
