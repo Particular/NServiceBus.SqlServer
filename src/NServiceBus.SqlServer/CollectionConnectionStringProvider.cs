@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -16,7 +17,7 @@
 
         public ConnectionParams GetForDestination(Address destination)
         {
-            var found = connectionStrings.FirstOrDefault(x => x.Endpoint == destination.Queue);
+            var found = connectionStrings.FirstOrDefault(x => destination.Queue.Equals(x.Endpoint, StringComparison.OrdinalIgnoreCase));
             return found != null
                 ? found.CreateConnectionParams(localConnectionParams)
                 : null;
