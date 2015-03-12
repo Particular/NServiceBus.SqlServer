@@ -30,8 +30,8 @@ namespace NServiceBus.Features
             }
             else
             {
-                var regRederType = Type.GetType("NServiceBus.Utils.RegistryReader, NServiceBus", true);
-                var readMethod = regRederType.GetMethod("Read", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                var regRederType = Type.GetType("NServiceBus.Utils.RegistryReader, NServiceBus.Core", true);
+                var readMethod = regRederType.GetMethod("Read", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
                 var registryErrorQueue = (string)readMethod.Invoke(null,new object[]{"ErrorQueue", null});
                 if (!string.IsNullOrWhiteSpace(registryErrorQueue))
                 {
