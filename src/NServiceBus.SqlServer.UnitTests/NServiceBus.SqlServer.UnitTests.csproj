@@ -56,6 +56,7 @@
     <Compile Include="CicruitBreakerConfigTests.cs" />
     <Compile Include="ConfigTest.cs" />
     <Compile Include="ConnectionConfigTests.cs" />
+    <Compile Include="ErrorQueueSettingsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
