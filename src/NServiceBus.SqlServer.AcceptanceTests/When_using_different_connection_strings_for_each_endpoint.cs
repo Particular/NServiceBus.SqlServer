@@ -2,6 +2,8 @@
 {
     using System;
     using System.Configuration;
+    using System.Data;
+    using System.Data.SqlClient;
     using System.Reflection;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -17,7 +19,7 @@
         [Test]
         public void Should_use_configured_connection_string_when_replying()
         {
-
+            EnsureSchemaExists("nsb");
             var context = new Context()
             {
                 Id = Guid.NewGuid()
@@ -129,6 +131,28 @@
         {
             public bool GotResponse { get; set; }
             public Guid Id { get; set; }
+        }
+
+        static void EnsureSchemaExists(string schema)
+        {
+            const string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            const string SchemaDdl =
+    @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{0}')
+BEGIN
+    EXEC('CREATE SCHEMA {0}');
+END";
+
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new SqlCommand(string.Format(SchemaDdl, schema), conn)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
     }
 }
