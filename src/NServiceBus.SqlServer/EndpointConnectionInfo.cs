@@ -57,7 +57,7 @@ namespace NServiceBus.Transports.SQLServer
             return new EndpointConnectionInfo(Endpoint, connectionString, schemaName);
         }
 
-        internal ConnectionParams CreateConnectionParams(ConnectionParams defaultConnectionParams)
+        internal ConnectionParams CreateConnectionParams(LocalConnectionParams defaultConnectionParams)
         {
             return defaultConnectionParams.MakeSpecific(connectionString, schemaName);
         }

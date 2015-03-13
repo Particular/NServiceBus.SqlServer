@@ -28,9 +28,10 @@ namespace NServiceBus.Transports.SQLServer
 
         public void CreateQueueIfNecessary(Address address, string account)
         {
-            using (var connection = new SqlConnection(ConnectionInfo.ConnectionString))
+            var connectionParams = connectionStringProvider.GetForDestination(address);
+            using (var connection = new SqlConnection(connectionParams.ConnectionString))
             {
-                var sql = string.Format(Ddl, ConnectionInfo.Schema, address.GetTableName());
+                var sql = string.Format(Ddl, connectionParams.Schema, address.GetTableName());
                 connection.Open();
 
                 using (var command = new SqlCommand(sql, connection) {CommandType = CommandType.Text})
@@ -40,6 +41,11 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public ConnectionParams ConnectionInfo { get; set; }
+        readonly IConnectionStringProvider connectionStringProvider;
+
+        public SqlServerQueueCreator(IConnectionStringProvider connectionStringProvider)
+        {
+            this.connectionStringProvider = connectionStringProvider;
+        }
     }
 }

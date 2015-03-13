@@ -1,29 +1,36 @@
 ﻿namespace NServiceBus.AcceptanceTests.Basic
 {
     using System;
+    using System.Data;
+    using System.Data.SqlClient;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
 
     public class When_using_non_standard_schema : NServiceBusAcceptanceTest
     {
+        
         [Test]
         public void Should_receive_the_message()
         {
-            Scenario.Define(() => new Context { Id = Guid.NewGuid() })
-                    .WithEndpoint<Sender>(b => b.Given((bus, context) => bus.Send<MyMessage>(m =>
-                    {
-                        m.Id = context.Id;
-                    })))
+            EnsureSchemaExists("receiver");
+            EnsureSchemaExists("sender");
+            var context = new Context
+            {
+                Id = Guid.NewGuid()
+            };
+
+            Scenario.Define(context)
+                    .WithEndpoint<Sender>(b => b.Given((bus, ctx) => bus.Send<MyMessage>(m => { m.Id = ctx.Id; })))
                     .WithEndpoint<Receiver>()
                     .Done(c => c.WasCalled)
-                    .Repeat(r => r.For(Serializers.Binary))
-                    .Should(c => Assert.True(c.WasCalled, "The message handler should be called"))
                     .Run();
+
+            Assert.True(context.WasCalled, "The message handler should be called");
         }
 
+        
         public class Context : ScenarioContext
         {
             public bool WasCalled { get; set; }
@@ -38,7 +45,7 @@
                     .UseTransport<SqlServerTransport>()
                     .DefaultSchema("sender")
                     .UseSpecificConnectionInformation(
-                        EndpointConnectionInfo.For("Basic.Receiver.WhenUsingNonStandardSchema.Binary").UseSchema("receiver")
+                        EndpointConnectionInfo.For("Basic.Receiver.WhenUsingNonStandardSchema.SqlServerTransport").UseSchema("receiver")
                     ))
                     .AddMapping<MyMessage>(typeof(Receiver));
             }
@@ -76,5 +83,28 @@
         {
             public Guid Id { get; set; }
         }
+
+        static void EnsureSchemaExists(string schema)
+        {
+            const string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            const string SchemaDdl =
+    @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{0}')
+BEGIN
+    EXEC('CREATE SCHEMA {0}');
+END";
+
+            using (var conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new SqlCommand(string.Format(SchemaDdl, schema), conn)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
     }
 }

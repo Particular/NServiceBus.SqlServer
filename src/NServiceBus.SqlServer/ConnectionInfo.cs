@@ -8,7 +8,7 @@
         readonly string schemaName;
         readonly string connectionString;
 
-        private ConnectionInfo(string connectionString, string schemaName)
+        internal ConnectionInfo(string connectionString, string schemaName)
         {
             this.connectionString = connectionString;
             this.schemaName = schemaName;
@@ -43,9 +43,9 @@
             return new ConnectionInfo(connectionString, schemaName);
         }
 
-        internal ConnectionParams CreateConnectionParams(ConnectionParams defaultConnectionParams)
+        internal ConnectionParams CreateConnectionParams(LocalConnectionParams localConnectionParams)
         {
-            return defaultConnectionParams.MakeSpecific(connectionString, schemaName);
+            return localConnectionParams.MakeSpecific(connectionString, schemaName);
         }
     }
 }

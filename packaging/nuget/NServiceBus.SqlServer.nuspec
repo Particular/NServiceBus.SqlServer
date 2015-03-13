@@ -19,8 +19,7 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\..\src\NServiceBus.SqlServer\bin\Release\NServiceBus.Transports.SqlServer.???" target="lib\net45" />
+    <file src="..\..\binaries\NServiceBus.Transports.SqlServer.???" target="lib\net45" />
     <file src="..\..\packaging\nuget\tools\install.ps1" target="tools" />
-    <file src="..\..\src\NServiceBus.SqlServer\**\*.cs" exclude="..\..\src\NServiceBus.SqlServer\**\TemporaryGeneratedFile_*.cs" target="src" />
   </files>
 </package>

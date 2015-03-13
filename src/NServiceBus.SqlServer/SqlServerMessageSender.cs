@@ -7,16 +7,16 @@
     using Unicast;
     using Unicast.Queuing;
 
-    /// <summary>
-    ///     SqlServer implementation of <see cref="ISendMessages" />.
-    /// </summary>
     class SqlServerMessageSender : ISendMessages
     {
-        public IConnectionStringProvider ConnectionStringProvider { get; set; }
+        readonly IConnectionStringProvider connectionStringProvider;
+        readonly PipelineExecutor pipelineExecutor;
 
-        public PipelineExecutor PipelineExecutor { get; set; }
-
-        public string CallbackQueue { get; set; }
+        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor)
+        {
+            this.connectionStringProvider = connectionStringProvider;
+            this.pipelineExecutor = pipelineExecutor;
+        }
 
         public void Send(TransportMessage message, SendOptions sendOptions)
         {
@@ -24,21 +24,20 @@
             try
             {
                 destination = DetermineDestination(sendOptions);
-                SetCallbackAddress(message);
             
-                var connectionInfo = ConnectionStringProvider.GetForDestination(sendOptions.Destination);
+                var connectionInfo = connectionStringProvider.GetForDestination(sendOptions.Destination);
                 var queue = new TableBasedQueue(destination, connectionInfo.Schema);
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
-                    if (PipelineExecutor.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
+                    if (pipelineExecutor.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
                     {
                         queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
                     }
                     else
                     {
                         SqlConnection currentConnection;
-                        if (PipelineExecutor.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
+                        if (pipelineExecutor.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
                         {
                             queue.Send(message, sendOptions, currentConnection);
                         }
@@ -91,14 +90,6 @@
             throw new QueueNotFoundException(destination, msg, ex);
         }
 
-        void SetCallbackAddress(TransportMessage message)
-        {
-            if (!string.IsNullOrEmpty(CallbackQueue))
-            {
-                message.Headers[CallbackHeaderKey] = CallbackQueue;
-            }
-        }
-
         Address DetermineDestination(SendOptions sendOptions)
         {
             return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
@@ -112,7 +103,7 @@
         Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
         {
             return IsReply(sendOptions) 
-                ? PipelineExecutor.CurrentContext.TryGetCallbackAddress() 
+                ? pipelineExecutor.CurrentContext.TryGetCallbackAddress() 
                 : null;
         }
 
@@ -132,6 +123,6 @@
                 string.Format("Failed to send message to address: {0}@{1}", address.Queue, address.Machine), ex);
         }
 
-        public const string CallbackHeaderKey = "NServiceBus.SqlServer.CallbackQueue";
+        
     }
 }

@@ -41,6 +41,7 @@ at NServiceBus.Unicast.MessageHandlerRegistry.Invoke(Object handler, Object mess
 at NServiceBus.InvokeHandlersBehavior.Invoke(IncomingContext context, Action next)
 at NServiceBus.SetCurrentMessageBeingHandledBehavior.Invoke(IncomingContext context, Action next)
 at NServiceBus.LoadHandlersBehavior.Invoke(IncomingContext context, Action next)
+at NServiceBus.Transports.SQLServer.ReadIncomingCallbackAddressBehavior.Invoke(IncomingContext context, Action next)
 at NServiceBus.ApplyIncomingMessageMutatorsBehavior.Invoke(IncomingContext context, Action next)
 at NServiceBus.ExecuteLogicalMessagesBehavior.Invoke(IncomingContext context, Action next)
 at NServiceBus.DeserializeLogicalMessagesBehavior.Invoke(IncomingContext context, Action next)
