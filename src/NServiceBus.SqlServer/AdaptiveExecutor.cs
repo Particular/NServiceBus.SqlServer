@@ -57,7 +57,7 @@
                         });
                     }
                     taskTracker.Forget(t);
-                    if (taskTracker.HasNoTasks)
+                    if (taskTracker.ShouldStartAnotherTaskImmediately)
                     {
                         StartTask();
                     }

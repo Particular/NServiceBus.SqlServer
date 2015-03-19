@@ -99,3 +99,22 @@ BEGIN
     SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] = 'U' AND category = 0 AND [name] > @name ORDER BY [name])
 END
 GO
+
+/* Create schemas */
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'nsb')
+BEGIN
+	EXEC('CREATE SCHEMA nsb')
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sender')
+BEGIN
+	EXEC('CREATE SCHEMA sender')
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'receiver')
+BEGIN
+	EXEC('CREATE SCHEMA receiver')
+END
+GO
