@@ -13,5 +13,7 @@
         {
             return localConnectionParams;
         }
+
+        public bool AllowsNonLocalConnectionString { get { return false; }}
     }
 }

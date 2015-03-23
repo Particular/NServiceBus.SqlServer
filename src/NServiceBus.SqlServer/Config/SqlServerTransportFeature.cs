@@ -10,6 +10,7 @@ namespace NServiceBus.Features
     using Transports;
     using Transports.SQLServer;
 
+    
     class SqlServerTransportFeature : ConfigureTransport
     {
         readonly List<ConfigBase> configs = new List<ConfigBase>()

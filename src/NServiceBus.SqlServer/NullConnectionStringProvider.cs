@@ -6,5 +6,7 @@
         {
             return null;
         }
+
+        public bool AllowsNonLocalConnectionString { get { return false; } }
     }
 }

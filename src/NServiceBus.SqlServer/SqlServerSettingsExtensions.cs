@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Configuration.AdvanceExtensibility;
     using NServiceBus.Transports.SQLServer;
     using NServiceBus.Transports.SQLServer.Config;
@@ -60,7 +61,7 @@
             {
                 throw new InvalidOperationException("Per-endpoint connection information can be specified only once, either by passing a collection or a callback.");
             }
-            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection);
+            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection.ToArray());
             return transportExtensions;
         }
 

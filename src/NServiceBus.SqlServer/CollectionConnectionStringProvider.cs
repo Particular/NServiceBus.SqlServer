@@ -22,5 +22,10 @@
                 ? found.CreateConnectionParams(localConnectionParams)
                 : null;
         }
+
+        public bool AllowsNonLocalConnectionString
+        {
+            get { return connectionStrings.Any(x => x.OverridesConnectionString); }
+        }
     }
 }

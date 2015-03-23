@@ -20,5 +20,7 @@ namespace NServiceBus.Transports.SQLServer
                 ? connectionInfo.CreateConnectionParams(localConnectionParams) 
                 : null;
         }
+
+        public bool AllowsNonLocalConnectionString { get { return true; }}
     }
 }
