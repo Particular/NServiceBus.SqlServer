@@ -33,7 +33,6 @@
         public  virtual void Stop()
         {
             taskTracker.ShutdownAll();
-            taskTracker = null;
             tokenSource = null;
         }
 

@@ -66,7 +66,7 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Audit\When_a_replymessage_is_audited.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\ScenarioDescriptors\AllTransactionSettings.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\ScenarioDescriptors\TransactionSettings.cs" />
-    <Compile Include="When_processing_messages.cs" />
+    <Compile Include="When_in_native_transaction_mode.cs" />
     <Compile Include="When_using_non_standard_schema.cs" />
     <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.0.0\Audit\When_a_message_is_audited.cs" />
