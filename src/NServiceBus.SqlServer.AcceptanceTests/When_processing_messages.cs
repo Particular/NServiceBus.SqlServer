@@ -35,7 +35,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(b => b.Transactions().DisableDistributedTransactions());
             }
 
             class Handler : IHandleMessages<TestMessage>
@@ -45,7 +45,7 @@
 
                 public void Handle(TestMessage message)
                 {
-                    Context.ContextInjected = StorageContext != null;
+                    Context.ContextInjected = StorageContext != null && StorageContext.Connection != null && StorageContext.Transaction != null;
                     Context.Done = true;
                 }
             }
