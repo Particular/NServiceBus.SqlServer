@@ -90,6 +90,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests
         }
 
         [SetUp]
+        [TearDown]
         public void ClearConnectionStrings()
         {
             var connectionStrings = ConfigurationManager.ConnectionStrings;

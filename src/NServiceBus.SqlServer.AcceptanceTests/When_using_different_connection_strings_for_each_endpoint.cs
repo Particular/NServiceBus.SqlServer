@@ -32,13 +32,20 @@
                    .Run();
         }
 
-        static void AddConnectionString(string name, string value)
+        [SetUp]
+        [TearDown]
+        public void ClearConnectionStrings()
         {
             var connectionStrings = ConfigurationManager.ConnectionStrings;
             //Setting the read only field to false via reflection in order to modify the connection strings
             var readOnlyField = typeof(ConfigurationElementCollection).GetField("bReadOnly", BindingFlags.Instance | BindingFlags.NonPublic);
             readOnlyField.SetValue(connectionStrings, false);
-            connectionStrings.Add(new ConnectionStringSettings(name, value));
+            connectionStrings.Clear();
+        }
+
+        static void AddConnectionString(string name, string value)
+        {
+            ConfigurationManager.ConnectionStrings.Add(new ConnectionStringSettings(name, value));
         }
 
         public class Sender : EndpointConfigurationBuilder
