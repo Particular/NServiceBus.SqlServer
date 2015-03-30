@@ -3,10 +3,9 @@ namespace NServiceBus.Transports.SQLServer
     using System;
     using System.Data.SqlClient;
     using System.Transactions;
-    using NServiceBus.Pipeline;
     using NServiceBus.Pipeline.Contexts;
 
-    class AmbientTransactionReceiveBehavior : IBehavior<IncomingContext>
+    class AmbientTransactionReceiveBehavior : ReceiveBehavior
     {
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
@@ -19,7 +18,7 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public void Invoke(IncomingContext context, Action next)
+        protected override void Invoke(IncomingContext context, Action<IncomingMessage> onMessage)
         {
             var queue = context.Get<TableBasedQueue>();
             var messageAvailabilitySignaller = context.Get<IMessageAvailabilitySignaller>();
@@ -46,32 +45,13 @@ namespace NServiceBus.Transports.SQLServer
                         }
 
                         messageAvailabilitySignaller.MessageAvailable();
-                        context.PhysicalMessage = readResult.Message;
-                        next();
 
-                        if (context.MessageHandledSuccessfully())
-                        {
-                            scope.Complete();
-                            scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
-                        }
+                        onMessage(readResult.Message);
+
+                        scope.Complete();
+                        scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
                     }
                 }
-            }
-        }
-
-        public class Registration : RegisterStep
-        {
-            public Registration(string errorQueueAddress, TransactionOptions transactionOptions)
-                : base("ReceiveMessage", typeof(AmbientTransactionReceiveBehavior), "Performs a SQL receive using a transaction scope.")
-            {
-                InsertBeforeIfExists(WellKnownStep.ExecuteLogicalMessages);
-                ContainerRegistration((builder, settings) =>
-                {
-                    var connectionInfo = builder.Build<LocalConnectionParams>();
-                    var errorQueue = new TableBasedQueue(errorQueueAddress, connectionInfo.Schema);
-
-                    return new AmbientTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue, transactionOptions);
-                });
             }
         }
     }

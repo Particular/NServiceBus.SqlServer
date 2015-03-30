@@ -13,9 +13,9 @@ namespace NServiceBus.Transports.SQLServer
             this.localConnectionParams = localConnectionParams;
         }
 
-        public ConnectionParams GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(string destination)
         {
-            var connectionInfo = connectionStringProvider(destination.Queue);
+            var connectionInfo = connectionStringProvider(destination);
             return connectionInfo != null 
                 ? connectionInfo.CreateConnectionParams(localConnectionParams) 
                 : null;

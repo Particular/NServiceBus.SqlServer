@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Threading;
-    using CircuitBreakers;
     using NServiceBus.Features;
 
     /// <summary>
@@ -19,7 +18,6 @@
             this.localConnectionParams = localConnectionParams;
             this.queuePurger = queuePurger;
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
-            this.circuitBreaker = circuitBreaker;
         }
 
         public void Init(DequeueSettings settings)
@@ -85,10 +83,8 @@
         readonly List<MessageAvailabilitySignaller> availabilitySignallers = new List<MessageAvailabilitySignaller>();
 
         Observable<MessageAvailable> observable = new Observable<MessageAvailable>();
-        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         readonly LocalConnectionParams localConnectionParams;
         readonly IQueuePurger queuePurger;
-
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
         SecondaryReceiveSettings secondaryReceiveSettings;
         CancellationTokenSource tokenSource;

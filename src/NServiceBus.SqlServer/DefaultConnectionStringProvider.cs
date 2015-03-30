@@ -9,7 +9,7 @@
             this.localConnectionParams = localConnectionParams;
         }
 
-        public ConnectionParams GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(string destination)
         {
             return localConnectionParams;
         }

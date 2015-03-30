@@ -12,7 +12,7 @@
             this.components = components;
         }
 
-        public ConnectionParams GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(string destination)
         {
             return components.Select(x => x.GetForDestination(destination)).First(x => x != null);
         }

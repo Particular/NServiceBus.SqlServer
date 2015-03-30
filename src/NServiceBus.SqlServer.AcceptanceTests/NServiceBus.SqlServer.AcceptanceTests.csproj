@@ -37,13 +37,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.AcceptanceTesting, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+    <Reference Include="NServiceBus.AcceptanceTesting, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NServiceBus.AcceptanceTesting.5.2.0-extending\lib\net45\NServiceBus.AcceptanceTesting.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.AcceptanceTesting.6.0.0-making\lib\net45\NServiceBus.AcceptanceTesting.dll</HintPath>
     </Reference>
-    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NServiceBus.5.2.0-extending\lib\net45\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-making\lib\net45\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -54,6 +54,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Messaging" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -220,6 +221,160 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.5.2.0-extending\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Audit\When_auditing.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Audit\When_a_message_is_audited.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Audit\When_a_replymessage_is_audited.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Audit\When_ForwardReceivedMessagesTo_is_set.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Audit\When_using_audit_message_is_received.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_aborting_the_behavior_chain.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_a_callback_for_local_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_callback_from_a_send_only.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_Deferring_a_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_handling_current_message_later.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_handling_message_with_several_messagehandlers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_incoming_headers_should_be_shared.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_injecting_handler_props.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_multiple_mappings_exists.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_receiving_with_catch_all_handlers_registered.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_registering_custom_serializer.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_sending_ensure_proper_headers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_sending_from_a_send_only.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_sending_to_another_endpoint.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_sending_with_conventions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_sending_with_no_correlation_id.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_a_custom_correlation_id.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_a_greedy_convention.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_callbacks_from_older_versions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_callbacks_in_a_scaleout.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_callbacks_with_messageid_eq_cid_.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_callback_to_get_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Basic\When_using_ineedinitialization.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ConfigureMsmqTransport.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Config\When_a_config_override_is_found.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Config\When_IWantToRunWhenBusStartsAndStops_Start_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Config\When__startup_is_complete.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\CriticalError\When_registering_a_custom_criticalErrorHandler.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DataBus\When_sending_databus_properties.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DataBus\When_using_custom_IDataBus.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DeliveryOptions\When_sending_a_non_durable_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DeliveryOptions\When_TimeToBeReceived_has_expired.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DeliveryOptions\When_TimeToBeReceived_has_not_expired.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\DeterministicGuid.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Encryption\When_using_encryption_with_custom_service.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Encryption\When_using_Rijndael_with_config.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Encryption\When_using_Rijndael_with_custom.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Encryption\When_using_Rijndael_with_multikey.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\EndpointTemplates\ConfigureExtensions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\EndpointTemplates\ContextAppender.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\EndpointTemplates\DefaultPublisher.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\EndpointTemplates\DefaultServer.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\Cant_convert_to_TransportMessage\SerializerCorrupter.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\Cant_convert_to_TransportMessage\When_cant_convert_to_TransportMessage.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\Cant_convert_to_TransportMessage\When_cant_convert_to_TransportMessage_NoTransactions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\Cant_convert_to_TransportMessage\When_cant_convert_to_TransportMessage_SuppressedDTC.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\StackTraceAssert.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_handler_and_Uow_End_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_handler_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_handler_throws_AggregateException.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_handler_throws_serialization_exception.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_serialization_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_Uow_Begin_and_different_End_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_Uow_Begin_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Exceptions\When_Uow_End_throws.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\HostInformation\When_feature_overrides_hostinfo.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\MessageId\When_message_has_empty_id_header.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\MessageId\When_message_has_no_id_header.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Mutators\Issue_1980.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Mutators\When_defining_outgoing_message_mutators.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Mutators\When_outgoing_mutator_replaces_instance.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NonDTC\When_blowing_up_just_after_dispatch.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NonDTC\When_dispatching_transport_operations.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NonDTC\When_receiving_a_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NonDTC\When_sending_from_a_non_dtc_endpoint.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NonTx\When_sending_inside_ambient_tx.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\NServiceBusAcceptanceTest.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PerfMon\CriticalTime\When_CriticalTime_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PerfMon\CriticalTime\When_deferring_a_message.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PerfMon\CriticalTime\When_slow_with_CriticalTime_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PerfMon\SLA\When_sending_slow_with_SLA_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PerfMon\SLA\When_sending_with_SLA_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PipelineExt\FilteringWhatGetsAudited.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PipelineExt\MutingHandlerExceptions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\SubscriptionBehavior.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\SubscriptionEventArgs.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_base_event_from_2_publishers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_multi_subscribing_to_a_polymorphic_event.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_an_event_implementing_two_unrelated_interfaces.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_from_sendonly.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_on_brokers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_using_root_type.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_with_only_local_messagehandlers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_publishing_with_overridden_local_address.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\PubSub\When_subscribing_to_a_polymorphic_event.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_doing_flr_with_default_settings.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_doing_flr_with_dtc_on.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_doing_flr_with_native_transactions.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_fails_flr.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_fails_with_retries_set_to_0.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_performing_slr.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_performing_slr_with_regular_exception.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_performing_slr_with_serialization_exception.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Retries\When_Subscribing_to_errors.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\Issue_1819.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\Issue_2044.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_an_endpoint_replies_to_a_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_a_base_class_message_hits_a_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_a_existing_saga_instance_exists.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_a_finder_exists.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_a_finder_exists_and_found_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_a_saga_message_goes_through_the_slr.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_doing_request_response_between_sagas.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_doing_request_response_between_sagas_first_handler_responding.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_doing_request_response_between_sagas_response_from_noninitiating.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_doing_request_response_between_sagas_with_timeout.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_message_has_a_saga_id.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_receiving_that_completes_the_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_receiving_that_should_start_a_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_receiving_that_should_start_a_saga_without_interception.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_receiving_that_should_start_a_saga_with_interception.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_replies_to_message_published_by_a_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_reply_from_a_finder.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_sagas_cant_be_found.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_saga_has_a_non_empty_constructor.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_saga_id_changed.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_saga_is_mapped_to_complex_expression.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_sending_from_a_saga_handle.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_sending_from_a_saga_timeout.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_started_by_base_event_from_other_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_started_by_event_from_another_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_timeout_hit_not_found_saga.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_two_sagas_subscribe_to_the_same_event.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_using_a_received_message_for_timeout.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Sagas\When_using_contain_saga_data.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScaleOut\When_individualization_is_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScaleOut\When_individualization_is_enabled_for_msmq.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScaleOut\When_no_discriminator_is_available.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\AllOutboxCapableStorages.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\AllTransactionSettings.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\AllTransports.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\Builders.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\Persistence.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\Serializers.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\TransactionSettings.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\ScenarioDescriptors\Transports.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Scheduling\When_scheduling_a_recurring_task.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\FakePromotableResourceManager.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\Issue_2481.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_receiving_with_dtc_disabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_receiving_with_dtc_enabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_receiving_with_native_multi_queue_transaction.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_receiving_with_the_default_settings.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_receiving_with_transactions_disabled.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Tx\When_sending_within_an_ambient_transaction.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\UnitOfWork\When_a_subscription_message_arrives.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
+    <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-making\Volatile\When_sending_to_non_durable_endpoint.cs" />
     <Compile Include="When_using_non_standard_schema.cs" />
     <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="When_using_different_connection_strings_for_each_endpoint.cs" />

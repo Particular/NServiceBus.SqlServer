@@ -2,10 +2,9 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Data.SqlClient;
-    using NServiceBus.Pipeline;
     using NServiceBus.Pipeline.Contexts;
 
-    class NoTransactionReceiveBehavior : IBehavior<IncomingContext>
+    class NoTransactionReceiveBehavior : ReceiveBehavior
     {
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
@@ -16,7 +15,7 @@ namespace NServiceBus.Transports.SQLServer
             this.errorQueue = errorQueue;
         }
 
-        public void Invoke(IncomingContext context, Action next)
+        protected override void Invoke(IncomingContext context, Action<IncomingMessage> onMessage)
         {
             var queue = context.Get<TableBasedQueue>();
             var messageAvailabilitySignaller = context.Get<IMessageAvailabilitySignaller>();
@@ -39,24 +38,7 @@ namespace NServiceBus.Transports.SQLServer
             }
             messageAvailabilitySignaller.MessageAvailable();
 
-            context.PhysicalMessage = readResult.Message;
-            next();
-        }
-
-        public class Registration : RegisterStep
-        {
-            public Registration(string errorQueueAddress)
-                : base("ReceiveMessage", typeof(NoTransactionReceiveBehavior), "Performs a SQL receive without a transaction.")
-            {
-                InsertBeforeIfExists(WellKnownStep.ExecuteLogicalMessages);
-                ContainerRegistration((builder, settings) =>
-                {
-                    var connectionInfo = builder.Build<LocalConnectionParams>();
-                    var errorQueue = new TableBasedQueue(errorQueueAddress, connectionInfo.Schema);
-
-                    return new NoTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue);
-                });
-            }
+            onMessage(readResult.Message);
         }
     }
 }

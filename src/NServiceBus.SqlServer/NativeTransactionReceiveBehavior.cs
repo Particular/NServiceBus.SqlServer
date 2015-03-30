@@ -3,11 +3,10 @@ namespace NServiceBus.Transports.SQLServer
     using System;
     using System.Data.SqlClient;
     using System.Transactions;
-    using NServiceBus.Pipeline;
     using NServiceBus.Pipeline.Contexts;
     using IsolationLevel = System.Data.IsolationLevel;
 
-    class NativeTransactionReceiveBehavior : IBehavior<IncomingContext>
+    class NativeTransactionReceiveBehavior : ReceiveBehavior
     {
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
@@ -20,7 +19,7 @@ namespace NServiceBus.Transports.SQLServer
             isolationLevel = GetSqlIsolationLevel(transactionOptions.IsolationLevel);
         }
 
-        public void Invoke(IncomingContext context, Action next)
+        protected override void Invoke(IncomingContext context, Action<IncomingMessage> onMessage)
         {
             var queue = context.Get<TableBasedQueue>();
             var messageAvailabilitySignaller = context.Get<IMessageAvailabilitySignaller>();
@@ -58,18 +57,10 @@ namespace NServiceBus.Transports.SQLServer
 
                             messageAvailabilitySignaller.MessageAvailable();
 
-                            context.PhysicalMessage = readResult.Message;
                             try
                             {
-                                next();
-                                if (context.MessageHandledSuccessfully())
-                                {
-                                    transaction.Commit();
-                                }
-                                else
-                                {
-                                    transaction.Rollback();
-                                }
+                                onMessage(readResult.Message);
+                                transaction.Commit();
                             }
                             catch (Exception)
                             {
@@ -104,22 +95,6 @@ namespace NServiceBus.Transports.SQLServer
             }
 
             return IsolationLevel.ReadCommitted;
-        }
-
-        public class Registration : RegisterStep
-        {
-            public Registration(string errorQueueAddress, TransactionOptions transactionOptions)
-                : base("ReceiveMessage", typeof(NativeTransactionReceiveBehavior), "Performs a SQL receive using a native transaction.")
-            {
-                InsertBeforeIfExists(WellKnownStep.ExecuteLogicalMessages);
-                ContainerRegistration((builder, settings) =>
-                {
-                    var connectionInfo = builder.Build<LocalConnectionParams>();
-                    var errorQueue = new TableBasedQueue(errorQueueAddress, connectionInfo.Schema);
-
-                    return new NativeTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue, transactionOptions);
-                });
-            }
         }
     }
 }

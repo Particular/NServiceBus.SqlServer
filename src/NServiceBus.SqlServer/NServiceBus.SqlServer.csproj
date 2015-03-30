@@ -50,9 +50,9 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NServiceBus.5.2.0-extending\lib\net45\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Core">
+      <HintPath>..\packages\NServiceBus.6.0.0-making\lib\net45\NServiceBus.Core.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -83,7 +83,6 @@
     <Compile Include="DefaultConnectionStringProvider.cs" />
     <Compile Include="DelegateConnectionStringProvider.cs" />
     <Compile Include="EndpointConnectionInfo.cs" />
-    <Compile Include="ErrorQueueSettings.cs" />
     <Compile Include="IConnectionStringProvider.cs" />
     <Compile Include="IExecutor.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
