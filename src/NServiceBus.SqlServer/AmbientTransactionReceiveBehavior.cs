@@ -49,7 +49,6 @@ namespace NServiceBus.Transports.SQLServer
                         onMessage(readResult.Message);
 
                         scope.Complete();
-                        scope.Dispose(); // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
                     }
                 }
             }
