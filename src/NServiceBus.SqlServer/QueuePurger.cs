@@ -9,6 +9,8 @@ namespace NServiceBus.Transports.SQLServer
     class QueuePurger : IQueuePurger
     {
         readonly LocalConnectionParams localConnectionParams;
+        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
+
         public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration, LocalConnectionParams localConnectionParams)
         {
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
@@ -55,7 +57,5 @@ namespace NServiceBus.Transports.SQLServer
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(QueuePurger));
 
-        readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
-        readonly LocalConnectionParams localConnectionParams;
     }
 }

@@ -4,7 +4,7 @@
     using NServiceBus.Pipeline;
     using NServiceBus.Pipeline.Contexts;
 
-    class SetOutgoingCallbackAddressBehavior : IBehavior<OutgoingContext>
+    class SetOutgoingCallbackAddressBehavior : PhysicalOutgoingContextStageBehavior
     {
         readonly OutgoingCallbackAddressSetter callbackAddressSetter;
 
@@ -13,7 +13,7 @@
             this.callbackAddressSetter = callbackAddressSetter;
         }
 
-        public void Invoke(OutgoingContext context, Action next)
+        public override void Invoke(Context context, Action next)
         {
             callbackAddressSetter.SetCallbackAddress(context.OutgoingMessage);
             next();

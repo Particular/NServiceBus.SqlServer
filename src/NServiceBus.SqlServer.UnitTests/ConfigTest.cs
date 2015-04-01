@@ -14,7 +14,6 @@ namespace NServiceBus.SqlServer.UnitTests
     abstract class ConfigTest
     {
         protected IBuilder Builder { get; private set; }
-        protected PipelineExecutor PipelineExecutor { get; private set; }
  
         protected IBuilder Activate(BusConfiguration busConfiguration, ConfigBase featureConfig, string connectionString = "")
         {
@@ -34,7 +33,6 @@ namespace NServiceBus.SqlServer.UnitTests
 
             builder.CallAllFactories();
             Builder = configure.Builder;
-            PipelineExecutor = new PipelineExecutor(settings, configure.Builder);
             return configure.Builder;
         }
 

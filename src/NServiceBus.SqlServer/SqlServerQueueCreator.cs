@@ -5,13 +5,6 @@ namespace NServiceBus.Transports.SQLServer
 
     class SqlServerQueueCreator : ICreateQueues
     {
-        readonly LocalConnectionParams localConnectionParams;
-
-        public SqlServerQueueCreator(LocalConnectionParams localConnectionParams)
-        {
-            this.localConnectionParams = localConnectionParams;
-        }
-
         const string Ddl =
             @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN

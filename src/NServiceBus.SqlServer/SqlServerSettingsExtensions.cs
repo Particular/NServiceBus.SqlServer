@@ -20,7 +20,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> PollInterval(this TransportExtensions<SqlServerTransport> transportExtensions, int pollInterval)
         {
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.PrimaryPollIntervalSettingsKey, pollInterval);
+            transportExtensions.GetSettings().Set(ConnectionConfig.PrimaryPollIntervalSettingsKey, pollInterval);
             return transportExtensions;
         }
 
@@ -43,7 +43,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> CallbackReceiverPollInterval(this TransportExtensions<SqlServerTransport> transportExtensions, int pollInterval)
         {
-            transportExtensions.GetSettings().Set(Features.SqlServerTransportFeature.SecondaryPollIntervalSettingsKey, pollInterval);
+            transportExtensions.GetSettings().Set(ConnectionConfig.SecondaryPollIntervalSettingsKey, pollInterval);
             return transportExtensions;
         }
 

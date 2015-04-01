@@ -11,7 +11,7 @@
     class SqlServerPollingDequeueStrategy : IDequeueMessages, IDisposable
     {
         public SqlServerPollingDequeueStrategy(
-            LocalConnectionParams locaConnectionParams,
+            LocalConnectionParams localConnectionParams,
             IQueuePurger queuePurger, 
             SecondaryReceiveConfiguration secondaryReceiveConfiguration)
         {

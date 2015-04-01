@@ -10,11 +10,12 @@
     class SqlServerMessageSender : ISendMessages
     {
         readonly IConnectionStringProvider connectionStringProvider;
-        readonly PipelineExecutor pipelineExecutor;
+        readonly BehaviorContext context;
 
-        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor)
+        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, BehaviorContext context)
+        {
             this.connectionStringProvider = connectionStringProvider;
-            this.pipelineExecutor = pipelineExecutor;
+            this.context = context;
         }
 
         public void Send(OutgoingMessage message, SendOptions sendOptions)
@@ -87,14 +88,6 @@
                 : string.Format("Failed to send message to address: [{0}]", destination);
 
             throw new QueueNotFoundException(destination, msg, ex);
-        }
-
-        void SetCallbackAddress(OutgoingMessage message)
-        {
-            if (!string.IsNullOrEmpty(CallbackQueue))
-            {
-                message.Headers[CallbackHeaderKey] = CallbackQueue;
-            }
         }
 
         string DetermineDestination(SendOptions sendOptions)
