@@ -30,7 +30,7 @@
             StartTask();
         }
 
-        public  virtual void Stop()
+        public virtual void Stop()
         {
             taskTracker.ShutdownAll();
             taskTracker = null;
@@ -44,24 +44,25 @@
             taskTracker.StartAndTrack(() =>
             {
                 var receiveTask = Task.Factory
-                    .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-                receiveTask.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
+                    .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                    .ContinueWith(t =>
                     {
-                        t.Exception.Handle(ex =>
+                        if (t.IsFaulted)
                         {
-                            HandleException(ex);
-                            circuitBreaker.Failure(ex);
-                            return true;
-                        });
-                    }
-                    taskTracker.Forget(t);
-                    if (taskTracker.HasNoTasks)
-                    {
-                        StartTask();
-                    }
-                });
+                            t.Exception.Handle(ex =>
+                            {
+                                HandleException(ex);
+                                circuitBreaker.Failure(ex);
+                                return true;
+                            });
+                        }
+                        taskTracker.Forget(t);
+                        if (taskTracker.HasNoTasks)
+                        {
+                            StartTask();
+                        }
+                    });
+
                 return receiveTask;
             });
         }
