@@ -34,16 +34,18 @@
         {
             taskTracker.ShutdownAll();
             taskTracker = null;
+            tokenSource.Dispose();
             tokenSource = null;
         }
 
         void StartTask()
         {
             var token = tokenSource.Token;
-
             taskTracker.StartAndTrack(() =>
             {
-                var receiveTask = Task.Factory
+                Task receiveTask = null;
+
+                receiveTask = Task.Factory
                     .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                     .ContinueWith(t =>
                     {
@@ -56,12 +58,13 @@
                                 return true;
                             });
                         }
-                        taskTracker.Forget(t);
-                        if (taskTracker.HasNoTasks)
+// ReSharper disable once AccessToModifiedClosure
+                        taskTracker.Forget(receiveTask);
+                        if (taskTracker.ShouldStartAnotherTaskImmediately)
                         {
                             StartTask();
                         }
-                    });
+                    }, token);
 
                 return receiveTask;
             });

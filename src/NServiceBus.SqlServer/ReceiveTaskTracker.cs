@@ -47,6 +47,10 @@
         {
             lock (lockObj)
             {
+                if (shuttingDown)
+                {
+                    return;
+                }
                 trackedTasks.Remove(receiveTask);
                 if (Logger.IsDebugEnabled)
                 {
@@ -56,12 +60,16 @@
             }
         }
 
-        public bool HasNoTasks
+        public bool ShouldStartAnotherTaskImmediately
         {
             get
             {
                 lock (lockObj)
                 {
+                    if (shuttingDown)
+                    {
+                        return false;
+                    }
                     return !trackedTasks.Any();
                 }
             }

@@ -7,7 +7,7 @@
     {
         void StartAndTrack(Func<Task> taskFactory);
         void Forget(Task receiveTask);
-        bool HasNoTasks { get; }
+        bool ShouldStartAnotherTaskImmediately { get; }
         void ShutdownAll();
     }
 }
