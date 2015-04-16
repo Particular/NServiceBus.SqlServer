@@ -12,7 +12,7 @@
             TableBasedQueue queue, 
             Action<TransportMessage, Exception> endProcessMessage, 
             RepeatedFailuresOverTimeCircuitBreaker circuitBreaker,
-            TransportNotifications transportNotifications) 
+            TransportNotifications transportNotifications)
             : base(circuitBreaker)
         {
             this.receiveStrategy = receiveStrategy;

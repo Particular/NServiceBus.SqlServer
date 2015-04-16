@@ -15,20 +15,20 @@
             this.queueName = queueName;
         }
 
-        public void StartAndTrack(Func<Tuple<Guid,Task>> taskFactory)
+        public void StartAndTrack(Func<Tuple<Guid, Task>> taskFactory)
         {
             lock (lockObj)
             {
                 if (shuttingDown)
                 {
-                    Logger.Debug("Ignoring start task request because shutdown is in progress.");
+                    Logger.DebugFormat("Ignoring start task request for '{0}' because shutdown is in progress.", queueName);
                     return;
                 }
                 if (trackedTasks.Count >= maximumConcurrency)
                 {
                     if (Logger.IsDebugEnabled)
                     {
-                        Logger.DebugFormat("Ignoring start task request because of maximum concurrency limit {0}", maximumConcurrency);
+                        Logger.DebugFormat("Ignoring start task request for '{0}' because of maximum concurrency limit of {1} has been reached.", queueName, maximumConcurrency);
                     }
                     transportNotifications.InvokeMaximumConcurrencyLevelReached(queueName, maximumConcurrency);
                     return;
@@ -37,7 +37,7 @@
                 trackedTasks.Add(tuple.Item1, tuple.Item2);
                 if (Logger.IsDebugEnabled)
                 {
-                    Logger.DebugFormat("Starting a new receive task. Total count current/max {0}/{1}", trackedTasks.Count, maximumConcurrency);
+                    Logger.DebugFormat("Starting a new receive task for '{0}'. Total count current/max {1}/{2}", queueName, trackedTasks.Count, maximumConcurrency);
                 }
                 transportNotifications.InvokeReceiveTaskStarted(queueName, trackedTasks.Count, maximumConcurrency);
             }
@@ -51,12 +51,15 @@
                 {
                     return;
                 }
-                trackedTasks.Remove(id);
-                if (Logger.IsDebugEnabled)
+
+                if (trackedTasks.Remove(id))
                 {
-                    Logger.DebugFormat("Stopping a receive task. Total count current/max {0}/{1}", trackedTasks.Count, maximumConcurrency);
+                    if (Logger.IsDebugEnabled)
+                    {
+                        Logger.DebugFormat("Stopping a receive task for '{0}'. Total count current/max {1}/{2}", queueName, trackedTasks.Count, maximumConcurrency);
+                    }
+                    transportNotifications.InvokeReceiveTaskStopped(queueName, trackedTasks.Count, maximumConcurrency);
                 }
-                transportNotifications.InvokeReceiveTaskStopped(queueName, trackedTasks.Count, maximumConcurrency);
             }
         }
 

@@ -65,7 +65,7 @@
 
                         StartTask();
                     }, taskId, token);
-                
+
                 return Tuple.Create(taskId, receiveTask);
             });
         }
