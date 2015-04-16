@@ -15,7 +15,7 @@
             this.queueName = queueName;
         }
 
-        public void StartAndTrack(Func<Task> taskFactory)
+        public void StartAndTrack(Func<Tuple<Guid,Task>> taskFactory)
         {
             lock (lockObj)
             {
@@ -33,8 +33,8 @@
                     transportNotifications.InvokeMaximumConcurrencyLevelReached(queueName, maximumConcurrency);
                     return;
                 }
-                var task = taskFactory();
-                trackedTasks.Add(task);
+                var tuple = taskFactory();
+                trackedTasks.Add(tuple.Item1, tuple.Item2);
                 if (Logger.IsDebugEnabled)
                 {
                     Logger.DebugFormat("Starting a new receive task. Total count current/max {0}/{1}", trackedTasks.Count, maximumConcurrency);
@@ -43,7 +43,7 @@
             }
         }
 
-        public void Forget(Task receiveTask)
+        public void Forget(Guid id)
         {
             lock (lockObj)
             {
@@ -51,7 +51,7 @@
                 {
                     return;
                 }
-                trackedTasks.Remove(receiveTask);
+                trackedTasks.Remove(id);
                 if (Logger.IsDebugEnabled)
                 {
                     Logger.DebugFormat("Stopping a receive task. Total count current/max {0}/{1}", trackedTasks.Count, maximumConcurrency);
@@ -81,25 +81,22 @@
             {
                 Logger.Debug("Stopping all receive tasks.");
             }
-            Task[] awaitedTasks;
             lock (lockObj)
             {
                 shuttingDown = true;
-                awaitedTasks = trackedTasks.ToArray();
-            }
-
-            try
-            {
-                Task.WaitAll(awaitedTasks);
-            }
-            catch (AggregateException aex)
-            {
-                aex.Handle(ex => ex is TaskCanceledException);
+                try
+                {
+                    Task.WaitAll(trackedTasks.Values.ToArray());
+                }
+                catch (AggregateException aex)
+                {
+                    aex.Handle(ex => ex is TaskCanceledException);
+                }
             }
         }
 
         readonly object lockObj = new object();
-        readonly List<Task> trackedTasks = new List<Task>();
+        readonly Dictionary<Guid, Task> trackedTasks = new Dictionary<Guid, Task>();
         bool shuttingDown;
         readonly int maximumConcurrency;
         readonly TransportNotifications transportNotifications;

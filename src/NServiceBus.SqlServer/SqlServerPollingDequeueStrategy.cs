@@ -71,8 +71,8 @@
         {
             tokenSource = new CancellationTokenSource();
 
-            primaryReceiver.Start(maximumConcurrencyLevel, tokenSource);
-            secondaryReceiver.Start(SecondaryReceiveSettings.MaximumConcurrencyLevel, tokenSource);
+            primaryReceiver.Start(maximumConcurrencyLevel, tokenSource.Token);
+            secondaryReceiver.Start(SecondaryReceiveSettings.MaximumConcurrencyLevel, tokenSource.Token);
         }
 
         /// <summary>
@@ -89,6 +89,8 @@
 
             primaryReceiver.Stop();
             secondaryReceiver.Stop();
+
+            tokenSource.Dispose();
         }
 
         public void Dispose()

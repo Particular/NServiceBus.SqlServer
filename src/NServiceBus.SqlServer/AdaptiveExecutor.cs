@@ -19,13 +19,13 @@
             this.circuitBreaker = circuitBreaker;
         }
 
-        public virtual void Start(int maximumConcurrency, CancellationTokenSource tokenSource)
+        public virtual void Start(int maximumConcurrency, CancellationToken token)
         {
             if (taskTracker != null)
             {
                 throw new InvalidOperationException("The executor has already been started. Use Stop() to stop it.");
             }
-            this.tokenSource = tokenSource;
+            this.token = token;
             taskTracker = CreateTaskTracker(maximumConcurrency);
             StartTask();
         }
@@ -33,40 +33,40 @@
         public virtual void Stop()
         {
             taskTracker.ShutdownAll();
+
             taskTracker = null;
-            tokenSource.Dispose();
-            tokenSource = null;
         }
 
         void StartTask()
         {
-            var token = tokenSource.Token;
             taskTracker.StartAndTrack(() =>
             {
-                Task receiveTask = null;
-
-                receiveTask = Task.Factory
+                var taskId = Guid.NewGuid();
+                var receiveTask = Task.Factory
                     .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                     .ContinueWith(t =>
                     {
-                        if (t.IsFaulted)
+                        t.Exception.Handle(ex =>
                         {
-                            t.Exception.Handle(ex =>
-                            {
-                                HandleException(ex);
-                                circuitBreaker.Failure(ex);
-                                return true;
-                            });
-                        }
-// ReSharper disable once AccessToModifiedClosure
-                        taskTracker.Forget(receiveTask);
-                        if (taskTracker.ShouldStartAnotherTaskImmediately)
-                        {
-                            StartTask();
-                        }
-                    }, token);
+                            HandleException(ex);
+                            circuitBreaker.Failure(ex);
+                            return true;
+                        });
 
-                return receiveTask;
+                    }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
+                    .ContinueWith((_, s) =>
+                    {
+                        taskTracker.Forget((Guid)s);
+
+                        if (!taskTracker.ShouldStartAnotherTaskImmediately)
+                        {
+                            return;
+                        }
+
+                        StartTask();
+                    }, taskId, token);
+                
+                return Tuple.Create(taskId, receiveTask);
             });
         }
 
@@ -75,7 +75,7 @@
             var backOff = new BackOff(1000);
             var rampUpController = CreateRampUpController(StartTask);
 
-            while (!tokenSource.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
+            while (!token.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
             {
                 bool success;
                 rampUpController.RampUpIfTooMuchWork();
@@ -103,7 +103,7 @@
         }
 
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        CancellationTokenSource tokenSource;
+        CancellationToken token;
         ITaskTracker taskTracker;
 
     }
