@@ -34,8 +34,8 @@ namespace NServiceBus.Features
                 if (connectionStringProvider.AllowsNonLocalConnectionString)
                 {
                     throw new Exception(@"The transport is running in native SQL Server transactions mode without an outbox, but configuration uses "
-                        + "multi-databse sending (http://docs.particular.net/nservicebus/sqlserver/multiple-databases). Multi-database can only be enabled when either in ambient transaction mode "
-                        + "or when outbox is enabled. Please check the endpoint configuration.");
+                        + "multi-database sending (http://docs.particular.net/nservicebus/sqlserver/multiple-databases). Multi-database sends can only be used when either in ambient transaction mode "
+                        + "or when outbox is enabled. Please check your endpoint configuration.");
                 }
             }
         }
