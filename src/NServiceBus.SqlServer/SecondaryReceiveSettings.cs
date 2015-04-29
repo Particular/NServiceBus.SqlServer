@@ -9,12 +9,8 @@ namespace NServiceBus.Transports.SQLServer
             return new SecondaryReceiveSettings();
         }
 
-        public static SecondaryReceiveSettings Enabled(string secondaryReceiveQueue, int maximumConcurrencyLevel)
+        public static SecondaryReceiveSettings Enabled(string secondaryReceiveQueue)
         {
-            if (maximumConcurrencyLevel <= 0)
-            {
-                throw new ArgumentException("Concurrency level must be a positive value.","maximumConcurrencyLevel");
-            }
             if (string.IsNullOrEmpty(secondaryReceiveQueue))
             {
                 throw new ArgumentException("Receive queue must not be empty.","secondaryReceiveQueue");
@@ -22,12 +18,11 @@ namespace NServiceBus.Transports.SQLServer
             return new SecondaryReceiveSettings()
             {
                 ReceiveQueue = secondaryReceiveQueue,
-                MaximumConcurrencyLevel = maximumConcurrencyLevel,
+                IsEnabled = true
             };
         }
 
-        public bool IsEnabled { get { return MaximumConcurrencyLevel > 0; }}
-        public int MaximumConcurrencyLevel { get; private set; }
+        public bool IsEnabled { get; private set; }
         public string ReceiveQueue { get; private set; }
 
         private SecondaryReceiveSettings()

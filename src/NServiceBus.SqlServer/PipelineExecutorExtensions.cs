@@ -7,30 +7,30 @@
 
     static class PipelineExecutorExtensions
     {
-        public static bool TryGetTransaction(this PipelineExecutor pipelineExecutor, string connectionString, out SqlTransaction transaction)
+        public static bool TryGetTransaction(this BehaviorContext context, string connectionString, out SqlTransaction transaction)
         {
             var key = MakeTransactionKey(connectionString);
-            return pipelineExecutor.CurrentContext.TryGet(key, out transaction);
+            return context.TryGet(key, out transaction);
         }
 
-        public static bool TryGetConnection(this PipelineExecutor pipelineExecutor, string connectionString, out SqlConnection connection)
+        public static bool TryGetConnection(this BehaviorContext context, string connectionString, out SqlConnection connection)
         {
             var key = MakeConnectionKey(connectionString);
-            return pipelineExecutor.CurrentContext.TryGet(key, out connection);
+            return context.TryGet(key, out connection);
         }
 
-        public static IDisposable SetTransaction(this PipelineExecutor pipelineExecutor, string connectionString, SqlTransaction transaction)
+        public static IDisposable SetTransaction(this BehaviorContext context, string connectionString, SqlTransaction transaction)
         {
             var key = MakeTransactionKey(connectionString);
-            pipelineExecutor.CurrentContext.Set(key, transaction);
-            return new ContextItemRemovalDisposable(key, pipelineExecutor);
+            context.Set(key, transaction);
+            return new ContextItemRemovalDisposable(key, context);
         }
 
-        public static IDisposable SetConnection(this PipelineExecutor pipelineExecutor, string connectionString, SqlConnection connection)
+        public static IDisposable SetConnection(this BehaviorContext context, string connectionString, SqlConnection connection)
         {
             var key = MakeConnectionKey(connectionString);
-            pipelineExecutor.CurrentContext.Set(key, connection);
-            return new ContextItemRemovalDisposable(key, pipelineExecutor);
+            context.Set(key, connection);
+            return new ContextItemRemovalDisposable(key, context);
         }
 
         static string MakeTransactionKey(string connectionString)
@@ -47,17 +47,17 @@
         class ContextItemRemovalDisposable : IDisposable
         {
             readonly string contextKey;
-            readonly PipelineExecutor pipelineExecutor;
+            readonly BehaviorContext context;
 
-            public ContextItemRemovalDisposable(string contextKey, PipelineExecutor pipelineExecutor)
+            public ContextItemRemovalDisposable(string contextKey, BehaviorContext context)
             {
                 this.contextKey = contextKey;
-                this.pipelineExecutor = pipelineExecutor;
+                this.context = context;
             }
 
             public void Dispose()
             {
-                pipelineExecutor.CurrentContext.Remove(contextKey);
+                context.Remove(contextKey);
             }
         }
     }

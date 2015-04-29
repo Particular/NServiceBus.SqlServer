@@ -4,9 +4,9 @@ namespace NServiceBus.Transports.SQLServer
 
     class CallbackQueueCreator : IWantQueueCreated
     {
-        public Address CallbackQueueAddress { get; set; }
+        public string CallbackQueueAddress { get; set; }
 
-        public Address Address
+        public string Address
         {
             get { return CallbackQueueAddress; }
         }

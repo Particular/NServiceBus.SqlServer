@@ -44,7 +44,7 @@
             {
                 EndpointSetup<DefaultPublisher>(b => b.OnEndpointSubscribed<Context>((args, context) =>
                 {
-                    if (args.SubscriberReturnAddress.Queue != "MyEndpoint")
+                    if (args.SubscriberReturnAddress != "MyEndpoint")
                     {
                         return;
                     }

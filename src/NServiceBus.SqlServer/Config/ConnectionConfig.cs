@@ -2,16 +2,20 @@ namespace NServiceBus.Transports.SQLServer.Config
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Configuration;
     using System.Data.Common;
     using System.Linq;
     using NServiceBus.Features;
+    using NServiceBus.Settings;
 
     class ConnectionConfig : ConfigBase
     {
         public const string DefaultSchemaSettingsKey = "SqlServer.SchemaName";
         public const string PerEndpointConnectionStringsCallbackSettingKey = "SqlServer.PerEndpointConnectrionStringsCallback";
         public const string PerEndpointConnectionStringsCollectionSettingKey = "SqlServer.PerEndpointConnectionStringsCollection";
+        public const string PrimaryPollIntervalSettingsKey = "SqlServer.PrimaryPollInterval";
+        public const string SecondaryPollIntervalSettingsKey = "SqlServer.SecondaryPollInterval";
 
         readonly List<ConnectionStringSettings> connectionStrings;
 
@@ -25,7 +29,11 @@ namespace NServiceBus.Transports.SQLServer.Config
             var defaultSchema = context.Settings.GetOrDefault<string>(DefaultSchemaSettingsKey);
             string configStringSchema;
             var connectionString = connectionStringWithSchema.ExtractSchemaName(out configStringSchema);
-            var localConnectionParams = new LocalConnectionParams(configStringSchema, connectionString, defaultSchema);
+
+            var primaryPollInterval = GetSetting<int>(context.Settings, PrimaryPollIntervalSettingsKey);
+            var secondaryPollInterval = GetSetting<int>(context.Settings, SecondaryPollIntervalSettingsKey);
+
+            var localConnectionParams = new LocalConnectionParams(configStringSchema, connectionString, defaultSchema, primaryPollInterval, secondaryPollInterval);
             context.Container.ConfigureComponent(() => localConnectionParams, DependencyLifecycle.SingleInstance);
 
             var connectionStringProvider = ConfigureConnectionStringProvider(context, localConnectionParams);
@@ -44,6 +52,17 @@ namespace NServiceBus.Transports.SQLServer.Config
                 );
 
             return connectionStringProvider;
+        }
+
+        static T GetSetting<T>(ReadOnlySettings settings, string key)
+        {
+            var stringValue = ConfigurationManager.AppSettings.Get("NServiceBus/" + key.Replace(".", "/"));
+            if (stringValue != null)
+            {
+                var converter = TypeDescriptor.GetConverter(typeof(T));
+                return (T)converter.ConvertFromInvariantString(stringValue);
+            }
+            return settings.GetOrDefault<T>(key);
         }
 
         IConnectionStringProvider CreateConfigPerEndpointConnectionStringProvider(LocalConnectionParams localConnectionParams)

@@ -2,6 +2,6 @@ namespace NServiceBus.Transports.SQLServer
 {
     interface IQueuePurger
     {
-        void Purge(Address address);
+        void Purge(string address);
     }
 }

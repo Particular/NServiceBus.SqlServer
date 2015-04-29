@@ -4,24 +4,26 @@ namespace NServiceBus.Transports.SQLServer
     using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
+    using System.IO;
     using NServiceBus.Logging;
     using NServiceBus.Serializers.Json;
     using NServiceBus.Unicast;
 
     class TableBasedQueue
     {
-        public TableBasedQueue(Address address, string schema)
-            : this(address.GetTableName(), schema)
+        public TableBasedQueue(string queueName, string schema)
         {
-        }
-
-        public TableBasedQueue(string tableName, string schema)
-        {
-            this.tableName = tableName;
+            tableName = queueName.GetTableName();
+            this.queueName = queueName;
             this.schema = schema;
         }
 
-        public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
+        public string QueueName
+        {
+            get { return queueName; }
+        }
+
+        public void Send(OutgoingMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
         {
             var messageData = ExtractTransportMessageData(message, sendOptions);
 
@@ -53,33 +55,34 @@ namespace NServiceBus.Transports.SQLServer
             command.ExecuteNonQuery();
         }
 
-        static object[] ExtractTransportMessageData(TransportMessage message, SendOptions sendOptions)
+        static object[] ExtractTransportMessageData(OutgoingMessage message, SendOptions sendOptions)
         {
             var data = new object[7];
 
-            data[IdColumn] = Guid.Parse(message.Id);
-            data[CorrelationIdColumn] = GetValue(message.CorrelationId);
-            if (sendOptions.ReplyToAddress != null)
+            data[IdColumn] = Guid.Parse(message.Headers[Headers.MessageId]);
+            data[CorrelationIdColumn] = GetValue(message.Headers[Headers.CorrelationId]);
+            if (message.Headers.ContainsKey(Headers.ReplyToAddress))
             {
-                data[ReplyToAddressColumn] = sendOptions.ReplyToAddress.ToString();
-            }
-            else if (message.ReplyToAddress != null)
-            {
-                data[ReplyToAddressColumn] = message.ReplyToAddress.ToString();
+                data[ReplyToAddressColumn] = message.Headers[Headers.ReplyToAddress];
             }
             else
             {
                 data[ReplyToAddressColumn] = DBNull.Value;
             }
-            data[RecoverableColumn] = message.Recoverable;
-            if (message.TimeToBeReceived == TimeSpan.MaxValue)
+
+            //TODO: What should be the default?
+            data[RecoverableColumn] = false;
+            if (sendOptions.NonDurable.HasValue)
             {
-                data[TimeToBeReceivedColumn] = DBNull.Value;
+                data[RecoverableColumn] = sendOptions.NonDurable.Value;
             }
-            else
+            
+            data[TimeToBeReceivedColumn] = DBNull.Value;
+            if (sendOptions.TimeToBeReceived.HasValue && sendOptions.TimeToBeReceived.Value < TimeSpan.MaxValue)
             {
-                data[TimeToBeReceivedColumn] = DateTime.UtcNow.Add(message.TimeToBeReceived);
+                data[TimeToBeReceivedColumn] = DateTime.UtcNow.Add(sendOptions.TimeToBeReceived.Value);
             }
+
             data[HeadersColumn] = HeaderSerializer.SerializeObject(message.Headers);
             if (message.Body == null)
             {
@@ -143,27 +146,17 @@ namespace NServiceBus.Transports.SQLServer
                 }
 
                 var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
-                var correlationId = GetNullableValue<string>(rowData[CorrelationIdColumn]);
-                var recoverable = (bool)rowData[RecoverableColumn];
                 var body = GetNullableValue<byte[]>(rowData[BodyColumn]);
-
-                var message = new TransportMessage(id, headers)
-                {
-                    CorrelationId = correlationId,
-                    Recoverable = recoverable,
-                    Body = body ?? new byte[0]
-                };
+                // TODO: Need to use the stream api to read the data
+                headers[Headers.CorrelationId] = GetNullableValue<string>(rowData[CorrelationIdColumn]);
+                
+                var message = new IncomingMessage(id, headers, new MemoryStream(body ?? new byte[0]));
 
                 var replyToAddress = GetNullableValue<string>(rowData[ReplyToAddressColumn]);
 
                 if (!string.IsNullOrEmpty(replyToAddress))
                 {
                     message.Headers[Headers.ReplyToAddress] = replyToAddress;
-                }
-
-                if (expireDateTime.HasValue)
-                {
-                    message.TimeToBeReceived = TimeSpan.FromTicks(expireDateTime.Value.Ticks - DateTime.UtcNow.Ticks);
                 }
 
                 return MessageReadResult.Success(message);
@@ -197,6 +190,7 @@ namespace NServiceBus.Transports.SQLServer
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
 
         readonly string tableName;
+        readonly string queueName;
         readonly string schema;
         static  readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 

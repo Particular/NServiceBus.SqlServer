@@ -8,6 +8,12 @@
         readonly string connectionString;
         readonly string schema;
 
+        protected ConnectionParams(string specificSchema, string defaultConnectionString, string defaultSchema)
+            : this(null, specificSchema, defaultConnectionString, defaultSchema)
+        {
+            
+        }
+
         public ConnectionParams(string specificConnectionString, string specificSchema, string defaultConnectionString, string defaultSchema)
         {
             if (defaultConnectionString == null)

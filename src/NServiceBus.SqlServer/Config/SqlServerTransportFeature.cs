@@ -4,8 +4,9 @@ namespace NServiceBus.Features
     using System.Collections.Generic;
     using System.Configuration;
     using System.Linq;
+    using System.Transactions;
+    using NServiceBus.ObjectBuilder;
     using NServiceBus.Transports.SQLServer.Config;
-    using Pipeline;
     using Settings;
     using Transports;
     using Transports.SQLServer;
@@ -37,6 +38,41 @@ namespace NServiceBus.Features
             get { return @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; }
         }
 
+        protected override Func<IBuilder, ReceiveBehavior> GetReceiveBehaviorFactory(ReceiveOptions receiveOptions)
+        {
+            if (receiveOptions.Transactions.IsTransactional)
+            {
+                var transactionOptions = new TransactionOptions
+                {
+                    IsolationLevel = receiveOptions.Transactions.IsolationLevel,
+                    Timeout = receiveOptions.Transactions.TransactionTimeout
+                };
+
+                if (receiveOptions.Transactions.SuppressDistributedTransactions)
+                {
+                    return builder =>
+                    {
+                        var connectionInfo = builder.Build<LocalConnectionParams>();
+                        var errorQueue = new TableBasedQueue(receiveOptions.ErrorQueue, connectionInfo.Schema);
+                        return new NativeTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue, transactionOptions);
+                    };
+                }
+                return builder =>
+                {
+                    var connectionInfo = builder.Build<LocalConnectionParams>();
+                    var errorQueue = new TableBasedQueue(receiveOptions.ErrorQueue, connectionInfo.Schema);
+                    return new AmbientTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue, transactionOptions);
+                };
+            }
+
+            return builder =>
+            {
+                var connectionInfo = builder.Build<LocalConnectionParams>();
+                var errorQueue = new TableBasedQueue(receiveOptions.ErrorQueue, connectionInfo.Schema);
+                return new NoTransactionReceiveBehavior(connectionInfo.ConnectionString, errorQueue);
+            };
+        }
+
         protected override string GetLocalAddress(ReadOnlySettings settings)
         {
             return settings.EndpointName();
@@ -44,9 +80,6 @@ namespace NServiceBus.Features
 
         protected override void Configure(FeatureConfigurationContext context, string connectionStringWithSchema)
         {
-            //Until we refactor the whole address system
-            Address.IgnoreMachineName();
-
             if (String.IsNullOrEmpty(connectionStringWithSchema))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
@@ -57,13 +90,8 @@ namespace NServiceBus.Features
                 config.Configure(context, connectionStringWithSchema);
             }
 
-            context.Container.ConfigureComponent<TransportNotifications>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
-
-            var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
-            context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue),  DependencyLifecycle.InstancePerCall);
-
             context.Container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<SqlServerStorageContext>(DependencyLifecycle.InstancePerUnitOfWork);
         }

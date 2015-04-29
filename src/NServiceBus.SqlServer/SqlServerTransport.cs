@@ -28,5 +28,15 @@ namespace NServiceBus
             config.GetSettings().EnableFeatureByDefault<StorageDrivenPublishing>();
             config.GetSettings().EnableFeatureByDefault<TimeoutManager>();
         }
+
+        /// <summary>
+        /// Creates a new Address whose Queue is derived from the Queue of the existing Address
+        ///             together with the provided qualifier. For example: queue.qualifier@machine
+        /// </summary>
+        public override string GetSubScope(string address, string qualifier)
+        {
+            //TODO: Need to validate what addresses look like in sql transport
+            return address + "." + qualifier;
+        }
     }
 }

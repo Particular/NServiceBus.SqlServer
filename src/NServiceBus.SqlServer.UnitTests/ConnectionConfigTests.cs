@@ -27,12 +27,12 @@ namespace NServiceBus.SqlServer.UnitTests
             var connectionProvider = builder.Build<IConnectionStringProvider>();
 
             //Config
-            var connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint1"));
+            var connectionParams = connectionProvider.GetForDestination("Endpoint1");
             Assert.IsTrue("Source=Config".Equals(connectionParams.ConnectionString, StringComparison.InvariantCultureIgnoreCase));
             Assert.AreEqual("ConfigSchema", connectionParams.Schema);
 
             //Fallback - code
-            connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint2"));
+            connectionParams = connectionProvider.GetForDestination("Endpoint2");
             Assert.IsTrue("Source=Code".Equals(connectionParams.ConnectionString, StringComparison.InvariantCultureIgnoreCase));
             Assert.AreEqual("CodeSchema", connectionParams.Schema);
         }
@@ -48,12 +48,12 @@ namespace NServiceBus.SqlServer.UnitTests
             var connectionProvider = builder.Build<IConnectionStringProvider>();
 
             //Code
-            var connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint1"));
+            var connectionParams = connectionProvider.GetForDestination("Endpoint1");
             Assert.AreEqual("Source=Code", connectionParams.ConnectionString);
             Assert.AreEqual("CodeSchema", connectionParams.Schema);
 
             //Fallback - default
-            connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint2"));
+            connectionParams = connectionProvider.GetForDestination("Endpoint2");
             Assert.IsTrue("Source=Default".Equals(connectionParams.ConnectionString, StringComparison.InvariantCultureIgnoreCase));
             Assert.AreEqual("DefaultSchema", connectionParams.Schema);
         }
@@ -69,12 +69,12 @@ namespace NServiceBus.SqlServer.UnitTests
             var connectionProvider = builder.Build<IConnectionStringProvider>();
 
             //Code 
-            var connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint1"));
+            var connectionParams = connectionProvider.GetForDestination("Endpoint1");
             Assert.AreEqual("Source=Code", connectionParams.ConnectionString);
             Assert.AreEqual("CodeSchema", connectionParams.Schema);
 
             //Fallback - default
-            connectionParams = connectionProvider.GetForDestination(Address.Parse("Endpoint2"));
+            connectionParams = connectionProvider.GetForDestination("Endpoint2");
             Assert.IsTrue("Source=Default".Equals(connectionParams.ConnectionString, StringComparison.InvariantCultureIgnoreCase));
             Assert.AreEqual("DefaultSchema", connectionParams.Schema);
         }
@@ -88,7 +88,7 @@ namespace NServiceBus.SqlServer.UnitTests
             var builder = Activate(busConfig, new ConnectionConfig(new List<ConnectionStringSettings>()), "Source=Default;Queue Schema=DefaultSchema");
             var connectionProvider = builder.Build<IConnectionStringProvider>();
 
-            Assert.AreEqual("DefaultSchema", connectionProvider.GetForDestination(Address.Parse("Endpoint")).Schema);
+            Assert.AreEqual("DefaultSchema", connectionProvider.GetForDestination("Endpoint").Schema);
         }
 
         [Test]

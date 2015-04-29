@@ -15,7 +15,7 @@
     <AssemblyOriginatorKeyFile>$(SolutionDir)NServiceBus.snk</AssemblyOriginatorKeyFile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>3ead7d6a</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>ddb7e95a</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,13 +46,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Janitor">
-      <HintPath>..\packages\Janitor.Fody.0.6.1.0\Lib\portable-net4+sl4+wp7+win8+MonoAndroid16+MonoTouch40\Janitor.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Janitor.Fody.1.1.0.0\Lib\portable-net4+sl5+wp8+win8+wpa81+MonoAndroid16+MonoTouch40\Janitor.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NServiceBus.5.0.0\lib\net45\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable0257\lib\net45\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -64,10 +64,9 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdaptiveExecutor.cs" />
-    <Compile Include="AdaptivePollingReceiver.cs" />
-    <Compile Include="AmbientTransactionReceiveStrategy.cs" />
-    <Compile Include="BackOff.cs" />
+    <Compile Include="AmbientTransactionReceiveBehavior.cs" />
+    <Compile Include="MessageAvailabilitySignaller.cs" />
+    <Compile Include="NativeTransactionReceiveBehavior.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="CallbackQueuePipelineContextExtensions.cs" />
     <Compile Include="CollectionConnectionStringProvider.cs" />
@@ -84,30 +83,19 @@
     <Compile Include="DefaultConnectionStringProvider.cs" />
     <Compile Include="DelegateConnectionStringProvider.cs" />
     <Compile Include="EndpointConnectionInfo.cs" />
-    <Compile Include="ErrorQueueSettings.cs" />
     <Compile Include="IConnectionStringProvider.cs" />
-    <Compile Include="IExecutor.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="IQueuePurger.cs" />
-    <Compile Include="IRampUpController.cs" />
-    <Compile Include="IReceiveStrategy.cs" />
     <Compile Include="ICallbackAddressSetter.cs" />
-    <Compile Include="ITaskTracker.cs" />
     <Compile Include="LocalConnectionParams.cs" />
+    <Compile Include="IQueuePurger.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="NativeTransactionReceiveStrategy.cs" />
-    <Compile Include="NoTransactionReceiveStrategy.cs" />
+    <Compile Include="NoTransactionReceiveBehavior.cs" />
     <Compile Include="NullConnectionStringProvider.cs" />
     <Compile Include="NullQueuePurger.cs" />
     <Compile Include="Observable.cs" />
     <Compile Include="PipelineExecutorExtensions.cs" />
-    <Compile Include="PipelineNotifications.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
-    <Compile Include="ReceiveRampUpController.cs" />
-    <Compile Include="ReceiveResult.cs" />
-    <Compile Include="ReceiveStrategyFactory.cs" />
-    <Compile Include="ReceiveTaskTracker.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
@@ -128,18 +116,20 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\Fody.1.24.0\build\Fody.targets" Condition="Exists('..\packages\Fody.1.24.0\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Fody.1.24.0\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.24.0\build\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.1.28.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.28.3\build\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets'))" />
     <Error Condition="!Exists('..\packages\NuGetPackager.0.5.2\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.5.2\build\NuGetPackager.targets'))" />
   </Target>
   <Import Project="..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.2.0.1\Build\GitVersionTask.targets')" />
+  <Import Project="..\packages\Fody.1.28.3\build\Fody.targets" Condition="Exists('..\packages\Fody.1.28.3\build\Fody.targets')" />
   <Import Project="..\packages\NuGetPackager.0.5.2\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.5.2\build\NuGetPackager.targets')" />
 </Project>

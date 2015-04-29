@@ -1,6 +1,8 @@
 namespace NServiceBus.SqlServer.AcceptanceTests
 {
+    using System;
     using System.Configuration;
+    using System.Linq;
     using System.Reflection;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -16,41 +18,62 @@ namespace NServiceBus.SqlServer.AcceptanceTests
         [Test]
         public void When_multi_db_via_configuration_it_fails_to_start()
         {
-            var context = new Context();
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/OtherEndpoint", OtherDatabaseConnectionString)))
-                   .Done(c => true)
-                   .Run();
-
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
+            try
+            {
+                var context = new Context();
+                Scenario.Define(context)
+                       .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/OtherEndpoint", OtherDatabaseConnectionString)))
+                       .Done(c => true)
+                       .Run();
+            }
+            catch (AggregateException ex)
+            {
+                Assert.IsTrue(ex.Flatten().ToString().Contains(ExceptionText));
+                return;
+            }
+            Assert.Fail("Expected exception");
         }
-        
+
         [Test]
         public void When_multi_db_via_code_it_fails_to_start()
         {
-            var context = new Context();
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
-                       EndpointConnectionInfo.For("A").UseConnectionString(OtherDatabaseConnectionString)
-                       )))
-                   .Done(c => true)
-                   .Run();
+            try
+            {
+                var context = new Context();
+                Scenario.Define(context)
+                       .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
+                           EndpointConnectionInfo.For("A").UseConnectionString(OtherDatabaseConnectionString)
+                           )))
+                       .Done(c => true)
+                       .Run();
+            }
+            catch (AggregateException ex)
+            {
+                Assert.IsTrue(ex.Flatten().ToString().Contains(ExceptionText));
+                return;
+            }
+            Assert.Fail("Expected exception");
+        }
 
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
-        } 
-        
         [Test]
         public void When_multi_db_via_callback_it_fails_to_start_even_when_not_using_other_database()
         {
-            var context = new Context();
-            Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
-                       e => ConnectionInfo.Create().UseSchema("nsb")
-                       )))
-                   .Done(c => true)
-                   .Run();
-
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
+            try
+            {
+                var context = new Context();
+                Scenario.Define(context)
+                       .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
+                           e => ConnectionInfo.Create().UseSchema("nsb")
+                           )))
+                       .Done(c => true)
+                       .Run();
+            }
+            catch (AggregateException ex)
+            {
+                Assert.IsTrue(ex.Flatten().ToString().Contains(ExceptionText));
+                return;
+            }
+            Assert.Fail("Expected exception");
         }
 
         [Test]

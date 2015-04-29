@@ -2,19 +2,20 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System.Data;
     using System.Data.SqlClient;
-    using Pipeline;
+    using NServiceBus.ObjectBuilder;
+    using NServiceBus.Pipeline;
 
     /// <summary>
     /// Provides users with access to the current SqlServer transport <see cref="IDbConnection"/>. 
     /// </summary>
     public class SqlServerStorageContext
     {
-        readonly PipelineExecutor pipelineExecutor;
+        readonly IBuilder builder;
         readonly string connectionString;
 
-        internal SqlServerStorageContext(PipelineExecutor pipelineExecutor, string connectionString)
+        internal SqlServerStorageContext(IBuilder builder, string connectionString)
         {
-            this.pipelineExecutor = pipelineExecutor;
+            this.builder = builder;
             this.connectionString = connectionString;
         }
 
@@ -26,7 +27,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlConnection connection;
-                return pipelineExecutor.TryGetConnection(connectionString, out connection) 
+                return builder.Build<BehaviorContext>().TryGetConnection(connectionString, out connection) 
                     ? connection 
                     : null;
             }
@@ -40,7 +41,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlTransaction transaction;
-                return pipelineExecutor.TryGetTransaction(connectionString, out transaction) 
+                return builder.Build<BehaviorContext>().TryGetTransaction(connectionString, out transaction) 
                     ? transaction 
                     : null;
             }

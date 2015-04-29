@@ -5,12 +5,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Text;
 
     static class TableNameUtils
-    {
-        public static string GetTableName(this Address address)
-        {
-            return GetTableName(address.Queue);
-        }
-        
+    {      
         public static string GetTableName(this string queueName)
         {
             if (queueName.Length > 128)

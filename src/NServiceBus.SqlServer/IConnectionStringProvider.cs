@@ -2,7 +2,7 @@
 {
     interface IConnectionStringProvider
     {
-        ConnectionParams GetForDestination(Address destination);
+        ConnectionParams GetForDestination(string destination);
         bool AllowsNonLocalConnectionString { get; }
     }
 }

@@ -15,9 +15,9 @@
             this.connectionStrings = connectionStrings.ToList();
         }
 
-        public ConnectionParams GetForDestination(Address destination)
+        public ConnectionParams GetForDestination(string destination)
         {
-            var found = connectionStrings.FirstOrDefault(x => destination.Queue.Equals(x.Endpoint, StringComparison.OrdinalIgnoreCase));
+            var found = connectionStrings.FirstOrDefault(x => destination.Equals(x.Endpoint, StringComparison.OrdinalIgnoreCase));
             return found != null
                 ? found.CreateConnectionParams(localConnectionParams)
                 : null;
