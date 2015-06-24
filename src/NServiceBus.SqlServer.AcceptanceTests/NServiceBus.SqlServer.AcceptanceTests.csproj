@@ -58,6 +58,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Messaging" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
   </ItemGroup>
@@ -69,12 +70,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
+    <Compile Include="NServiceBusAcceptanceTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <!--
   <Target Name="BeforeBuild">
