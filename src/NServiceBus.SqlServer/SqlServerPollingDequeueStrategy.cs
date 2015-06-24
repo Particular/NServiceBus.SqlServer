@@ -410,7 +410,7 @@
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
             TimeSpan.FromMinutes(2),
             ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
             TimeSpan.FromSeconds(10));

@@ -63,7 +63,7 @@
             currentTransactions.Value.Remove(connectionString);
         }
 
-        readonly ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
+        ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
             = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>(StringComparer.InvariantCultureIgnoreCase));
 
         string defaultConnectionString;
