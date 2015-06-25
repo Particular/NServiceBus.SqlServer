@@ -6,9 +6,9 @@ namespace NServiceBus.Transports.SQLServer
     public class SqlServerQueueCreator : ICreateQueues
     {
         const string Ddl =
-            @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{0}]') AND type in (N'U'))
+            @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN
-                    CREATE TABLE [dbo].[{0}](
+                    CREATE TABLE [{0}].[{1}](
 	                    [Id] [uniqueidentifier] NOT NULL,
 	                    [CorrelationId] [varchar](255) NULL,
 	                    [ReplyToAddress] [varchar](255) NULL,
@@ -19,7 +19,7 @@ namespace NServiceBus.Transports.SQLServer
 	                    [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
                     ) ON [PRIMARY];                    
 
-                    CREATE CLUSTERED INDEX [Index_RowVersion] ON [dbo].[{0}] 
+                    CREATE CLUSTERED INDEX [Index_RowVersion] ON [{0}].[{1}] 
                     (
 	                    [RowVersion] ASC
                     )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
@@ -30,7 +30,7 @@ namespace NServiceBus.Transports.SQLServer
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
-                var sql = string.Format(Ddl, TableNameUtils.GetTableName(address));
+                var sql = string.Format(Ddl, SchemaName, TableNameUtils.GetTableName(address));
                 connection.Open();
 
                 using (var command = new SqlCommand(sql, connection) {CommandType = CommandType.Text})
@@ -41,5 +41,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         public string ConnectionString { get; set; }
+
+        public string SchemaName { get; set; }
     }
 }

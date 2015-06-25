@@ -4,18 +4,12 @@
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading;
-    using Settings;
 
     public class UnitOfWork : IDisposable
     {
-        public UnitOfWork()
-        {
-            defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
-        }
-
         public SqlTransaction Transaction
         {
-            get { return GetTransaction(defaultConnectionString); }
+            get { return GetTransaction(DefaultConnectionString); }
         }
 
         public void Dispose()
@@ -30,7 +24,7 @@
 
         public void SetTransaction(SqlTransaction transaction)
         {
-            SetTransaction(transaction, defaultConnectionString);
+            SetTransaction(transaction, DefaultConnectionString);
         }
 
         public void SetTransaction(SqlTransaction transaction, string connectionString)
@@ -45,7 +39,7 @@
 
         public bool HasActiveTransaction()
         {
-            return HasActiveTransaction(defaultConnectionString);
+            return HasActiveTransaction(DefaultConnectionString);
         }
 
         public bool HasActiveTransaction(string connectionString)
@@ -55,7 +49,7 @@
 
         public void ClearTransaction()
         {
-            ClearTransaction(defaultConnectionString);
+            ClearTransaction(DefaultConnectionString);
         }
 
         public void ClearTransaction(string connectionString)
@@ -66,6 +60,6 @@
         ThreadLocal<Dictionary<string, SqlTransaction>> currentTransactions
             = new ThreadLocal<Dictionary<string, SqlTransaction>>(() => new Dictionary<string, SqlTransaction>(StringComparer.InvariantCultureIgnoreCase));
 
-        string defaultConnectionString;
+        public string DefaultConnectionString { get; set; }
     }
 }

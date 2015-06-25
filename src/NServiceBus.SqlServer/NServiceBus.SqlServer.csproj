@@ -61,6 +61,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackOff.cs" />
+    <Compile Include="ConnectionInfo.cs" />
+    <Compile Include="ConnectionStringParser.cs" />
     <Compile Include="SqlServer.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
