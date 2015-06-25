@@ -110,7 +110,13 @@
 
         private static void ExecuteQuery(TransportMessage message, SqlCommand command)
         {
-            command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = Guid.Parse(message.Id);
+            Guid sqlNativeMessageId;
+            if (!Guid.TryParse(message.Id, out sqlNativeMessageId))
+            {
+                sqlNativeMessageId = Guid.NewGuid();
+            }
+
+            command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = sqlNativeMessageId;
             command.Parameters.Add("CorrelationId", SqlDbType.VarChar).Value =
                 GetValue(message.CorrelationId);
             if (message.ReplyToAddress == null) // SendOnly endpoint
