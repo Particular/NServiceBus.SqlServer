@@ -72,6 +72,17 @@
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
     <Compile Include="Audit\When_a_message_is_audited.cs" />
     <Compile Include="Audit\When_using_auditing_as_a_feature.cs" />
+    <Compile Include="SqlCustomSchema\When_aborting_the_behavior_chain.cs" />
+    <Compile Include="SqlCustomSchema\When_Deferring_a_message.cs" />
+    <Compile Include="SqlCustomSchema\When_handling_current_message_later.cs" />
+    <Compile Include="SqlCustomSchema\When_registering_a_callback_for_a_local_message.cs" />
+    <Compile Include="SqlCustomSchema\When_sending_a_message_that_is_registered_multiple_times_to_another_endpoint.cs" />
+    <Compile Include="SqlCustomSchema\When_sending_a_message_to_another_endpoint.cs" />
+    <Compile Include="SqlCustomSchema\When_sending_a_message_with_no_correlation_id.cs" />
+    <Compile Include="SqlCustomSchema\When_using_a_custom_correlation_id.cs" />
+    <Compile Include="SqlCustomSchema\When_using_a_greedy_convention.cs" />
+    <Compile Include="SqlCustomSchema\When_using_a_message_with_TimeToBeReceived_has_not_expired.cs" />
+    <Compile Include="SqlCustomSchema\When_using_callbacks_in_a_scaleout_scenario.cs" />
     <Compile Include="BasicMessaging\When_aborting_the_behavior_chain.cs" />
     <Compile Include="BasicMessaging\When_Deferring_a_message.cs" />
     <Compile Include="BasicMessaging\When_handling_current_message_later.cs" />
@@ -173,6 +184,7 @@
     <Compile Include="ScenarioDescriptors\TimeoutPersisters.cs" />
     <Compile Include="ScenarioDescriptors\Transports.cs" />
     <Compile Include="Scheduling\When_scheduling_a_recurring_task.cs" />
+    <Compile Include="SqlCustomSchema\When_using_different_connection_strings_for_each_endpoint.cs" />
     <Compile Include="Transactions\FakePromotableResourceManager.cs" />
     <Compile Include="Transactions\When_receiving_a_message_with_dtc_disabled.cs" />
     <Compile Include="Transactions\When_receiving_a_message_with_dtc_enabled.cs" />
