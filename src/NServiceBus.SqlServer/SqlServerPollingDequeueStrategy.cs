@@ -361,6 +361,11 @@
                     var body = dataReader.IsDBNull(6) ? null : dataReader.GetSqlBinary(6).Value;
                     var replyToAddress = dataReader.IsDBNull(2) ? null : Address.Parse(dataReader.GetString(2));
 
+                    if (headers.ContainsKey(Headers.MessageId))
+                    {
+                        id = headers[Headers.MessageId];
+                    }
+
                     var message = new TransportMessage(id, headers)
                     {
                         CorrelationId = correlationId,
