@@ -72,7 +72,6 @@
     <Compile Include="App_Packages\NServiceBus.AcceptanceTests\**\*.cs" />
     <Compile Include="Audit\When_a_message_is_audited.cs" />
     <Compile Include="Audit\When_using_auditing_as_a_feature.cs" />
-    <Compile Include="BasicMessaging\When_using_a_custom_message_id.cs" />
     <Compile Include="SqlCustomSchema\When_aborting_the_behavior_chain.cs" />
     <Compile Include="SqlCustomSchema\When_Deferring_a_message.cs" />
     <Compile Include="SqlCustomSchema\When_handling_current_message_later.cs" />
