@@ -9,11 +9,11 @@
         /// <param name="schemaName">Name of the schema.</param>
         internal ConnectionInfo( string connectionString, string schemaName )
         {
-            this.ConnectionString = connectionString;
-            this.SchemaName = schemaName;
-            if( string.IsNullOrWhiteSpace( this.SchemaName ) ) 
+            ConnectionString = connectionString;
+            SchemaName = schemaName;
+            if( string.IsNullOrWhiteSpace( SchemaName ) ) 
             {
-                this.SchemaName = "dbo";
+                SchemaName = "dbo";
             }
         }
 

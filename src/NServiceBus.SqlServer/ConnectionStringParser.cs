@@ -8,7 +8,7 @@
         {
             const string key = "Queue Schema";
             string _schemaName = null;
-            string _connectionString = connectionString;
+            var _connectionString = connectionString;
 
             var connectionStringParser = new DbConnectionStringBuilder
             {
