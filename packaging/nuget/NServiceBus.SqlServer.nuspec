@@ -19,6 +19,6 @@
   </metadata>
   <files>
     <file src="..\..\src\NServiceBus.SqlServer\bin\Release\NServiceBus.Transports.SqlServer.???" target="lib\net40" />
-    <file src="tools\install.ps1" target="tools" />
+    <file src="..\..\packaging\nuget\tools\install.ps1" target="tools" />
   </files>
 </package>
