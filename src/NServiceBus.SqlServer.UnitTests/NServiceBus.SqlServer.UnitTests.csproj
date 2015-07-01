@@ -30,6 +30,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>NServiceBus.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="NServiceBus, Version=4.7.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <HintPath>..\packages\NServiceBus.Interfaces.4.7.5\lib\net40\NServiceBus.dll</HintPath>
@@ -62,6 +68,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="NServiceBus.snk" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
