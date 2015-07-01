@@ -11,9 +11,9 @@ namespace NServiceBus.AcceptanceTests
 // ReSharper disable once PartialTypeWithSinglePart
     public abstract partial class NServiceBusAcceptanceTest
     {
-        protected const string ConnectionStringWith_test_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=test_schema";
-        protected const string ConnectionStringWith_sender_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=sender_schema";
-        protected const string ConnectionStringWith_receiver_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=receiver_schema";
+        protected const string ConnectionStringWith_test_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=nsb";
+        protected const string ConnectionStringWith_sender_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=sender";
+        protected const string ConnectionStringWith_receiver_schema = @"Data Source=.\SQLEXPRESS;Initial Catalog=NServiceBus;Integrated Security=True; Queue Schema=receiver";
 
         [SetUp]
         public void SetUp()
