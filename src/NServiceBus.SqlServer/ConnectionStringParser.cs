@@ -2,8 +2,16 @@
 {
     using System.Data.Common;
 
-    class ConnectionStringParser
+    /// <summary>
+    /// Connection string utilities.
+    /// </summary>
+    public class ConnectionStringParser
     {
+        /// <summary>
+        /// Parses the supplied connection string extracting the schema name, if any.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns></returns>
         public static ConnectionInfo AsConnectionInfo( string connectionString )
         {
             const string key = "Queue Schema";

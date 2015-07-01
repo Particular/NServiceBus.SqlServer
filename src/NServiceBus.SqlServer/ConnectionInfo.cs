@@ -1,6 +1,9 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    class ConnectionInfo
+    /// <summary>
+    /// Carries connection string information along with schema name.
+    /// </summary>
+    public class ConnectionInfo
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ConnectionInfo"/> class.
