@@ -56,15 +56,19 @@ namespace NServiceBus.Features
                 config.Configure(context, connectionStringWithSchema);
             }
 
-            context.Container.ConfigureComponent<TransportNotifications>(DependencyLifecycle.SingleInstance);
             context.Container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall);
-            context.Container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
-            var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
-            context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue),  DependencyLifecycle.InstancePerCall);
+            if (!context.Settings.GetOrDefault<bool>("Endpoint.SendOnly"))
+            {
+                context.Container.ConfigureComponent<TransportNotifications>(DependencyLifecycle.SingleInstance);
+                context.Container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
-            context.Container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
-            context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>()),  DependencyLifecycle.InstancePerUnitOfWork);
+                var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
+                context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue), DependencyLifecycle.InstancePerCall);
+
+                context.Container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
+                context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>()), DependencyLifecycle.InstancePerUnitOfWork);
+            }
         }
     }
 

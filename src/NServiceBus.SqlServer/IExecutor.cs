@@ -4,13 +4,13 @@
 
     interface IExecutor
     {
-        void Start(int maximumConcurrency, CancellationTokenSource tokenSource);
+        void Start(int maximumConcurrency, CancellationToken token);
         void Stop();
     }
 
     class NullExecutor : IExecutor
     {
-        public void Start(int maximumConcurrency, CancellationTokenSource tokenSource)
+        public void Start(int maximumConcurrency, CancellationToken token)
         {
         }
 

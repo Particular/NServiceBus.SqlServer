@@ -19,35 +19,32 @@
             this.circuitBreaker = circuitBreaker;
         }
 
-        public virtual void Start(int maximumConcurrency, CancellationTokenSource tokenSource)
+        public virtual void Start(int maximumConcurrency, CancellationToken token)
         {
             if (taskTracker != null)
             {
                 throw new InvalidOperationException("The executor has already been started. Use Stop() to stop it.");
             }
-            this.tokenSource = tokenSource;
+            this.token = token;
             taskTracker = CreateTaskTracker(maximumConcurrency);
             StartTask();
         }
 
-        public  virtual void Stop()
+        public virtual void Stop()
         {
             taskTracker.ShutdownAll();
+
             taskTracker = null;
-            tokenSource = null;
         }
 
         void StartTask()
         {
-            var token = tokenSource.Token;
-
             taskTracker.StartAndTrack(() =>
             {
+                var taskId = Guid.NewGuid();
                 var receiveTask = Task.Factory
-                    .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-                receiveTask.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
+                    .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                    .ContinueWith(t =>
                     {
                         t.Exception.Handle(ex =>
                         {
@@ -55,14 +52,21 @@
                             circuitBreaker.Failure(ex);
                             return true;
                         });
-                    }
-                    taskTracker.Forget(t);
-                    if (taskTracker.HasNoTasks)
+
+                    }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
+                    .ContinueWith((_, s) =>
                     {
+                        taskTracker.Forget((Guid)s);
+
+                        if (!taskTracker.ShouldStartAnotherTaskImmediately)
+                        {
+                            return;
+                        }
+
                         StartTask();
-                    }
-                });
-                return receiveTask;
+                    }, taskId, token);
+
+                return Tuple.Create(taskId, receiveTask);
             });
         }
 
@@ -71,7 +75,7 @@
             var backOff = new BackOff(1000);
             var rampUpController = CreateRampUpController(StartTask);
 
-            while (!tokenSource.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
+            while (!token.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
             {
                 bool success;
                 rampUpController.RampUpIfTooMuchWork();
@@ -99,7 +103,7 @@
         }
 
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
-        CancellationTokenSource tokenSource;
+        CancellationToken token;
         ITaskTracker taskTracker;
 
     }
