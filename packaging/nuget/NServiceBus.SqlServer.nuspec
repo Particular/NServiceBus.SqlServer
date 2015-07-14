@@ -3,16 +3,16 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>NServiceBus.SqlServer</id>
     <title>NServiceBus SqlServer</title>
-    <version>4.0.0-alpha0</version>
-    <authors>NServiceBus Ltd</authors>
-    <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
-    <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
-    <projectUrl>http://particular.net/</projectUrl>
-    <iconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</iconUrl>
-    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <version>$version$</version>
+    <authors>$authors$</authors>
+    <owners>$owners$</owners>
+    <licenseUrl>$licenseUrl$</licenseUrl>
+    <projectUrl>$projectUrl$</projectUrl>
+    <iconUrl>$iconUrl$</iconUrl>
+    <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
+    <copyright>$copyright$</copyright>
     <description>SQL transport support for NServicebus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright 2010-2013 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
     </dependencies>
