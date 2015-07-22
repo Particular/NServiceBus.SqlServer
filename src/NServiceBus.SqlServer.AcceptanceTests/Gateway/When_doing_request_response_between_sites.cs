@@ -8,7 +8,7 @@
 
     public class When_doing_request_response_between_sites : NServiceBusAcceptanceTest
     {
-        [Test]
+        [Test, Explicit( "This tests requires URLS ACL to be set on the Agent" )]
         public void Callback_should_be_fired()
         {
             var context = new Context();

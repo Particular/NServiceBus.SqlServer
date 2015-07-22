@@ -13,7 +13,7 @@
     
     public class When_sending_a_message_via_the_gateway : NServiceBusAcceptanceTest
     {
-        [Test]
+        [Test, Explicit( "This tests requires URLS ACL to be set on the Agent" )]
         public void Should_process_message()
         {
             Scenario.Define<Context>()
