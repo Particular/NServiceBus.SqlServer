@@ -28,33 +28,54 @@ namespace NServiceBus.Features
         {
             //Until we refactor the whole address system
             CustomizeAddress();
-            
-            var defaultConnectionString = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
 
-            //Load all connectionstrings 
-            var collection =
-                ConfigurationManager
-                .ConnectionStrings
-                .Cast<ConnectionStringSettings>()
-                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
-                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", String.Empty), y => y.ConnectionString);
-
-            if (String.IsNullOrEmpty(defaultConnectionString))
+            var connectionStringSetting = SettingsHolder.Get<string>("NServiceBus.Transport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionStringSetting))
             {
                 throw new ArgumentException("Sql Transport connection string cannot be empty or null.");
             }
 
-            NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance);
+            var defaultConnectionInfo = ConnectionStringParser.AsConnectionInfo(connectionStringSetting);
+
+            //Load all connectionstrings 
+            var connectionStringCollection =
+                ConfigurationManager
+                .ConnectionStrings
+                .Cast<ConnectionStringSettings>()
+                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
+                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", string.Empty), y =>
+                {
+                    var info= ConnectionStringParser.AsConnectionInfo(y.ConnectionString);
+                    return info.ConnectionString;
+                });
+
+            var schemaNameCollection =
+                ConfigurationManager
+                .ConnectionStrings
+                .Cast<ConnectionStringSettings>()
+                .Where(x => x.Name.StartsWith("NServiceBus/Transport/"))
+                .ToDictionary(x => x.Name.Replace("NServiceBus/Transport/", string.Empty), y =>
+                {
+                    var info= ConnectionStringParser.AsConnectionInfo(y.ConnectionString);
+                    return info.SchemaName;
+                });
+
+            NServiceBus.Configure.Component<UnitOfWork>(DependencyLifecycle.SingleInstance)
+                .ConfigureProperty( p => p.DefaultConnectionString, defaultConnectionInfo.ConnectionString );
 
             NServiceBus.Configure.Component<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString);
+                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionInfo.ConnectionString)
+                  .ConfigureProperty( p => p.SchemaName, defaultConnectionInfo.SchemaName);
 
             NServiceBus.Configure.Component<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionString)
-                  .ConfigureProperty(p => p.ConnectionStringCollection, collection);
+                  .ConfigureProperty(p => p.DefaultConnectionString, defaultConnectionInfo.ConnectionString)
+                  .ConfigureProperty( p => p.DefaultSchemaName, defaultConnectionInfo.SchemaName)
+                  .ConfigureProperty(p => p.ConnectionStringCollection, connectionStringCollection)
+                  .ConfigureProperty( p => p.SchemaNameCollection, schemaNameCollection);
 
             NServiceBus.Configure.Component<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall)
-                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionString)
+                  .ConfigureProperty(p => p.ConnectionString, defaultConnectionInfo.ConnectionString)
+                  .ConfigureProperty(p => p.SchemaName, defaultConnectionInfo.SchemaName)
                   .ConfigureProperty(p => p.PurgeOnStartup, ConfigurePurging.PurgeRequested);
         }
 

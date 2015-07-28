@@ -24,6 +24,11 @@
         public string ConnectionString { get; set; }
 
         /// <summary>
+        /// The name of the schema to use when connection to SQL Server.
+        /// </summary>
+        public string SchemaName { get; set; }
+
+        /// <summary>
         ///     Determines if the queue should be purged when the transport starts.
         /// </summary>
         public bool PurgeOnStartup { get; set; }
@@ -60,7 +65,7 @@
 
             tableName = TableNameUtils.GetTableName(address);
 
-            sql = string.Format(SqlReceive, tableName);
+            sql = string.Format(SqlReceive, SchemaName, tableName);
 
             if (PurgeOnStartup)
             {
@@ -105,7 +110,7 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(string.Format(SqlPurge, tableName), connection)
+                using (var command = new SqlCommand(string.Format(SqlPurge, SchemaName, tableName), connection)
                 {
                     CommandType = CommandType.Text
                 })
@@ -400,17 +405,17 @@
         }
 
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
-        const string SqlPurge = @"DELETE FROM [{0}]";
+        const string SqlPurge = @"DELETE FROM [{0}].[{1}]";
 
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
 
-        readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
+        RepeatedFailuresOverTimeCircuitBreaker circuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlTransportConnectivity",
             TimeSpan.FromMinutes(2),
             ex => Configure.Instance.RaiseCriticalError("Repeated failures when communicating with SqlServer", ex),
             TimeSpan.FromSeconds(10));

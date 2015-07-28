@@ -14,14 +14,18 @@
     public class SqlServerMessageSender : ISendMessages
     {
         const string SqlSend =
-            @"INSERT INTO [{0}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
 
         public string DefaultConnectionString { get; set; }
 
+        public string DefaultSchemaName { get; set; }
+
         public Dictionary<string, string> ConnectionStringCollection { get; set; }
+
+        public Dictionary<string, string> SchemaNameCollection { get; set; }
 
         public UnitOfWork UnitOfWork { get; set; }
         
@@ -45,9 +49,16 @@
             {
                 //If there is a connectionstring configured for the queue, use that connectionstring
                 var queueConnectionString = DefaultConnectionString;
+                var schemaName = DefaultSchemaName;
+                
                 if (ConnectionStringCollection.Keys.Contains(address.Queue))
                 {
                     queueConnectionString = ConnectionStringCollection[address.Queue];
+                }
+
+                if( SchemaNameCollection.Keys.Contains( address.Queue ) )
+                {
+                    schemaName = SchemaNameCollection[ address.Queue ];
                 }
 
                 if (UnitOfWork.HasActiveTransaction(queueConnectionString))
@@ -55,7 +66,7 @@
                     //if there is an active transaction for the connection, we can use the same native transaction
                     var transaction = UnitOfWork.GetTransaction(queueConnectionString);
 
-                    using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), transaction.Connection, transaction)
+                    using (var command = new SqlCommand(string.Format(SqlSend, schemaName, TableNameUtils.GetTableName(address)), transaction.Connection, transaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -69,7 +80,7 @@
                     using (var connection = new SqlConnection(queueConnectionString))
                     {
                         connection.Open();
-                        using (var command = new SqlCommand(string.Format(SqlSend, TableNameUtils.GetTableName(address)), connection)
+                        using (var command = new SqlCommand(string.Format(SqlSend, schemaName, TableNameUtils.GetTableName(address)), connection)
                             {
                                 CommandType = CommandType.Text
                             })
