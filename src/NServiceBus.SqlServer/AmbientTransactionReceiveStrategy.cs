@@ -31,9 +31,8 @@ namespace NServiceBus.Transports.SQLServer
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = SqlConnectionFactory.OpenNewConnection(connectionString))
                 {
-                    connection.Open();
                     using (pipelineExecutor.SetConnection(connectionString, connection))
                     {
                         var readResult = queue.TryReceive(connection);

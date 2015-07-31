@@ -19,9 +19,8 @@ namespace NServiceBus.Transports.SQLServer
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
             MessageReadResult readResult;
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = SqlConnectionFactory.OpenNewConnection(connectionString))
             {
-                connection.Open();
                 readResult = queue.TryReceive(connection);
                 if (readResult.IsPoison)
                 {

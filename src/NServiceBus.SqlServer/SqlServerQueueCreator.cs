@@ -29,10 +29,9 @@ namespace NServiceBus.Transports.SQLServer
         public void CreateQueueIfNecessary(Address address, string account)
         {
             var connectionParams = connectionStringProvider.GetForDestination(address);
-            using (var connection = new SqlConnection(connectionParams.ConnectionString))
+            using (var connection = SqlConnectionFactory.OpenNewConnection(connectionParams.ConnectionString))
             {
                 var sql = string.Format(Ddl, connectionParams.Schema, address.GetTableName());
-                connection.Open();
 
                 using (var command = new SqlCommand(sql, connection) {CommandType = CommandType.Text})
                 {

@@ -25,9 +25,8 @@ namespace NServiceBus.Transports.SQLServer
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = SqlConnectionFactory.OpenNewConnection(connectionString))
             {
-                connection.Open();
                 using (pipelineExecutor.SetConnection(connectionString, connection))
                 {
                     using (var transaction = connection.BeginTransaction(isolationLevel))

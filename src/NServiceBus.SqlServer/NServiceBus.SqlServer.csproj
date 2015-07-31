@@ -77,6 +77,9 @@
     <Compile Include="Config\ConfigBase.cs" />
     <Compile Include="Config\ConnectionConfig.cs" />
     <Compile Include="Config\PurgingConfig.cs" />
+    <Compile Include="DefaultSqlConnectionFactory.cs" />
+    <Compile Include="ISqlConnectionFactory.cs" />
+    <Compile Include="SqlConnectionFactory.cs" />
     <Compile Include="Config\ValidateOutboxOrAmbientTransactionsEnabled.cs" />
     <Compile Include="ConnectionInfo.cs" />
     <Compile Include="ConnectionParams.cs" />
