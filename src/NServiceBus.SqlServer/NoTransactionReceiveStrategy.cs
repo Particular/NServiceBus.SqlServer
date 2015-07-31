@@ -8,20 +8,21 @@ namespace NServiceBus.Transports.SQLServer
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
+        readonly Func<string, SqlConnection> sqlConnectionFactory;
 
-        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback)
+        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, Func<string, SqlConnection> sqlConnectionFactory)
         {
             this.connectionString = connectionString;
             this.errorQueue = errorQueue;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
+            this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
             MessageReadResult readResult;
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = sqlConnectionFactory(connectionString))
             {
-                connection.Open();
                 readResult = queue.TryReceive(connection);
                 if (readResult.IsPoison)
                 {
