@@ -23,10 +23,8 @@ namespace NServiceBus.Transports.SQLServer
 
         void Purge(IEnumerable<string> tableNames)
         {
-            using (var connection = new SqlConnection(localConnectionParams.ConnectionString))
+            using (var connection = SqlConnectionFactory.OpenNewConnection(localConnectionParams.ConnectionString))
             {
-                connection.Open();
-
                 foreach (var tableName in tableNames)
                 {
                     using (var command = new SqlCommand(string.Format(SqlPurge, localConnectionParams.Schema, tableName), connection)

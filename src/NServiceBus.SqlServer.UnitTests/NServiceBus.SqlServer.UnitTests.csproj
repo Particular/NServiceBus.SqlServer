@@ -58,6 +58,7 @@
     <Compile Include="ConnectionConfigTests.cs" />
     <Compile Include="ErrorQueueSettingsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqlConnectionFactoryTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NServiceBus.snk" />

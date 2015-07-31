@@ -43,9 +43,8 @@
                         }
                         else
                         {
-                            using (var connection = new SqlConnection(connectionInfo.ConnectionString))
+                            using (var connection = SqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
                             {
-                                connection.Open();
                                 queue.Send(message, sendOptions, connection);
                             }
                         }
@@ -56,9 +55,8 @@
                     // Suppress so that even if DTC is on, we won't escalate
                     using (var tx = new TransactionScope(TransactionScopeOption.Suppress))
                     {
-                        using (var connection = new SqlConnection(connectionInfo.ConnectionString))
+                        using (var connection = SqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
                         {
-                            connection.Open();
                             queue.Send(message, sendOptions, connection);
                         }
 
