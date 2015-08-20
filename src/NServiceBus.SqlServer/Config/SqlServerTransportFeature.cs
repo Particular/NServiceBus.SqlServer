@@ -3,7 +3,6 @@ namespace NServiceBus.Features
     using System;
     using System.Collections.Generic;
     using System.Configuration;
-    using System.Data.SqlClient;
     using System.Linq;
     using NServiceBus.Transports.SQLServer.Config;
     using Pipeline;

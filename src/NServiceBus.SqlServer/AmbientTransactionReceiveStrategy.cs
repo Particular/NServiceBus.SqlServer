@@ -1,7 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Transactions;
     using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;

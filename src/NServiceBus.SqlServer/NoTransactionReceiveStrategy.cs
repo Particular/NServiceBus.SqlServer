@@ -1,7 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
 
     class NoTransactionReceiveStrategy : IReceiveStrategy
     {

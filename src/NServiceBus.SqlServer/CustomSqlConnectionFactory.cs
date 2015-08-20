@@ -9,7 +9,7 @@
 
         public CustomSqlConnectionFactory(Func<string, SqlConnection> factory)
         {
-            this.OpenNewConnection = factory;
+            OpenNewConnection = factory;
         }
     }
 }
