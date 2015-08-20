@@ -2,7 +2,6 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Data;
-    using System.Data.SqlClient;
     using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;
 
@@ -13,21 +12,22 @@ namespace NServiceBus.Transports.SQLServer
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly IsolationLevel isolationLevel;
+        readonly CustomSqlConnectionFactory sqlConnectionFactory;
 
-        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, CustomSqlConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
             this.errorQueue = errorQueue;
             this.connectionString = connectionString;
+            this.sqlConnectionFactory = sqlConnectionFactory;
             isolationLevel = GetSqlIsolationLevel(transactionSettings.IsolationLevel);
         }
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
             {
-                connection.Open();
                 using (pipelineExecutor.SetConnection(connectionString, connection))
                 {
                     using (var transaction = connection.BeginTransaction(isolationLevel))

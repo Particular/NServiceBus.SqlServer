@@ -1,7 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Transactions;
     using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;
@@ -13,13 +12,16 @@ namespace NServiceBus.Transports.SQLServer
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly TransactionOptions transactionOptions;
+        readonly CustomSqlConnectionFactory sqlConnectionFactory;
 
-        public AmbientTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public AmbientTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, CustomSqlConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
             this.errorQueue = errorQueue;
             this.connectionString = connectionString;
+            this.sqlConnectionFactory = sqlConnectionFactory;
+
             transactionOptions = new TransactionOptions
             {
                 IsolationLevel = transactionSettings.IsolationLevel,
@@ -31,9 +33,8 @@ namespace NServiceBus.Transports.SQLServer
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions))
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
                 {
-                    connection.Open();
                     using (pipelineExecutor.SetConnection(connectionString, connection))
                     {
                         var readResult = queue.TryReceive(connection);

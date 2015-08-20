@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.SqlClient;
     using System.Linq;
     using Configuration.AdvanceExtensibility;
     using NServiceBus.Transports.SQLServer;
@@ -139,6 +140,18 @@
         public static TransportExtensions<SqlServerTransport> PauseAfterReceiveFailure(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan pauseTime)
         {
             transportExtensions.GetSettings().Set(CircuitBreakerConfig.CircuitBreakerDelayAfterFailureSettingsKey, pauseTime);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default time SQL Connections factory.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="sqlConnectionFactory">Factory for creating and opening new SQL Connections.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
+        {
+            transportExtensions.GetSettings().Set(SqlConnectionFactoryConfig.CustomSqlConnectionFactorySettingKey, new CustomSqlConnectionFactory(sqlConnectionFactory));
             return transportExtensions;
         }
     }
