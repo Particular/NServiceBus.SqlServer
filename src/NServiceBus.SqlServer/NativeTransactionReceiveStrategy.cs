@@ -13,9 +13,9 @@ namespace NServiceBus.Transports.SQLServer
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly IsolationLevel isolationLevel;
-        readonly Func<string, SqlConnection> sqlConnectionFactory;
+        readonly CustomSqlConnectionFactory sqlConnectionFactory;
 
-        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, Func<string, SqlConnection> sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, CustomSqlConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
@@ -27,7 +27,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
-            using (var connection = sqlConnectionFactory(connectionString))
+            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
             {
                 using (pipelineExecutor.SetConnection(connectionString, connection))
                 {

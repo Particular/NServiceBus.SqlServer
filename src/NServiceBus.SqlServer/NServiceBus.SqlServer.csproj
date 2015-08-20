@@ -111,6 +111,7 @@
     <Compile Include="ReceiveTaskTracker.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />
+    <Compile Include="CustomSqlConnectionFactory.cs" />
     <Compile Include="SqlServerSettingsExtensions.cs" />
     <Compile Include="SqlServerStorageContext.cs" />
     <Compile Include="SqlServerTransport.cs" />

@@ -151,7 +151,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
         {
-            transportExtensions.GetSettings().Set(SqlConnectionFactoryConfig.CustomSqlConnectionFactorySettingKey, sqlConnectionFactory);
+            transportExtensions.GetSettings().Set(SqlConnectionFactoryConfig.CustomSqlConnectionFactorySettingKey, new CustomSqlConnectionFactory(sqlConnectionFactory));
             return transportExtensions;
         }
     }

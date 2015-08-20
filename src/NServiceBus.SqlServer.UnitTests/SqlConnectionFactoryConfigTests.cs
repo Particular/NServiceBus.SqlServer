@@ -3,6 +3,7 @@
     using System;
     using System.Data.SqlClient;
     using System.Reflection;
+    using NServiceBus.Transports.SQLServer;
     using NServiceBus.Transports.SQLServer.Config;
     using NUnit.Framework;
 
@@ -18,10 +19,10 @@
             busConfig.UseTransport<SqlServerTransport>();
 
             var builder = Activate(busConfig, new SqlConnectionFactoryConfig());
-            var factory = builder.Build<Func<string, SqlConnection>>();
+            var factory = builder.Build<CustomSqlConnectionFactory>();
 
             Assert.IsNotNull(factory);
-            Assert.AreEqual(defaultFactoryMethod, factory.Method);
+            Assert.AreEqual(defaultFactoryMethod, factory.OpenNewConnection.Method);
         }
 
         [Test]
@@ -35,10 +36,10 @@
                 .UseCustomSqlConnectionFactory(testFactory);
 
             var builder = Activate(busConfig, new SqlConnectionFactoryConfig());
-            var factory = builder.Build<Func<string, SqlConnection>>();
+            var factory = builder.Build<CustomSqlConnectionFactory>();
 
             Assert.IsNotNull(factory);
-            Assert.AreEqual(factory, testFactory);
+            Assert.AreEqual(testFactory, factory.OpenNewConnection);
         }
     }
 }

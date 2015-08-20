@@ -11,9 +11,9 @@
     {
         readonly IConnectionStringProvider connectionStringProvider;
         readonly PipelineExecutor pipelineExecutor;
-        readonly Func<string, SqlConnection> sqlConnectionFactory;
+        readonly CustomSqlConnectionFactory sqlConnectionFactory;
 
-        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor, Func<string, SqlConnection> sqlConnectionFactory)
+        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor, CustomSqlConnectionFactory sqlConnectionFactory)
         {
             this.connectionStringProvider = connectionStringProvider;
             this.pipelineExecutor = pipelineExecutor;
@@ -45,7 +45,7 @@
                         }
                         else
                         {
-                            using (var connection = sqlConnectionFactory(connectionInfo.ConnectionString))
+                            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
                             {
                                 queue.Send(message, sendOptions, connection);
                             }
@@ -57,7 +57,7 @@
                     // Suppress so that even if DTC is on, we won't escalate
                     using (var tx = new TransactionScope(TransactionScopeOption.Suppress))
                     {
-                        using (var connection = sqlConnectionFactory(connectionInfo.ConnectionString))
+                        using (var connection = sqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
                         {
                             queue.Send(message, sendOptions, connection);
                         }

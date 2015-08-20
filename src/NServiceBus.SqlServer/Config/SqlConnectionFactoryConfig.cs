@@ -28,14 +28,13 @@
 
         public override void SetUpDefaults(SettingsHolder settings)
         {
-            Func<string, SqlConnection> factoryMethod = DefaultOpenNewConnection;
-            settings.SetDefault(CustomSqlConnectionFactorySettingKey, factoryMethod);
+            settings.SetDefault(CustomSqlConnectionFactorySettingKey, new CustomSqlConnectionFactory(DefaultOpenNewConnection));
         }
 
         public override void Configure(FeatureConfigurationContext context, string connectionStringWithSchema)
         {
-            var factoryMethod = (Func<string, SqlConnection>)context.Settings.Get(CustomSqlConnectionFactorySettingKey);
-            context.Container.ConfigureComponent(b => factoryMethod, DependencyLifecycle.SingleInstance);
+            var factory = (CustomSqlConnectionFactory)context.Settings.Get(CustomSqlConnectionFactorySettingKey);
+            context.Container.ConfigureComponent(b => factory, DependencyLifecycle.SingleInstance);
         }
     }
 }

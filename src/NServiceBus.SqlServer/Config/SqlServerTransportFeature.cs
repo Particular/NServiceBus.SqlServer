@@ -64,7 +64,7 @@ namespace NServiceBus.Features
             context.Container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
             var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
-            context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue, b.Build<Func<string, SqlConnection>>()),  DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue, b.Build<CustomSqlConnectionFactory>()), DependencyLifecycle.InstancePerCall);
 
             context.Container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
             context.Container.ConfigureComponent<SqlServerStorageContext>(DependencyLifecycle.InstancePerUnitOfWork);
