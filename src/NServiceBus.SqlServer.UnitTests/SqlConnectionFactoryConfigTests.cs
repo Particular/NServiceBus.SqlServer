@@ -2,7 +2,6 @@
 {
     using System;
     using System.Data.SqlClient;
-    using System.Reflection;
     using NServiceBus.Transports.SQLServer;
     using NServiceBus.Transports.SQLServer.Config;
     using NUnit.Framework;
@@ -11,24 +10,9 @@
     class SqlConnectionFactoryConfigTests : ConfigTest
     {
         [Test]
-        public void sql_connection_factory_exists_by_default()
+        public void Sql_connection_factory_can_be_customized()
         {
-            var defaultFactoryMethod = typeof(SqlConnectionFactoryConfig).GetMethod("DefaultOpenNewConnection", BindingFlags.Static | BindingFlags.NonPublic);
-
-            var busConfig = new BusConfiguration();
-            busConfig.UseTransport<SqlServerTransport>();
-
-            var builder = Activate(busConfig, new SqlConnectionFactoryConfig());
-            var factory = builder.Build<ConnectionFactory>();
-
-            Assert.IsNotNull(factory);
-            Assert.AreEqual(defaultFactoryMethod, factory.OpenNewConnection.Method);
-        }
-
-        [Test]
-        public void sql_connection_factory_can_be_customized()
-        {
-            Func<string, SqlConnection> testFactory = connectionString => { throw new Exception("Error"); };
+            Func<string, SqlConnection> testFactory = connectionString => new SqlConnection(@"Data Source=.\SQLEXPRESS");
 
             var busConfig = new BusConfiguration();
             busConfig
@@ -39,7 +23,7 @@
             var factory = builder.Build<ConnectionFactory>();
 
             Assert.IsNotNull(factory);
-            Assert.AreEqual(testFactory, factory.OpenNewConnection);
+            Assert.AreEqual(@"Data Source=.\SQLEXPRESS", factory.OpenNewConnection("Invalid").ConnectionString);
         }
     }
 }

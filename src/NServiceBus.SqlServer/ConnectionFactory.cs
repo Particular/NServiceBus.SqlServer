@@ -5,11 +5,16 @@
 
     class ConnectionFactory
     {
-        public readonly Func<string, SqlConnection> OpenNewConnection;
+        readonly Func<string, SqlConnection> openNewConnection;
 
         public ConnectionFactory(Func<string, SqlConnection> factory)
         {
-            OpenNewConnection = factory;
+            openNewConnection = factory;
+        }
+
+        public SqlConnection OpenNewConnection(string connectionString)
+        {
+            return openNewConnection(connectionString);
         }
 
         public static ConnectionFactory Default()
