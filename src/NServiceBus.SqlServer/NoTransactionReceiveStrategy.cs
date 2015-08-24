@@ -7,9 +7,9 @@ namespace NServiceBus.Transports.SQLServer
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
-        readonly CustomSqlConnectionFactory sqlConnectionFactory;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, CustomSqlConnectionFactory sqlConnectionFactory)
+        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory)
         {
             this.connectionString = connectionString;
             this.errorQueue = errorQueue;

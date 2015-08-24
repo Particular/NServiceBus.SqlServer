@@ -9,9 +9,9 @@ namespace NServiceBus.Transports.SQLServer
         readonly PipelineExecutor pipelineExecutor;
         readonly Address errorQueueAddress;
         readonly LocalConnectionParams localConnectionParams;
-        readonly CustomSqlConnectionFactory sqlConnectionFactory;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public ReceiveStrategyFactory(PipelineExecutor pipelineExecutor, LocalConnectionParams localConnectionParams, Address errorQueueAddress, CustomSqlConnectionFactory sqlConnectionFactory)
+        public ReceiveStrategyFactory(PipelineExecutor pipelineExecutor, LocalConnectionParams localConnectionParams, Address errorQueueAddress, ConnectionFactory sqlConnectionFactory)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.errorQueueAddress = errorQueueAddress;

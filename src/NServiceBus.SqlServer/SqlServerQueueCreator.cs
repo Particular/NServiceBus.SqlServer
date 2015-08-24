@@ -41,9 +41,9 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         readonly IConnectionStringProvider connectionStringProvider;
-        readonly CustomSqlConnectionFactory sqlConnectionFactory;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public SqlServerQueueCreator(IConnectionStringProvider connectionStringProvider, CustomSqlConnectionFactory sqlConnectionFactory)
+        public SqlServerQueueCreator(IConnectionStringProvider connectionStringProvider, ConnectionFactory sqlConnectionFactory)
         {
             this.connectionStringProvider = connectionStringProvider;
             this.sqlConnectionFactory = sqlConnectionFactory;

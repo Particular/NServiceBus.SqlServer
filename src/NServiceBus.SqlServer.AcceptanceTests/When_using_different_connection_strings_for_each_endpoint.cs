@@ -63,8 +63,6 @@
                     busConfiguration.UseTransport<SqlServerTransport>()
                         .UseSpecificConnectionInformation(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
                         .ConnectionString(SenderConnectionStringWithSchema);
-
-                    busConfiguration.Transactions().DisableDistributedTransactions();
                 }
             }
 
@@ -99,8 +97,6 @@
                         .UseSpecificConnectionInformation(
                             EndpointConnectionInfo.For("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
                         .ConnectionString(ReceiverConnectionStringWithSchema);
-
-                    busConfiguration.Transactions().DisableDistributedTransactions();
                 }
             }
 

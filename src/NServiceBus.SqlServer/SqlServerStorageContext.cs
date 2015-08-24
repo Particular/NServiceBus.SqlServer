@@ -10,12 +10,12 @@ namespace NServiceBus.Transports.SQLServer
     public class SqlServerStorageContext
     {
         readonly PipelineExecutor pipelineExecutor;
-        readonly string connectionString;
+        readonly LocalConnectionParams localConnectionParams;
 
-        internal SqlServerStorageContext(PipelineExecutor pipelineExecutor, string connectionString)
+        internal SqlServerStorageContext(PipelineExecutor pipelineExecutor, LocalConnectionParams localConnectionParams)
         {
             this.pipelineExecutor = pipelineExecutor;
-            this.connectionString = connectionString;
+            this.localConnectionParams = localConnectionParams;
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlConnection connection;
-                return pipelineExecutor.TryGetConnection(connectionString, out connection) 
+                return pipelineExecutor.TryGetConnection(localConnectionParams.ConnectionString, out connection) 
                     ? connection 
                     : null;
             }
@@ -40,7 +40,7 @@ namespace NServiceBus.Transports.SQLServer
             get
             {
                 SqlTransaction transaction;
-                return pipelineExecutor.TryGetTransaction(connectionString, out transaction) 
+                return pipelineExecutor.TryGetTransaction(localConnectionParams.ConnectionString, out transaction) 
                     ? transaction 
                     : null;
             }

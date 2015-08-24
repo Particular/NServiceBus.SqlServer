@@ -19,7 +19,7 @@
             busConfig.UseTransport<SqlServerTransport>();
 
             var builder = Activate(busConfig, new SqlConnectionFactoryConfig());
-            var factory = builder.Build<CustomSqlConnectionFactory>();
+            var factory = builder.Build<ConnectionFactory>();
 
             Assert.IsNotNull(factory);
             Assert.AreEqual(defaultFactoryMethod, factory.OpenNewConnection.Method);
@@ -36,7 +36,7 @@
                 .UseCustomSqlConnectionFactory(testFactory);
 
             var builder = Activate(busConfig, new SqlConnectionFactoryConfig());
-            var factory = builder.Build<CustomSqlConnectionFactory>();
+            var factory = builder.Build<ConnectionFactory>();
 
             Assert.IsNotNull(factory);
             Assert.AreEqual(testFactory, factory.OpenNewConnection);

@@ -12,9 +12,9 @@ namespace NServiceBus.Transports.SQLServer
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly IsolationLevel isolationLevel;
-        readonly CustomSqlConnectionFactory sqlConnectionFactory;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, CustomSqlConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
         {
             this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;

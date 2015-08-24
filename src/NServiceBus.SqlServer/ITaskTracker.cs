@@ -5,8 +5,8 @@
 
     interface ITaskTracker
     {
-        void StartAndTrack(Func<Task> taskFactory);
-        void Forget(Task receiveTask);
+        void StartAndTrack(Func<Tuple<Guid, Task>> taskFactory);
+        void Forget(Guid id);
         bool ShouldStartAnotherTaskImmediately { get; }
         void ShutdownAll();
     }

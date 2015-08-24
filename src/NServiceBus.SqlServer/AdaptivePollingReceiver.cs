@@ -12,7 +12,7 @@
             TableBasedQueue queue, 
             Action<TransportMessage, Exception> endProcessMessage, 
             RepeatedFailuresOverTimeCircuitBreaker circuitBreaker,
-            TransportNotifications transportNotifications) 
+            TransportNotifications transportNotifications)
             : base(circuitBreaker)
         {
             this.receiveStrategy = receiveStrategy;
@@ -21,10 +21,10 @@
             this.transportNotifications = transportNotifications;
         }
 
-        public override void Start(int maximumConcurrency, CancellationTokenSource tokenSource)
+        public override void Start(int maximumConcurrency, CancellationToken token)
         {
             Logger.InfoFormat("Receiver for queue '{0}' started with maximum concurrency '{1}'", queue, maximumConcurrency);
-            base.Start(maximumConcurrency, tokenSource);
+            base.Start(maximumConcurrency, token);
         }
 
         protected override ReceiveResult Init()

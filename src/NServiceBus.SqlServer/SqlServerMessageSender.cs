@@ -11,9 +11,9 @@
     {
         readonly IConnectionStringProvider connectionStringProvider;
         readonly PipelineExecutor pipelineExecutor;
-        readonly CustomSqlConnectionFactory sqlConnectionFactory;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor, CustomSqlConnectionFactory sqlConnectionFactory)
+        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor, ConnectionFactory sqlConnectionFactory)
         {
             this.connectionStringProvider = connectionStringProvider;
             this.pipelineExecutor = pipelineExecutor;
