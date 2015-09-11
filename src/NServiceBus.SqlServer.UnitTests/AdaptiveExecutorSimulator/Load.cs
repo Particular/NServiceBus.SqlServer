@@ -5,15 +5,21 @@ namespace NServiceBus.SqlServer.UnitTests
 
     class Load
     {
-        private readonly List<Message> queue = new List<Message>();
         readonly List<Stage> stages = new List<Stage>();
         int currentStage;
         long currentGlobalTime;
+        int totalSentMessages;
         int totalMessages;
+        Action<Message> enqueueAction;
 
-        public bool HasMoreMessages
+        public void Connect(Action<Message> enqueueAction)
         {
-            get { return queue.Count > 0 || currentStage < stages.Count; }
+            this.enqueueAction = enqueueAction;
+        }
+
+        public int TotalSentMessages
+        {
+            get { return totalSentMessages; }
         }
 
         public int TotalMessages
@@ -40,24 +46,14 @@ namespace NServiceBus.SqlServer.UnitTests
             currentGlobalTime = newCurrentGlobalTime;
         }
 
-        public Message TryDequeue()
-        {
-            if (queue.Count > 0)
-            {
-                var result = queue[0];
-                queue.RemoveAt(0);
-                return result;
-            }
-            return null;
-        }
-
         public Load AddStage(long length, long period, Func<long> processingTime)
         {
             var stage = new Stage(length, period, () =>
             {
-                totalMessages++;
-                queue.Add(new Message(processingTime()));
+                totalSentMessages++;
+                enqueueAction(new Message(processingTime()));
             });
+            totalMessages += (int)(length/period);
             stages.Add(stage);
             return this;
         }

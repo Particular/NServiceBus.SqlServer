@@ -5,29 +5,27 @@ namespace NServiceBus.SqlServer.UnitTests
     using System.Linq;
     using NServiceBus.Transports.SQLServer;
 
-    class Simulator
+    class Simulator : ISimulator
     {
-        readonly int maximumConcurrency;
+        int maximumConcurrency;
         readonly Func<Action, IRampUpController> rampUpControllerFactory;
-        readonly Load workload;
         long currentTime;
         List<RunningThread> threads = new List<RunningThread>();
         List<Tuple<long, int, string>> result = new List<Tuple<long, int, string>>();
         List<Action> currentQueue = new List<Action>();
         int threadCounter;
         int processedMessages;
+        private readonly List<Message> queue = new List<Message>();
 
-        public List<Tuple<long, int, string>> Result
+        public Message TryDequeue()
         {
-            get { return result; }
-        }
-
-        public void DumpResultsToConsole()
-        {
-            foreach (var tuple in result)
+            if (queue.Count > 0)
             {
-                Console.WriteLine("{0,12:n} [{1,2}] {2}", tuple.Item1, tuple.Item2, tuple.Item3);
+                var result = queue[0];
+                queue.RemoveAt(0);
+                return result;
             }
+            return null;
         }
 
         void RampUp()
@@ -48,24 +46,25 @@ namespace NServiceBus.SqlServer.UnitTests
             result.Add(Tuple.Create(currentTime, threadNumber, eventType));
         }
 
-        public Simulator(int maximumConcurrency, Func<Action, IRampUpController> rampUpControllerFactory, Load workload)
+        public Simulator()
         {
-            this.maximumConcurrency = maximumConcurrency;
-            this.rampUpControllerFactory = rampUpControllerFactory;
-            this.workload = workload;
+            rampUpControllerFactory = x => new ReceiveRampUpController(x, new TransportNotifications(), "SomeQueue", 7, 5);
         }
 
-        public void Simulate()
+        public IEnumerable<string> Simulate(Load workload, int maximumConcurrency)
         {
+            this.maximumConcurrency = maximumConcurrency;
+            workload.Connect(queue.Add);
             StartThread(0);
             while (threads.Count > 0)
             {
                 workload.TimePassed(currentTime);
+                const int longRunningThreshold = 100;
                 foreach (var runningThread in threads)
                 {
                     runningThread.Tick(currentTime);
                     var blockedTime = currentTime - runningThread.BlockedAt;
-                    if (!runningThread.Dead && !runningThread.Replaced && blockedTime > 5000) //blocked for more than five seconds
+                    if (!runningThread.Dead && !runningThread.Replaced && runningThread.ProcessingMessage && blockedTime > longRunningThreshold) //blocked for more than five seconds
                     {
                         runningThread.MarkAsReplaced();
                         RampUp();
@@ -79,9 +78,9 @@ namespace NServiceBus.SqlServer.UnitTests
                 if (threads.Count > 0)
                 {
                     var newTime = threads.Min(x => x.DueAt);
-                    if (threads.Any(x => x.LongRunning && !x.Replaced && newTime - currentTime > 5000))
+                    if (threads.Any(x => x.LongRunning && !x.Replaced  && newTime - currentTime > longRunningThreshold))
                     {
-                        currentTime = currentTime + 5000;
+                        currentTime = currentTime + longRunningThreshold;
                     }
                     else
                     {
@@ -93,15 +92,16 @@ namespace NServiceBus.SqlServer.UnitTests
                 //    break;
                 //}
             }
+            return result.Select(x => string.Format("{0,12:n} [{1,2}] {2}", x.Item1, x.Item2, x.Item3));
         }
 
-        public int StartThread(long dueAt)
+        int StartThread(long dueAt)
         {
             var threadNumber = threadCounter;
-            var newThread = new ProcessingThread(rampUpControllerFactory(RampUp), () => workload.TryDequeue(), _ => processedMessages++, s => AddEvent(threadNumber, s));
+            var newThread = new ProcessingThread(rampUpControllerFactory(RampUp), TryDequeue, _ => processedMessages++, s => AddEvent(threadNumber, s));
             var running = new RunningThread(threadNumber, newThread.ReceiveLoop().GetEnumerator(), OnTheadDied, dueAt);
             threads.Add(running);
-            threadCounter ++;
+            threadCounter++;
             return threadNumber;
         }
 
@@ -117,7 +117,7 @@ namespace NServiceBus.SqlServer.UnitTests
                 //else
                 {
                     AddEvent(obj.ThreadNumber, "Thread died");
-                }    
+                }
             });
         }
     }

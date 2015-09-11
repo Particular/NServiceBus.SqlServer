@@ -8,13 +8,13 @@ namespace NServiceBus.SqlServer.UnitTests
         long dueAt;
         long blockedAt;
         readonly int threadNumber;
-        readonly IEnumerator<long> processingMethod;
+        readonly IEnumerator<ProcessingStepResult> processingMethod;
         readonly Action<RunningThread> diedCallback;
         bool replaced;
         bool dead;
         bool longRunning;
 
-        public RunningThread(int threadNumber, IEnumerator<long> processingMethod, Action<RunningThread> diedCallback, long dueAt)
+        public RunningThread(int threadNumber, IEnumerator<ProcessingStepResult> processingMethod, Action<RunningThread> diedCallback, long dueAt)
         {
             this.threadNumber = threadNumber;
             this.processingMethod = processingMethod;
@@ -26,6 +26,8 @@ namespace NServiceBus.SqlServer.UnitTests
         {
             get { return blockedAt; }
         }
+
+        public bool ProcessingMessage { get; private set; }
 
         public long DueAt
         {
@@ -69,8 +71,9 @@ namespace NServiceBus.SqlServer.UnitTests
             if (stillAlive)
             {
                 var processingTime = processingMethod.Current;
-                dueAt = currentTime + processingTime;
-                longRunning = processingTime > 5000;
+                ProcessingMessage = processingTime.BusyProcessingMessage;
+                dueAt = currentTime + processingTime.SleepFor;
+                longRunning = processingTime.SleepFor > 5000;
             }
             else
             {

@@ -20,7 +20,7 @@ namespace NServiceBus.SqlServer.UnitTests
             this.addEvent = addEvent;
         }
 
-        public IEnumerable<long> ReceiveLoop()
+        public IEnumerable<ProcessingStepResult> ReceiveLoop()
         {
             var backOff = new BackOff(1000);
             while (rampUpController.CheckHasEnoughWork())
@@ -31,7 +31,7 @@ namespace NServiceBus.SqlServer.UnitTests
                 {
                     addEvent("Processing started. Time remaining: "+message.ProcessingTime);
                     successfulRead = true;
-                    yield return message.ProcessingTime;
+                    yield return  new ProcessingStepResult(message.ProcessingTime, true);
                 }
                 else
                 {
@@ -45,7 +45,7 @@ namespace NServiceBus.SqlServer.UnitTests
                 }
                 else
                 {
-                    yield return backOff.Wait(() => message == null);                    
+                    yield return new ProcessingStepResult(backOff.Wait(() => message == null), false);                    
                 }
             }
         }
