@@ -9,12 +9,16 @@
         readonly Action rampUpCallback;
         readonly TransportNotifications transportNotifications;
         readonly string queueName;
+        int maximumConsecutiveFailures;
+        int minimumConsecutiveSuccesses;
 
-        public ReceiveRampUpController(Action rampUpCallback, TransportNotifications transportNotifications, string queueName)
+        public ReceiveRampUpController(Action rampUpCallback, TransportNotifications transportNotifications, string queueName, int maximumConsecutiveFailures, int minimumConsecutiveSuccesses)
         {
             this.rampUpCallback = rampUpCallback;
             this.transportNotifications = transportNotifications;
             this.queueName = queueName;
+            this.maximumConsecutiveFailures = maximumConsecutiveFailures;
+            this.minimumConsecutiveSuccesses = minimumConsecutiveSuccesses;
         }
 
         public void Succeeded()
@@ -31,7 +35,7 @@
 
         public bool CheckHasEnoughWork()
         {
-            var result = consecutiveFailures < 7;
+            var result = consecutiveFailures < maximumConsecutiveFailures;
             if (!result)
             {
                 transportNotifications.InvokeTooLittleWork(queueName);
@@ -52,7 +56,7 @@
 
         private bool HasTooMuchWork
         {
-            get { return consecutiveSuccesses > 5; }
+            get { return consecutiveSuccesses > minimumConsecutiveSuccesses; }
         }
 
     }

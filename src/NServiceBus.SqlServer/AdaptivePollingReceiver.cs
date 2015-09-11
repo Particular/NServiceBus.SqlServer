@@ -7,13 +7,31 @@
 
     class AdaptivePollingReceiver : AdaptiveExecutor<ReceiveResult>
     {
+        /// <summary>
+        /// Controls the ramping up of additional threads in case one of the current threads is processing a slow message.
+        /// If the processing takes more than a number of seconds, an additional thread is ramped up. Such thing can happen only once per processing a single message.
+        /// </summary>
+        const int SlowTaskThresholdInMilliseconds = 5000;
+        /// <summary>
+        /// The maximum number of failures of receive for a given thread before it decides to commit suicide.
+        /// </summary>
+        const int MaximumConsecutiveFailures = 7;
+        /// <summary>
+        /// The minimum number of successful message processing attempts for a given thread before it tries to ramp up another thread.
+        /// </summary>
+        const int MinimumConsecutiveSuccesses = 5;
+        /// <summary>
+        /// The maximum time for a thread to wait if a previous receive operation failed.
+        /// </summary>
+        const int MaximumBackOffTimeMilliseconds = 1000;
+
         public AdaptivePollingReceiver(
             IReceiveStrategy receiveStrategy, 
             TableBasedQueue queue, 
             Action<TransportMessage, Exception> endProcessMessage, 
             RepeatedFailuresOverTimeCircuitBreaker circuitBreaker,
             TransportNotifications transportNotifications)
-            : base(circuitBreaker)
+            : base(queue.ToString(), circuitBreaker, transportNotifications, TimeSpan.FromMilliseconds(SlowTaskThresholdInMilliseconds))
         {
             this.receiveStrategy = receiveStrategy;
             this.queue = queue;
@@ -54,12 +72,12 @@
 
         protected override IRampUpController CreateRampUpController(Action rampUpCallback)
         {
-            return new ReceiveRampUpController(rampUpCallback, transportNotifications, queue.ToString());
+            return new ReceiveRampUpController(rampUpCallback, transportNotifications, queue.ToString(), MaximumConsecutiveFailures, MinimumConsecutiveSuccesses);
         }
 
-        protected override ITaskTracker CreateTaskTracker(int maximumConcurrency)
+        protected override IBackOffStrategy CreateBackOffStrategy()
         {
-            return new ReceiveTaskTracker(maximumConcurrency, transportNotifications, queue.ToString());
+            return new BoundedExponentialBackOff(MaximumBackOffTimeMilliseconds);
         }
 
         readonly IReceiveStrategy receiveStrategy;

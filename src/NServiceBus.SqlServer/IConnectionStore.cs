@@ -5,28 +5,43 @@
     using Janitor;
     using NServiceBus.Pipeline;
 
-    static class PipelineExecutorExtensions
+    interface IConnectionStore
     {
-        public static bool TryGetTransaction(this PipelineExecutor pipelineExecutor, string connectionString, out SqlTransaction transaction)
+        bool TryGetTransaction(string connectionString, out SqlTransaction transaction);
+        bool TryGetConnection(string connectionString, out SqlConnection connection);
+        IDisposable SetTransaction(string connectionString, SqlTransaction transaction);
+        IDisposable SetConnection(string connectionString, SqlConnection connection);
+    }
+
+    class ContextualConnectionStore : IConnectionStore
+    {
+        readonly PipelineExecutor pipelineExecutor;
+
+        public ContextualConnectionStore(PipelineExecutor pipelineExecutor)
+        {
+            this.pipelineExecutor = pipelineExecutor;
+        }
+
+        public bool TryGetTransaction(string connectionString, out SqlTransaction transaction)
         {
             var key = MakeTransactionKey(connectionString);
             return pipelineExecutor.CurrentContext.TryGet(key, out transaction);
         }
 
-        public static bool TryGetConnection(this PipelineExecutor pipelineExecutor, string connectionString, out SqlConnection connection)
+        public bool TryGetConnection(string connectionString, out SqlConnection connection)
         {
             var key = MakeConnectionKey(connectionString);
             return pipelineExecutor.CurrentContext.TryGet(key, out connection);
         }
 
-        public static IDisposable SetTransaction(this PipelineExecutor pipelineExecutor, string connectionString, SqlTransaction transaction)
+        public IDisposable SetTransaction(string connectionString, SqlTransaction transaction)
         {
             var key = MakeTransactionKey(connectionString);
             pipelineExecutor.CurrentContext.Set(key, transaction);
             return new ContextItemRemovalDisposable(key, pipelineExecutor);
         }
 
-        public static IDisposable SetConnection(this PipelineExecutor pipelineExecutor, string connectionString, SqlConnection connection)
+        public IDisposable SetConnection(string connectionString, SqlConnection connection)
         {
             var key = MakeConnectionKey(connectionString);
             pipelineExecutor.CurrentContext.Set(key, connection);

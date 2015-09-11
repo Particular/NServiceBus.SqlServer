@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.CircuitBreakers;
@@ -12,38 +13,60 @@
         protected abstract void Finally(T value);
         protected abstract void HandleException(Exception ex);
         protected abstract IRampUpController CreateRampUpController(Action rampUpCallback);
-        protected abstract ITaskTracker CreateTaskTracker(int maximumConcurrency);
-
-        protected AdaptiveExecutor(RepeatedFailuresOverTimeCircuitBreaker circuitBreaker)
+        protected abstract IBackOffStrategy CreateBackOffStrategy();
+        
+        protected AdaptiveExecutor(string name, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, TransportNotifications transportNotifications, TimeSpan slowTaskThreshold)
         {
+            this.name = name;
             this.circuitBreaker = circuitBreaker;
+            this.transportNotifications = transportNotifications;
+            this.slowTaskThreshold = slowTaskThreshold;
         }
 
         public virtual void Start(int maximumConcurrency, CancellationToken token)
         {
             if (taskTracker != null)
             {
-                throw new InvalidOperationException("The executor has already been started. Use Stop() to stop it.");
+                throw new InvalidOperationException("The executor has already been started.");
             }
             this.token = token;
-            taskTracker = CreateTaskTracker(maximumConcurrency);
+            taskTracker = new TaskTracker(maximumConcurrency, transportNotifications, name);
             StartTask();
+            slowTaskTimer = new Timer(_ => MonitorSlowTasks(), null, TimeSpan.Zero, slowTaskThreshold);
         }
 
         public virtual void Stop()
         {
+            if (taskTracker == null)
+            {
+                throw new InvalidOperationException("The executor has not been started.");
+            }
+            using (var waitHandle = new ManualResetEvent(false))
+            {
+                slowTaskTimer.Dispose(waitHandle);
+                waitHandle.WaitOne();
+            }
             taskTracker.ShutdownAll();
-
             taskTracker = null;
+        }
+
+        void MonitorSlowTasks()
+        {
+            var allStates = taskTracker.GetTaskStates();
+            foreach (var state in allStates.Cast<ExecutorTaskState>())
+            {
+                state.TriggerAnotherTaskIfLongRunning(StartTask);
+            }
         }
 
         void StartTask()
         {
             taskTracker.StartAndTrack(() =>
             {
+                var state = new ExecutorTaskState();
                 var taskId = Guid.NewGuid();
                 var receiveTask = Task.Factory
-                    .StartNew(ReceiveLoop, null, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                    .StartNew(ReceiveLoop, state, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                     .ContinueWith(t =>
                     {
                         t.Exception.Handle(ex =>
@@ -52,7 +75,6 @@
                             circuitBreaker.Failure(ex);
                             return true;
                         });
-
                     }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
                     .ContinueWith((_, s) =>
                     {
@@ -66,18 +88,20 @@
                         StartTask();
                     }, taskId, token);
 
-                return Tuple.Create(taskId, receiveTask);
+                return Tuple.Create(taskId, receiveTask, state);
             });
         }
 
         void ReceiveLoop(object obj)
         {
-            var backOff = new BackOff(1000);
+            var state = (ExecutorTaskState) obj;
+            var backOff = CreateBackOffStrategy();
             var rampUpController = CreateRampUpController(StartTask);
 
             while (!token.IsCancellationRequested && rampUpController.CheckHasEnoughWork())
             {
                 bool success;
+                state.Reset();
                 rampUpController.RampUpIfTooMuchWork();
                 var result = Init();
                 try
@@ -98,13 +122,16 @@
                 }
 
                 circuitBreaker.Success();
-                backOff.Wait(() => !success);
+                backOff.ConditionalWait(() => !success, Thread.Sleep);
             }
         }
 
+        Timer slowTaskTimer;
+        readonly TimeSpan slowTaskThreshold;
+        readonly string name;
         readonly RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
+        readonly TransportNotifications transportNotifications;
         CancellationToken token;
-        ITaskTracker taskTracker;
-
+        TaskTracker taskTracker;
     }
 }

@@ -6,40 +6,40 @@
     using System.Threading.Tasks;
     using NServiceBus.Logging;
 
-    class ReceiveTaskTracker : ITaskTracker
+    class TaskTracker
     {
-        public ReceiveTaskTracker(int maximumConcurrency, TransportNotifications transportNotifications, string queueName)
+        public TaskTracker(int maximumConcurrency, TransportNotifications transportNotifications, string executorName)
         {
             this.maximumConcurrency = maximumConcurrency;
             this.transportNotifications = transportNotifications;
-            this.queueName = queueName;
+            this.executorName = executorName;
         }
 
-        public void StartAndTrack(Func<Tuple<Guid, Task>> taskFactory)
+        public void StartAndTrack(Func<Tuple<Guid, Task, ExecutorTaskState>> taskFactory)
         {
             lock (lockObj)
             {
                 if (shuttingDown)
                 {
-                    Logger.DebugFormat("Ignoring start task request for '{0}' because shutdown is in progress.", queueName);
+                    Logger.DebugFormat("Ignoring start task request for '{0}' because shutdown is in progress.", executorName);
                     return;
                 }
                 if (trackedTasks.Count >= maximumConcurrency)
                 {
                     if (Logger.IsDebugEnabled)
                     {
-                        Logger.DebugFormat("Ignoring start task request for '{0}' because of maximum concurrency limit of {1} has been reached.", queueName, maximumConcurrency);
+                        Logger.DebugFormat("Ignoring start task request for '{0}' because of maximum concurrency limit of {1} has been reached.", executorName, maximumConcurrency);
                     }
-                    transportNotifications.InvokeMaximumConcurrencyLevelReached(queueName, maximumConcurrency);
+                    transportNotifications.InvokeMaximumConcurrencyLevelReached(executorName, maximumConcurrency);
                     return;
                 }
                 var tuple = taskFactory();
-                trackedTasks.Add(tuple.Item1, tuple.Item2);
+                trackedTasks.Add(tuple.Item1, Tuple.Create(tuple.Item2, tuple.Item3));
                 if (Logger.IsDebugEnabled)
                 {
-                    Logger.DebugFormat("Starting a new receive task for '{0}'. Total count current/max {1}/{2}", queueName, trackedTasks.Count, maximumConcurrency);
+                    Logger.DebugFormat("Starting a new receive task for '{0}'. Total count current/max {1}/{2}", executorName, trackedTasks.Count, maximumConcurrency);
                 }
-                transportNotifications.InvokeReceiveTaskStarted(queueName, trackedTasks.Count, maximumConcurrency);
+                transportNotifications.InvokeReceiveTaskStarted(executorName, trackedTasks.Count, maximumConcurrency);
             }
         }
 
@@ -56,10 +56,18 @@
                 {
                     if (Logger.IsDebugEnabled)
                     {
-                        Logger.DebugFormat("Stopping a receive task for '{0}'. Total count current/max {1}/{2}", queueName, trackedTasks.Count, maximumConcurrency);
+                        Logger.DebugFormat("Stopping a receive task for '{0}'. Total count current/max {1}/{2}", executorName, trackedTasks.Count, maximumConcurrency);
                     }
-                    transportNotifications.InvokeReceiveTaskStopped(queueName, trackedTasks.Count, maximumConcurrency);
+                    transportNotifications.InvokeReceiveTaskStopped(executorName, trackedTasks.Count, maximumConcurrency);
                 }
+            }
+        }
+
+        public IEnumerable<object> GetTaskStates()
+        {
+            lock (lockObj)
+            {
+                return trackedTasks.Values.Select(x => x.Item2).ToArray();
             }
         }
 
@@ -82,14 +90,14 @@
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Stopping all receive tasks.");
+                Logger.Debug("Stopping all tasks.");
             }
             lock (lockObj)
             {
                 shuttingDown = true;
                 try
                 {
-                    Task.WaitAll(trackedTasks.Values.ToArray());
+                    Task.WaitAll(trackedTasks.Values.Select(x => x.Item1).ToArray());
                 }
                 catch (AggregateException aex)
                 {
@@ -99,12 +107,12 @@
         }
 
         readonly object lockObj = new object();
-        readonly Dictionary<Guid, Task> trackedTasks = new Dictionary<Guid, Task>();
+        readonly Dictionary<Guid, Tuple<Task, ExecutorTaskState>> trackedTasks = new Dictionary<Guid, Tuple<Task, ExecutorTaskState>>();
         bool shuttingDown;
         readonly int maximumConcurrency;
         readonly TransportNotifications transportNotifications;
-        readonly string queueName;
+        readonly string executorName;
 
-        static readonly ILog Logger = LogManager.GetLogger<ReceiveTaskTracker>();
+        static readonly ILog Logger = LogManager.GetLogger<TaskTracker>();
     }
 }

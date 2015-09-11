@@ -2,25 +2,24 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Data;
-    using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;
 
     class NativeTransactionReceiveStrategy : IReceiveStrategy
     {
-        readonly PipelineExecutor pipelineExecutor;
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly IsolationLevel isolationLevel;
         readonly ConnectionFactory sqlConnectionFactory;
+        readonly IConnectionStore connectionStore;
 
-        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public NativeTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory, IConnectionStore connectionStore, TransactionSettings transactionSettings)
         {
-            this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
             this.errorQueue = errorQueue;
             this.connectionString = connectionString;
             this.sqlConnectionFactory = sqlConnectionFactory;
+            this.connectionStore = connectionStore;
             isolationLevel = GetSqlIsolationLevel(transactionSettings.IsolationLevel);
         }
 
@@ -28,11 +27,11 @@ namespace NServiceBus.Transports.SQLServer
         {
             using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
             {
-                using (pipelineExecutor.SetConnection(connectionString, connection))
+                using (connectionStore.SetConnection(connectionString, connection))
                 {
                     using (var transaction = connection.BeginTransaction(isolationLevel))
                     {
-                        using (pipelineExecutor.SetTransaction(connectionString, transaction))
+                        using (connectionStore.SetTransaction(connectionString, transaction))
                         {
                             MessageReadResult readResult;
                             try
