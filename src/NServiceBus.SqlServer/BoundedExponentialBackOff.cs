@@ -7,16 +7,17 @@
     /// </summary>
     class BoundedExponentialBackOff : IBackOffStrategy
     {
-        readonly int maximum;
-        int currentDelay = 50;
+        static readonly int defaultDelay = 50;
+        readonly int maximumDelay;
+        int currentDelay = defaultDelay;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="maximum">The maximum number of milliseconds for which the thread is blocked.</param>
-        public BoundedExponentialBackOff(int maximum)
+        /// <param name="maximumDelay">The maximum number of milliseconds for which the thread is blocked.</param>
+        public BoundedExponentialBackOff(int maximumDelay)
         {
-            this.maximum = maximum;
+            this.maximumDelay = maximumDelay;
         }
 
         /// <summary>
@@ -29,22 +30,17 @@
             if (condition())
             {
                 waitAction(currentDelay);
-                currentDelay = RecalculateDelay(currentDelay, maximum);
+                currentDelay = RecalculateDelay(currentDelay, maximumDelay);
             }
             else
             {
-                currentDelay = 50;
+                currentDelay = defaultDelay;
             }
         }
 
         static int RecalculateDelay(int currentDelay, int maximumDelay)
         {
-            var newDelay = currentDelay*2;
-            if (newDelay > maximumDelay)
-            {
-                newDelay = maximumDelay;
-            }
-            return newDelay;
+            return Math.Min(maximumDelay, currentDelay * 2);
         }
     }
 }
