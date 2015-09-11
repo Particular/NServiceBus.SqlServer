@@ -103,9 +103,14 @@
 
         Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
         {
-            return IsReply(sendOptions)
-                ? callbackAddressStore.TryGetCallbackAddress() 
-                : null;
+            if (IsReply(sendOptions))
+            {
+                Address callbackAddress;
+                callbackAddressStore.TryGetCallbackAddress(out callbackAddress);
+                return callbackAddress;
+            }
+            
+            return null;
         }
 
         static bool IsReply(SendOptions sendOptions)

@@ -114,9 +114,10 @@
             {
             }
 
-            public Address TryGetCallbackAddress()
+            public bool TryGetCallbackAddress(out Address callbackAddress)
             {
-                return null;
+                callbackAddress = default(Address);
+                return false;
             }
         }
 

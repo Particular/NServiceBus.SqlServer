@@ -5,7 +5,7 @@
     interface ICallbackAddressStore
     {
         void SetCallbackAddress(Address callbackAddress);
-        Address TryGetCallbackAddress();
+        bool TryGetCallbackAddress(out Address callbackAddress);
     }
 
     class ContextualCallbackAddressStore : ICallbackAddressStore
@@ -23,11 +23,9 @@
             behaviorContext.Set(SqlServerCallbackAddressContextKey,callbackAddress);
         }
 
-        public Address TryGetCallbackAddress()
+        public bool TryGetCallbackAddress(out Address callbackAddress)
         {
-            Address callbackAddress;
-            behaviorContext.TryGet(SqlServerCallbackAddressContextKey, out callbackAddress);
-            return callbackAddress;
+            return behaviorContext.TryGet(SqlServerCallbackAddressContextKey, out callbackAddress);
         }
     }
 }
