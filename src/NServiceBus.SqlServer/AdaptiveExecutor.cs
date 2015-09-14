@@ -9,7 +9,7 @@
     abstract class AdaptiveExecutor<T> : IExecutor
     {
         protected abstract T Init();
-        protected abstract T Try(T initialValue, out bool success);
+        protected abstract T Try(out bool success);
         protected abstract void Finally(T value);
         protected abstract void HandleException(Exception ex);
         protected abstract IRampUpController CreateRampUpController(Action rampUpCallback);
@@ -106,7 +106,7 @@
                 var result = Init();
                 try
                 {
-                    result = Try(result, out success);
+                    result = Try(out success);
                     if (success)
                     {
                         rampUpController.Succeeded();

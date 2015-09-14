@@ -50,7 +50,7 @@
             return ReceiveResult.NoMessage();
         }
 
-        protected override ReceiveResult Try(ReceiveResult initialValue, out bool success)
+        protected override ReceiveResult Try(out bool success)
         {
             var result = receiveStrategy.TryReceiveFrom(queue);
             success = result.HasReceivedMessage;
