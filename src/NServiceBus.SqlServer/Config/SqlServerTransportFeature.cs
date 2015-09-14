@@ -58,11 +58,13 @@ namespace NServiceBus.Features
                 config.Configure(context, connectionStringWithSchema);
             }
 
-            context.Container.ConfigureComponent(b => new SqlServerMessageSender(
-                b.Build<IConnectionStringProvider>(),
-                new ContextualConnectionStore(b.Build<PipelineExecutor>()),
-                new ContextualCallbackAddressStore(b.Build<PipelineExecutor>().CurrentContext),
-                b.Build<ConnectionFactory>()), DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(
+                b => new SqlServerMessageSender(
+                    b.Build<IConnectionStringProvider>(),
+                    new ContextualConnectionStore(b.Build<PipelineExecutor>()),
+                    new ContextualCallbackAddressStore(b.Build<PipelineExecutor>().CurrentContext),
+                    b.Build<ConnectionFactory>()),
+                DependencyLifecycle.InstancePerCall);
 
             if (!context.Settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
