@@ -9,7 +9,7 @@
         const string discriminator = "-something";
 
         
-        [Test]
+        [Test][Ignore("SQL Server transport does not support scaling out with individualized queues.")]
         public void Should_use_the_configured_differentiator()
         {
             var context = Scenario.Define<Context>()
