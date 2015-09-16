@@ -45,6 +45,19 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -53,12 +66,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdaptiveExecutorSimulator\BackOff.cs" />
+    <Compile Include="AdaptiveExecutorSimulator\ISimulator.cs" />
     <Compile Include="AdaptiveExecutorSimulator\Load.cs" />
     <Compile Include="AdaptiveExecutorSimulator\Message.cs" />
+    <Compile Include="AdaptiveExecutorSimulator\ProcessingStepResult.cs" />
     <Compile Include="AdaptiveExecutorSimulator\ProcessingThread.cs" />
+    <Compile Include="AdaptiveExecutorSimulator\RealSimulator.cs" />
     <Compile Include="AdaptiveExecutorSimulator\RunningThread.cs" />
     <Compile Include="AdaptiveExecutorSimulator\Simulator.cs" />
     <Compile Include="AdaptiveExecutorSimulator\Stage.cs" />
+    <Compile Include="BoundedExponentialBackOffTests.cs" />
     <Compile Include="CallbackConfigTests.cs" />
     <Compile Include="CicruitBreakerConfigTests.cs" />
     <Compile Include="ConfigTest.cs" />

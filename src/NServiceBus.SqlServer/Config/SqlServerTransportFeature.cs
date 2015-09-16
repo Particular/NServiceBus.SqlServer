@@ -58,7 +58,13 @@ namespace NServiceBus.Features
                 config.Configure(context, connectionStringWithSchema);
             }
 
-            context.Container.ConfigureComponent<SqlServerMessageSender>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(
+                b => new SqlServerMessageSender(
+                    b.Build<IConnectionStringProvider>(),
+                    new ContextualConnectionStore(b.Build<PipelineExecutor>()),
+                    new ContextualCallbackAddressStore(b.Build<PipelineExecutor>().CurrentContext),
+                    b.Build<ConnectionFactory>()),
+                DependencyLifecycle.InstancePerCall);
 
             if (!context.Settings.GetOrDefault<bool>("Endpoint.SendOnly"))
             {
@@ -66,7 +72,7 @@ namespace NServiceBus.Features
                 context.Container.ConfigureComponent<SqlServerQueueCreator>(DependencyLifecycle.InstancePerCall);
 
                 var errorQueue = ErrorQueueSettings.GetConfiguredErrorQueue(context.Settings);
-                context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>(), errorQueue, b.Build<ConnectionFactory>()), DependencyLifecycle.InstancePerCall);
+                context.Container.ConfigureComponent(b => new ReceiveStrategyFactory(new ContextualConnectionStore(b.Build<PipelineExecutor>()), b.Build<LocalConnectionParams>(), errorQueue, b.Build<ConnectionFactory>()), DependencyLifecycle.InstancePerCall);
 
                 context.Container.ConfigureComponent<SqlServerPollingDequeueStrategy>(DependencyLifecycle.InstancePerCall);
                 context.Container.ConfigureComponent(b => new SqlServerStorageContext(b.Build<PipelineExecutor>(), b.Build<LocalConnectionParams>()), DependencyLifecycle.InstancePerUnitOfWork);

@@ -1,19 +1,18 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;
 
     class ReceiveStrategyFactory
     {
-        readonly PipelineExecutor pipelineExecutor;
+        readonly IConnectionStore connectionStore;
         readonly Address errorQueueAddress;
         readonly LocalConnectionParams localConnectionParams;
         readonly ConnectionFactory sqlConnectionFactory;
 
-        public ReceiveStrategyFactory(PipelineExecutor pipelineExecutor, LocalConnectionParams localConnectionParams, Address errorQueueAddress, ConnectionFactory sqlConnectionFactory)
+        public ReceiveStrategyFactory(IConnectionStore connectionStore, LocalConnectionParams localConnectionParams, Address errorQueueAddress, ConnectionFactory sqlConnectionFactory)
         {
-            this.pipelineExecutor = pipelineExecutor;
+            this.connectionStore = connectionStore;
             this.errorQueueAddress = errorQueueAddress;
             this.localConnectionParams = localConnectionParams;
             this.sqlConnectionFactory = sqlConnectionFactory;
@@ -27,9 +26,9 @@ namespace NServiceBus.Transports.SQLServer
             {
                 if (settings.SuppressDistributedTransactions)
                 {
-                    return new NativeTransactionReceiveStrategy(localConnectionParams.ConnectionString, errorQueue, tryProcessMessageCallback, sqlConnectionFactory, pipelineExecutor, settings);
+                    return new NativeTransactionReceiveStrategy(localConnectionParams.ConnectionString, errorQueue, tryProcessMessageCallback, sqlConnectionFactory, connectionStore, settings);
                 }
-                return new AmbientTransactionReceiveStrategy(localConnectionParams.ConnectionString, errorQueue, tryProcessMessageCallback, sqlConnectionFactory, pipelineExecutor, settings);
+                return new AmbientTransactionReceiveStrategy(localConnectionParams.ConnectionString, errorQueue, tryProcessMessageCallback, sqlConnectionFactory, connectionStore, settings);
             }
             return new NoTransactionReceiveStrategy(localConnectionParams.ConnectionString, errorQueue, tryProcessMessageCallback, sqlConnectionFactory);
         }

@@ -2,25 +2,24 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Transactions;
-    using NServiceBus.Pipeline;
     using NServiceBus.Unicast.Transport;
 
     class AmbientTransactionReceiveStrategy : IReceiveStrategy
     {
-        readonly PipelineExecutor pipelineExecutor;
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
         readonly TransactionOptions transactionOptions;
         readonly ConnectionFactory sqlConnectionFactory;
+        readonly IConnectionStore connectionStore;
 
-        public AmbientTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory, PipelineExecutor pipelineExecutor, TransactionSettings transactionSettings)
+        public AmbientTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory, IConnectionStore connectionStore, TransactionSettings transactionSettings)
         {
-            this.pipelineExecutor = pipelineExecutor;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
             this.errorQueue = errorQueue;
             this.connectionString = connectionString;
             this.sqlConnectionFactory = sqlConnectionFactory;
+            this.connectionStore = connectionStore;
 
             transactionOptions = new TransactionOptions
             {
@@ -35,7 +34,7 @@ namespace NServiceBus.Transports.SQLServer
             {
                 using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
                 {
-                    using (pipelineExecutor.SetConnection(connectionString, connection))
+                    using (connectionStore.SetConnection(connectionString, connection))
                     {
                         var readResult = queue.TryReceive(connection);
                         if (readResult.IsPoison)

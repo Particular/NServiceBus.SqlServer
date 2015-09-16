@@ -41,7 +41,7 @@
                     .UseTransport<SqlServerTransport>()
                     .DefaultSchema("sender")
                     .UseSpecificConnectionInformation(
-                        EndpointConnectionInfo.For("Basic.Receiver.WhenUsingNonStandardSchema.SqlServerTransport").UseSchema("receiver")
+                        EndpointConnectionInfo.For("UsingNonStandardSchema.Receiver").UseSchema("receiver")
                     ))
                     .AddMapping<MyMessage>(typeof(Receiver));
             }

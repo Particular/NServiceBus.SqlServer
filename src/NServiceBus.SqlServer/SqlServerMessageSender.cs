@@ -3,20 +3,21 @@
     using System;
     using System.Data.SqlClient;
     using System.Transactions;
-    using Pipeline;
     using Unicast;
     using Unicast.Queuing;
 
     class SqlServerMessageSender : ISendMessages
     {
         readonly IConnectionStringProvider connectionStringProvider;
-        readonly PipelineExecutor pipelineExecutor;
+        readonly IConnectionStore connectionStore;
+        readonly ICallbackAddressStore callbackAddressStore;
         readonly ConnectionFactory sqlConnectionFactory;
 
-        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, PipelineExecutor pipelineExecutor, ConnectionFactory sqlConnectionFactory)
+        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, IConnectionStore connectionStore, ICallbackAddressStore callbackAddressStore, ConnectionFactory sqlConnectionFactory)
         {
             this.connectionStringProvider = connectionStringProvider;
-            this.pipelineExecutor = pipelineExecutor;
+            this.connectionStore = connectionStore;
+            this.callbackAddressStore = callbackAddressStore;
             this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
@@ -32,14 +33,14 @@
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
-                    if (pipelineExecutor.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
+                    if (connectionStore.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
                     {
                         queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
                     }
                     else
                     {
                         SqlConnection currentConnection;
-                        if (pipelineExecutor.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
+                        if (connectionStore.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
                         {
                             queue.Send(message, sendOptions, currentConnection);
                         }
@@ -102,9 +103,14 @@
 
         Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
         {
-            return IsReply(sendOptions) 
-                ? pipelineExecutor.CurrentContext.TryGetCallbackAddress() 
-                : null;
+            if (IsReply(sendOptions))
+            {
+                Address callbackAddress;
+                callbackAddressStore.TryGetCallbackAddress(out callbackAddress);
+                return callbackAddress;
+            }
+            
+            return null;
         }
 
         static bool IsReply(SendOptions sendOptions)

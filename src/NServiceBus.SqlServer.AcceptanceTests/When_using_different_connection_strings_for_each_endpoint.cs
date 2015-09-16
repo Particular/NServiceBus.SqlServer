@@ -23,7 +23,7 @@
             };
 
             Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", SenderConnectionStringWithSchema)))
+                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/UsingDifferentConnectionStringsForEachEndpoint.Sender", SenderConnectionStringWithSchema)))
                    .WithEndpoint<Sender>(b => b.Given((bus, c) => bus.Send(new MyRequest
                    {
                        ContextId = c.Id
@@ -61,7 +61,7 @@
                 public void Configure(BusConfiguration busConfiguration)
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
-                        .UseSpecificConnectionInformation(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
+                        .UseSpecificConnectionInformation(x => x == "UsingDifferentConnectionStringsForEachEndpoint.Receiver" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
                         .ConnectionString(SenderConnectionStringWithSchema);
                 }
             }
@@ -95,7 +95,7 @@
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
                         .UseSpecificConnectionInformation(
-                            EndpointConnectionInfo.For("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
+                            EndpointConnectionInfo.For("UsingDifferentConnectionStringsForEachEndpoint.Sender").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
                         .ConnectionString(ReceiverConnectionStringWithSchema);
                 }
             }
