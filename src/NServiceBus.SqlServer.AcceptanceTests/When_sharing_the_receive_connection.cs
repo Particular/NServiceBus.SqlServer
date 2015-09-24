@@ -21,6 +21,8 @@
             Assert.False(context.IsDtcTransaction);
         }
 
+        
+
         public class Context : ScenarioContext
         {
             public bool Done { get; set; }
@@ -33,6 +35,7 @@
         [Serializable]
         public class AnotherMessage : IMessage { }
 
+        
         public class ConnectionSharingEndpoint : EndpointConfigurationBuilder
         {
             public ConnectionSharingEndpoint()

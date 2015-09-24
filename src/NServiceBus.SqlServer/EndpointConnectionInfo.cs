@@ -61,5 +61,10 @@ namespace NServiceBus.Transports.SQLServer
         {
             return defaultConnectionParams.MakeSpecific(connectionString, schemaName);
         }
+
+        internal bool OverridesConnectionString
+        {
+            get { return connectionString != null; }
+        }
     }
 }

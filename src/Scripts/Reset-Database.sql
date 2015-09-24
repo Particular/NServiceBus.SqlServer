@@ -87,15 +87,36 @@ GO
 
 /* Drop all tables */
 DECLARE @name VARCHAR(128)
+DECLARE @schema VARCHAR(128)
 DECLARE @SQL VARCHAR(254)
 
-SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] = 'U' AND category = 0 ORDER BY [name])
+SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objects INNER JOIN sys.schemas ON sys.objects.schema_id = sys.schemas.schema_id WHERE [type] = 'U' ORDER BY sys.objects.name
 
 WHILE @name IS NOT NULL
 BEGIN
-    SELECT @SQL = 'DROP TABLE [dbo].[' + RTRIM(@name) +']'
+    SELECT @SQL = 'DROP TABLE [' + @schema + '].[' + RTRIM(@name) +']'
     EXEC (@SQL)
-    PRINT 'Dropped Table: ' + @name
-    SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] = 'U' AND category = 0 AND [name] > @name ORDER BY [name])
+    PRINT 'Dropped Table: ' + @schema + '.' + @name
+	SELECT  @name = NULL
+    SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objects INNER JOIN sys.schemas ON sys.objects.schema_id = sys.schemas.schema_id WHERE [type] = 'U' ORDER BY sys.objects.name
+END
+GO
+
+/* Create schemas */
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'nsb')
+BEGIN
+	EXEC('CREATE SCHEMA nsb')
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sender')
+BEGIN
+	EXEC('CREATE SCHEMA sender')
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'receiver')
+BEGIN
+	EXEC('CREATE SCHEMA receiver')
 END
 GO

@@ -12,7 +12,7 @@
             string incomingCallbackQueue;
             if (context.IncomingLogicalMessage != null && context.IncomingLogicalMessage.Headers.TryGetValue(CallbackConfig.CallbackHeaderKey, out incomingCallbackQueue))
             {
-                context.SetCallbackAddress(Address.Parse(incomingCallbackQueue));
+                new ContextualCallbackAddressStore(context).SetCallbackAddress(Address.Parse(incomingCallbackQueue));
             }
             next();
         }

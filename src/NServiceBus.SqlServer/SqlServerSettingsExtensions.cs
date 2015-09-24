@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.Linq;
     using Configuration.AdvanceExtensibility;
     using NServiceBus.Transports.SQLServer;
     using NServiceBus.Transports.SQLServer.Config;
@@ -60,7 +62,7 @@
             {
                 throw new InvalidOperationException("Per-endpoint connection information can be specified only once, either by passing a collection or a callback.");
             }
-            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection);
+            transportExtensions.GetSettings().Set(ConnectionConfig.PerEndpointConnectionStringsCollectionSettingKey, connectionInformationCollection.ToArray());
             return transportExtensions;
         }
 
@@ -138,6 +140,18 @@
         public static TransportExtensions<SqlServerTransport> PauseAfterReceiveFailure(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan pauseTime)
         {
             transportExtensions.GetSettings().Set(CircuitBreakerConfig.CircuitBreakerDelayAfterFailureSettingsKey, pauseTime);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides the default time SQL Connections factory.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="sqlConnectionFactory">Factory for creating and opening new SQL Connections.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
+        {
+            transportExtensions.GetSettings().Set(SqlConnectionFactoryConfig.CustomSqlConnectionFactorySettingKey, new ConnectionFactory(sqlConnectionFactory));
             return transportExtensions;
         }
     }

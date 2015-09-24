@@ -9,11 +9,13 @@ namespace NServiceBus.Transports.SQLServer
     class QueuePurger : IQueuePurger
     {
         readonly LocalConnectionParams localConnectionParams;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration, LocalConnectionParams localConnectionParams)
+        public QueuePurger(SecondaryReceiveConfiguration secondaryReceiveConfiguration, LocalConnectionParams localConnectionParams, ConnectionFactory sqlConnectionFactory)
         {
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             this.localConnectionParams = localConnectionParams;
+            this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
         public void Purge(Address address)
@@ -23,10 +25,8 @@ namespace NServiceBus.Transports.SQLServer
 
         void Purge(IEnumerable<string> tableNames)
         {
-            using (var connection = new SqlConnection(localConnectionParams.ConnectionString))
+            using (var connection = sqlConnectionFactory.OpenNewConnection(localConnectionParams.ConnectionString))
             {
-                connection.Open();
-
                 foreach (var tableName in tableNames)
                 {
                     using (var command = new SqlCommand(string.Format(SqlPurge, localConnectionParams.Schema, tableName), connection)

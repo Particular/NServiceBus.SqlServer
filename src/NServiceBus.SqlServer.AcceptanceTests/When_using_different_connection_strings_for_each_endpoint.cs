@@ -17,14 +17,13 @@
         [Test]
         public void Should_use_configured_connection_string_when_replying()
         {
-
             var context = new Context()
             {
                 Id = Guid.NewGuid()
             };
 
             Scenario.Define(context)
-                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport", SenderConnectionStringWithSchema)))
+                   .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/UsingDifferentConnectionStringsForEachEndpoint.Sender", SenderConnectionStringWithSchema)))
                    .WithEndpoint<Sender>(b => b.Given((bus, c) => bus.Send(new MyRequest
                    {
                        ContextId = c.Id
@@ -33,13 +32,20 @@
                    .Run();
         }
 
-        static void AddConnectionString(string name, string value)
+        [SetUp]
+        [TearDown]
+        public void ClearConnectionStrings()
         {
             var connectionStrings = ConfigurationManager.ConnectionStrings;
             //Setting the read only field to false via reflection in order to modify the connection strings
             var readOnlyField = typeof(ConfigurationElementCollection).GetField("bReadOnly", BindingFlags.Instance | BindingFlags.NonPublic);
             readOnlyField.SetValue(connectionStrings, false);
-            connectionStrings.Add(new ConnectionStringSettings(name, value));
+            connectionStrings.Clear();
+        }
+
+        static void AddConnectionString(string name, string value)
+        {
+            ConfigurationManager.ConnectionStrings.Add(new ConnectionStringSettings(name, value));
         }
 
         public class Sender : EndpointConfigurationBuilder
@@ -55,7 +61,7 @@
                 public void Configure(BusConfiguration busConfiguration)
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
-                        .UseSpecificConnectionInformation(x => x == "Basic.Receiver.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
+                        .UseSpecificConnectionInformation(x => x == "UsingDifferentConnectionStringsForEachEndpoint.Receiver" ? ConnectionInfo.Create().UseConnectionString(ReceiverConnectionString).UseSchema("nsb") : null)
                         .ConnectionString(SenderConnectionStringWithSchema);
                 }
             }
@@ -89,10 +95,8 @@
                 {
                     busConfiguration.UseTransport<SqlServerTransport>()
                         .UseSpecificConnectionInformation(
-                            EndpointConnectionInfo.For("Basic.Sender.WhenUsingDifferentConnectionStringsForEachEndpoint.SqlServerTransport").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
+                            EndpointConnectionInfo.For("UsingDifferentConnectionStringsForEachEndpoint.Sender").UseConnectionString("ToBeOverridenViaConfig").UseSchema("ToBeOverridenViaConfig"))
                         .ConnectionString(ReceiverConnectionStringWithSchema);
-
-                    busConfiguration.Transactions().DisableDistributedTransactions();
                 }
             }
 

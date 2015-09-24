@@ -3,6 +3,7 @@ namespace NServiceBus.Transports.SQLServer.Config
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Data.Common;
     using System.Linq;
     using NServiceBus.Features;
 
@@ -33,6 +34,20 @@ namespace NServiceBus.Transports.SQLServer.Config
 
         CompositeConnectionStringProvider ConfigureConnectionStringProvider(FeatureConfigurationContext context, LocalConnectionParams localConnectionParams)
         {
+            var configProvidedPerEndpointConnectionStrings = CreateConfigPerEndpointConnectionStringProvider(localConnectionParams);
+            var programmaticallyProvidedPerEndpointConnectionStrings = CreateProgrammaticPerEndpointConnectionStringProvider(context, localConnectionParams);
+
+            var connectionStringProvider = new CompositeConnectionStringProvider(
+                configProvidedPerEndpointConnectionStrings,
+                programmaticallyProvidedPerEndpointConnectionStrings,
+                new DefaultConnectionStringProvider(localConnectionParams)
+                );
+
+            return connectionStringProvider;
+        }
+
+        IConnectionStringProvider CreateConfigPerEndpointConnectionStringProvider(LocalConnectionParams localConnectionParams)
+        {
             const string transportConnectionStringPrefix = "NServiceBus/Transport/";
             var configConnectionStrings =
                 connectionStrings
@@ -42,23 +57,25 @@ namespace NServiceBus.Transports.SQLServer.Config
                         string schema;
                         var connectionString = x.ConnectionString.ExtractSchemaName(out schema);
                         var endpoint = x.Name.Replace(transportConnectionStringPrefix, String.Empty);
-                        return EndpointConnectionInfo.For(endpoint).UseConnectionString(connectionString).UseSchema(schema);
-                    });
+                        var connectionInfo = EndpointConnectionInfo.For(endpoint).UseSchema(schema);
 
-            var configProvidedPerEndpointConnectionStrings = new CollectionConnectionStringProvider(configConnectionStrings, localConnectionParams);
-            var programmaticallyProvidedPerEndpointConnectionStrings = CreateProgrammaticPerEndpointConnectionStringProvider(context, localConnectionParams);
+                        var localConnectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = localConnectionParams.ConnectionString };
+                        var overriddenConnectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            var connectionStringProvider = new CompositeConnectionStringProvider(
-                configProvidedPerEndpointConnectionStrings,
-                programmaticallyProvidedPerEndpointConnectionStrings,
-                new DefaultConnectionStringProvider(localConnectionParams)
-                );
-            return connectionStringProvider;
+                        if (!localConnectionStringBuilder.EquivalentTo(overriddenConnectionStringBuilder))
+                        {
+                            connectionInfo = connectionInfo.UseConnectionString(connectionString);
+                        }
+                        return connectionInfo;
+                    })
+                    .ToArray();
+
+            return new CollectionConnectionStringProvider(configConnectionStrings, localConnectionParams);
         }
 
         static IConnectionStringProvider CreateProgrammaticPerEndpointConnectionStringProvider(FeatureConfigurationContext context, LocalConnectionParams localConnectionParams)
         {
-            var collection = context.Settings.GetOrDefault<IEnumerable<EndpointConnectionInfo>>(PerEndpointConnectionStringsCollectionSettingKey);
+            var collection = context.Settings.GetOrDefault<EndpointConnectionInfo[]>(PerEndpointConnectionStringsCollectionSettingKey);
             if (collection != null)
             {
                 return new CollectionConnectionStringProvider(collection, localConnectionParams);

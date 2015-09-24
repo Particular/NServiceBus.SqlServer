@@ -1,8 +1,6 @@
 ﻿namespace NServiceBus.AcceptanceTests.Basic
 {
     using System;
-    using System.Data;
-    using System.Data.SqlClient;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Transports.SQLServer;
@@ -14,8 +12,6 @@
         [Test]
         public void Should_receive_the_message()
         {
-            EnsureSchemaExists("receiver");
-            EnsureSchemaExists("sender");
             var context = new Context
             {
                 Id = Guid.NewGuid()
@@ -45,7 +41,7 @@
                     .UseTransport<SqlServerTransport>()
                     .DefaultSchema("sender")
                     .UseSpecificConnectionInformation(
-                        EndpointConnectionInfo.For("Basic.Receiver.WhenUsingNonStandardSchema.SqlServerTransport").UseSchema("receiver")
+                        EndpointConnectionInfo.For("UsingNonStandardSchema.Receiver").UseSchema("receiver")
                     ))
                     .AddMapping<MyMessage>(typeof(Receiver));
             }
@@ -83,28 +79,5 @@
         {
             public Guid Id { get; set; }
         }
-
-        static void EnsureSchemaExists(string schema)
-        {
-            const string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-            const string SchemaDdl =
-    @"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{0}')
-BEGIN
-    EXEC('CREATE SCHEMA {0}');
-END";
-
-            using (var conn = new SqlConnection(ConnectionString))
-            {
-                conn.Open();
-                using (var cmd = new SqlCommand(string.Format(SchemaDdl, schema), conn)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-
     }
 }

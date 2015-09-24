@@ -16,5 +16,10 @@
         {
             return components.Select(x => x.GetForDestination(destination)).First(x => x != null);
         }
+
+        public bool AllowsNonLocalConnectionString
+        {
+            get { return components.Any(x => x.AllowsNonLocalConnectionString); }
+        }
     }
 }

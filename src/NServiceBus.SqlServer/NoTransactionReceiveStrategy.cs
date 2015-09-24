@@ -1,27 +1,27 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
 
     class NoTransactionReceiveStrategy : IReceiveStrategy
     {
         readonly string connectionString;
         readonly TableBasedQueue errorQueue;
         readonly Func<TransportMessage, bool> tryProcessMessageCallback;
+        readonly ConnectionFactory sqlConnectionFactory;
 
-        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback)
+        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory)
         {
             this.connectionString = connectionString;
             this.errorQueue = errorQueue;
             this.tryProcessMessageCallback = tryProcessMessageCallback;
+            this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
         public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
         {
             MessageReadResult readResult;
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
             {
-                connection.Open();
                 readResult = queue.TryReceive(connection);
                 if (readResult.IsPoison)
                 {
