@@ -67,17 +67,18 @@
                 var taskId = Guid.NewGuid();
                 var receiveTask = Task.Factory
                     .StartNew(ReceiveLoop, state, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-                    .ContinueWith(t =>
+                    .ContinueWith((t, s) =>
                     {
-                        t.Exception.Handle(ex =>
+                        if (t.IsFaulted)
                         {
-                            HandleException(ex);
-                            circuitBreaker.Failure(ex);
-                            return true;
-                        });
-                    }, token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
-                    .ContinueWith((_, s) =>
-                    {
+                            t.Exception.Handle(ex =>
+                            {
+                                HandleException(ex);
+                                circuitBreaker.Failure(ex);
+                                return true;
+                            });
+                        }
+
                         taskTracker.Forget((Guid)s);
 
                         if (!taskTracker.ShouldStartAnotherTaskImmediately)

@@ -36,6 +36,7 @@
 
             Scenario.Define(context)
                     .WithEndpoint<RetryEndpoint>(b => b.Given(bus => bus.SendLocal(new MessageToBeRetried())))
+                    .AllowExceptions()
                     .Done(c => c.FinishedMessageProcessingCalledAfterFaultManagerInvoked)
                     .Run();
 
