@@ -19,7 +19,9 @@ namespace NServiceBus.Features
 
         protected override void InternalConfigure(Configure config)
         {
-            
+            // required for TimeoutPersistenceVersionCheck on NSB.Core
+            SettingsHolder.Set("NServiceBus.Transport.SupportsNativeTransactionSuppression", true);
+
             Enable<SqlServerTransport>();
             Enable<MessageDrivenSubscriptions>();
         }

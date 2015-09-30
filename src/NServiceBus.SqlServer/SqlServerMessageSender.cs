@@ -7,6 +7,7 @@
     using Serializers.Json;
     using Unicast.Queuing;
     using System.Collections.Generic;
+    using NServiceBus.Pipeline;
 
     /// <summary>
     ///     SqlServer implementation of <see cref="ISendMessages" />.
@@ -28,7 +29,9 @@
         public Dictionary<string, string> SchemaNameCollection { get; set; }
 
         public UnitOfWork UnitOfWork { get; set; }
-        
+
+        public PipelineExecutor PipelineExecutor { get; set; }
+
         public SqlServerMessageSender()
         {
             ConnectionStringCollection = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
@@ -61,7 +64,9 @@
                     schemaName = SchemaNameCollection[ address.Queue ];
                 }
 
-                if (UnitOfWork.HasActiveTransaction(queueConnectionString))
+                bool suppressNativeTransactions;
+                PipelineExecutor.CurrentContext.TryGet("do-not-enlist-in-native-transaction", out suppressNativeTransactions);
+                if (UnitOfWork.HasActiveTransaction(queueConnectionString) && !suppressNativeTransactions)
                 {
                     //if there is an active transaction for the connection, we can use the same native transaction
                     var transaction = UnitOfWork.GetTransaction(queueConnectionString);
