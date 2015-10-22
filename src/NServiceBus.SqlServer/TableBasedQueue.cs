@@ -6,22 +6,16 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data.SqlClient;
     using NServiceBus.Logging;
     using NServiceBus.Serializers.Json;
-    using NServiceBus.Unicast;
 
     class TableBasedQueue
     {
-        public TableBasedQueue(Address address, string schema)
-            : this(address.GetTableName(), schema)
-        {
-        }
-
         public TableBasedQueue(string tableName, string schema)
         {
             this.tableName = tableName;
             this.schema = schema;
         }
 
-        public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
+        public void Send(TransportMessage message, DispatchOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
         {
             var messageData = ExtractTransportMessageData(message, sendOptions);
 
@@ -53,7 +47,7 @@ namespace NServiceBus.Transports.SQLServer
             command.ExecuteNonQuery();
         }
 
-        static object[] ExtractTransportMessageData(TransportMessage message, SendOptions sendOptions)
+        static object[] ExtractTransportMessageData(TransportMessage message, DispatchOptions sendOptions)
         {
             var data = new object[7];
 
@@ -228,7 +222,7 @@ namespace NServiceBus.Transports.SQLServer
         const int IdColumn = 0;
         const int CorrelationIdColumn = 1;
         const int ReplyToAddressColumn = 2;
-        const int RecoverableColumn = 3;
+        const int RecoverableColumn = 3;    
         const int TimeToBeReceivedColumn = 4;
         const int HeadersColumn = 5;
         const int BodyColumn = 6;

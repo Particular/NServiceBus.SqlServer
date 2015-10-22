@@ -6,6 +6,7 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Transports.SQLServer;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     public class When_using_different_connection_strings_for_each_endpoint : NServiceBusAcceptanceTest

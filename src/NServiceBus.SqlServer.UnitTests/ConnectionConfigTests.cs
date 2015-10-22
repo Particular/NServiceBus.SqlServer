@@ -5,6 +5,7 @@ namespace NServiceBus.SqlServer.UnitTests
     using System.Configuration;
     using NServiceBus.Transports.SQLServer;
     using NServiceBus.Transports.SQLServer.Config;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     [TestFixture]
