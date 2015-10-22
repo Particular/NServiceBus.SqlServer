@@ -1,49 +1,32 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Threading.Tasks;
+    using NServiceBus.Extensibility;
 
-    class NoTransactionReceiveStrategy : IReceiveStrategy
+    class NoTransactionReceiveStrategy
     {
-        readonly string connectionString;
-        readonly TableBasedQueue errorQueue;
-        readonly Func<TransportMessage, bool> tryProcessMessageCallback;
-        readonly ConnectionFactory sqlConnectionFactory;
+        readonly TableBasedQueue inputQueue;
+        readonly Func<PushContext, Task> onMessage;
 
-        public NoTransactionReceiveStrategy(string connectionString, TableBasedQueue errorQueue, Func<TransportMessage, bool> tryProcessMessageCallback, ConnectionFactory sqlConnectionFactory)
+        public NoTransactionReceiveStrategy(TableBasedQueue inputQueue, Func<PushContext, Task> onMessage)
         {
-            this.connectionString = connectionString;
-            this.errorQueue = errorQueue;
-            this.tryProcessMessageCallback = tryProcessMessageCallback;
-            this.sqlConnectionFactory = sqlConnectionFactory;
+            this.onMessage = onMessage;
+            this.inputQueue = inputQueue;
         }
 
-        public ReceiveResult TryReceiveFrom(TableBasedQueue queue)
+        public async Task TryReceiveFrom()
         {
             MessageReadResult readResult;
-            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionString))
+            readResult = inputQueue.TryReceive();
+            if (readResult.Successful)
             {
-                readResult = queue.TryReceive(connection);
-                if (readResult.IsPoison)
+                var incomingMessage = readResult.Message;
+                using (var bodyStream = incomingMessage.BodyStream)
                 {
-                    errorQueue.Send(readResult.DataRecord, connection);
-                    return ReceiveResult.NoMessage();
+                    var pushContext = new PushContext(incomingMessage.MessageId, incomingMessage.Headers, bodyStream, new ContextBag());
+                    await onMessage(pushContext).ConfigureAwait(false);
                 }
-            }
-
-            if (!readResult.Successful)
-            {
-                return ReceiveResult.NoMessage();
-            }
-
-            var result = ReceiveResult.Received(readResult.Message);
-            try
-            {
-                tryProcessMessageCallback(readResult.Message);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return result.FailedProcessing(ex);
             }
         }
     }

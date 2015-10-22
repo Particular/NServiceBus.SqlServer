@@ -69,7 +69,10 @@
     <Compile Include="Light\SqlServerMessageSender.cs" />
     <Compile Include="Light\SqlServer.cs" />
     <Compile Include="MessagePump.cs" />
+    <Compile Include="MessageReadResult.cs" />
+    <Compile Include="NoTransactionReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Config\" />

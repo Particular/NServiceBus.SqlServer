@@ -15,11 +15,11 @@
 
         protected override void Configure(FeatureConfigurationContext context, string connectionString)
         {
-            context.Container.ConfigureComponent(b => new SqlServerMessageSender(connectionString), DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(b => new SqlServerMessageSender(new TableBasedQueue("", "", connectionString)), DependencyLifecycle.InstancePerCall);
 
             context.Container.ConfigureComponent(b => new SqlServerQueueCreator(connectionString), DependencyLifecycle.InstancePerCall);
 
-            context.Container.ConfigureComponent<MessagePump>(DependencyLifecycle.InstancePerCall);
+            context.Container.ConfigureComponent(b => new MessagePump(connectionString), DependencyLifecycle.InstancePerCall);
         }
 
         protected override string ExampleConnectionStringForErrorMessage  =>  @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"; 
