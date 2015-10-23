@@ -73,14 +73,13 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     message.Headers[Headers.ReplyToAddress] = replyToAddress;
                 }
-
+                
                 return MessageReadResult.Success(message);
             }
             catch (Exception ex)
             {
                 Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
-                return new MessageReadResult();
-                //return MessageReadResult.Poison(rowData);
+                return MessageReadResult.Poison(rowData);
             }
         }
 
@@ -198,6 +197,35 @@ namespace NServiceBus.Transports.SQLServer
                 connection.Open();
 
                 var commandText = String.Format(SqlSend, "dbo", destination);
+
+                //TODO: figure out how tansactions are passed and are they only for native transactions
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new SqlCommand(commandText, connection, transaction)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        for (var i = 0; i < messageData.Length; i++)
+                        {
+                            command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
+                        }
+
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                }
+            }
+        }
+
+        public void Send(object[] messageData)
+        {
+            using (var connection = new SqlConnection(this.connectionString))
+            {
+                connection.Open();
+
+                var commandText = String.Format(SqlSend, this.schema, this.tableName);
 
                 //TODO: figure out how tansactions are passed and are they only for native transactions
                 using (var transaction = connection.BeginTransaction())

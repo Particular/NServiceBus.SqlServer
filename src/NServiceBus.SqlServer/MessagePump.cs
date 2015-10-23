@@ -7,7 +7,8 @@ namespace NServiceBus.Transports.SQLServer
 
     class MessagePump : IPushMessages
     {
-        TableBasedQueue queue;
+        TableBasedQueue inputQueue;
+        TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
         string connectionString;
 
@@ -19,7 +20,8 @@ namespace NServiceBus.Transports.SQLServer
         public void Init(Func<PushContext, Task> pipe, PushSettings settings)
         {
             this.pipeline = pipe;
-            this.queue = new TableBasedQueue(settings.InputQueue, "dbo", this.connectionString);
+            this.inputQueue = new TableBasedQueue(settings.InputQueue, "dbo", this.connectionString);
+            this.errorQueue = new TableBasedQueue(settings.ErrorQueue, "dbo", this.connectionString);
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -31,7 +33,7 @@ namespace NServiceBus.Transports.SQLServer
         {
             while (true)
             {
-                var strategy = new NoTransactionReceiveStrategy(queue, pipeline);
+                var strategy = new NoTransactionReceiveStrategy(inputQueue, errorQueue, pipeline);
                 await strategy.TryReceiveFrom();
                 
             }

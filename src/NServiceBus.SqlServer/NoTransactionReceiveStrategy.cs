@@ -7,18 +7,27 @@ namespace NServiceBus.Transports.SQLServer
     class NoTransactionReceiveStrategy
     {
         readonly TableBasedQueue inputQueue;
+        readonly TableBasedQueue errorQueue;
         readonly Func<PushContext, Task> onMessage;
 
-        public NoTransactionReceiveStrategy(TableBasedQueue inputQueue, Func<PushContext, Task> onMessage)
+        public NoTransactionReceiveStrategy(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            this.onMessage = onMessage;
             this.inputQueue = inputQueue;
+            this.errorQueue = errorQueue;
+            this.onMessage = onMessage;
         }
 
         public async Task TryReceiveFrom()
         {
             MessageReadResult readResult;
             readResult = inputQueue.TryReceive();
+
+            if (readResult.IsPoison)
+            {
+                errorQueue.Send(readResult.DataRecord);
+                return;
+            }
+
             if (readResult.Successful)
             {
                 var message = readResult.Message;
