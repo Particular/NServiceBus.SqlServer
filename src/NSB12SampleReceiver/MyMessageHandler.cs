@@ -6,9 +6,9 @@ using Topics.Radical;
 
 namespace NSB12SampleReceiver
 {
-    class MyMessageHandler : IHandleMessages<PolymorficCollectionMessage>
+    class MyMessageHandler : IHandleMessages<MyMessage>
     {
-        public Task Handle(PolymorficCollectionMessage message, IMessageHandlerContext context)
+        public Task Handle(MyMessage message, IMessageHandlerContext context)
         {
             using (ConsoleColor.Cyan.AsForegroundColor())
             {

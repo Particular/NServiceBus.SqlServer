@@ -31,8 +31,8 @@ namespace NServiceBus.Transports.SQLServer
         {
             while (true)
             {
-                    var strategy = new NoTransactionReceiveStrategy(queue, pipeline);
-                    await strategy.TryReceiveFrom();
+                var strategy = new NoTransactionReceiveStrategy(queue, pipeline);
+                await strategy.TryReceiveFrom();
                 
             }
         }

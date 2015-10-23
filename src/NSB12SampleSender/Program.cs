@@ -25,13 +25,9 @@ namespace NSB12SampleSender
 				{
 					setup.DefineAction( ConsoleKey.S, "Sends a new message.", () =>
 					{
-						bus.SendAsync( new PolymorficCollectionMessage()
+						bus.SendAsync( new MyMessage()
 						{
-                            Items = new List<BaseEntity>
-                            {
-                                new SpecializationA { Name = "a" },
-                                new SpecializationB { Name = "b" }
-                            }
+                            Content = "Test"
 						} );
 					} );
 				} );

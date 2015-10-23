@@ -72,7 +72,15 @@ namespace NServiceBus.Transports.SQLServer.Light
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             //TODO: check what that is hmm..
-            return logicalAddress.EndpointInstanceName.EndpointName.ToString();
+            var endpointName = logicalAddress.EndpointInstanceName.EndpointName.ToString();
+            var qualifier = logicalAddress.Qualifier;
+
+            if (string.IsNullOrEmpty(qualifier))
+            {
+                return $"{endpointName}";
+            }
+
+            return $"{endpointName}.{qualifier}";
         }
 
         /// <summary>

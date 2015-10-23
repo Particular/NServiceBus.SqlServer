@@ -8,6 +8,7 @@ namespace NServiceBus.Transports.SQLServer
     using NServiceBus.Logging;
     using NServiceBus.Routing;
     using NServiceBus.Serializers.Json;
+    using NServiceBus.Transports.SQLServer.Light;
 
     class TableBasedQueue
     {
@@ -62,10 +63,9 @@ namespace NServiceBus.Transports.SQLServer
                 var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
                 var body = GetNullableValue<byte[]>(rowData[BodyColumn]) ?? new byte[0];
 
-                var memoryStream = new MemoryStream();
-                memoryStream.Write(body, 0, body.Length);
-                memoryStream.Position = 0;
-                var message = new IncomingMessage(id, headers, memoryStream);
+                var memoryStream = new MemoryStream(body);
+
+                var message = new SqlMessage(id, memoryStream, headers);
 
                 var replyToAddress = GetNullableValue<string>(rowData[ReplyToAddressColumn]);
 

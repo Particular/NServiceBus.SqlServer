@@ -21,10 +21,12 @@ namespace NServiceBus.Transports.SQLServer
             readResult = inputQueue.TryReceive();
             if (readResult.Successful)
             {
-                var incomingMessage = readResult.Message;
-                using (var bodyStream = incomingMessage.BodyStream)
+                var message = readResult.Message;
+
+                using (var bodyStream = message.BodyStream)
                 {
-                    var pushContext = new PushContext(incomingMessage.MessageId, incomingMessage.Headers, bodyStream, new ContextBag());
+                    bodyStream.Position = 0;
+                    var pushContext = new PushContext(message.Id, message.Headers, bodyStream, new ContextBag());
                     await onMessage(pushContext).ConfigureAwait(false);
                 }
             }
