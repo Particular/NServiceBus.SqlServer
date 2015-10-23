@@ -10,21 +10,22 @@ namespace NSB12SampleReceiver
     {
         public Task Handle(MyMessage message, IMessageHandlerContext context)
         {
-            using (ConsoleColor.Cyan.AsForegroundColor())
-            {
-                Console.WriteLine("Sending MyReply to:  {0}", context.ReplyToAddress);
+            throw new ArgumentException("Poison msg");
+            //using (ConsoleColor.Cyan.AsForegroundColor())
+            //{
+            //    Console.WriteLine("Sending MyReply to:  {0}", context.ReplyToAddress);
 
-                var reply = new MyReply()
-                {
-                    Content = "How you doing?"
-                };
+            //    var reply = new MyReply()
+            //    {
+            //        Content = "How you doing?"
+            //    };
 
-                context.ReplyAsync(reply);
+            //    context.ReplyAsync(reply);
 
-                Console.WriteLine("Reply sent.");
-            }
+            //    Console.WriteLine("Reply sent.");
+            //}
 
-            return Task.FromResult(0);
+            //return Task.FromResult(0);
         }
     }
 }

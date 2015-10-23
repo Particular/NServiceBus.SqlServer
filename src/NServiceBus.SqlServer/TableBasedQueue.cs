@@ -116,7 +116,16 @@ namespace NServiceBus.Transports.SQLServer
             var data = new object[7];
 
             data[IdColumn] = Guid.Parse(message.MessageId);
-            data[CorrelationIdColumn] = message.Headers[Headers.CorrelationId];
+            string correlationId;
+            if (message.Headers.TryGetValue(Headers.CorrelationId, out correlationId))
+            {
+                data[CorrelationIdColumn] = correlationId;
+            }
+            else
+            {
+                data[CorrelationIdColumn] = DBNull.Value;
+            }
+
 
             //TODO: where does Reply-To-Address come from
             string replyToAddress;
@@ -217,6 +226,13 @@ namespace NServiceBus.Transports.SQLServer
                     transaction.Commit();
                 }
             }
+        }
+
+
+
+        static object GetValue(object value)
+        {
+            return value ?? DBNull.Value;
         }
 
         public void Send(object[] messageData)

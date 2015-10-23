@@ -14,6 +14,7 @@ namespace NSB12SampleReceiver
 			cfg.UsePersistence<InMemoryPersistence>();
             cfg.UseSerialization<JsonSerializer>();
             cfg.UseTransport<SqlServer>();
+		    cfg.Transactions().Disable();
 			cfg.Conventions()
 				.DefiningMessagesAs( t => t.Namespace != null && t.Namespace.EndsWith( "Messages" ) );
 

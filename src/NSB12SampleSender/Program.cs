@@ -16,7 +16,8 @@ namespace NSB12SampleSender
 			cfg.UsePersistence<InMemoryPersistence>();
             cfg.UseSerialization<JsonSerializer>();
             cfg.UseTransport<SqlServer>();
-			cfg.Conventions()
+            cfg.Transactions().Disable();
+            cfg.Conventions()
 				.DefiningCommandsAs( t => t.Namespace != null && t.Namespace.EndsWith( "Messages" ) );
 
 			using(var bus = Bus.Create( cfg ).StartAsync().Result )
