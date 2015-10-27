@@ -12,29 +12,20 @@ namespace NServiceBus.Transports.SQLServer
 
     class TableBasedQueue
     {
-        readonly string connectionString;
-
-        public TableBasedQueue(string tableName, string schema, string connectionString)
+        public TableBasedQueue(string tableName, string schema)
         {
             this.tableName = tableName;
             this.schema = schema;
-            this.connectionString = connectionString;
         }
 
-        public MessageReadResult TryReceive()
+        public MessageReadResult TryReceive(SqlConnection connection, SqlTransaction transaction = null)
         {
-            using (var connection = new SqlConnection(this.connectionString))
+            using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName), connection, transaction)
             {
-                connection.Open();
-
-                using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName), connection)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    return ExecuteReader(command);
-                }
-
+                CommandType = CommandType.Text
+            })
+            {
+                return ExecuteReader(command);
             }
         }
 
@@ -73,7 +64,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     message.Headers[Headers.ReplyToAddress] = replyToAddress;
                 }
-                
+
                 return MessageReadResult.Success(message);
             }
             catch (Exception ex)
@@ -182,7 +173,7 @@ namespace NServiceBus.Transports.SQLServer
         const int HeadersColumn = 5;
         const int BodyColumn = 6;
 
-        public void SendMessage(TransportOperation outgoingMessage)
+        public void SendMessage(TransportOperation outgoingMessage, SqlConnection connection)
         {
             var messageData = ExtractTransportMessageData(outgoingMessage.Message);
 
@@ -201,30 +192,25 @@ namespace NServiceBus.Transports.SQLServer
 
             var destination = routingStrategy.Destination;
 
-            using (var connection = new SqlConnection(this.connectionString))
+            var commandText = String.Format(SqlSend, "dbo", destination);
+
+            //TODO: figure out how tansactions are passed and are they only for native transactions
+            using (var transaction = connection.BeginTransaction())
             {
-                connection.Open();
-
-                var commandText = String.Format(SqlSend, "dbo", destination);
-
-                //TODO: figure out how tansactions are passed and are they only for native transactions
-                using (var transaction = connection.BeginTransaction())
+                using (var command = new SqlCommand(commandText, connection, transaction)
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction)
+                    CommandType = CommandType.Text
+                })
+                {
+                    for (var i = 0; i < messageData.Length; i++)
                     {
-                        CommandType = CommandType.Text
-                    })
-                    {
-                        for (var i = 0; i < messageData.Length; i++)
-                        {
-                            command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
-                        }
-
-                        command.ExecuteNonQuery();
+                        command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
                     }
 
-                    transaction.Commit();
+                    command.ExecuteNonQuery();
                 }
+
+                transaction.Commit();
             }
         }
 
@@ -235,32 +221,21 @@ namespace NServiceBus.Transports.SQLServer
             return value ?? DBNull.Value;
         }
 
-        public void Send(object[] messageData)
+        public void Send(object[] messageData, SqlConnection connection, SqlTransaction transaction = null)
         {
-            using (var connection = new SqlConnection(this.connectionString))
+            var commandText = String.Format(SqlSend, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection, transaction)
             {
-                connection.Open();
-
-                var commandText = String.Format(SqlSend, this.schema, this.tableName);
-
-                //TODO: figure out how tansactions are passed and are they only for native transactions
-                using (var transaction = connection.BeginTransaction())
+                CommandType = CommandType.Text
+            })
+            {
+                for (var i = 0; i < messageData.Length; i++)
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction)
-                    {
-                        CommandType = CommandType.Text
-                    })
-                    {
-                        for (var i = 0; i < messageData.Length; i++)
-                        {
-                            command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
-                        }
-
-                        command.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
+                    command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
                 }
+
+                command.ExecuteNonQuery();
             }
         }
     }

@@ -65,13 +65,16 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ReceiveWithTransactionScope.cs" />
     <Compile Include="Light\SqlMessage.cs" />
     <Compile Include="Light\SqlServerConfigurator.cs" />
     <Compile Include="Light\SqlServerMessageSender.cs" />
     <Compile Include="Light\SqlServer.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="NoTransactionReceiveStrategy.cs" />
+    <Compile Include="ReceiveWithNativeTransaction.cs" />
+    <Compile Include="ReceiveWithNoTransaction.cs" />
+    <Compile Include="ReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
     <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>

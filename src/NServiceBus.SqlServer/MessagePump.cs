@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 namespace NServiceBus.Transports.SQLServer
 {
     using System.Threading;
+    using System.Transactions;
 
     class MessagePump : IPushMessages
     {
@@ -20,8 +21,8 @@ namespace NServiceBus.Transports.SQLServer
         public void Init(Func<PushContext, Task> pipe, PushSettings settings)
         {
             this.pipeline = pipe;
-            this.inputQueue = new TableBasedQueue(settings.InputQueue, "dbo", this.connectionString);
-            this.errorQueue = new TableBasedQueue(settings.ErrorQueue, "dbo", this.connectionString);
+            this.inputQueue = new TableBasedQueue(settings.InputQueue, "dbo");
+            this.errorQueue = new TableBasedQueue(settings.ErrorQueue, "dbo");
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -33,9 +34,13 @@ namespace NServiceBus.Transports.SQLServer
         {
             while (true)
             {
-                var strategy = new NoTransactionReceiveStrategy(inputQueue, errorQueue, pipeline);
-                await strategy.TryReceiveFrom();
-                
+                //var transactionOptions = new TransactionOptions
+                //{
+                //    IsolationLevel =  IsolationLevel.Serializable,
+                //    Timeout = TimeSpan.FromSeconds(10)
+                //};
+                var strategy = new ReceiveWithNoTransaction(this.connectionString);
+                await strategy.TryReceiveFrom(inputQueue, errorQueue, pipeline);
             }
         }
 
