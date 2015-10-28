@@ -18,4 +18,4 @@ Before doing anything else, make sure you have SQL Server up and running in your
 
 ## Samples
 
-See https://github.com/Particular/NServiceBus.SqlServer.Samples
+See http://docs.particular.net/samples/
