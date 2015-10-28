@@ -1,10 +1,10 @@
-namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Threading.Tasks;
-
-    abstract class ReceiveStrategy
+    
+    interface ReceiveStrategy
     {
-        public abstract Task RecieveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage);
+        Task ReceiveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage);
     }
 }

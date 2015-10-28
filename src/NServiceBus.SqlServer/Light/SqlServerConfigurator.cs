@@ -9,7 +9,6 @@
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
-            throw new System.NotImplementedException();
         }
     }
 }

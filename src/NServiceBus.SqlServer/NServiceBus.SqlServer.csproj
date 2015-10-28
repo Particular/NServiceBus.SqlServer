@@ -52,7 +52,7 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-unstable1008\lib\net451\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable1041\lib\net451\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -66,13 +66,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Light\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
+    <Compile Include="ReceiveResult.cs" />
+    <Compile Include="ReceiveWithTransactionScope.cs" />
     <Compile Include="Light\SqlMessage.cs" />
     <Compile Include="Light\SqlServerConfigurator.cs" />
     <Compile Include="Light\SqlServerMessageSender.cs" />
     <Compile Include="Light\SqlServerTransport.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="MessageReadResult.cs" />
-    <Compile Include="NoTransactionReceiveStrategy.cs" />
+    <Compile Include="ReceiveWithNativeTransaction.cs" />
+    <Compile Include="ReceiveWithNoTransaction.cs" />
     <Compile Include="ReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
     <Compile Include="TableBasedQueue.cs" />

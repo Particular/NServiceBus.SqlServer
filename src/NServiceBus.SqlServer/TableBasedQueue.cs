@@ -5,10 +5,10 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data;
     using System.Data.SqlClient;
     using System.IO;
-    using NServiceBus.Logging;
-    using NServiceBus.Routing;
-    using NServiceBus.Serializers.Json;
-    using NServiceBus.Transports.SQLServer.Light;
+    using Logging;
+    using Routing;
+    using Serializers.Json;
+    using Light;
 
     //TODO: transacion management
     //TODO: connection management
@@ -24,16 +24,11 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public MessageReadResult TryReceive(string messageId)
+        public MessageReadResult TryReceive( string messageId, SqlConnection connection, SqlTransaction transaction = null)
         {
-            using (var connection = new SqlConnection(this.connectionString))
+            using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName, messageId), connection, transaction))
             {
-                connection.Open();
-
-                using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName, messageId), connection))
-                {
-                    return ExecuteReader(command);
-                }
+                return ExecuteReader(command);
             }
         }
 
@@ -179,7 +174,7 @@ namespace NServiceBus.Transports.SQLServer
         const int HeadersColumn = 5;
         const int BodyColumn = 6;
 
-        public void SendMessage(TransportOperation outgoingMessage)
+        public void SendMessage(SqlConnection connection, TransportOperation outgoingMessage)
         {
             var messageData = ExtractTransportMessageData(outgoingMessage.Message);
 
@@ -198,53 +193,38 @@ namespace NServiceBus.Transports.SQLServer
 
             var destination = routingStrategy.Destination;
 
-            using (var connection = new SqlConnection(this.connectionString))
+            var commandText = String.Format(SqlSend, "dbo", destination);
+
+            //TODO: figure out how tansactions are passed and are they only for native transactions
+            using (var transaction = connection.BeginTransaction())
             {
-                connection.Open();
-
-                var commandText = String.Format(SqlSend, "dbo", destination);
-
-                //TODO: figure out how tansactions are passed and are they only for native transactions
-                using (var transaction = connection.BeginTransaction())
+                using (var command = new SqlCommand(commandText, connection, transaction))
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction))
+                    for (var i = 0; i < messageData.Length; i++)
                     {
-                        for (var i = 0; i < messageData.Length; i++)
-                        {
-                            command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
-                        }
-
-                        command.ExecuteNonQuery();
+                        command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
                     }
 
-                    transaction.Commit();
+                    command.ExecuteNonQuery();
                 }
+
+                transaction.Commit();
             }
         }
 
-        public void Send(object[] messageData)
+        public void Send(object[] messageData, SqlConnection connection, SqlTransaction transaction = null)
         {
-            using (var connection = new SqlConnection(this.connectionString))
+            var commandText = String.Format(SqlSend, this.schema, this.tableName);
+
+            //TODO: figure out how tansactions are passed and are they only for native transactions
+            using (var command = new SqlCommand(commandText, connection, transaction))
             {
-                connection.Open();
-
-                var commandText = String.Format(SqlSend, this.schema, this.tableName);
-
-                //TODO: figure out how tansactions are passed and are they only for native transactions
-                using (var transaction = connection.BeginTransaction())
+                for (var i = 0; i < messageData.Length; i++)
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction))
-                    {
-                        for (var i = 0; i < messageData.Length; i++)
-                        {
-                            command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
-                        }
-
-                        command.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
+                    command.Parameters.Add(Parameters[i], ParameterTypes[i]).Value = messageData[i];
                 }
+
+                command.ExecuteNonQuery();
             }
         }
 

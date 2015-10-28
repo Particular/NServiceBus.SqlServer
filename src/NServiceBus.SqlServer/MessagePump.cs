@@ -133,7 +133,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     try
                     {
-                        await receiveStrategy.RecieveMessage(messageId, inputQueue, errorQueue, pipeline)
+                        await receiveStrategy.ReceiveMessage(messageId, inputQueue, errorQueue, pipeline)
                                              .ConfigureAwait(false);
 
                         receiveCircuitBreaker.Success();

@@ -2,6 +2,7 @@ namespace NServiceBus.Transports.SQLServer.Light
 {
     using System;
     using System.Collections.Generic;
+    using System.Transactions;
     using Settings;
 
     /// <summary>
@@ -28,13 +29,29 @@ namespace NServiceBus.Transports.SQLServer.Light
 
             context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionString));
 
-            context.SetMessagePumpFactory(c => new MessagePump(c, SelectReceiveStrategy, connectionString));
+            //TODO: this is a smell. Figure out how to get this data in a static type manner
+            var transactionOptions = new TransactionOptions
+            {
+                IsolationLevel = context.Settings.Get<IsolationLevel>("Transactions.IsolationLevel"),
+                Timeout = context.Settings.Get<TimeSpan>("Transactions.DefaultTimeout")
+            }; 
+
+            context.SetMessagePumpFactory(c => new MessagePump(c, guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionString), connectionString));
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimalGuarantees)
+        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, string connectionString)
         {
-            //TODO: add support different transaction quarantees. Remmber about transaction options from the settings
-            return new NoTransactionReceiveStrategy();
+            if (minimumConsistencyGuarantee == TransactionSupport.Distributed)
+            {
+                return new ReceiveWithTransactionScope(options, connectionString);
+            }
+
+            if (minimumConsistencyGuarantee == TransactionSupport.None)
+            {
+                return new ReceiveWithNoTransaction(connectionString);
+            }
+
+            return new ReceiveWithNativeTransaction(connectionString);
         }
 
         /// <summary>
@@ -45,7 +62,7 @@ namespace NServiceBus.Transports.SQLServer.Light
         {
             var connectionString = context.ConnectionString;
 
-            context.SetDispatcherFactory(() => new SqlServerMessageSender(new TableBasedQueue("", "", connectionString)));
+            context.SetDispatcherFactory(() => new SqlServerMessageSender(new TableBasedQueue("", "", connectionString), connectionString));
         }
 
         /// <summary>
