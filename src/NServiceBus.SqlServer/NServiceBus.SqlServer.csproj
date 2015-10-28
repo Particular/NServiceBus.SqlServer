@@ -65,13 +65,13 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Light\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
+    <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveWithTransactionScope.cs" />
-    <Compile Include="Light\SqlMessage.cs" />
-    <Compile Include="Light\SqlServerConfigurator.cs" />
-    <Compile Include="Light\SqlServerMessageSender.cs" />
-    <Compile Include="Light\SqlServerTransport.cs" />
+    <Compile Include="SqlMessage.cs" />
+    <Compile Include="SqlServerConfigurator.cs" />
+    <Compile Include="SqlServerMessageSender.cs" />
+    <Compile Include="SqlServerTransport.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="MessageReadResult.cs" />
     <Compile Include="ReceiveWithNativeTransaction.cs" />
@@ -81,7 +81,7 @@
     <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Config\" />
+    <Content Include="FodyWeavers.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
