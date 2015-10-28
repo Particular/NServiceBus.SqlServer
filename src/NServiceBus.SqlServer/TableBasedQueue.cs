@@ -10,6 +10,9 @@ namespace NServiceBus.Transports.SQLServer
     using NServiceBus.Serializers.Json;
     using NServiceBus.Transports.SQLServer.Light;
 
+    //TODO: transacion management
+    //TODO: connection management
+    //TODO: sql creation with C#6 string interpolation
     class TableBasedQueue
     {
         readonly string connectionString;
@@ -21,20 +24,16 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public MessageReadResult TryReceive()
+        public MessageReadResult TryReceive(string messageId)
         {
             using (var connection = new SqlConnection(this.connectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName), connection)
-                {
-                    CommandType = CommandType.Text
-                })
+                using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName, messageId), connection))
                 {
                     return ExecuteReader(command);
                 }
-
             }
         }
 
@@ -58,7 +57,6 @@ namespace NServiceBus.Transports.SQLServer
             try
             {
                 var id = rowData[0].ToString();
-
 
                 var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
                 var body = GetNullableValue<byte[]>(rowData[BodyColumn]) ?? new byte[0];
@@ -104,9 +102,8 @@ namespace NServiceBus.Transports.SQLServer
         static readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 
 
-
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE Id = '{2}') 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
@@ -210,10 +207,7 @@ namespace NServiceBus.Transports.SQLServer
                 //TODO: figure out how tansactions are passed and are they only for native transactions
                 using (var transaction = connection.BeginTransaction())
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction)
-                    {
-                        CommandType = CommandType.Text
-                    })
+                    using (var command = new SqlCommand(commandText, connection, transaction))
                     {
                         for (var i = 0; i < messageData.Length; i++)
                         {
@@ -228,13 +222,6 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-
-
-        static object GetValue(object value)
-        {
-            return value ?? DBNull.Value;
-        }
-
         public void Send(object[] messageData)
         {
             using (var connection = new SqlConnection(this.connectionString))
@@ -246,10 +233,7 @@ namespace NServiceBus.Transports.SQLServer
                 //TODO: figure out how tansactions are passed and are they only for native transactions
                 using (var transaction = connection.BeginTransaction())
                 {
-                    using (var command = new SqlCommand(commandText, connection, transaction)
-                    {
-                        CommandType = CommandType.Text
-                    })
+                    using (var command = new SqlCommand(commandText, connection, transaction))
                     {
                         for (var i = 0; i < messageData.Length; i++)
                         {
@@ -260,6 +244,38 @@ namespace NServiceBus.Transports.SQLServer
                     }
 
                     transaction.Commit();
+                }
+            }
+        }
+
+        //TODO: let's test if it would be benefitial to peek messages in batches
+        const string SqlPeek =
+            @"SELECT TOP(1) Id FROM [{0}].[{1}] ORDER BY [RowVersion] ASC;";
+
+        public bool TryPeek(out string messageId)
+        {
+            using (var connection = new SqlConnection(this.connectionString))
+            {
+                connection.Open();
+
+                var commandText = String.Format(SqlPeek, this.schema, this.tableName);
+
+                //TODO: figure out if we need a transaction here. I don't thinks so
+                using (var command = new SqlCommand(commandText, connection))
+                using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
+                {
+                    if (dataReader.Read())
+                    {
+                        var rowData = new object[1];
+                        // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+                        dataReader.GetValues(rowData);
+
+                        messageId = rowData[0].ToString();
+                        return true;
+                    }
+
+                    messageId = null;
+                    return false;
                 }
             }
         }

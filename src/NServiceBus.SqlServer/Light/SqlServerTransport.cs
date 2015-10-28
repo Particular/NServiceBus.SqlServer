@@ -2,28 +2,50 @@ namespace NServiceBus.Transports.SQLServer.Light
 {
     using System;
     using System.Collections.Generic;
-    using NServiceBus.Settings;
+    using Settings;
 
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServer : TransportDefinition
+    public class SqlServerTransport : TransportDefinition
     {
         /// <summary>
         /// Ctor
         /// </summary>
-        public SqlServer()
+        public SqlServerTransport()
         {
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
         }
 
         /// <summary>
-        /// Gives implementations access to the <see cref="T:NServiceBus.BusConfiguration"/> instance at configuration time.
+        /// Registers components necessary for receiving messages from the transport.
         /// </summary>
-        protected override void Configure(BusConfiguration config)
+        /// <param name="context"></param>
+        protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
-            config.EnableFeature<SqlServerConfigurator>();
+            var connectionString = context.ConnectionString;
+
+            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionString));
+
+            context.SetMessagePumpFactory(c => new MessagePump(c, SelectReceiveStrategy, connectionString));
+        }
+
+        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimalGuarantees)
+        {
+            //TODO: add support different transaction quarantees. Remmber about transaction options from the settings
+            return new NoTransactionReceiveStrategy();
+        }
+
+        /// <summary>
+        /// Registers components necessary for sending messages.
+        /// </summary>
+        /// <param name="context"></param>
+        protected override void ConfigureForSending(TransportSendingConfigurationContext context)
+        {
+            var connectionString = context.ConnectionString;
+
+            context.SetDispatcherFactory(() => new SqlServerMessageSender(new TableBasedQueue("", "", connectionString)));
         }
 
         /// <summary>
@@ -33,7 +55,7 @@ namespace NServiceBus.Transports.SQLServer.Light
         public override IEnumerable<Type> GetSupportedDeliveryConstraints()
         {
             //HINT: here goes support for TTBR
-            return new Type[0]{};
+            return new Type[]{};
         }
 
         /// <summary>
@@ -93,5 +115,15 @@ namespace NServiceBus.Transports.SQLServer.Light
             //TODO: check what that does 
             return new OutboundRoutingPolicy(OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend);
         }
+
+        /// <summary>
+        /// Sample connection string.
+        /// </summary>
+        public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+
+        /// <summary>
+        /// Specifies if connection string is required for SqlServer transport.
+        /// </summary>
+        public override bool RequiresConnectionString => true;
     }
 }

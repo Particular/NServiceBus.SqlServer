@@ -1,7 +1,6 @@
 ﻿using NSB12SampleMessages;
 using NServiceBus;
 using System;
-using System.Collections.Generic;
 
 namespace NSB12SampleSender
 {
@@ -15,7 +14,7 @@ namespace NSB12SampleSender
 
 			cfg.UsePersistence<InMemoryPersistence>();
             cfg.UseSerialization<JsonSerializer>();
-            cfg.UseTransport<SqlServer>();
+            cfg.UseTransport<SqlServerTransport>();
             cfg.Transactions().Disable();
             cfg.Conventions()
 				.DefiningCommandsAs( t => t.Namespace != null && t.Namespace.EndsWith( "Messages" ) );

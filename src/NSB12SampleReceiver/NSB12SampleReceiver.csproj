@@ -33,10 +33,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-unstable1008\lib\net451\NServiceBus.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Radical, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Radical.1.5.1.0\lib\net45\Radical.dll</HintPath>
@@ -62,6 +58,10 @@
     <ProjectReference Include="..\..\..\..\Particular\NServiceBus.SqlServer\src\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
       <Name>NServiceBus.SqlServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\NServiceBus\src\NServiceBus.Core\NServiceBus.Core.csproj">
+      <Project>{DD48B2D0-E996-412D-9157-821ED8B17A9D}</Project>
+      <Name>NServiceBus.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\NSB12SampleMessages\NSB12SampleMessages.csproj">
       <Project>{15f61e04-0917-428f-9bc4-162f47b0ea9b}</Project>

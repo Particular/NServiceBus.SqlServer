@@ -2,25 +2,14 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
-    class NoTransactionReceiveStrategy
+    class NoTransactionReceiveStrategy : ReceiveStrategy
     {
-        readonly TableBasedQueue inputQueue;
-        readonly TableBasedQueue errorQueue;
-        readonly Func<PushContext, Task> onMessage;
-
-        public NoTransactionReceiveStrategy(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
+        //TODO: do we need to pass the messageId here. Cons: idle runs? Ordering?, pros: fewer locking?
+        public override async Task RecieveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            this.inputQueue = inputQueue;
-            this.errorQueue = errorQueue;
-            this.onMessage = onMessage;
-        }
-
-        public async Task TryReceiveFrom()
-        {
-            MessageReadResult readResult;
-            readResult = inputQueue.TryReceive();
+            var readResult = inputQueue.TryReceive(messageId);
 
             if (readResult.IsPoison)
             {

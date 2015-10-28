@@ -8,24 +8,24 @@ namespace NSB12SampleReceiver
 {
     class MyMessageHandler : IHandleMessages<MyMessage>
     {
-        public Task Handle(MyMessage message, IMessageHandlerContext context)
+        public async Task Handle(MyMessage message, IMessageHandlerContext context)
         {
-            throw new ArgumentException("Poison msg");
             //using (ConsoleColor.Cyan.AsForegroundColor())
             //{
             //    Console.WriteLine("Sending MyReply to:  {0}", context.ReplyToAddress);
 
-            //    var reply = new MyReply()
-            //    {
-            //        Content = "How you doing?"
-            //    };
+                var reply = new MyReply()
+                {
+                    Content = "How you doing?"
+                };
 
-            //    context.ReplyAsync(reply);
+                await context.ReplyAsync(reply);
+
+            //throw new ArgumentException("Poison msg");
+
 
             //    Console.WriteLine("Reply sent.");
             //}
-
-            //return Task.FromResult(0);
         }
     }
 }
