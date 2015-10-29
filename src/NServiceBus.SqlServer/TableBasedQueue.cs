@@ -24,7 +24,7 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public MessageReadResult TryReceive( string messageId, SqlConnection connection, SqlTransaction transaction = null)
+        public MessageReadResult TryReceive(string messageId, SqlConnection connection, SqlTransaction transaction = null)
         {
             using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName, messageId), connection, transaction))
             {

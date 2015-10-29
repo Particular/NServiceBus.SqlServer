@@ -20,12 +20,11 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task ReceiveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = new SqlConnection(this.connectionString))
+            using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
             {
-                sqlConnection.Open();
-                using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                using (var sqlConnection = new SqlConnection(this.connectionString))
                 {
-
+                    sqlConnection.Open();
                     var readResult = inputQueue.TryReceive(messageId, sqlConnection);
                     if (readResult.IsPoison)
                     {

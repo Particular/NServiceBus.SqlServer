@@ -138,15 +138,18 @@ namespace NServiceBus.Transports.SQLServer
 
                         receiveCircuitBreaker.Success();
                     }
-                    //TODO: we need to make this fellow public in the core
-                    //catch (MessageProcessingAbortedException)
-                    //{
-                        //expected to happen
-                    //}
                     catch (Exception ex)
                     {
-                        Logger.Warn("Sql receive operation failed", ex);
-                        await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                        //TODO: we need to talk about making this exception public
+                        if (ex.GetType().Name == "MessageProcessingAbortedException")
+                        {
+                            //expected to happen
+                        }
+                        else
+                        {
+                            Logger.Warn("Sql receive operation failed", ex);
+                            await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                        }
                     }
                     finally
                     {
