@@ -65,6 +65,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveWithTransactionScope.cs" />
