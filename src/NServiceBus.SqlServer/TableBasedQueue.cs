@@ -107,7 +107,8 @@ namespace NServiceBus.Transports.SQLServer
         {
             var data = new object[7];
 
-            data[IdColumn] = Guid.Parse(message.MessageId);
+            data[IdColumn] = Guid.NewGuid();
+
             string correlationId;
             if (message.Headers.TryGetValue(Headers.CorrelationId, out correlationId))
             {
@@ -117,7 +118,6 @@ namespace NServiceBus.Transports.SQLServer
             {
                 data[CorrelationIdColumn] = DBNull.Value;
             }
-
 
             //TODO: where does Reply-To-Address come from
             string replyToAddress;
