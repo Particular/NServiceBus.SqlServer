@@ -3,6 +3,7 @@ namespace NServiceBus.Transports.SQLServer.Light
     using System;
     using System.Collections.Generic;
     using System.Transactions;
+    using NServiceBus.Performance.TimeToBeReceived;
     using Settings;
 
     /// <summary>
@@ -71,8 +72,10 @@ namespace NServiceBus.Transports.SQLServer.Light
         /// <returns></returns>
         public override IEnumerable<Type> GetSupportedDeliveryConstraints()
         {
-            //HINT: here goes support for TTBR
-            return new Type[]{};
+            return new[]
+            {
+                typeof(DiscardIfNotReceivedBefore)
+            };
         }
 
         /// <summary>

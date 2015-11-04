@@ -52,8 +52,23 @@ namespace NServiceBus.Transports.SQLServer
             try
             {
                 var id = rowData[0].ToString();
+                DateTime? expireDateTime = null;
+                if (rowData[TimeToBeReceivedColumn] != DBNull.Value)
+                {
+                    expireDateTime = (DateTime)rowData[TimeToBeReceivedColumn];
+                }
+
+                //Has message expired?
+                if (expireDateTime.HasValue && expireDateTime.Value < DateTime.UtcNow)
+                {
+                    Logger.InfoFormat("Message with ID={0} has expired. Removing it from queue.", id);
+                    return MessageReadResult.NoMessage;
+                }
 
                 var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[HeadersColumn], typeof(Dictionary<string, string>));
+
+                
+
                 var body = GetNullableValue<byte[]>(rowData[BodyColumn]) ?? new byte[0];
 
                 var memoryStream = new MemoryStream(body);
@@ -129,11 +144,18 @@ namespace NServiceBus.Transports.SQLServer
             {
                 data[ReplyToAddressColumn] = DBNull.Value;
             }
-
-            //TODO: figure out what recoverable means
+            
             data[RecoverableColumn] = true;
 
             data[TimeToBeReceivedColumn] = DBNull.Value;
+            if (message.Headers.ContainsKey(Headers.TimeToBeReceived))
+            {
+                TimeSpan TTBR;
+                if (TimeSpan.TryParse(message.Headers[Headers.TimeToBeReceived], out TTBR) && TTBR != TimeSpan.MaxValue)
+                {
+                    data[TimeToBeReceivedColumn] = DateTime.UtcNow.Add(TTBR);
+                }
+            }
 
             data[HeadersColumn] = new JsonMessageSerializer(null).SerializeObject(message.Headers);
 
