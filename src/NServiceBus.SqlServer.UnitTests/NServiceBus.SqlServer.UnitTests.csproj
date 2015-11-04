@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NServiceBus.SqlServer.UnitTests</RootNamespace>
     <AssemblyName>NServiceBus.SqlServer.UnitTests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,8 +37,9 @@
     <AssemblyOriginatorKeyFile>NServiceBus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NServiceBus.Core">
-      <HintPath>..\packages\NServiceBus.5.1.3\lib\net45\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable1041\lib\net451\NServiceBus.Core.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
@@ -65,29 +67,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdaptiveExecutorSimulator\BackOff.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\ISimulator.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\Load.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\Message.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\ProcessingStepResult.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\ProcessingThread.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\RealSimulator.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\RunningThread.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\Simulator.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\Stage.cs" />
-    <Compile Include="BoundedExponentialBackOffTests.cs" />
-    <Compile Include="CallbackConfigTests.cs" />
-    <Compile Include="CicruitBreakerConfigTests.cs" />
-    <Compile Include="ConfigTest.cs" />
-    <Compile Include="ConnectionConfigTests.cs" />
-    <Compile Include="ErrorQueueSettingsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AdaptiveExecutorSimulator\Simulations.cs" />
-    <Compile Include="SqlConnectionFactoryConfigTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NServiceBus.snk" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">

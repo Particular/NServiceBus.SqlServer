@@ -5,6 +5,7 @@
     using System.Data.SqlClient;
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     public class When_receiving_a_poison_message : NServiceBusAcceptanceTest

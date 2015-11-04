@@ -2,6 +2,7 @@
 {
     using System;
     using NServiceBus.Transports.SQLServer.Config;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
 

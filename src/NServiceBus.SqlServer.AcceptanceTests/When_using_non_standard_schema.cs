@@ -4,6 +4,7 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Transports.SQLServer;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     public class When_using_non_standard_schema : NServiceBusAcceptanceTest
