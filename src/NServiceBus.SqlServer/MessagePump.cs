@@ -103,12 +103,11 @@ namespace NServiceBus.Transports.SQLServer
         {
             while (!cancellationTokenSource.IsCancellationRequested)
             {
-                string messageId;
+                int messageCount;
 
                 try
                 {
-                    //TODO: change that to peeking a collection of ids instead of one
-                    if (inputQueue.TryPeek(out messageId) == false)
+                    if (inputQueue.TryPeek(out messageCount) == false)
                     {
                         continue;
                     } 
@@ -127,51 +126,54 @@ namespace NServiceBus.Transports.SQLServer
                     return;
                 }
 
-                await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                var task = Task.Run(async () =>
+                for (int i = 0; i < messageCount; i++)
                 {
-                    try
-                    {
-                        await receiveStrategy.ReceiveMessage(messageId, inputQueue, errorQueue, pipeline)
-                                             .ConfigureAwait(false);
+                    await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                        receiveCircuitBreaker.Success();
-                    }
-                    catch (Exception ex)
+                    var task = Task.Run(async () =>
                     {
-                        //TODO: we need to talk about making this exception public
-                        if (ex.GetType().Name == "MessageProcessingAbortedException")
+                        try
                         {
-                            //expected to happen
+                            await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, pipeline)
+                                .ConfigureAwait(false);
+
+                            receiveCircuitBreaker.Success();
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            Logger.Warn("Sql receive operation failed", ex);
-                            await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                            //TODO: we need to talk about making this exception public
+                            if (ex.GetType().Name == "MessageProcessingAbortedException")
+                            {
+                                //expected to happen
+                            }
+                            else
+                            {
+                                Logger.Warn("Sql receive operation failed", ex);
+                                await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                            }
                         }
-                    }
-                    finally
+                        finally
+                        {
+                            concurrencyLimiter.Release();
+                        }
+                    }, cancellationToken);
+
+                    await runningReceiveTasks.AddOrUpdate(task, task, (k, v) => task);
+
+                    // We insert the original task into the runningReceiveTasks because we want to await the completion
+                    // of the running receives. ExecuteSynchronously is a request to execute the continuation as part of
+                    // the transition of the antecedents completion phase. This means in most of the cases the continuation
+                    // will be executed during this transition and the antecedent task goes into the completion state only 
+                    // after the continuation is executed. This is not always the case. When the TPL thread handling the
+                    // antecedent task is aborted the continuation will be scheduled. But in this case we don't need to await
+                    // the continuation to complete because only really care about the receive operations. The final operation
+                    // when shutting down is a clear of the running tasks anyway.
+                    await task.ContinueWith(t =>
                     {
-                        concurrencyLimiter.Release();
-                    }
-                }, cancellationToken);
-
-                await runningReceiveTasks.AddOrUpdate(task, task, (k, v) => task);
-
-                // We insert the original task into the runningReceiveTasks because we want to await the completion
-                // of the running receives. ExecuteSynchronously is a request to execute the continuation as part of
-                // the transition of the antecedents completion phase. This means in most of the cases the continuation
-                // will be executed during this transition and the antecedent task goes into the completion state only 
-                // after the continuation is executed. This is not always the case. When the TPL thread handling the
-                // antecedent task is aborted the continuation will be scheduled. But in this case we don't need to await
-                // the continuation to complete because only really care about the receive operations. The final operation
-                // when shutting down is a clear of the running tasks anyway.
-                await task.ContinueWith(t =>
-                {
-                    Task toBeRemoved;
-                    runningReceiveTasks.TryRemove(t, out toBeRemoved);
-                }, TaskContinuationOptions.ExecuteSynchronously);
+                        Task toBeRemoved;
+                        runningReceiveTasks.TryRemove(t, out toBeRemoved);
+                    }, TaskContinuationOptions.ExecuteSynchronously);
+                }
             }
         }
 

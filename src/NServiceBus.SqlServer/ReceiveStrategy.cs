@@ -5,6 +5,6 @@
     
     interface ReceiveStrategy
     {
-        Task ReceiveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage);
+        Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage);
     }
 }

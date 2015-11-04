@@ -4,6 +4,9 @@ using System;
 
 namespace NSB12SampleSender
 {
+    using System.Threading;
+    using System.Threading.Tasks;
+    using NServiceBus.Features;
     using NServiceBus.Transports.SQLServer.Light;
 
     class Program
@@ -15,23 +18,36 @@ namespace NSB12SampleSender
 			cfg.UsePersistence<InMemoryPersistence>();
             cfg.UseSerialization<JsonSerializer>();
             cfg.UseTransport<SqlServerTransport>();
-            cfg.Transactions().Disable();
-            cfg.Conventions()
-				.DefiningCommandsAs( t => t.Namespace != null && t.Namespace.EndsWith( "Messages" ) );
+            cfg.DisableFeature<Audit>();
+		    cfg.Transactions().DisableDistributedTransactions();
+            cfg.Conventions().DefiningCommandsAs( t => t.Namespace != null && t.Namespace.EndsWith( "Messages" ) );
 
-			using(var bus = Bus.Create( cfg ).StartAsync().Result )
+			using(var bus = Bus.Create(cfg).StartAsync().Result )
 			{
-				Logic.Run( setup =>
-				{
-					setup.DefineAction( ConsoleKey.S, "Sends a new message.", () =>
-					{
-						bus.SendAsync( new MyMessage()
-						{
-                            Content = "Test"
-						} );
-					} );
-				} );
+                SpawnWriters(bus, 10, 1000);
+
+			    Console.ReadKey();
 			}
 		}
-	}
+
+        private static void SpawnWriters(IBus bus, int threads, int snapshotInterval)
+        {
+            var stats = new Statistics("Write", snapshotInterval);
+
+            stats.Start();
+
+            for (int i = 0; i < threads; i++)
+            {
+                new Thread(async () =>
+                {
+                    while (true)
+                    {
+                        await bus.SendAsync(new MyMessage());
+
+                        stats.MessageProcessed();
+                    }
+                }).Start();
+            }
+        }
+    }
 }

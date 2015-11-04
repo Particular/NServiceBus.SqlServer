@@ -24,9 +24,9 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public MessageReadResult TryReceive(string messageId, SqlConnection connection, SqlTransaction transaction = null)
+        public MessageReadResult TryReceive(SqlConnection connection, SqlTransaction transaction = null)
         {
-            using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName, messageId), connection, transaction))
+            using (var command = new SqlCommand(string.Format(SqlReceive, this.schema, this.tableName), connection, transaction))
             {
                 return ExecuteReader(command);
             }
@@ -98,7 +98,7 @@ namespace NServiceBus.Transports.SQLServer
 
 
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE Id = '{2}') 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion]) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
@@ -230,9 +230,9 @@ namespace NServiceBus.Transports.SQLServer
 
         //TODO: let's test if it would be benefitial to peek messages in batches
         const string SqlPeek =
-            @"SELECT TOP(1) Id FROM [{0}].[{1}] ORDER BY [RowVersion] ASC;";
+            @"SELECT count(*) Id FROM [{0}].[{1}];";
 
-        public bool TryPeek(out string messageId)
+        public bool TryPeek(out int messageCount)
         {
             using (var connection = new SqlConnection(this.connectionString))
             {
@@ -250,11 +250,11 @@ namespace NServiceBus.Transports.SQLServer
                         // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
                         dataReader.GetValues(rowData);
 
-                        messageId = rowData[0].ToString();
+                        messageCount = Math.Min(Convert.ToInt32(rowData[0]), 1000);
                         return true;
                     }
 
-                    messageId = null;
+                    messageCount = 0;
                     return false;
                 }
             }

@@ -14,12 +14,12 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionString = connectionString;
         }
 
-        public async Task ReceiveMessage(string messageId, TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
             using (var sqlConnection = new SqlConnection(this.connectionString))
             {
                 sqlConnection.Open();
-                var readResult = inputQueue.TryReceive(messageId, sqlConnection);
+                var readResult = inputQueue.TryReceive(sqlConnection);
 
                 if (readResult.IsPoison)
                 {

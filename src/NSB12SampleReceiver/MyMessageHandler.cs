@@ -1,31 +1,23 @@
 ﻿using NSB12SampleMessages;
 using NServiceBus;
-using System;
 using System.Threading.Tasks;
-using Topics.Radical;
 
 namespace NSB12SampleReceiver
 {
     class MyMessageHandler : IHandleMessages<MyMessage>
     {
-        public async Task Handle(MyMessage message, IMessageHandlerContext context)
+        readonly Statistics stats;
+
+        public MyMessageHandler(Statistics stats)
         {
-            //using (ConsoleColor.Cyan.AsForegroundColor())
-            //{
-            //    Console.WriteLine("Sending MyReply to:  {0}", context.ReplyToAddress);
+            this.stats = stats;
+        }
 
-                var reply = new MyReply()
-                {
-                    Content = "How you doing?"
-                };
+        public Task Handle(MyMessage message, IMessageHandlerContext context)
+        {
+            stats.MessageProcessed();
 
-                await context.ReplyAsync(reply);
-
-            //throw new ArgumentException("Poison msg");
-
-
-            //    Console.WriteLine("Reply sent.");
-            //}
+            return Task.FromResult(0);
         }
     }
 }
