@@ -5,7 +5,6 @@ using System;
 namespace NSB12SampleSender
 {
     using System.Threading;
-    using System.Threading.Tasks;
     using NServiceBus.Features;
     using NServiceBus.Transports.SQLServer.Light;
 

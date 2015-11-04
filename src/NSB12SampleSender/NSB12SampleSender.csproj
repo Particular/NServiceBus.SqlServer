@@ -63,10 +63,6 @@
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
       <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\LogicEngine\LogicEngine.csproj">
-      <Project>{4675dbb4-d24a-4d4f-9310-5edc646ac06b}</Project>
-      <Name>LogicEngine</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NSB12SampleMessages\NSB12SampleMessages.csproj">
       <Project>{15f61e04-0917-428f-9bc4-162f47b0ea9b}</Project>
       <Name>NSB12SampleMessages</Name>
