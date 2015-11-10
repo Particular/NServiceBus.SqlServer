@@ -2,6 +2,7 @@
 {
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     public class When_callback_receiver_is_disabled

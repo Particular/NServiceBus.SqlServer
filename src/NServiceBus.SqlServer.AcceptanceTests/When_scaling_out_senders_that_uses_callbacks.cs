@@ -5,6 +5,7 @@
     using NServiceBus.AcceptanceTesting.Support;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.Support;
+    using NServiceBus.Transports.SQLServer.Light;
     using NUnit.Framework;
 
     public class When_scaling_out_senders_that_uses_callbacks

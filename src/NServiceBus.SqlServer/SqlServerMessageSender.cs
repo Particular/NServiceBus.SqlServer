@@ -1,134 +1,101 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Threading.Tasks;
     using System.Transactions;
-    using Unicast;
-    using Unicast.Queuing;
+    using NServiceBus.Extensibility;
+    using NServiceBus.Routing;
 
-    class SqlServerMessageSender : ISendMessages
+    class SqlServerMessageSender : IDispatchMessages
     {
-        readonly IConnectionStringProvider connectionStringProvider;
-        readonly IConnectionStore connectionStore;
-        readonly ICallbackAddressStore callbackAddressStore;
-        readonly ConnectionFactory sqlConnectionFactory;
+        readonly ConnectionParams connectionParams;
 
-        public SqlServerMessageSender(IConnectionStringProvider connectionStringProvider, IConnectionStore connectionStore, ICallbackAddressStore callbackAddressStore, ConnectionFactory sqlConnectionFactory)
+        public SqlServerMessageSender(ConnectionParams connectionParams)
         {
-            this.connectionStringProvider = connectionStringProvider;
-            this.connectionStore = connectionStore;
-            this.callbackAddressStore = callbackAddressStore;
-            this.sqlConnectionFactory = sqlConnectionFactory;
+            this.connectionParams = connectionParams;
         }
 
-        public void Send(TransportMessage message, SendOptions sendOptions)
+        public Task Dispatch(IEnumerable<TransportOperation> transportOperations, ContextBag context)
         {
-            Address destination = null;
-            try
+            foreach (var operation in transportOperations)
             {
-                destination = DetermineDestination(sendOptions);
-            
-                var connectionInfo = connectionStringProvider.GetForDestination(sendOptions.Destination);
-                var queue = new TableBasedQueue(destination, connectionInfo.Schema);
-                if (sendOptions.EnlistInReceiveTransaction)
+                var dispatchOptions = operation.DispatchOptions;
+                var routingStrategy = dispatchOptions.AddressTag as UnicastAddressTag;
+
+                if (routingStrategy == null)
                 {
-                    SqlTransaction currentTransaction;
-                    if (connectionStore.TryGetTransaction(connectionInfo.ConnectionString, out currentTransaction))
+                    throw new Exception("The Sql transport only supports the `DirectRoutingStrategy`, strategy required " + dispatchOptions.AddressTag.GetType().Name);
+                }
+
+                var destination = routingStrategy.Destination;
+                var queue = new TableBasedQueue(destination, this.connectionParams.Schema);
+
+                //Dispatch in separate transaction even if transaction scope already exists
+                if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
+                {
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew))
                     {
-                        queue.Send(message, sendOptions, currentTransaction.Connection, currentTransaction);
-                    }
-                    else
-                    {
-                        SqlConnection currentConnection;
-                        if (connectionStore.TryGetConnection(connectionInfo.ConnectionString, out currentConnection))
+                        using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
                         {
-                            queue.Send(message, sendOptions, currentConnection);
+                            connection.Open();
+
+                            queue.SendMessage(operation.Message, connection, null);
                         }
-                        else
+
+                        scope.Complete();
+                    }
+                }
+
+                ReceiveContext receiveContext;
+                if (context.TryGet(out receiveContext))
+                {
+                    SqlConnection connection;
+                    SqlTransaction transaction;
+
+                    GetSqlResources(receiveContext, out connection, out transaction);
+
+                    queue.SendMessage(operation.Message, connection, transaction);
+                }
+                else
+                {
+                    using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
+                    {
+                        connection.Open();
+
+                        using (var transaction = connection.BeginTransaction())
                         {
-                            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
-                            {
-                                queue.Send(message, sendOptions, connection);
-                            }
+                            queue.SendMessage(operation.Message, connection, transaction);
+
+                            transaction.Commit();
                         }
                     }
                 }
-                else 
-                {
-                    // Suppress so that even if DTC is on, we won't escalate
-                    using (var tx = new TransactionScope(TransactionScopeOption.Suppress))
-                    {
-                        using (var connection = sqlConnectionFactory.OpenNewConnection(connectionInfo.ConnectionString))
-                        {
-                            queue.Send(message, sendOptions, connection);
-                        }
-
-                        tx.Complete();
-                    }
-                }
             }
-            catch (SqlException ex)
+
+            return Task.FromResult(0);
+        }
+
+        void GetSqlResources(ReceiveContext receiveContext, out SqlConnection connection, out SqlTransaction transaction)
+        {
+            switch (receiveContext.Type)
             {
-                if (ex.Number == 208)
-                {
-                    ThrowQueueNotFoundException(destination, ex);
-                }
-
-                ThrowFailedToSendException(destination, ex);
+                case ReceiveType.TransactionScope:
+                    connection = receiveContext.Connection;
+                    transaction = null;
+                    break;
+                case ReceiveType.NativeTransaction:
+                    connection = receiveContext.Transaction.Connection;
+                    transaction = receiveContext.Transaction;
+                    break;
+                case ReceiveType.NoTransaction:
+                    connection = receiveContext.Connection;
+                    transaction = null;
+                    break;
+                default:
+                    throw new Exception("Invalid receive type");
             }
-            catch (Exception ex)
-            {
-                ThrowFailedToSendException(destination, ex);
-            }
         }
-
-        static void ThrowQueueNotFoundException(Address destination, SqlException ex)
-        {
-            var msg = destination == null
-                ? "Failed to send message. Target address is null."
-                : string.Format("Failed to send message to address: [{0}]", destination);
-
-            throw new QueueNotFoundException(destination, msg, ex);
-        }
-
-        Address DetermineDestination(SendOptions sendOptions)
-        {
-            return RequestorProvidedCallbackAddress(sendOptions) ?? SenderProvidedDestination(sendOptions);
-        }
-
-        static Address SenderProvidedDestination(SendOptions sendOptions)
-        {
-            return sendOptions.Destination;
-        }
-
-        Address RequestorProvidedCallbackAddress(SendOptions sendOptions)
-        {
-            if (IsReply(sendOptions))
-            {
-                Address callbackAddress;
-                callbackAddressStore.TryGetCallbackAddress(out callbackAddress);
-                return callbackAddress;
-            }
-            
-            return null;
-        }
-
-        static bool IsReply(SendOptions sendOptions)
-        {
-            return sendOptions.GetType().FullName.EndsWith("ReplyOptions");
-        }
-
-        static void ThrowFailedToSendException(Address address, Exception ex)
-        {
-            if (address == null)
-            {
-                throw new Exception("Failed to send message.", ex);
-            }
-
-            throw new Exception(
-                string.Format("Failed to send message to address: {0}@{1}", address.Queue, address.Machine), ex);
-        }
-
-        
     }
 }

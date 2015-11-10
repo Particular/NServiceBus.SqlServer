@@ -1,22 +1,50 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿
+namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Data.Common;
 
     class ConnectionParams
     {
         const string DefaultSchema = "dbo";
-        readonly string connectionString;
-        readonly string schema;
+        string connectionString;
+        string schema;
 
-        public ConnectionParams(string specificConnectionString, string specificSchema, string defaultConnectionString, string defaultSchema)
+        //TODO: when adding support for multip-db setup provide more params to connectionParams
+        //i.e. values read from config file and from code config
+        //TODO: figure out what context.ConnectionString/connectionStringWithSchema is (value from code/config?)
+        //does it have consistent precedence rules with http://docs.particular.net/nservicebus/sqlserver/multiple-databases#current-endpoint ?
+        public ConnectionParams(string connectionStringWithSchema)
         {
-            if (defaultConnectionString == null)
+            if (connectionStringWithSchema == null)
             {
-                throw new ArgumentNullException("defaultConnectionString");
+                throw new ArgumentNullException("connectionString");
             }
 
-            connectionString = specificConnectionString ?? defaultConnectionString;
-            schema = specificSchema ?? defaultSchema ?? DefaultSchema;
+            string schemaName;
+            connectionString = TryExtractSchemaName(connectionStringWithSchema, out schemaName);
+            schema = schemaName ?? DefaultSchema;
+        }
+
+        private static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)
+        {
+            const string key = "Queue Schema";
+
+            var connectionStringParser = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionStringWithSchema
+            };
+            if (connectionStringParser.ContainsKey(key))
+            {
+                schemaName = (string)connectionStringParser[key];
+                connectionStringParser.Remove(key);
+                connectionStringWithSchema = connectionStringParser.ConnectionString;
+            }
+            else
+            {
+                schemaName = null;
+            }
+            return connectionStringWithSchema;
         }
 
         public string ConnectionString
