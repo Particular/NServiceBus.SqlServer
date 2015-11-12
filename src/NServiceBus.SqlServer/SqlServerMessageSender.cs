@@ -36,7 +36,7 @@
                 //Dispatch in separate transaction even if transaction scope already exists
                 if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
-                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew)) // AsyncFlowOptions
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                     {
                         using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
                         {
