@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System;
+    using System.Threading.Tasks;
     using System.Collections.Concurrent;
     using System.Data.SqlClient;
     using System.Linq;
@@ -49,7 +48,7 @@ namespace NServiceBus.Transports.SQLServer
 
             cancellationToken = cancellationTokenSource.Token;
 
-            messagePumpTask = Task.Factory.StartNew(() => ProcessMessages(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            messagePumpTask = Task.Run(() => ProcessMessages(), CancellationToken.None);
         }
 
         /// <summary>
@@ -108,16 +107,21 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     using (var connection = new SqlConnection(connectionParams.ConnectionString))
                     {
-                        connection.Open();
+                        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-                        if (inputQueue.TryPeek(connection, out messageCount) == false)
+                        messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
+                        peekCircuitBreaker.Success();
+
+                        if (messageCount == 0)
                         {
-                            await Task.Delay(peekDelay, cancellationToken);
+                            await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
                             continue;
                         }
-
-                        peekCircuitBreaker.Success();
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    continue;
                 }
                 catch (Exception ex)
                 {
@@ -135,7 +139,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                    var task = Task.Run(async () =>
+                    var receiveTask = Task.Run(async () =>
                     {
                         try
                         {
@@ -158,7 +162,7 @@ namespace NServiceBus.Transports.SQLServer
                         }
                     }, cancellationToken);
 
-                    await runningReceiveTasks.AddOrUpdate(task, task, (k, v) => task);
+                    runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
                     // We insert the original task into the runningReceiveTasks because we want to await the completion
                     // of the running receives. ExecuteSynchronously is a request to execute the continuation as part of
@@ -168,7 +172,7 @@ namespace NServiceBus.Transports.SQLServer
                     // antecedent task is aborted the continuation will be scheduled. But in this case we don't need to await
                     // the continuation to complete because only really care about the receive operations. The final operation
                     // when shutting down is a clear of the running tasks anyway.
-                    await task.ContinueWith(t =>
+                    await receiveTask.ContinueWith(t =>
                     {
                         Task toBeRemoved;
                         runningReceiveTasks.TryRemove(t, out toBeRemoved);
@@ -196,7 +200,7 @@ namespace NServiceBus.Transports.SQLServer
         RepeatedFailuresOverTimeCircuitBreaker receiveCircuitBreaker;
 
         static ILog Logger = LogManager.GetLogger<MessagePump>();
-        Task<Task> messagePumpTask;
+        Task messagePumpTask;
         ReceiveStrategy receiveStrategy;
         static TimeSpan peekDelay = TimeSpan.FromSeconds(1);
     }

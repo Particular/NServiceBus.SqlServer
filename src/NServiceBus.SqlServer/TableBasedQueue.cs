@@ -3,6 +3,8 @@ namespace NServiceBus.Transports.SQLServer
     using System;
     using System.Data;
     using System.Data.SqlClient;
+    using System.Threading;
+    using System.Threading.Tasks;
     using NServiceBus.Logging;
     
     class TableBasedQueue
@@ -13,11 +15,14 @@ namespace NServiceBus.Transports.SQLServer
             this.schema = schema;
         }
 
-        public MessageReadResult TryReceive(SqlConnection connection, SqlTransaction transaction)
+        public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(String.Format(Sql.ReceiveText, this.schema, this.tableName), connection, transaction))
+            using (var command = new SqlCommand(String.Format(Sql.ReceiveText, schema, tableName), connection, transaction))
+            // We should use a SqlCommandParameters or the builder, never string.Format
+            // https://technet.microsoft.com/en-us/library/ms161953(v=sql.105).aspx
+            // https://msdn.microsoft.com/en-us/library/ms182310.aspx
             {
-                var rawMessageData = ReadRawMessageData(command);
+                var rawMessageData = await ReadRawMessageData(command).ConfigureAwait(false);
 
                 if (rawMessageData == null)
                 {
@@ -31,7 +36,7 @@ namespace NServiceBus.Transports.SQLServer
                     if (message.TimeToBeReceived.HasValue && message.TimeToBeReceived.Value < DateTime.UtcNow)
                     {
                         //TODO: do we what to have message id from the header?
-                        Logger.InfoFormat("Message with ID={0} has expired. Removing it from queue.", message.TransportId);
+                        Logger.InfoFormat($"Message with ID={message.TransportId} has expired. Removing it from queue.");
 
                         return MessageReadResult.NoMessage;
                     }
@@ -47,11 +52,11 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        object[] ReadRawMessageData(SqlCommand command)
+        static async Task<object[]> ReadRawMessageData(SqlCommand command)
         {
-            using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
+            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
             {
-                if (dataReader.Read())
+                if (await dataReader.ReadAsync().ConfigureAwait(false))
                 {
                     var rowData = new object[dataReader.FieldCount];
                     dataReader.GetValues(rowData);
@@ -63,7 +68,7 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public void SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
+        public Task SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
         {
             var messageData = SqlMessageParser.CreateRawMessageData(message);
 
@@ -72,12 +77,16 @@ namespace NServiceBus.Transports.SQLServer
                 throw new InvalidOperationException("The length of message data array must match the name of Parameters array.");
             }
 
-            SendRawMessage(messageData, connection, transaction);
+            return SendRawMessage(messageData, connection, transaction);
         }
 
-        public void SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
+        public async Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
         {
             var commandText = String.Format(Sql.SendText, this.schema, this.tableName);
+
+            // We should use a SqlCommandParameters or the builder, never string.Format
+            // https://technet.microsoft.com/en-us/library/ms161953(v=sql.105).aspx
+            // https://msdn.microsoft.com/en-us/library/ms182310.aspx
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -86,29 +95,27 @@ namespace NServiceBus.Transports.SQLServer
                     command.Parameters.Add(column.Name, column.Type).Value = data[column.Index];
                 }
 
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
-        public bool TryPeek(SqlConnection connection, out int messageCount)
+        public async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
             var commandText = String.Format(Sql.PeekText, this.schema, this.tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
+                using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token).ConfigureAwait(false))
                 {
-                    if (dataReader.Read())
+                    if (await dataReader.ReadAsync(token).ConfigureAwait(false))
                     {
                         var rowData = new object[1];
                         dataReader.GetValues(rowData);
 
-                        messageCount = Convert.ToInt32(rowData[0]);
-                        return true;
+                        return Convert.ToInt32(rowData[0]);
                     }
 
-                    messageCount = 0;
-                    return false;
+                    return 0;
                 }
             }
         }

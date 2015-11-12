@@ -16,14 +16,14 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = new SqlConnection(this.connectionString))
+            using (var sqlConnection = new SqlConnection(connectionString))
             {
-                sqlConnection.Open();
-                var readResult = inputQueue.TryReceive(sqlConnection, null);
+                await sqlConnection.OpenAsync().ConfigureAwait(false);
+                var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
                 {
-                    errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null);
+                    await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
                     return;
                 }
 

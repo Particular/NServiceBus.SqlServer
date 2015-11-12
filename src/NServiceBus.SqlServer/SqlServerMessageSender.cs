@@ -17,7 +17,8 @@
             this.connectionParams = connectionParams;
         }
 
-        public Task Dispatch(IEnumerable<TransportOperation> transportOperations, ContextBag context)
+        // We need to check if we can support cancellation in here as well?
+        public async Task Dispatch(IEnumerable<TransportOperation> transportOperations, ContextBag context)
         {
             foreach (var operation in transportOperations)
             {
@@ -35,13 +36,13 @@
                 //Dispatch in separate transaction even if transaction scope already exists
                 if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
-                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew))
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew)) // AsyncFlowOptions
                     {
                         using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
                         {
-                            connection.Open();
+                            await connection.OpenAsync().ConfigureAwait(false);
 
-                            queue.SendMessage(operation.Message, connection, null);
+                            await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
                         }
 
                         scope.Complete();
@@ -56,25 +57,23 @@
 
                     GetSqlResources(receiveContext, out connection, out transaction);
 
-                    queue.SendMessage(operation.Message, connection, transaction);
+                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
                 }
                 else
                 {
-                    using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
+                    using (var connection = new SqlConnection(connectionParams.ConnectionString))
                     {
-                        connection.Open();
+                        await connection.OpenAsync().ConfigureAwait(false);
 
                         using (var transaction = connection.BeginTransaction())
                         {
-                            queue.SendMessage(operation.Message, connection, transaction);
+                            await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
 
                             transaction.Commit();
                         }
                     }
                 }
             }
-
-            return Task.FromResult(0);
         }
 
         void GetSqlResources(ReceiveContext receiveContext, out SqlConnection connection, out SqlTransaction transaction)
