@@ -15,19 +15,19 @@
         }
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = new SqlConnection(this.connectionString))
+            using (var sqlConnection = new SqlConnection(connectionString))
             {
-                sqlConnection.Open();
+                await sqlConnection.OpenAsync().ConfigureAwait(false);
 
                 using (var transaction = sqlConnection.BeginTransaction())
                 {
                     try
                     {
-                        var readResult = inputQueue.TryReceive(sqlConnection, transaction);
+                        var readResult = await inputQueue.TryReceive(sqlConnection, transaction).ConfigureAwait(false);
 
                         if (readResult.IsPoison)
                         {
-                            errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, transaction);
+                            await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, transaction).ConfigureAwait(false);
                             transaction.Commit();
                             return;
                         }

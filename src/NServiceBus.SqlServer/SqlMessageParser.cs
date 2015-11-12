@@ -16,10 +16,10 @@
             DateTime? expireDateTime = null;
             if (rowData[Sql.Columns.TimeToBeReceived.Index] != DBNull.Value)
             {
-                expireDateTime = (DateTime)rowData[Sql.Columns.TimeToBeReceived.Index];
+                expireDateTime = (DateTime) rowData[Sql.Columns.TimeToBeReceived.Index];
             }
 
-            var headers = (Dictionary<string, string>)HeaderSerializer.DeserializeObject((string)rowData[Sql.Columns.Headers.Index], typeof(Dictionary<string, string>));
+            var headers = (Dictionary<string, string>) HeaderSerializer.DeserializeObject((string) rowData[Sql.Columns.Headers.Index], typeof(Dictionary<string, string>));
 
             var body = GetNullableValue<byte[]>(rowData[Sql.Columns.Body.Index]) ?? new byte[0];
 
@@ -29,7 +29,7 @@
 
             var replyToAddress = GetNullableValue<string>(rowData[Sql.Columns.ReplyToAddress.Index]);
 
-            if (!String.IsNullOrEmpty(replyToAddress))
+            if (!string.IsNullOrEmpty(replyToAddress))
             {
                 message.Headers[Headers.ReplyToAddress] = replyToAddress;
             }
@@ -89,13 +89,13 @@
             return data;
         }
 
-        private static T GetNullableValue<T>(object value)
+        static T GetNullableValue<T>(object value)
         {
             if (value == DBNull.Value)
             {
                 return default(T);
             }
-            return (T)value;
+            return (T) value;
         }
     }
 }

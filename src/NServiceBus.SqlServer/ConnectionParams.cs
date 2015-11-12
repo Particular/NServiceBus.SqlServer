@@ -7,8 +7,6 @@ namespace NServiceBus.Transports.SQLServer
     class ConnectionParams
     {
         const string DefaultSchema = "dbo";
-        string connectionString;
-        string schema;
 
         //TODO: when adding support for multip-db setup provide more params to connectionParams
         //i.e. values read from config file and from code config
@@ -18,12 +16,12 @@ namespace NServiceBus.Transports.SQLServer
         {
             if (connectionStringWithSchema == null)
             {
-                throw new ArgumentNullException("connectionString");
+                throw new ArgumentNullException(nameof(connectionStringWithSchema));
             }
 
             string schemaName;
-            connectionString = TryExtractSchemaName(connectionStringWithSchema, out schemaName);
-            schema = schemaName ?? DefaultSchema;
+            ConnectionString = TryExtractSchemaName(connectionStringWithSchema, out schemaName);
+            Schema = schemaName ?? DefaultSchema;
         }
 
         private static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)
@@ -47,14 +45,8 @@ namespace NServiceBus.Transports.SQLServer
             return connectionStringWithSchema;
         }
 
-        public string ConnectionString
-        {
-            get { return connectionString; }
-        }
+        public string ConnectionString { get; }
 
-        public string Schema
-        {
-            get { return schema; }
-        }
+        public string Schema { get; }
     }
 }

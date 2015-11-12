@@ -3,6 +3,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data;
     using System.Data.SqlClient;
 
+    // Should we make this async in core?
     class SqlServerQueueCreator : ICreateQueues
     {
         readonly ConnectionParams connectionParams;

@@ -24,13 +24,13 @@ namespace NServiceBus.Transports.SQLServer
             {
                 using (var sqlConnection = new SqlConnection(this.connectionString))
                 {
-                    sqlConnection.Open();
+                    await sqlConnection.OpenAsync().ConfigureAwait(false);
 
-                    var readResult = inputQueue.TryReceive(sqlConnection, null);
+                    var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
 
                     if (readResult.IsPoison)
                     {
-                        errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null);
+                        await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
                         scope.Complete();
                         return;
                     }
@@ -49,13 +49,14 @@ namespace NServiceBus.Transports.SQLServer
                             await onMessage(pushContext).ConfigureAwait(false);
 
                             scope.Complete();
+                            // Try finally?
                             scope.Dispose(); //TODO: check if calling that is really necessary
                                              // We explicitly calling Dispose so that we force any exception to not bubble, eg Concurrency/Deadlock exception.
 
                             return;
                         }
                     }
-
+                    // Try finally?
                     scope.Complete();
                 }
             }
