@@ -3,6 +3,7 @@ namespace NServiceBus.Transports.SQLServer
     using System;
     using System.Data;
     using System.Data.SqlClient;
+    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Logging;
     
@@ -98,25 +99,23 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public bool TryPeek(SqlConnection connection, out int messageCount)
+        public async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
             var commandText = String.Format(Sql.PeekText, this.schema, this.tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                using (var dataReader = command.ExecuteReader(CommandBehavior.SingleRow))
+                using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token).ConfigureAwait(false))
                 {
-                    if (dataReader.Read())
+                    if (await dataReader.ReadAsync(token).ConfigureAwait(false))
                     {
                         var rowData = new object[1];
                         dataReader.GetValues(rowData);
 
-                        messageCount = Convert.ToInt32(rowData[0]);
-                        return true;
+                        return Convert.ToInt32(rowData[0]);
                     }
 
-                    messageCount = 0;
-                    return false;
+                    return 0;
                 }
             }
         }

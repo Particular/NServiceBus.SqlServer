@@ -107,16 +107,21 @@
                 {
                     using (var connection = new SqlConnection(connectionParams.ConnectionString))
                     {
-                        connection.Open();
+                        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-                        if (inputQueue.TryPeek(connection, out messageCount) == false)
+                        messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
+                        peekCircuitBreaker.Success();
+
+                        if (messageCount == 0)
                         {
                             await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
                             continue;
                         }
-
-                        peekCircuitBreaker.Success();
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    continue;
                 }
                 catch (Exception ex)
                 {
