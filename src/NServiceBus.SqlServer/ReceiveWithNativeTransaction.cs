@@ -34,7 +34,6 @@
                             return;
                         }
 
-                        //TODO: IsPoision and Successful can probably be marged they are negations of each other
                         if (readResult.Successful)
                         {
                             var message = readResult.Message;
