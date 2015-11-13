@@ -17,7 +17,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            //HINT: We do not have to escape schema and tableName
+            //HINT: We do not have to escape schema and tableName. The are delimited identifiers in sql text.
             //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
             var commandText = String.Format(Sql.ReceiveText, schema, tableName);
 
