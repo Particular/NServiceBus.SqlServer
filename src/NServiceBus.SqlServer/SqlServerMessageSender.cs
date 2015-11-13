@@ -36,43 +36,58 @@
                 //Dispatch in separate transaction even if transaction scope already exists
                 if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
-                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-                    {
-                        using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
-                        {
-                            await connection.OpenAsync().ConfigureAwait(false);
-
-                            await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                        }
-
-                        scope.Complete();
-                    }
+                    await DispatchInIsolatedTransactionScope(queue, operation);
                 }
 
                 ReceiveContext receiveContext;
                 if (context.TryGet(out receiveContext))
                 {
-                    SqlConnection connection;
-                    SqlTransaction transaction;
-
-                    GetSqlResources(receiveContext, out connection, out transaction);
-
-                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                    await DispatchInCurrentReceiveContext(receiveContext, queue, operation);
                 }
                 else
                 {
-                    using (var connection = new SqlConnection(connectionParams.ConnectionString))
-                    {
-                        await connection.OpenAsync().ConfigureAwait(false);
-
-                        using (var transaction = connection.BeginTransaction())
-                        {
-                            await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
-
-                            transaction.Commit();
-                        }
-                    }
+                    await DispatchAsSeparateSendOperation(queue, operation);
                 }
+            }
+        }
+
+        async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, TransportOperation operation)
+        {
+            using (var connection = new SqlConnection(connectionParams.ConnectionString))
+            {
+                await connection.OpenAsync().ConfigureAwait(false);
+
+                using (var transaction = connection.BeginTransaction())
+                {
+                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+
+                    transaction.Commit();
+                }
+            }
+        }
+
+        async Task DispatchInCurrentReceiveContext(ReceiveContext receiveContext, TableBasedQueue queue, TransportOperation operation)
+        {
+            SqlConnection connection;
+            SqlTransaction transaction;
+
+            GetSqlResources(receiveContext, out connection, out transaction);
+
+            await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+        }
+
+        async Task DispatchInIsolatedTransactionScope(TableBasedQueue queue, TransportOperation operation)
+        {
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
+                {
+                    await connection.OpenAsync().ConfigureAwait(false);
+
+                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                }
+
+                scope.Complete();
             }
         }
 
