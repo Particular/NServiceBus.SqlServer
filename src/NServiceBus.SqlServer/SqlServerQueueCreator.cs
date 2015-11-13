@@ -15,10 +15,12 @@ namespace NServiceBus.Transports.SQLServer
                 connection.Open();
 
                 var sql = string.Format(Sql.CreateQueueText, connectionParams.Schema, address);
-
-                using (var command = new SqlCommand(sql, connection) {CommandType = CommandType.Text})
+                using (var transaction = connection.BeginTransaction())
+                using (var command = new SqlCommand(sql, connection, transaction) {CommandType = CommandType.Text})
                 {
                     command.ExecuteNonQuery();
+
+                    transaction.Commit();
                 }
             }
         }

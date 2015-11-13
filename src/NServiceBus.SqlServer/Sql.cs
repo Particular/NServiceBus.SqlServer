@@ -20,7 +20,7 @@ namespace NServiceBus.Transports.SQLServer
 
         internal const string CreateQueueText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN
-                    EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusie'
+                    EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
 
                     IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                     BEGIN
