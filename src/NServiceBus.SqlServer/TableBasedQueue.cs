@@ -108,7 +108,9 @@ namespace NServiceBus.Transports.SQLServer
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token).ConfigureAwait(false))
+                // ReSharper disable once MethodSupportsCancellation
+                // ExecuteReaderAsync throws InvalidOperationException instead of TaskCancelledException with localized exception message 
+                using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
                 {
                     if (await dataReader.ReadAsync(token).ConfigureAwait(false))
                     {
