@@ -41,7 +41,6 @@ namespace NServiceBus.Transports.SQLServer
                     }
                 }
 
-                // Try finally?
                 scope.Complete();
             }
         }
