@@ -2,6 +2,7 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
@@ -113,13 +114,18 @@ namespace NServiceBus.Transports.SQLServer
         {
             var endpointName = logicalAddress.EndpointInstanceName.EndpointName.ToString();
             var qualifier = logicalAddress.Qualifier;
+            var userDiscriminator = logicalAddress.EndpointInstanceName.UserDiscriminator;
 
-            if (string.IsNullOrEmpty(qualifier))
+            var nonEmptyParts = new[]
             {
-                return $"{endpointName}";
-            }
+                endpointName,
+                qualifier,
+                userDiscriminator
+            }.Where(p => !string.IsNullOrEmpty(p));
+            
+            var transportAddress = string.Join(".", nonEmptyParts);
 
-            return $"{endpointName}.{qualifier}";
+            return transportAddress;
         }
 
         /// <summary>
