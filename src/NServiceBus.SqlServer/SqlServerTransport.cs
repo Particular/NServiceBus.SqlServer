@@ -51,7 +51,7 @@ namespace NServiceBus.Transports.SQLServer
                 return new ReceiveWithNoTransaction(connectionString);
             }
 
-            return new ReceiveWithNativeTransaction(connectionString);
+            return new ReceiveWithNativeTransaction(options, connectionString);
         }
 
         /// <summary>
