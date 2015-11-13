@@ -63,7 +63,7 @@ namespace NServiceBus.Transports.SQLServer
         {
             var connectionParams = new ConnectionParams(context.ConnectionString);
 
-            context.SetDispatcherFactory(() => new SqlServerMessageSender(connectionParams));
+            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionParams));
         }
 
         /// <summary>

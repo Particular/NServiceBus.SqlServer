@@ -8,11 +8,11 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
 
-    class SqlServerMessageSender : IDispatchMessages
+    class SqlServerMessageDispatcher : IDispatchMessages
     {
         readonly ConnectionParams connectionParams;
 
-        public SqlServerMessageSender(ConnectionParams connectionParams)
+        public SqlServerMessageDispatcher(ConnectionParams connectionParams)
         {
             this.connectionParams = connectionParams;
         }

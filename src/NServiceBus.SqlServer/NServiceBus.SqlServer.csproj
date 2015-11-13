@@ -75,7 +75,7 @@
     <Compile Include="SqlMessage.cs" />
     <Compile Include="SqlMessageParser.cs" />
     <Compile Include="SqlServerConfigurator.cs" />
-    <Compile Include="SqlServerMessageSender.cs" />
+    <Compile Include="SqlServerMessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="MessagePump.cs" />
     <Compile Include="MessageReadResult.cs" />
