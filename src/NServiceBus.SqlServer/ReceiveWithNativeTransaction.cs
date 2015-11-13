@@ -41,9 +41,6 @@
 
                             using (var bodyStream = message.BodyStream)
                             {
-                                //TODO: do we really need to rewind here?
-                                bodyStream.Position = 0;
-
                                 var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new ContextBag());
                                 pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NativeTransaction, Transaction = transaction});
 

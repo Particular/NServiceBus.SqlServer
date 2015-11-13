@@ -33,8 +33,6 @@ namespace NServiceBus.Transports.SQLServer
 
                     using (var bodyStream = message.BodyStream)
                     {
-                        bodyStream.Position = 0;
-
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new ContextBag ());
                         pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NoTransaction, Connection = sqlConnection});
 
