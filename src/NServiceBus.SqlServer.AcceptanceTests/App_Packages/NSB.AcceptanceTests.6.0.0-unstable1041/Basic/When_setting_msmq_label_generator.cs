@@ -13,7 +13,7 @@
     {
         const string auditQueue = @".\private$\labelAuditQueue";
 
-        [Test]
+        [Test, Ignore]
         public async Task Should_receive_the_message_and_label()
         {
             DeleteAudit();
