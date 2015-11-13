@@ -17,7 +17,9 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            using (var command = new SqlCommand(String.Format(Sql.ReceiveText, schema, tableName), connection, transaction))
+            var commandText = String.Format(Sql.ReceiveText, schema, tableName);
+
+            using (var command = new SqlCommand(commandText, connection, transaction))
             // We should use a SqlCommandParameters or the builder, never string.Format
             // https://technet.microsoft.com/en-us/library/ms161953(v=sql.105).aspx
             // https://msdn.microsoft.com/en-us/library/ms182310.aspx
@@ -33,10 +35,11 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var message = SqlMessageParser.ParseRawData(rawMessageData);
 
-                    if (message.TimeToBeReceived.HasValue && message.TimeToBeReceived.Value < DateTime.UtcNow)
+                    if (message.TTBRExpried(DateTime.UtcNow))
                     {
-                        //TODO: do we what to have message id from the header?
-                        Logger.InfoFormat($"Message with ID={message.TransportId} has expired. Removing it from queue.");
+                        var messageId = message.GetLogicalId() ?? message.TransportId;
+
+                        Logger.InfoFormat($"Message with ID={messageId} has expired. Removing it from queue.");
 
                         return MessageReadResult.NoMessage;
                     }

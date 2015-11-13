@@ -14,6 +14,19 @@
             Headers = headers;
         }
 
+        public bool TTBRExpried(DateTime now)
+        {
+            return TimeToBeReceived.HasValue && TimeToBeReceived.Value < now;
+        }
+
+        public string GetLogicalId()
+        {
+            string logicalId;
+            Headers.TryGetValue(NServiceBus.Headers.MessageId, out logicalId);
+
+            return logicalId;
+        }
+
         public string TransportId { get; }
         public DateTime? TimeToBeReceived { get; }
         public Stream BodyStream { get; }
