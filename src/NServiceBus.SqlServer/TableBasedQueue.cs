@@ -17,12 +17,11 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
+            //HINT: We do not have to escape schema and tableName
+            //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
             var commandText = String.Format(Sql.ReceiveText, schema, tableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
-            // We should use a SqlCommandParameters or the builder, never string.Format
-            // https://technet.microsoft.com/en-us/library/ms161953(v=sql.105).aspx
-            // https://msdn.microsoft.com/en-us/library/ms182310.aspx
             {
                 var rawMessageData = await ReadRawMessageData(command).ConfigureAwait(false);
 
@@ -87,10 +86,6 @@ namespace NServiceBus.Transports.SQLServer
         {
             var commandText = String.Format(Sql.SendText, this.schema, this.tableName);
 
-            // We should use a SqlCommandParameters or the builder, never string.Format
-            // https://technet.microsoft.com/en-us/library/ms161953(v=sql.105).aspx
-            // https://msdn.microsoft.com/en-us/library/ms182310.aspx
-
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
                 foreach (var column in Sql.Columns.All)
@@ -137,12 +132,12 @@ namespace NServiceBus.Transports.SQLServer
 
         public override string ToString()
         {
-            return tableName;
+            return $"{schema}.{tableName}";
         }
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
-
-        readonly string tableName;
-        readonly string schema;
+        
+        string tableName;
+        string schema;
     }
 }
