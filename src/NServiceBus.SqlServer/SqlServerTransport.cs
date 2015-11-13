@@ -102,7 +102,7 @@ namespace NServiceBus.Transports.SQLServer
         /// <returns></returns>
         public override string GetDiscriminatorForThisEndpointInstance()
         {
-            return Environment.MachineName;
+            return null;
         }
 
         /// <summary>
