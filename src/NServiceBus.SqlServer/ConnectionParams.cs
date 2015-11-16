@@ -7,12 +7,12 @@ namespace NServiceBus.Transports.SQLServer
     class ConnectionParams
     {
         const string DefaultSchema = "dbo";
+        public const string DefaultSchemaSettingsKey = "SqlServer.SchemaName";
 
-        //TODO: when adding support for multip-db setup provide more params to connectionParams
-        //i.e. values read from config file and from code config
-        //TODO: figure out what context.ConnectionString/connectionStringWithSchema is (value from code/config?)
-        //does it have consistent precedence rules with http://docs.particular.net/nservicebus/sqlserver/multiple-databases#current-endpoint ?
-        public ConnectionParams(string connectionStringWithSchema)
+
+        //TODO: when adding support for multip-db setup provide more params to connectionParams        
+        //for more info see UseSpecificConnectionInformation in v2
+        public ConnectionParams(string connectionStringWithSchema, string endpointSpecificSchema)
         {
             if (connectionStringWithSchema == null)
             {
@@ -21,7 +21,8 @@ namespace NServiceBus.Transports.SQLServer
 
             string schemaName;
             ConnectionString = TryExtractSchemaName(connectionStringWithSchema, out schemaName);
-            Schema = schemaName ?? DefaultSchema;
+            Schema = schemaName ?? endpointSpecificSchema ?? DefaultSchema;
+
         }
 
         private static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)

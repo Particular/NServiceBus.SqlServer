@@ -67,6 +67,8 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ConnectionParams.cs" />
+    <Compile Include="Guard\Guard.cs" />
+    <Compile Include="Guard\Resharper.Annotations.g.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
@@ -83,6 +85,7 @@
     <Compile Include="ReceiveWithNoTransaction.cs" />
     <Compile Include="ReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>
   <ItemGroup>

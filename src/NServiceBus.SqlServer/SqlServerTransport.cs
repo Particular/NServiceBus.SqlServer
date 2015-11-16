@@ -27,7 +27,8 @@ namespace NServiceBus.Transports.SQLServer
         /// <param name="context"></param>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
-            var connectionParams = new ConnectionParams(context.ConnectionString);
+            var schemaSpecifiedInCode = context.Settings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
+            var connectionParams = new ConnectionParams(context.ConnectionString, schemaSpecifiedInCode);
 
             context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionParams));
             
@@ -61,7 +62,8 @@ namespace NServiceBus.Transports.SQLServer
         /// <param name="context"></param>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
-            var connectionParams = new ConnectionParams(context.ConnectionString);
+            var schemaSpecifiedInCode = context.GlobalSettings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
+            var connectionParams = new ConnectionParams(context.ConnectionString, schemaSpecifiedInCode);
 
             context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionParams));
         }
