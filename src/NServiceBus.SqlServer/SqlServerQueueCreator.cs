@@ -3,50 +3,31 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data;
     using System.Data.SqlClient;
 
+    // Should we make this async in core?
     class SqlServerQueueCreator : ICreateQueues
     {
-        const string Ddl =
-            @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
-                  BEGIN
-                    CREATE TABLE [{0}].[{1}](
-	                    [Id] [uniqueidentifier] NOT NULL,
-	                    [CorrelationId] [varchar](255) NULL,
-	                    [ReplyToAddress] [varchar](255) NULL,
-	                    [Recoverable] [bit] NOT NULL,
-	                    [Expires] [datetime] NULL,
-	                    [Headers] [varchar](max) NOT NULL,
-	                    [Body] [varbinary](max) NULL,
-	                    [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
-                    ) ON [PRIMARY];                    
+        readonly ConnectionParams connectionParams;
 
-                    CREATE CLUSTERED INDEX [Index_RowVersion] ON [{0}].[{1}] 
-                    (
-	                    [RowVersion] ASC
-                    )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
-                    
-                  END";
-
-        public void CreateQueueIfNecessary(Address address, string account)
+        public void CreateQueueIfNecessary(string address, string account)
         {
-            var connectionParams = connectionStringProvider.GetForDestination(address);
-            using (var connection = sqlConnectionFactory.OpenNewConnection(connectionParams.ConnectionString))
+            using (var connection = new SqlConnection(connectionParams.ConnectionString))
             {
-                var sql = string.Format(Ddl, connectionParams.Schema, address.GetTableName());
+                connection.Open();
 
-                using (var command = new SqlCommand(sql, connection) {CommandType = CommandType.Text})
+                var sql = string.Format(Sql.CreateQueueText, connectionParams.Schema, address);
+                using (var transaction = connection.BeginTransaction())
+                using (var command = new SqlCommand(sql, connection, transaction) {CommandType = CommandType.Text})
                 {
                     command.ExecuteNonQuery();
+
+                    transaction.Commit();
                 }
             }
         }
 
-        readonly IConnectionStringProvider connectionStringProvider;
-        readonly ConnectionFactory sqlConnectionFactory;
-
-        public SqlServerQueueCreator(IConnectionStringProvider connectionStringProvider, ConnectionFactory sqlConnectionFactory)
+        public SqlServerQueueCreator(ConnectionParams connectionParams)
         {
-            this.connectionStringProvider = connectionStringProvider;
-            this.sqlConnectionFactory = sqlConnectionFactory;
+            this.connectionParams = connectionParams;
         }
     }
 }

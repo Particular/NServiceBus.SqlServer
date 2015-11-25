@@ -2,48 +2,31 @@ namespace NServiceBus.Transports.SQLServer
 {
     struct MessageReadResult
     {
-        readonly TransportMessage message;
-        readonly bool poison;
-        readonly object[] dataRecord;
-
-        MessageReadResult(TransportMessage message, bool poison, object[] dataRecord)
+        MessageReadResult(SqlMessage message, bool poison, object[] dataRecord)
         {
-            this.message = message;
-            this.poison = poison;
-            this.dataRecord = dataRecord;
+            Message = message;
+            IsPoison = poison;
+            DataRecord = dataRecord;
         }
 
         public static MessageReadResult NoMessage = new MessageReadResult(null, false, null);
 
-        public bool IsPoison
-        {
-            get { return poison; }
-        }
+        public bool IsPoison { get; }
 
-        public bool Successful
-        {
-            get { return message != null; }
-        }
+        public bool Successful => Message != null;
 
-        public TransportMessage Message
-        {
-            get { return message; }
-        }
+        public SqlMessage Message { get; }
 
-        public object[] DataRecord
-        {
-            get { return dataRecord; }
-        }
+        public object[] DataRecord { get; }
 
         public static MessageReadResult Poison(object[] record)
         {
             return new MessageReadResult(null, true, record);
         }
 
-        public static MessageReadResult Success(TransportMessage message)
+        public static MessageReadResult Success(SqlMessage message)
         {
             return new MessageReadResult(message, false, null);
         }
-
     }
 }

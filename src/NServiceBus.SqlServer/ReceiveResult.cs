@@ -4,13 +4,10 @@ namespace NServiceBus.Transports.SQLServer
 
     class ReceiveResult
     {
-        readonly Exception exception;
-        readonly TransportMessage message;
-
         ReceiveResult(Exception exception, TransportMessage message)
         {
-            this.exception = exception;
-            this.message = message;
+            Exception = exception;
+            Message = message;
         }
 
         public static ReceiveResult NoMessage()
@@ -25,24 +22,13 @@ namespace NServiceBus.Transports.SQLServer
 
         public ReceiveResult FailedProcessing(Exception encounteredException)
         {
-            return new ReceiveResult(encounteredException, message);
+            return new ReceiveResult(encounteredException, Message);
         }
 
-        public Exception Exception
-        {
-            get { return exception; }
-        }
+        public Exception Exception { get; }
 
-        public bool HasReceivedMessage
-        {
-            get { return message != null; }
-        }
+        public bool HasReceivedMessage => Message != null;
 
-        public TransportMessage Message
-        {
-            get { return message; }
-        }
+        public TransportMessage Message { get; }
     }
-
-
 }

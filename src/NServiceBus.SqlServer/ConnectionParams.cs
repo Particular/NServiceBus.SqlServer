@@ -1,32 +1,53 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿
+namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Data.Common;
 
     class ConnectionParams
     {
         const string DefaultSchema = "dbo";
-        readonly string connectionString;
-        readonly string schema;
+        public const string DefaultSchemaSettingsKey = "SqlServer.SchemaName";
 
-        public ConnectionParams(string specificConnectionString, string specificSchema, string defaultConnectionString, string defaultSchema)
+
+        //TODO: when adding support for multip-db setup provide more params to connectionParams        
+        //for more info see UseSpecificConnectionInformation in v2
+        public ConnectionParams(string connectionStringWithSchema, string endpointSpecificSchema)
         {
-            if (defaultConnectionString == null)
+            if (connectionStringWithSchema == null)
             {
-                throw new ArgumentNullException("defaultConnectionString");
+                throw new ArgumentNullException(nameof(connectionStringWithSchema));
             }
 
-            connectionString = specificConnectionString ?? defaultConnectionString;
-            schema = specificSchema ?? defaultSchema ?? DefaultSchema;
+            string schemaName;
+            ConnectionString = TryExtractSchemaName(connectionStringWithSchema, out schemaName);
+            Schema = schemaName ?? endpointSpecificSchema ?? DefaultSchema;
+
         }
 
-        public string ConnectionString
+        private static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)
         {
-            get { return connectionString; }
+            const string key = "Queue Schema";
+
+            var connectionStringParser = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionStringWithSchema
+            };
+            if (connectionStringParser.ContainsKey(key))
+            {
+                schemaName = (string)connectionStringParser[key];
+                connectionStringParser.Remove(key);
+                connectionStringWithSchema = connectionStringParser.ConnectionString;
+            }
+            else
+            {
+                schemaName = null;
+            }
+            return connectionStringWithSchema;
         }
 
-        public string Schema
-        {
-            get { return schema; }
-        }
+        public string ConnectionString { get; }
+
+        public string Schema { get; }
     }
 }
