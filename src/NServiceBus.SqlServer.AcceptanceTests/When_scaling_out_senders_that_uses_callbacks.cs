@@ -9,7 +9,7 @@
 
     public class When_scaling_out_senders_that_uses_callbacks
     {
-        const int numMessagesToSend = 1;
+        const int numMessagesToSend = 5;
 
         [Test]
         public void Should_only_deliver_response_to_one_of_the_instances()
@@ -29,9 +29,9 @@
                                {
                                    ReturnCode = 1
                                })
-                                   .Register(m =>
+                                   .Register<int>(r =>
                                    {
-                                       if (m.ErrorCode != 1)
+                                       if (r != 1)
                                        {
                                            throw new Exception("Wrong server got the response");
                                        }
@@ -51,9 +51,9 @@
                                {
                                    ReturnCode = 2
                                })
-                                   .Register(m =>
+                                   .Register<int>(r =>
                                    {
-                                       if (m.ErrorCode != 2)
+                                       if (r != 2)
                                        {
                                            throw new Exception("Wrong server got the response");
                                        }
