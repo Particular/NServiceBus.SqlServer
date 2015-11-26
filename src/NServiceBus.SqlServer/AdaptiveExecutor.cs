@@ -69,6 +69,8 @@
                     .StartNew(ReceiveLoop, state, token, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                     .ContinueWith((t, s) =>
                     {
+                        taskTracker.Forget((Guid)s);
+
                         if (t.IsFaulted)
                         {
                             t.Exception.Handle(ex =>
@@ -78,8 +80,6 @@
                                 return true;
                             });
                         }
-
-                        taskTracker.Forget((Guid)s);
 
                         if (!taskTracker.ShouldStartAnotherTaskImmediately)
                         {
