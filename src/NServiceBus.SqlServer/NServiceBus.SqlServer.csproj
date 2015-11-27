@@ -52,7 +52,7 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-unstable1076\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable1139\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -69,6 +69,7 @@
     <Compile Include="ConnectionParams.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
+    <Compile Include="NullTransaction.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="SqlServerQueueCreator.cs" />
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="TableBasedQueue.cs" />
+    <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />

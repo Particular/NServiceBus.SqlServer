@@ -54,7 +54,7 @@
         /// <summary>
         ///     Stops the dequeuing of messages.
         /// </summary>
-        public async Task StopAsync()
+        public async Task Stop()
         {
             cancellationTokenSource.Cancel();
 
