@@ -259,8 +259,6 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1139\UnitOfWork\When_a_subscription_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1139\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1139\Volatile\When_sending_to_non_durable_endpoint.cs" />
-    <Compile Include="SqlTransportSpecific\When_schema_provided_via_code.cs" />
-    <Compile Include="SqlTransportSpecific\When_using_multiple_schemas.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
