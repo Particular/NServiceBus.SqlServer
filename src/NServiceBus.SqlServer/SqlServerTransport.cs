@@ -22,7 +22,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// Registers components necessary for receiving messages from the transport.
+        /// <see cref="TransportDefinition.ConfigureForReceiving"/>
         /// </summary>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
@@ -56,7 +56,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// Registers components necessary for sending messages.
+        /// <see cref="TransportDefinition.ConfigureForSending"/>
         /// </summary>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
@@ -131,12 +131,12 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// Sample connection string.
+        /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage"/>
         /// </summary>
         public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         /// <summary>
-        /// Specifies if connection string is required for SqlServer transport.
+        /// <see cref="TransportDefinition.RequiresConnectionString"/>
         /// </summary>
         public override bool RequiresConnectionString => true;
     }

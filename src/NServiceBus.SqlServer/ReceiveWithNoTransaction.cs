@@ -33,13 +33,16 @@ namespace NServiceBus.Transports.SQLServer
 
                     using (var bodyStream = message.BodyStream)
                     {
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new ContextBag ());
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new NullTransaction(), new ContextBag ());
                         pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NoTransaction, Connection = sqlConnection});
 
                         await onMessage(pushContext).ConfigureAwait(false);
                     }
                 }
             }
+        }
+        private class NullTransaction : TransportTransaction
+        {
         }
     }
 }

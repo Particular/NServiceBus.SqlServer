@@ -16,13 +16,13 @@ namespace NServiceBus.SqlServer.AcceptanceTests.SqlTransportSpecific
         public async Task Message_should_be_delivered()
         {
             var context = await Scenario.Define<Context>(c => { c.Id = Guid.NewGuid(); })
-                    .WithEndpoint<Sender>(b => b.When((bus, c) => bus.SendAsync(new MyMessage
-                    {
-                        Id = c.Id
-                    })))
-                    .WithEndpoint<Receiver>()
-                    .Done(c => c.WasCalled)
-                    .Run(TimeSpan.FromSeconds(200));
+                .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new MyMessage
+                {
+                    Id = c.Id
+                })))
+                .WithEndpoint<Receiver>()
+                .Done(c => c.WasCalled)
+                .Run(TimeSpan.FromSeconds(200));
 
             Assert.True(context.WasCalled, "The message handler should be called");
         }

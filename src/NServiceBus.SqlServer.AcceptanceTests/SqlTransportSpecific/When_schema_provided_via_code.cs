@@ -15,13 +15,13 @@ namespace NServiceBus.SqlServer.AcceptanceTests.SqlTransportSpecific
         public async Task Value_from_connectionString_should_take_precedence()
         {
             var context = await Scenario.Define<Context>(c => { c.Id = Guid.NewGuid(); })
-                    .WithEndpoint<Sender>(b => b.When((bus, c) => bus.SendAsync(new MyMessage
-                    {
-                        Id = c.Id
-                    })))
-                    .WithEndpoint<Receiver>()
-                    .Done(c => c.WasCalled)
-                    .Run();
+                .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new MyMessage
+                {
+                    Id = c.Id
+                })))
+                .WithEndpoint<Receiver>()
+                .Done(c => c.WasCalled)
+                .Run();
 
             Assert.True(context.WasCalled, "The message handler should be called");
         }
