@@ -7,7 +7,7 @@
 
     static class SqlMessageParser
     {
-        static JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
+        static JsonMessageSerializer headerSerializer = new JsonMessageSerializer(null);
 
         internal static SqlMessage ParseRawData(object[] rowData)
         {
@@ -19,7 +19,7 @@
                 expireDateTime = (DateTime) rowData[Sql.Columns.TimeToBeReceived.Index];
             }
 
-            var headers = (Dictionary<string, string>) HeaderSerializer.DeserializeObject((string) rowData[Sql.Columns.Headers.Index], typeof(Dictionary<string, string>));
+            var headers = GetHeaders(rowData);
 
             var body = GetNullableValue<byte[]>(rowData[Sql.Columns.Body.Index]) ?? new byte[0];
 
@@ -35,6 +35,16 @@
             }
 
             return message;
+        }
+
+        static Dictionary<string, string> GetHeaders(object[] rowData)
+        {
+            var headersAsString = (string) rowData[Sql.Columns.Headers.Index];
+            if (string.IsNullOrWhiteSpace(headersAsString))
+            {
+                return new Dictionary<string, string>();
+            }
+            return (Dictionary<string, string>) headerSerializer.DeserializeObject(headersAsString, typeof(Dictionary<string, string>));
         }
 
         internal static object[] CreateRawMessageData(OutgoingMessage message)
