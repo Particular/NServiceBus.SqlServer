@@ -96,7 +96,7 @@ namespace NServiceBus.Transports.SQLServer
         /// <summary>
         /// <see cref="TransportDefinition.GetDiscriminatorForThisEndpointInstance"/>.
         /// </summary>
-        public override string GetDiscriminatorForThisEndpointInstance()
+        public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
         {
             return null;
         }
