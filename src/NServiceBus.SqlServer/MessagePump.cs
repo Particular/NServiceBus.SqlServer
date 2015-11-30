@@ -19,15 +19,15 @@
 
         public void Init(Func<PushContext, Task> pipe, PushSettings settings)
         {
-            this.pipeline = pipe;
+            pipeline = pipe;
 
             receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionSupport);
 
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
             
-            this.inputQueue = new TableBasedQueue(settings.InputQueue, this.connectionParams.Schema);
-            this.errorQueue = new TableBasedQueue(settings.ErrorQueue, this.connectionParams.Schema);
+            inputQueue = new TableBasedQueue(settings.InputQueue, connectionParams.Schema);
+            errorQueue = new TableBasedQueue(settings.ErrorQueue, connectionParams.Schema);
 
             if (settings.PurgeOnStartup)
             {
@@ -135,7 +135,7 @@
                     return;
                 }
 
-                for (int i = 0; i < messageCount; i++)
+                for (var i = 0; i < messageCount; i++)
                 {
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -181,7 +181,7 @@
             }
         }
 
-        private static bool HandledByRetries(Exception ex)
+        static bool HandledByRetries(Exception ex)
         {
             return ex.GetType().Name == "MessageProcessingAbortedException";
         }
@@ -190,8 +190,8 @@
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
         ConnectionParams connectionParams;
-        readonly Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
-        readonly CriticalError criticalError;
+        Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
+        CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource cancellationTokenSource;

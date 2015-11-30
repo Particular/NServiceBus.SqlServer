@@ -7,7 +7,7 @@
 
     static class SqlMessageParser
     {
-        static readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
+        static JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 
         internal static SqlMessage ParseRawData(object[] rowData)
         {

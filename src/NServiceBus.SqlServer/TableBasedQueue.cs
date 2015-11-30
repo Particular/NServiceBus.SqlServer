@@ -11,7 +11,7 @@ namespace NServiceBus.Transports.SQLServer
     {
         public TableBasedQueue(string queueName, string schema)
         {
-            this.tableName = queueName;
+            tableName = queueName;
             this.schema = schema;
         }
 
@@ -19,7 +19,7 @@ namespace NServiceBus.Transports.SQLServer
         {
             //HINT: We do not have to escape schema and tableName. The are delimited identifiers in sql text.
             //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
-            var commandText = String.Format(Sql.ReceiveText, schema, tableName);
+            var commandText = string.Format(Sql.ReceiveText, schema, tableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -84,7 +84,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = String.Format(Sql.SendText, this.schema, this.tableName);
+            var commandText = string.Format(Sql.SendText, schema, tableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -99,7 +99,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
-            var commandText = String.Format(Sql.PeekText, this.schema, this.tableName);
+            var commandText = string.Format(Sql.PeekText, schema, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -122,7 +122,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public int Purge(SqlConnection connection)
         {
-            var commandText = string.Format(Sql.PurgeText, this.schema, this.tableName);
+            var commandText = string.Format(Sql.PurgeText, schema, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -135,7 +135,7 @@ namespace NServiceBus.Transports.SQLServer
             return $"{schema}.{tableName}";
         }
 
-        static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
+        static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
         
         string tableName;
         string schema;

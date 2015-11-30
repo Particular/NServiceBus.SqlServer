@@ -10,7 +10,7 @@
 
     class SqlServerMessageDispatcher : IDispatchMessages
     {
-        readonly ConnectionParams connectionParams;
+        ConnectionParams connectionParams;
 
         public SqlServerMessageDispatcher(ConnectionParams connectionParams)
         {
@@ -31,7 +31,7 @@
                 }
 
                 var destination = routingStrategy.Destination;
-                var queue = new TableBasedQueue(destination, this.connectionParams.Schema);
+                var queue = new TableBasedQueue(destination, connectionParams.Schema);
 
                 //Dispatch in separate transaction even if transaction scope already exists
                 if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
@@ -80,7 +80,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = new SqlConnection(this.connectionParams.ConnectionString))
+                using (var connection = new SqlConnection(connectionParams.ConnectionString))
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
 

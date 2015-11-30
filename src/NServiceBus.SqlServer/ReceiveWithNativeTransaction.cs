@@ -11,7 +11,7 @@
 
         public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, string connectionString)
         {
-            this.isolationLevel = GetSqlIsolationLevel(transactionOptions.IsolationLevel);
+            isolationLevel = GetSqlIsolationLevel(transactionOptions.IsolationLevel);
             this.connectionString = connectionString;
         }
 
