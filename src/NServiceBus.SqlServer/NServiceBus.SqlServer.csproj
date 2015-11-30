@@ -76,6 +76,7 @@
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="NullTransaction.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
