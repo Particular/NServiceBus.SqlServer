@@ -4,22 +4,21 @@
     <id>NServiceBus.SqlServer</id>
     <title>NServiceBus SqlServer</title>
     <version>$version$</version>
-    <authors>NServiceBus Ltd</authors>
-    <owners>Udi Dahan, Andreas Ohlund, John Simons</owners>
-    <licenseUrl>http://particular.net/LicenseAgreement</licenseUrl>
-    <projectUrl>http://particular.net/</projectUrl>
-    <iconUrl>http://s3.amazonaws.com/nuget.images/NServiceBus_32.png</iconUrl>
-    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <authors>$authors$</authors>
+    <owners>$owners$</owners>
+    <licenseUrl>$licenseUrl$</licenseUrl>
+    <projectUrl>$projectUrl$</projectUrl>
+    <iconUrl>$iconUrl$</iconUrl>
+    <copyright>$copyright$</copyright>
+    <requireLicenseAcceptance>$requireLicenseAcceptance$</requireLicenseAcceptance>
     <description>SQL transport support for NServiceBus</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright 2010-2014 NServiceBus. All rights reserved</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
     <dependencies>
-	  <dependency id="NServiceBus" version="[5.0.0, 6.0.0)" />
+	  <dependency id="NServiceBus" version="[5.0.0-unstable, 6.0.0)" />
     </dependencies>
   </metadata>
   <files>
-    <file src="..\..\binaries\NServiceBus.Transports.SqlServer.???" target="lib\net45" />
-    <file src="..\..\packaging\nuget\tools\install.ps1" target="tools" />
+    <file src="..\..\binaries\NServiceBus.Transports.SqlServer.???" target="lib\net452" />
   </files>
 </package>
