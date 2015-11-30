@@ -266,8 +266,6 @@
       <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1152\FakeTransport\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
