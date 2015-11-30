@@ -56,6 +56,10 @@
       <HintPath>..\packages\NServiceBus.6.0.0-unstable1155\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Obsolete, Version=4.0.3.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obsolete.Fody.4.0.3\Lib\portable-net4+sl5+wp8+win8+wpa81+MonoAndroid16+MonoTouch40\Obsolete.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -70,6 +74,7 @@
     <Compile Include="ConnectionParams.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
+    <Compile Include="obsoletes.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
@@ -86,7 +91,6 @@
     <Compile Include="ReceiveWithNoTransaction.cs" />
     <Compile Include="ReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
-    <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>
   <ItemGroup>
