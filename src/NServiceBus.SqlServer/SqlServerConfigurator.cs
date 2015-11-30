@@ -12,14 +12,14 @@
             //TODO: this is something that needs discussing. What happens when both msmq and sql are enabled (which will be the case probably)
             EnableByDefault();
 
-            ThrowIvV2ConfigurationFileSettingsFound();
+            ThrowIfV2ConfigurationFileSettingsFound();
         }
 
         protected override void Setup(FeatureConfigurationContext context)
         {
         }
 
-        private void ThrowIvV2ConfigurationFileSettingsFound()
+        private void ThrowIfV2ConfigurationFileSettingsFound()
         {
             var connectionSettings = ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>().ToList();
 

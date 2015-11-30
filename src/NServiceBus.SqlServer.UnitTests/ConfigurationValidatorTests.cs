@@ -64,5 +64,23 @@
             Assert.IsTrue(result.Success);
             Assert.IsNullOrEmpty(result.Message);
         }
+
+        [Test]
+        public void Validation_fails_when_only_single_endpoint_specific_transport_connection_string_exists()
+        {
+            var result = Validate(new ConnectionStringSettings("NServiceBus/Transport/Endpoint1", "Soruce = xxx;"));
+
+            Assert.IsFalse(result.Success);
+            Assert.IsNotNullOrEmpty(result.Message);
+        }
+
+        [Test]
+        public void Validation_passes_when_there_is_no_transport_connection_string()
+        {
+            var result = Validate(new ConnectionStringSettings("NoTransport", "Soruce = xxx;"));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsNullOrEmpty(result.Message);
+        }
     }
 }
