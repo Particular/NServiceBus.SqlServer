@@ -102,7 +102,7 @@ namespace NServiceBus.Transports.SQLServer
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string GetDiscriminatorForThisEndpointInstance()
+        public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
         {
             return null;
         }

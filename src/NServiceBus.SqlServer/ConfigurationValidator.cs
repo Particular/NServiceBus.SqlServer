@@ -24,7 +24,7 @@
 
             Func<string, bool> hasSchemaOverride = cs => new DbConnectionStringBuilder { ConnectionString = cs }.ContainsKey("Queue Schema");
 
-            if (hasSchemaOverride(transportConnectionSettings.First().ConnectionString))
+            if (transportConnectionSettings.Any() && hasSchemaOverride(transportConnectionSettings.First().ConnectionString))
             {
                 message = @"Schema override in connection string is not supported anymore.
                             Please see documentation for setting up non defautl scheam value";
