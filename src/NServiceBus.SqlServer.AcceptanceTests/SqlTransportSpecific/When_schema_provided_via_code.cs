@@ -37,7 +37,6 @@ namespace NServiceBus.SqlServer.AcceptanceTests.SqlTransportSpecific
             public Sender()
             {
                 EndpointSetup<DefaultServer>(c =>
-
                     c.UseTransport<SqlServerTransport>()
                      .DefaultSchema("WillBeOverriddenViaConnectionString")
                      .ConnectionString(@"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;Queue Schema=dbo")
@@ -63,7 +62,9 @@ namespace NServiceBus.SqlServer.AcceptanceTests.SqlTransportSpecific
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
                 if (Context.Id != message.Id)
+                {
                     return Task.FromResult(0);
+                }
 
                 Context.WasCalled = true;
                 return Task.FromResult(0);
