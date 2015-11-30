@@ -34,11 +34,11 @@
             }
 
             //Single connection string
-            var transportConnectionString = transportConnectionSettings.Single().ConnectionString;
+            var transportConnectionSetting = transportConnectionSettings.Single();
 
             Func<string, bool> isGlobalConnectionString = cs => string.Equals(cs, TransportConnectionStringPrefix, StringComparison.InvariantCultureIgnoreCase);
 
-            if (isGlobalConnectionString(transportConnectionString) == false)
+            if (isGlobalConnectionString(transportConnectionSetting.Name) == false)
             {
                message = @"Multidatabase setup is not supported in this version of sql transport. 
                            Please see documentation for setting up non default schema per each endpoint";
@@ -48,7 +48,7 @@
 
             Func<string, bool> hasSchemaOverride = cs => new DbConnectionStringBuilder { ConnectionString = cs }.ContainsKey(SchemaOverridePart);
 
-            if (hasSchemaOverride(transportConnectionString))
+            if (hasSchemaOverride(transportConnectionSetting.ConnectionString))
             {
                 message = @"Schema override in connection string is not supported anymore.
                             Please see documentation for setting up non defautl scheam value";
