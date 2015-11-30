@@ -6,7 +6,7 @@ namespace NServiceBus.Transports.SQLServer
     // Should we make this async in core?
     class SqlServerQueueCreator : ICreateQueues
     {
-        readonly ConnectionParams connectionParams;
+        ConnectionParams connectionParams;
 
         public void CreateQueueIfNecessary(string address, string account)
         {

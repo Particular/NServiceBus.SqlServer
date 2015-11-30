@@ -13,7 +13,7 @@ namespace NServiceBus.Transports.SQLServer
     public class SqlServerTransport : TransportDefinition
     {
         /// <summary>
-        /// Ctor
+        /// Initializes a new insatnce of <see cref="SqlServerTransport"/>.
         /// </summary>
         public SqlServerTransport()
         {
@@ -24,7 +24,6 @@ namespace NServiceBus.Transports.SQLServer
         /// <summary>
         /// Registers components necessary for receiving messages from the transport.
         /// </summary>
-        /// <param name="context"></param>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
             var schemaSpecifiedInCode = context.Settings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
@@ -59,7 +58,6 @@ namespace NServiceBus.Transports.SQLServer
         /// <summary>
         /// Registers components necessary for sending messages.
         /// </summary>
-        /// <param name="context"></param>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
             var schemaSpecifiedInCode = context.GlobalSettings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
@@ -69,9 +67,8 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.GetSupportedDeliveryConstraints"/>.
         /// </summary>
-        /// <returns></returns>
         public override IEnumerable<Type> GetSupportedDeliveryConstraints()
         {
             return new[]
@@ -81,37 +78,32 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.GetTransactionSupport"/>.
         /// </summary>
-        /// <returns></returns>
         public override TransactionSupport GetTransactionSupport()
         {
             return TransactionSupport.Distributed;
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.GetSubscriptionManager"/>.
         /// </summary>
-        /// <returns></returns>
         public override IManageSubscriptions GetSubscriptionManager()
         {
             throw new NotSupportedException("Sql don't support native pub sub");
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.GetDiscriminatorForThisEndpointInstance"/>.
         /// </summary>
-        /// <returns></returns>
         public override string GetDiscriminatorForThisEndpointInstance()
         {
             return null;
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.ToTransportAddress"/>.
         /// </summary>
-        /// <param name="logicalAddress"></param>
-        /// <returns></returns>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             var endpointName = logicalAddress.EndpointInstanceName.EndpointName.ToString();
@@ -131,10 +123,8 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         /// <summary>
-        /// 
+        /// <see cref="TransportDefinition.GetOutboundRoutingPolicy"/>.
         /// </summary>
-        /// <param name="settings"></param>
-        /// <returns></returns>
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
             return new OutboundRoutingPolicy(OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend);

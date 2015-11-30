@@ -1,5 +1,4 @@
-﻿
-namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using NServiceBus.Configuration.AdvanceExtensibility;
 
@@ -13,7 +12,6 @@ namespace NServiceBus.Transports.SQLServer
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="schemaName">Name of the schema to use instead of default value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
             Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);

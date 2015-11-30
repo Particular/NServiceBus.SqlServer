@@ -7,7 +7,7 @@ namespace NServiceBus.Transports.SQLServer
 
     class ReceiveWithNoTransaction : ReceiveStrategy
     {
-        readonly string connectionString;
+        string connectionString;
 
         public ReceiveWithNoTransaction(string connectionString)
         {

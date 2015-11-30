@@ -18,7 +18,7 @@ namespace NServiceBus.Transports.SQLServer
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-            using (var sqlConnection = new SqlConnection(this.connectionString))
+            using (var sqlConnection = new SqlConnection(connectionString))
             {
                 await sqlConnection.OpenAsync().ConfigureAwait(false);
 

@@ -25,7 +25,7 @@ namespace NServiceBus.Transports.SQLServer
 
         }
 
-        private static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)
+        static string TryExtractSchemaName(string connectionStringWithSchema, out string schemaName)
         {
             const string key = "Queue Schema";
 
