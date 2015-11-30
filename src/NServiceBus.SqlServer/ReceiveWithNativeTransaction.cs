@@ -40,7 +40,7 @@
 
                             using (var bodyStream = message.BodyStream)
                             {
-                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new NativeSqlTransaction(transaction), new ContextBag());
+                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new NullTransaction(), new ContextBag());
                                 pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NativeTransaction, Transaction = transaction});
 
                                 await onMessage(pushContext).ConfigureAwait(false);
@@ -87,15 +87,5 @@
 
         System.Data.IsolationLevel isolationLevel;
         string connectionString;
-    }
-
-    class NativeSqlTransaction : TransportTransaction
-    {
-        public SqlTransaction SqlTransaction { get; }
-
-        public NativeSqlTransaction(SqlTransaction sqlTransaction)
-        {
-            SqlTransaction = sqlTransaction;
-        }
     }
 }
