@@ -28,11 +28,11 @@
         /// Specifies callback which provides custom schema name for given table name. If null value is returned a default schema name will be used.
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="tableNameToSchema">Function which takes table name and returns schema name.</param>
+        /// <param name="schemaForQueueName">Function which takes table name and returns schema name.</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> tableNameToSchema)
+        public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> schemaForQueueName)
         {
-            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.SchemaOverrideCallbackSettingsKey, tableNameToSchema);
+            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.SchemaOverrideCallbackSettingsKey, schemaForQueueName);
 
             return transportExtensions;
         }
