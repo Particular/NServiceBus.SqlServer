@@ -259,6 +259,11 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1155\UnitOfWork\When_a_subscription_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1155\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1155\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="When_custom_schema_configured_with_default_override.cs" />
+    <Compile Include="When_custom_schema_configured_with_message_mappings.cs" />
+    <Compile Include="When_custom_schema_configured.cs" />
+    <Compile Include="When_custom_schema_configured_with_transport_discriminator.cs" />
+    <Compile Include="When_custom_schem_configured_with_queue_specific_override.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">

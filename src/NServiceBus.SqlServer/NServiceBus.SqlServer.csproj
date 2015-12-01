@@ -72,7 +72,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ConfigurationValidator.cs" />
-    <Compile Include="ConnectionParams.cs" />
+    <Compile Include="SqlServerSettingsKeys.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
@@ -85,6 +85,8 @@
     <Compile Include="Sql.cs" />
     <Compile Include="SqlMessage.cs" />
     <Compile Include="SqlMessageParser.cs" />
+    <Compile Include="SqlServerAddress.cs" />
+    <Compile Include="SqlServerAddressProvider.cs" />
     <Compile Include="SqlServerConfigurator.cs" />
     <Compile Include="SqlServerMessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
@@ -94,6 +96,7 @@
     <Compile Include="ReceiveWithNoTransaction.cs" />
     <Compile Include="ReceiveStrategy.cs" />
     <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="TableBasedQueue.cs" />
   </ItemGroup>
   <ItemGroup>

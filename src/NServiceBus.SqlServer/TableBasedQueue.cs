@@ -9,17 +9,16 @@ namespace NServiceBus.Transports.SQLServer
     
     class TableBasedQueue
     {
-        public TableBasedQueue(string queueName, string schema)
+        public TableBasedQueue(SqlServerAddress address)
         {
-            tableName = queueName;
-            this.schema = schema;
+            this.address = address;
         }
 
         public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
             //HINT: We do not have to escape schema and tableName. The are delimited identifiers in sql text.
             //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
-            var commandText = string.Format(Sql.ReceiveText, schema, tableName);
+            var commandText = string.Format(Sql.ReceiveText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -84,7 +83,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = string.Format(Sql.SendText, schema, tableName);
+            var commandText = string.Format(Sql.SendText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -99,7 +98,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
-            var commandText = string.Format(Sql.PeekText, schema, tableName);
+            var commandText = string.Format(Sql.PeekText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -122,7 +121,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public int Purge(SqlConnection connection)
         {
-            var commandText = string.Format(Sql.PurgeText, schema, tableName);
+            var commandText = string.Format(Sql.PurgeText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -132,12 +131,11 @@ namespace NServiceBus.Transports.SQLServer
 
         public override string ToString()
         {
-            return $"{schema}.{tableName}";
+            return $"{address.SchemaName}.{address.TableName}";
         }
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
         
-        string tableName;
-        string schema;
+        SqlServerAddress address;
     }
 }

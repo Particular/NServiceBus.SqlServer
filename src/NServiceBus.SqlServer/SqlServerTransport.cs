@@ -2,7 +2,6 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
@@ -21,23 +20,38 @@ namespace NServiceBus.Transports.SQLServer
             RequireOutboxConsent = true;
         }
 
+        SqlServerAddressProvider CreateAddressParser(ReadOnlySettings settings)
+        {
+            string defaultSchemaOverride;
+            Func<string, string> schemaOverrider;
+
+            settings.TryGet(SqlServerSettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
+            settings.TryGet(SqlServerSettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
+
+            var parser = new SqlServerAddressProvider("dbo", defaultSchemaOverride, schemaOverrider);
+
+            return parser;
+        }
+
         /// <summary>
         /// <see cref="TransportDefinition.ConfigureForReceiving"/>
         /// </summary>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
-            var schemaSpecifiedInCode = context.Settings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
-            var connectionParams = new ConnectionParams(context.ConnectionString, schemaSpecifiedInCode);
+            var connectionString = context.ConnectionString;
+            var addressParser = CreateAddressParser(context.Settings);
 
-            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionParams));
+            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionString, addressParser));
             
             var transactionOptions = new TransactionOptions
             {
                 IsolationLevel = context.Settings.Get<IsolationLevel>("Transactions.IsolationLevel"),
                 Timeout = context.Settings.Get<TimeSpan>("Transactions.DefaultTimeout")
-            }; 
+            };
 
-            context.SetMessagePumpFactory(c => new MessagePump(c, guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionParams.ConnectionString), connectionParams));
+            Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionString);
+
+            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionString, addressParser));
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, string connectionString)
@@ -60,10 +74,10 @@ namespace NServiceBus.Transports.SQLServer
         /// </summary>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
-            var schemaSpecifiedInCode = context.GlobalSettings.GetOrDefault<string>(ConnectionParams.DefaultSchemaSettingsKey);
-            var connectionParams = new ConnectionParams(context.ConnectionString, schemaSpecifiedInCode);
+            var connectionString = context.ConnectionString;
+            var parser = CreateAddressParser(context.GlobalSettings);
 
-            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionParams));
+            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionString, parser));
         }
 
         /// <summary>
@@ -98,7 +112,7 @@ namespace NServiceBus.Transports.SQLServer
         /// </summary>
         public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
         {
-            return null;
+            return CreateAddressParser(settings).DefaultSchema;
         }
 
         /// <summary>
@@ -106,20 +120,7 @@ namespace NServiceBus.Transports.SQLServer
         /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            var endpointName = logicalAddress.EndpointInstanceName.EndpointName.ToString();
-            var qualifier = logicalAddress.Qualifier;
-            var userDiscriminator = logicalAddress.EndpointInstanceName.UserDiscriminator;
-
-            var nonEmptyParts = new[]
-            {
-                endpointName,
-                qualifier,
-                userDiscriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-            
-            var transportAddress = string.Join(".", nonEmptyParts);
-
-            return transportAddress;
+            return SqlServerAddress.ToTransportAddressText(logicalAddress);
         }
 
         /// <summary>

@@ -8,14 +8,8 @@ namespace NServiceBus.Transports.SQLServer
     using System.Collections.Generic;
     using NServiceBus.Transports.SQLServer.ConnectionStrings;
 
-    public static class SqlServerTransportSettingsExtensions
+    public static partial class SqlServerTransportSettingsExtensions
     {
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "")]
-        public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
-        {
-            throw new NotImplementedException();
-        }
-
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "")]
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,
