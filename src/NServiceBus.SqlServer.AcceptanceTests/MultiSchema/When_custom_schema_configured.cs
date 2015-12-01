@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
     using System.Threading.Tasks;
     using NServiceBus.AcceptanceTesting;

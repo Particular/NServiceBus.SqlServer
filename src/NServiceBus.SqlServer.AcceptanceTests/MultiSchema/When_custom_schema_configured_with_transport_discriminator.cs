@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -6,7 +6,7 @@
     using NUnit.Framework;
     using static AcceptanceTesting.Customization.Conventions;
 
-    public class When_custom_schema_configured_with_message_mappings : When_custom_schema_configured
+    public class When_custom_schema_configured_with_transport_discriminator : When_custom_schema_configured
     {
         [Test]
         public async void Should_receive_message()
@@ -26,7 +26,9 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.Routing().UnicastRoutingTable.AddStatic(typeof(Message), $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}");
+                    var recieverName = $"{EndpointNamingConvention(typeof(Receiver))}";
+
+                    c.Routing().UnicastRoutingTable.AddStatic(typeof(Message), new EndpointInstanceName(new EndpointName(recieverName), null, ReceiverSchema));
                 });
             }
         }

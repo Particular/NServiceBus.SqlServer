@@ -1,15 +1,15 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
-    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
+    using static AcceptanceTesting.Customization.Conventions;
 
-    public class When_custom_schema_configured_with_default_override : When_custom_schema_configured
+    public class When_custom_schema_configured_with_message_mappings : When_custom_schema_configured
     {
         [Test]
-        public async void Should_recieive_message()
+        public async void Should_receive_message()
         {
             await Scenario.Define<Context>()
                 .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
@@ -26,10 +26,9 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema);
-                }).AddMapping<Message>(typeof(Receiver));
+                    c.Routing().UnicastRoutingTable.AddStatic(typeof(Message), $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}");
+                });
             }
         }
     }
 }
- 
