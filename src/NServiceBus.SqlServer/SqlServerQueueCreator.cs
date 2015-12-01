@@ -6,11 +6,18 @@ namespace NServiceBus.Transports.SQLServer
 
     class SqlServerQueueCreator : ICreateQueues
     {
-        ConnectionParams connectionParams;
+        string connectionString;
+        readonly SqlServerAddressProvider addressProvider;
+
+        public SqlServerQueueCreator(string connectionString, SqlServerAddressProvider addressProvider)
+        {
+            this.connectionString = connectionString;
+            this.addressProvider = addressProvider;
+        }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            using (var connection = new SqlConnection(connectionParams.ConnectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();
 
@@ -18,20 +25,21 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                     {
-                        await CreateQueue(receivingAddress, connection, transaction);
+                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
                     }
                     foreach (var receivingAddress in queueBindings.SendingAddresses)
                     {
-                        await CreateQueue(receivingAddress, connection, transaction);
+                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
                     }
                     transaction.Commit();
                 }
             }
         }
 
-        async Task CreateQueue(string address, SqlConnection connection, SqlTransaction transaction)
+        async Task CreateQueue(SqlServerAddress address, SqlConnection connection, SqlTransaction transaction)
         {
-            var sql = string.Format(Sql.CreateQueueText, connectionParams.Schema, address);
+            var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -39,11 +47,6 @@ namespace NServiceBus.Transports.SQLServer
             {
                 await command.ExecuteNonQueryAsync();
             }
-        }
-
-        public SqlServerQueueCreator(ConnectionParams connectionParams)
-        {
-            this.connectionParams = connectionParams;
         }
     }
 }

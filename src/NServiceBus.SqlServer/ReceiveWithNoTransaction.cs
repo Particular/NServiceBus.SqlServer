@@ -41,8 +41,5 @@ namespace NServiceBus.Transports.SQLServer
                 }
             }
         }
-        private class NullTransaction : TransportTransaction
-        {
-        }
     }
 }

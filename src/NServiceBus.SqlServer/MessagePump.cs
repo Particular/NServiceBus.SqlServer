@@ -10,10 +10,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, ConnectionParams connectionParams)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, string connectionString, SqlServerAddressProvider addressProvider)
         {
-            this.connectionParams = connectionParams;
+            this.connectionString = connectionString;
             this.receiveStrategyFactory = receiveStrategyFactory;
+            this.addressProvider = addressProvider;
             this.criticalError = criticalError;
         }
 
@@ -26,12 +27,12 @@
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
             
-            inputQueue = new TableBasedQueue(settings.InputQueue, connectionParams.Schema);
-            errorQueue = new TableBasedQueue(settings.ErrorQueue, connectionParams.Schema);
+            inputQueue = new TableBasedQueue(addressProvider.Parse(settings.InputQueue));
+            errorQueue = new TableBasedQueue(addressProvider.Parse(settings.ErrorQueue));
 
             if (settings.PurgeOnStartup)
             {
-                using (var connection = new SqlConnection(connectionParams.ConnectionString))
+                using (var connection = new SqlConnection(connectionString))
                 {
                     var purgedRowsCount = inputQueue.Purge(connection);
 
@@ -103,7 +104,7 @@
 
                 try
                 {
-                    using (var connection = new SqlConnection(connectionParams.ConnectionString))
+                    using (var connection = new SqlConnection(connectionString))
                     {
                         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
@@ -187,8 +188,9 @@
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
-        ConnectionParams connectionParams;
+        string connectionString;
         Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
+        readonly SqlServerAddressProvider addressProvider;
         CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;

@@ -53,7 +53,11 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-unstable1152\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable1155\lib\net452\NServiceBus.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Obsolete, Version=4.0.3.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
+      <HintPath>..\packages\Obsolete.Fody.4.0.3\Lib\portable-net4+sl5+wp8+win8+wpa81+MonoAndroid16+MonoTouch40\Obsolete.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -67,9 +71,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="ConnectionParams.cs" />
+    <Compile Include="ConfigurationValidator.cs" />
+    <Compile Include="SqlServerSettingsKeys.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
+    <Compile Include="InternalsVisibleTo.cs" />
+    <Compile Include="NullTransaction.cs" />
+    <Compile Include="obsoletes.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="ReceiveResult.cs" />
@@ -77,6 +85,8 @@
     <Compile Include="Sql.cs" />
     <Compile Include="SqlMessage.cs" />
     <Compile Include="SqlMessageParser.cs" />
+    <Compile Include="SqlServerAddress.cs" />
+    <Compile Include="SqlServerAddressProvider.cs" />
     <Compile Include="SqlServerConfigurator.cs" />
     <Compile Include="SqlServerMessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />

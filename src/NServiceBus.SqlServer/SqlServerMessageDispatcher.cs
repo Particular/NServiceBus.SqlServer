@@ -10,11 +10,13 @@
 
     class SqlServerMessageDispatcher : IDispatchMessages
     {
-        ConnectionParams connectionParams;
+        string connectionString;
+        SqlServerAddressProvider addressProvider;
 
-        public SqlServerMessageDispatcher(ConnectionParams connectionParams)
+        public SqlServerMessageDispatcher(string connectionString, SqlServerAddressProvider addressProvider)
         {
-            this.connectionParams = connectionParams;
+            this.connectionString = connectionString;
+            this.addressProvider = addressProvider;
         }
 
         // We need to check if we can support cancellation in here as well?
@@ -30,8 +32,8 @@
                     throw new Exception("The Sql transport only supports the `DirectRoutingStrategy`, strategy required " + dispatchOptions.AddressTag.GetType().Name);
                 }
 
-                var destination = routingStrategy.Destination;
-                var queue = new TableBasedQueue(destination, connectionParams.Schema);
+                var destination = addressProvider.Parse(routingStrategy.Destination);
+                var queue = new TableBasedQueue(destination);
 
                 //Dispatch in separate transaction even if transaction scope already exists
                 if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
@@ -53,7 +55,7 @@
 
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, TransportOperation operation)
         {
-            using (var connection = new SqlConnection(connectionParams.ConnectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync().ConfigureAwait(false);
 
@@ -80,7 +82,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = new SqlConnection(connectionParams.ConnectionString))
+                using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
 
