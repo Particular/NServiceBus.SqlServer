@@ -15,10 +15,8 @@
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = connectionFactory.OpenNewConnection())
+            using (var sqlConnection = await connectionFactory.OpenNewConnection())
             {
-                await sqlConnection.OpenAsync().ConfigureAwait(false);
-
                 using (var transaction = sqlConnection.BeginTransaction(isolationLevel))
                 {
                     try

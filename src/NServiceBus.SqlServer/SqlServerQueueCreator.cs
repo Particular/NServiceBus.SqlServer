@@ -17,10 +17,8 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            using (var connection = connectionFactory.OpenNewConnection())
+            using (var connection = await connectionFactory.OpenNewConnection())
             {
-                connection.Open();
-
                 using (var transaction = connection.BeginTransaction())
                 {
                     foreach (var receivingAddress in queueBindings.ReceivingAddresses)
@@ -31,6 +29,7 @@ namespace NServiceBus.Transports.SQLServer
                     {
                         await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
                     }
+
                     transaction.Commit();
                 }
             }

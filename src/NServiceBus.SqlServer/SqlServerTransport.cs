@@ -3,6 +3,7 @@ namespace NServiceBus
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
@@ -38,7 +39,7 @@ namespace NServiceBus
 
         SqlConnectionFactory CreateConnectoinFactory(string connectionString, ReadOnlySettings settings)
         {
-            Func<string, SqlConnection> factoryOverride;
+            Func<string, Task<SqlConnection>> factoryOverride;
 
             if (settings.TryGet(SqlServerSettingsKeys.ConnectionFactoryOverride, out factoryOverride))
             {

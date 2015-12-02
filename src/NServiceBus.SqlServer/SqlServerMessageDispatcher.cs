@@ -55,10 +55,8 @@
 
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, TransportOperation operation)
         {
-            using (var connection = connectionFactory.OpenNewConnection())
+            using (var connection = await connectionFactory.OpenNewConnection())
             {
-                await connection.OpenAsync().ConfigureAwait(false);
-
                 using (var transaction = connection.BeginTransaction())
                 {
                     await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
@@ -82,10 +80,8 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = connectionFactory.OpenNewConnection())
+                using (var connection = await connectionFactory.OpenNewConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
-
                     await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
                 }
 

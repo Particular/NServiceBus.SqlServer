@@ -32,7 +32,8 @@
 
             if (settings.PurgeOnStartup)
             {
-                using (var connection = connectionFactory.OpenNewConnection())
+                //TODO: this is wrong. Fix after init is made async in core
+                using (var connection = connectionFactory.OpenNewConnection().GetAwaiter().GetResult())
                 {
                     var purgedRowsCount = inputQueue.Purge(connection);
 
@@ -104,11 +105,10 @@
 
                 try
                 {
-                    using (var connection = connectionFactory.OpenNewConnection())
+                    using (var connection = await connectionFactory.OpenNewConnection())
                     {
-                        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
                         messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
+
                         peekCircuitBreaker.Success();
 
                         if (messageCount == 0)

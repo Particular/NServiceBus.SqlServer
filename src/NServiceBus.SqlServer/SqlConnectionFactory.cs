@@ -2,31 +2,32 @@
 {
     using System;
     using System.Data.SqlClient;
+    using System.Threading.Tasks;
 
     class SqlConnectionFactory
     {
         readonly string connectionString;
-        readonly Func<string, SqlConnection> openNewConnection;
+        readonly Func<string, Task<SqlConnection>> openNewConnection;
 
-        public SqlConnectionFactory(string connectionString, Func<string, SqlConnection> factory)
+        public SqlConnectionFactory(string connectionString, Func<string, Task<SqlConnection>> factory)
         {
             this.connectionString = connectionString;
             openNewConnection = factory;
         }
 
-        public SqlConnection OpenNewConnection()
+        public async Task<SqlConnection> OpenNewConnection()
         {
-            return openNewConnection(connectionString);
+            return await openNewConnection(connectionString);
         }
 
         public static SqlConnectionFactory Default(string connectionString)
         {
-            return new SqlConnectionFactory(connectionString, cs =>
+            return new SqlConnectionFactory(connectionString, async cs =>
             {
                 var connection = new SqlConnection(cs);
                 try
                 {
-                    connection.Open();
+                    await connection.OpenAsync().ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
