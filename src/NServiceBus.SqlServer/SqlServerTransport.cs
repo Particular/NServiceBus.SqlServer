@@ -37,7 +37,7 @@ namespace NServiceBus
             return parser;
         }
 
-        SqlConnectionFactory CreateConnectoinFactory(string connectionString, ReadOnlySettings settings)
+        SqlConnectionFactory CreateConnectionFactory(string connectionString, ReadOnlySettings settings)
         {
             Func<string, Task<SqlConnection>> factoryOverride;
 
@@ -54,7 +54,7 @@ namespace NServiceBus
         /// </summary>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
-            var connectionFactory = CreateConnectoinFactory(context.ConnectionString, context.Settings);
+            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
             var addressParser = CreateAddressParser(context.Settings);
 
             context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionFactory, addressParser));
@@ -94,7 +94,7 @@ namespace NServiceBus
         /// </summary>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
-            var connectionFactory = CreateConnectoinFactory(context.ConnectionString, context.GlobalSettings);
+            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.GlobalSettings);
             var parser = CreateAddressParser(context.GlobalSettings);
 
             context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionFactory, parser));
