@@ -3,17 +3,16 @@
     using System;
     using System.Threading.Tasks;
     using System.Collections.Concurrent;
-    using System.Data.SqlClient;
     using System.Linq;
     using System.Threading;
     using Logging;
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, string connectionString, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
         {
-            this.connectionString = connectionString;
             this.receiveStrategyFactory = receiveStrategyFactory;
+            this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.criticalError = criticalError;
@@ -33,7 +32,7 @@
 
             if (settings.PurgeOnStartup)
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = connectionFactory.OpenNewConnection())
                 {
                     var purgedRowsCount = inputQueue.Purge(connection);
 
@@ -105,7 +104,7 @@
 
                 try
                 {
-                    using (var connection = new SqlConnection(connectionString))
+                    using (var connection = connectionFactory.OpenNewConnection())
                     {
                         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
@@ -189,10 +188,10 @@
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
-        string connectionString;
         Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
-        readonly SqlServerAddressProvider addressProvider;
-        readonly TimeSpan waitTimeCircuitBreaker;
+        SqlConnectionFactory connectionFactory;
+        SqlServerAddressProvider addressProvider;
+        TimeSpan waitTimeCircuitBreaker;
         CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;

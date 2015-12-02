@@ -54,12 +54,6 @@ namespace NServiceBus.Transports.SQLServer
             throw new NotImplementedException();
         }
 
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "Multi-database setup is currently not supported.")]
-        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
-        {
-            throw new NotImplementedException();
-        }
-
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "That config option is no longer supported.")]
         public static TransportExtensions<SqlServerTransport> PauseAfterReceiveFailure(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan delayTime)
         {

@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using NServiceBus.Configuration.AdvanceExtensibility;
 
     //TODO: let's move classes into subfolders?
@@ -47,6 +48,19 @@
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
             transportExtensions.GetSettings().Set(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, waitTime);
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies connection factory to be used by sql transport.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="sqlConnectionFactory">Factory that takes connection string and returns connection ready for usage.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
+        {
+            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
+
             return transportExtensions;
         }
     }

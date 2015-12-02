@@ -10,12 +10,12 @@
 
     class SqlServerMessageDispatcher : IDispatchMessages
     {
-        string connectionString;
-        SqlServerAddressProvider addressProvider;
+        readonly SqlConnectionFactory connectionFactory;
+        readonly SqlServerAddressProvider addressProvider;
 
-        public SqlServerMessageDispatcher(string connectionString, SqlServerAddressProvider addressProvider)
+        public SqlServerMessageDispatcher(SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider)
         {
-            this.connectionString = connectionString;
+            this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
         }
 
@@ -55,7 +55,7 @@
 
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, TransportOperation operation)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = connectionFactory.OpenNewConnection())
             {
                 await connection.OpenAsync().ConfigureAwait(false);
 
@@ -82,7 +82,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = connectionFactory.OpenNewConnection())
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
 
