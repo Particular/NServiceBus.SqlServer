@@ -1,10 +1,12 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus
 {
     using System;
     using System.Collections.Generic;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
+    using NServiceBus.Transports;
+    using NServiceBus.Transports.SQLServer;
 
     /// <summary>
     /// SqlServer Transport
