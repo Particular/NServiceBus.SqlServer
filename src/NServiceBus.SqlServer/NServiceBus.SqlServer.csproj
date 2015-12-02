@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="CircuitBreakerSettingsKeys.cs" />
     <Compile Include="ConfigurationValidator.cs" />
     <Compile Include="SqlServerSettingsKeys.cs" />
     <Compile Include="Guard\Guard.cs" />

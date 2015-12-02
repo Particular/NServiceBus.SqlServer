@@ -10,11 +10,12 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, string connectionString, SqlServerAddressProvider addressProvider)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, string connectionString, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
         {
             this.connectionString = connectionString;
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.addressProvider = addressProvider;
+            this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.criticalError = criticalError;
         }
 
@@ -24,8 +25,8 @@
 
             receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionSupport);
 
-            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
-            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", TimeSpan.FromSeconds(30), ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
+            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
+            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
             
             inputQueue = new TableBasedQueue(addressProvider.Parse(settings.InputQueue));
             errorQueue = new TableBasedQueue(addressProvider.Parse(settings.ErrorQueue));
@@ -191,6 +192,7 @@
         string connectionString;
         Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
         readonly SqlServerAddressProvider addressProvider;
+        readonly TimeSpan waitTimeCircuitBreaker;
         CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;

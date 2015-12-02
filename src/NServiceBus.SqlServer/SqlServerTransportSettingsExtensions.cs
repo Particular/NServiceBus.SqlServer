@@ -46,19 +46,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
-            //TODO: implement parameters for passing this value to CircuitBreaker
-            return transportExtensions;
-        }
-
-        /// <summary>
-        /// Overrides the default time to pause after a failure while trying to receive a message.
-        /// </summary>
-        /// <param name="transportExtensions"></param>
-        /// <param name="pauseTime">Time to pause after failure while receiving a message.</param>
-        /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> PauseAfterReceiveFailure(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan pauseTime)
-        {
-            //TODO: implement parameters for passing this value to CircuitBreaker
+            transportExtensions.GetSettings().Set(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, waitTime);
             return transportExtensions;
         }
     }

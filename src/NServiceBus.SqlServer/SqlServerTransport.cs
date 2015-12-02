@@ -51,9 +51,13 @@ namespace NServiceBus
                 Timeout = context.Settings.Get<TimeSpan>("Transactions.DefaultTimeout")
             };
 
+            TimeSpan waitTimeCircuitBreaker;
+            if(context.Settings.TryGet(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
+                waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
+
             Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionString);
 
-            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionString, addressParser));
+            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionString, addressParser, waitTimeCircuitBreaker));
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, string connectionString)
