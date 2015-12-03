@@ -1,26 +1,22 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Extensibility;
 
     class ReceiveWithNativeTransaction : ReceiveStrategy
     {
-
-        public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, string connectionString)
+        public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
+            this.connectionFactory = connectionFactory;
             isolationLevel = GetSqlIsolationLevel(transactionOptions.IsolationLevel);
-            this.connectionString = connectionString;
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = new SqlConnection(connectionString))
+            using (var sqlConnection = await connectionFactory.OpenNewConnection())
             {
-                await sqlConnection.OpenAsync().ConfigureAwait(false);
-
                 using (var transaction = sqlConnection.BeginTransaction(isolationLevel))
                 {
                     try
@@ -86,6 +82,6 @@
         }
 
         System.Data.IsolationLevel isolationLevel;
-        string connectionString;
+        SqlConnectionFactory connectionFactory;
     }
 }

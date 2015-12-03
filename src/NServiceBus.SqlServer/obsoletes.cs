@@ -1,12 +1,9 @@
 ﻿#pragma warning disable 1591
 
-//TODO: add meaningful messages 
-
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Collections.Generic;
-    using System.Data.SqlClient;
     using NServiceBus.Transports.SQLServer.ConnectionStrings;
 
     public static partial class SqlServerTransportSettingsExtensions
@@ -50,12 +47,6 @@ namespace NServiceBus.Transports.SQLServer
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             Func<string, ConnectionInfo> connectionInformationProvider)
-        {
-            throw new NotImplementedException();
-        }
-
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "Multi-database setup is currently not supported.")]
-        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, SqlConnection> sqlConnectionFactory)
         {
             throw new NotImplementedException();
         }

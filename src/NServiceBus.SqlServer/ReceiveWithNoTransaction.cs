@@ -1,24 +1,22 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
 
     class ReceiveWithNoTransaction : ReceiveStrategy
     {
-        string connectionString;
+        readonly SqlConnectionFactory connectionFactory;
 
-        public ReceiveWithNoTransaction(string connectionString)
+        public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
         {
-            this.connectionString = connectionString;
+            this.connectionFactory = connectionFactory;
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = new SqlConnection(connectionString))
+            using (var sqlConnection = await connectionFactory.OpenNewConnection())
             {
-                await sqlConnection.OpenAsync().ConfigureAwait(false);
                 var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)

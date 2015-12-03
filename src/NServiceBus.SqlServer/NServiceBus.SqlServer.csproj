@@ -73,6 +73,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="CircuitBreakerSettingsKeys.cs" />
     <Compile Include="ConfigurationValidator.cs" />
+    <Compile Include="SqlConnectionFactory.cs" />
     <Compile Include="SqlServerSettingsKeys.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />

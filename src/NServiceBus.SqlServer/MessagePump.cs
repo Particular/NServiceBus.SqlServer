@@ -3,17 +3,16 @@
     using System;
     using System.Threading.Tasks;
     using System.Collections.Concurrent;
-    using System.Data.SqlClient;
     using System.Linq;
     using System.Threading;
     using Logging;
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, string connectionString, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
         {
-            this.connectionString = connectionString;
             this.receiveStrategyFactory = receiveStrategyFactory;
+            this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.criticalError = criticalError;
@@ -33,7 +32,8 @@
 
             if (settings.PurgeOnStartup)
             {
-                using (var connection = new SqlConnection(connectionString))
+                //TODO: this is wrong. Fix after init is made async in core
+                using (var connection = connectionFactory.OpenNewConnection().GetAwaiter().GetResult())
                 {
                     var purgedRowsCount = inputQueue.Purge(connection);
 
@@ -77,23 +77,21 @@
         
         async Task ProcessMessages()
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await InnerProcessMessages().ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // For graceful shutdown purposes
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Sql Message pump failed", ex);
-                await peekCircuitBreaker.Failure(ex).ConfigureAwait(false);
-            }
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                await ProcessMessages().ConfigureAwait(false);
+                try
+                {
+                    await InnerProcessMessages().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // For graceful shutdown purposes
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Sql Message pump failed", ex);
+                    await peekCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                }
             }
         }
 
@@ -105,11 +103,10 @@
 
                 try
                 {
-                    using (var connection = new SqlConnection(connectionString))
+                    using (var connection = await connectionFactory.OpenNewConnection())
                     {
-                        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
                         messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
+
                         peekCircuitBreaker.Success();
 
                         if (messageCount == 0)
@@ -189,10 +186,10 @@
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
-        string connectionString;
         Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
-        readonly SqlServerAddressProvider addressProvider;
-        readonly TimeSpan waitTimeCircuitBreaker;
+        SqlConnectionFactory connectionFactory;
+        SqlServerAddressProvider addressProvider;
+        TimeSpan waitTimeCircuitBreaker;
         CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;

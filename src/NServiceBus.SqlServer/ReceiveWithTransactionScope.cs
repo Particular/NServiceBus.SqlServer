@@ -3,25 +3,22 @@ using System.Threading.Tasks;
 
 namespace NServiceBus.Transports.SQLServer
 {
-    using System.Data.SqlClient;
     using System.Transactions;
     using NServiceBus.Extensibility;
 
     class ReceiveWithTransactionScope : ReceiveStrategy
     {
-        public ReceiveWithTransactionScope(TransactionOptions transactionOptions, string connectionString)
+        public ReceiveWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
             this.transactionOptions = transactionOptions;
-            this.connectionString = connectionString;
+            this.connectionFactory = connectionFactory;
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-            using (var sqlConnection = new SqlConnection(connectionString))
+            using (var sqlConnection = await connectionFactory.OpenNewConnection())
             {
-                await sqlConnection.OpenAsync().ConfigureAwait(false);
-
                 var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
@@ -45,7 +42,7 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        TransactionOptions transactionOptions;
-        string connectionString;
+        readonly TransactionOptions transactionOptions;
+        readonly SqlConnectionFactory connectionFactory;
     }
 }

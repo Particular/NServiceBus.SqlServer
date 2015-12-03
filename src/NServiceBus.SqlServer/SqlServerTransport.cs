@@ -2,6 +2,8 @@ namespace NServiceBus
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Settings;
@@ -35,15 +37,27 @@ namespace NServiceBus
             return parser;
         }
 
+        SqlConnectionFactory CreateConnectionFactory(string connectionString, ReadOnlySettings settings)
+        {
+            Func<Task<SqlConnection>> factoryOverride;
+
+            if (settings.TryGet(SqlServerSettingsKeys.ConnectionFactoryOverride, out factoryOverride))
+            {
+                return new SqlConnectionFactory(factoryOverride);
+            }
+
+            return SqlConnectionFactory.Default(connectionString);
+        }
+
         /// <summary>
         /// <see cref="TransportDefinition.ConfigureForReceiving"/>
         /// </summary>
         protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
-            var connectionString = context.ConnectionString;
+            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
             var addressParser = CreateAddressParser(context.Settings);
 
-            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionString, addressParser));
+            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionFactory, addressParser));
             
             var transactionOptions = new TransactionOptions
             {
@@ -55,24 +69,24 @@ namespace NServiceBus
             if(context.Settings.TryGet(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
 
-            Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionString);
+            Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
-            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionString, addressParser, waitTimeCircuitBreaker));
+            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker));
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, string connectionString)
+        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransactionSupport.Distributed)
             {
-                return new ReceiveWithTransactionScope(options, connectionString);
+                return new ReceiveWithTransactionScope(options, connectionFactory);
             }
 
             if (minimumConsistencyGuarantee == TransactionSupport.None)
             {
-                return new ReceiveWithNoTransaction(connectionString);
+                return new ReceiveWithNoTransaction(connectionFactory);
             }
 
-            return new ReceiveWithNativeTransaction(options, connectionString);
+            return new ReceiveWithNativeTransaction(options, connectionFactory);
         }
 
         /// <summary>
@@ -80,10 +94,10 @@ namespace NServiceBus
         /// </summary>
         protected override void ConfigureForSending(TransportSendingConfigurationContext context)
         {
-            var connectionString = context.ConnectionString;
+            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.GlobalSettings);
             var parser = CreateAddressParser(context.GlobalSettings);
 
-            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionString, parser));
+            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionFactory, parser));
         }
 
         /// <summary>

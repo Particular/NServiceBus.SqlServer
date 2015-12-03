@@ -6,21 +6,19 @@ namespace NServiceBus.Transports.SQLServer
 
     class SqlServerQueueCreator : ICreateQueues
     {
-        string connectionString;
+        readonly SqlConnectionFactory connectionFactory;
         readonly SqlServerAddressProvider addressProvider;
 
-        public SqlServerQueueCreator(string connectionString, SqlServerAddressProvider addressProvider)
+        public SqlServerQueueCreator(SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider)
         {
-            this.connectionString = connectionString;
+            this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = await connectionFactory.OpenNewConnection())
             {
-                connection.Open();
-
                 using (var transaction = connection.BeginTransaction())
                 {
                     foreach (var receivingAddress in queueBindings.ReceivingAddresses)
@@ -31,6 +29,7 @@ namespace NServiceBus.Transports.SQLServer
                     {
                         await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
                     }
+
                     transaction.Commit();
                 }
             }
