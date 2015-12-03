@@ -77,23 +77,21 @@
         
         async Task ProcessMessages()
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await InnerProcessMessages().ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // For graceful shutdown purposes
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Sql Message pump failed", ex);
-                await peekCircuitBreaker.Failure(ex).ConfigureAwait(false);
-            }
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                await ProcessMessages().ConfigureAwait(false);
+                try
+                {
+                    await InnerProcessMessages().ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // For graceful shutdown purposes
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Sql Message pump failed", ex);
+                    await peekCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                }
             }
         }
 
