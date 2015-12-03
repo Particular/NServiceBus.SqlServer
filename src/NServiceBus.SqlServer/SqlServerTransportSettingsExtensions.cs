@@ -13,7 +13,7 @@
     {
 
         /// <summary>
-        /// Sets a default schema for both input and autput queues
+        /// Sets a default schema for both input and output queues
         /// </summary>
         /// <param name="transportExtensions"></param>
         /// <param name="schemaName"></param>

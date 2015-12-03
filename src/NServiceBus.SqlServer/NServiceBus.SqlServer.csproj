@@ -88,7 +88,6 @@
     <Compile Include="SqlMessageParser.cs" />
     <Compile Include="SqlServerAddress.cs" />
     <Compile Include="SqlServerAddressProvider.cs" />
-    <Compile Include="SqlServerConfigurator.cs" />
     <Compile Include="SqlServerMessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="MessagePump.cs" />
