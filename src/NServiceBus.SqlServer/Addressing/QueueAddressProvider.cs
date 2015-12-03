@@ -13,10 +13,7 @@
 
         public QueueAddressProvider(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
         {
-            if (string.IsNullOrWhiteSpace(defaultSchema))
-            {
-                throw new ArgumentOutOfRangeException(nameof(defaultSchema));
-            }
+            Guard.AgainstNullAndEmpty("defaultSchema", defaultSchema);
 
             this.defaultSchema = defaultSchema;
             this.defaultSchemaOverride = defaultSchemaOverride;

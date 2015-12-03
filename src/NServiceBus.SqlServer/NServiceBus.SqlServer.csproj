@@ -74,6 +74,7 @@
     <Compile Include="Configuration\SqlConnectionFactory.cs" />
     <Compile Include="Configuration\ConnectionStringsValidator.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
+    <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Receiving\ReceiveContext.cs" />
@@ -84,6 +85,7 @@
     <Compile Include="Queuing\MessageParser.cs" />
     <Compile Include="Addressing\QueueAddress.cs" />
     <Compile Include="Addressing\QueueAddressProvider.cs" />
+    <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />

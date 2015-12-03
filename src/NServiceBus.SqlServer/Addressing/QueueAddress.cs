@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    using System;
     using System.Linq;
 
     class QueueAddress
@@ -10,10 +9,7 @@
 
         public QueueAddress(string tableName, string schemaName)
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentOutOfRangeException(nameof(tableName));
-            }
+            Guard.AgainstNullAndEmpty("tableName", tableName);
 
             TableName = tableName;
             SchemaName = schemaName;

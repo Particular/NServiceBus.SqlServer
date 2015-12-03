@@ -20,6 +20,8 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
+            Guard.AgainstNullAndEmpty("schemaName", schemaName);
+
             transportExtensions.GetSettings().Set(SettingsKeys.DefaultSchemaSettingsKey, schemaName);
 
             return transportExtensions;
@@ -33,6 +35,8 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> schemaForQueueName)
         {
+            Guard.AgainstNull("schemaForQueueName", schemaForQueueName);
+
             transportExtensions.GetSettings().Set(SettingsKeys.SchemaOverrideCallbackSettingsKey, schemaForQueueName);
 
             return transportExtensions;
@@ -59,6 +63,8 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
         {
+            Guard.AgainstNull("sqlConnectionFactory", sqlConnectionFactory);
+
             transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
 
             return transportExtensions;
