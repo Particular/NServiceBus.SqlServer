@@ -24,15 +24,15 @@ namespace NServiceBus
             RequireOutboxConsent = true;
         }
 
-        SqlServerAddressProvider CreateAddressParser(ReadOnlySettings settings)
+        QueueAddressProvider CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
             Func<string, string> schemaOverrider;
 
-            settings.TryGet(SqlServerSettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
-            settings.TryGet(SqlServerSettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
+            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
+            settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            var parser = new SqlServerAddressProvider("dbo", defaultSchemaOverride, schemaOverrider);
+            var parser = new QueueAddressProvider("dbo", defaultSchemaOverride, schemaOverrider);
 
             return parser;
         }
@@ -41,7 +41,7 @@ namespace NServiceBus
         {
             Func<Task<SqlConnection>> factoryOverride;
 
-            if (settings.TryGet(SqlServerSettingsKeys.ConnectionFactoryOverride, out factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
             {
                 return new SqlConnectionFactory(factoryOverride);
             }
@@ -64,14 +64,14 @@ namespace NServiceBus
             };
 
             TimeSpan waitTimeCircuitBreaker;
-            if(context.Settings.TryGet(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
+            if(context.Settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
 
             Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
             return new TransportReceivingConfigurationResult(
                 c => new MessagePump(c, receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
-                () => new SqlServerQueueCreator(connectionFactory, addressParser),
+                () => new QueueCreator(connectionFactory, addressParser),
                 () => { return Task.FromResult(StartupCheckResult.Success); });
         }
 
@@ -99,7 +99,7 @@ namespace NServiceBus
             var parser = CreateAddressParser(context.Settings);
 
             return new TransportSendingConfigurationResult(
-                () => new SqlServerMessageDispatcher(connectionFactory, parser),
+                () => new MessageDispatcher(connectionFactory, parser),
                 () => {
                         var result = UsingOldConfigurationCheck.Check();
                         return Task.FromResult(result);
@@ -146,7 +146,7 @@ namespace NServiceBus
         /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            return SqlServerAddress.ToTransportAddressText(logicalAddress);
+            return QueueAddress.ToTransportAddressText(logicalAddress);
         }
 
         /// <summary>

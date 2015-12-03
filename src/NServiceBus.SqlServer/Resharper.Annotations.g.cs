@@ -1,34 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
-// ReSharper disable CommentTypo
-// ReSharper disable IdentifierTypo
-
-#pragma warning disable 1591
-// ReSharper disable UnusedMember.Global
-// ReSharper disable MemberCanBePrivate.Global
-// ReSharper disable UnusedAutoPropertyAccessor.Global
-// ReSharper disable IntroduceOptionalParameters.Global
-// ReSharper disable MemberCanBeProtected.Global
-// ReSharper disable InconsistentNaming
 
 namespace JetBrains.Annotations
 {
-    /// <summary>
-    /// Indicates that the function argument should be string literal and match one
-    /// of the parameters of the caller function. For example, ReSharper annotates
-    /// the parameter of <see cref="System.ArgumentNullException"/>
-    /// </summary>
-    /// <example><code>
-    /// public void Foo(string param) {
-    ///   if (param == null)
-    ///     throw new ArgumentNullException("par"); // Warning: Cannot resolve symbol
-    /// }
-    /// </code></example>
-    [AttributeUsage(AttributeTargets.Parameter)]
-    [Conditional("JETBRAINS_ANNOTATIONS")]
-    internal sealed class InvokerParameterNameAttribute : Attribute
-    {
-    }
+    using System.Diagnostics;
+
 
     /// <summary>
     /// Indicates that the value of the marked element could never be <c>null</c>
@@ -39,13 +14,10 @@ namespace JetBrains.Annotations
     /// }
     /// </code></example>
     [AttributeUsage(
-        AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
-        AttributeTargets.Delegate | AttributeTargets.Field | AttributeTargets.Event)]
+      AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
+      AttributeTargets.Delegate | AttributeTargets.Field | AttributeTargets.Event)]
     [Conditional("JETBRAINS_ANNOTATIONS")]
-    internal sealed class NotNullAttribute : Attribute
-    {
-    }
-
+    internal sealed class NotNullAttribute : Attribute { }
 
     /// <summary>
     /// Describes dependency between method input and output
@@ -107,4 +79,19 @@ namespace JetBrains.Annotations
         public string Contract { get; private set; }
         public bool ForceFullStates { get; private set; }
     }
+
+    /// <summary>
+    /// Indicates that the function argument should be string literal and match one
+    /// of the parameters of the caller function. For example, ReSharper annotates
+    /// the parameter of <see cref="System.ArgumentNullException"/>
+    /// </summary>
+    /// <example><code>
+    /// public void Foo(string param) {
+    ///   if (param == null)
+    ///     throw new ArgumentNullException("par"); // Warning: Cannot resolve symbol
+    /// }
+    /// </code></example>
+    [AttributeUsage(AttributeTargets.Parameter)]
+    [Conditional("JETBRAINS_ANNOTATIONS")]
+    internal sealed class InvokerParameterNameAttribute : Attribute { }
 }

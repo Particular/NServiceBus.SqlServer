@@ -5,11 +5,11 @@
     using System.IO;
     using NServiceBus.Serializers.Json;
 
-    static class SqlMessageParser
+    static class MessageParser
     {
         static JsonMessageSerializer headerSerializer = new JsonMessageSerializer(null);
 
-        internal static SqlMessage ParseRawData(object[] rowData)
+        internal static Message ParseRawData(object[] rowData)
         {
             var transportId = rowData[0].ToString();
 
@@ -25,7 +25,7 @@
 
             var memoryStream = new MemoryStream(body);
 
-            var message = new SqlMessage(transportId, expireDateTime, headers, memoryStream);
+            var message = new Message(transportId, expireDateTime, headers, memoryStream);
 
             var replyToAddress = GetNullableValue<string>(rowData[Sql.Columns.ReplyToAddress.Index]);
 

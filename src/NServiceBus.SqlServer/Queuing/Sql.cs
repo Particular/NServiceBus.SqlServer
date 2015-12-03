@@ -53,7 +53,7 @@ namespace NServiceBus.Transports.SQLServer
                 Type = SqlDbType.UniqueIdentifier
             };
 
-            public static ColumnInfo CorrelationId = new ColumnInfo
+            internal static ColumnInfo CorrelationId = new ColumnInfo
             {
                 Index = 1,
                 Name = "CorrelationId",

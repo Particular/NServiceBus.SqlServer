@@ -71,35 +71,32 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="CircuitBreakerSettingsKeys.cs" />
-    <Compile Include="SqlConnectionFactory.cs" />
-    <Compile Include="ConnectionStringsValidator.cs" />
-    <Compile Include="SqlServerSettingsKeys.cs" />
-    <Compile Include="Guard\Guard.cs" />
-    <Compile Include="Guard\Resharper.Annotations.g.cs" />
+    <Compile Include="Configuration\SqlConnectionFactory.cs" />
+    <Compile Include="Configuration\ConnectionStringsValidator.cs" />
+    <Compile Include="Configuration\SettingsKeys.cs" />
+    <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="obsoletes.cs" />
-    <Compile Include="ReceiveContext.cs" />
-    <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
-    <Compile Include="ReceiveResult.cs" />
-    <Compile Include="ReceiveWithTransactionScope.cs" />
-    <Compile Include="Sql.cs" />
-    <Compile Include="SqlMessage.cs" />
-    <Compile Include="SqlMessageParser.cs" />
-    <Compile Include="SqlServerAddress.cs" />
-    <Compile Include="SqlServerAddressProvider.cs" />
-    <Compile Include="SqlServerConfigurator.cs" />
-    <Compile Include="SqlServerMessageDispatcher.cs" />
+    <Compile Include="Receiving\ReceiveContext.cs" />
+    <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
+    <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
+    <Compile Include="Queuing\Sql.cs" />
+    <Compile Include="Queuing\Message.cs" />
+    <Compile Include="Queuing\MessageParser.cs" />
+    <Compile Include="Addressing\QueueAddress.cs" />
+    <Compile Include="Addressing\QueueAddressProvider.cs" />
+    <Compile Include="Resharper.Annotations.g.cs" />
+    <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
-    <Compile Include="MessagePump.cs" />
-    <Compile Include="MessageReadResult.cs" />
-    <Compile Include="ReceiveWithNativeTransaction.cs" />
-    <Compile Include="ReceiveWithNoTransaction.cs" />
-    <Compile Include="ReceiveStrategy.cs" />
-    <Compile Include="SqlServerQueueCreator.cs" />
+    <Compile Include="Receiving\MessagePump.cs" />
+    <Compile Include="Queuing\MessageReadResult.cs" />
+    <Compile Include="Receiving\ReceiveWithNativeTransaction.cs" />
+    <Compile Include="Receiving\ReceiveWithNoTransaction.cs" />
+    <Compile Include="Receiving\ReceiveStrategy.cs" />
+    <Compile Include="Receiving\QueueCreator.cs" />
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
-    <Compile Include="TableBasedQueue.cs" />
-    <Compile Include="UsingOldConfigurationCheck.cs" />
+    <Compile Include="Queuing\TableBasedQueue.cs" />
+    <Compile Include="Sending\UsingOldConfigurationCheck.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
@@ -109,6 +106,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

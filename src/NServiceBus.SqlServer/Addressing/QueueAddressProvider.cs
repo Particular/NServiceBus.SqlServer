@@ -2,7 +2,7 @@
 {
     using System;
 
-    class SqlServerAddressProvider
+    class QueueAddressProvider
     {
         readonly string defaultSchema;
         readonly string defaultSchemaOverride;
@@ -11,21 +11,18 @@
 
         public string DefaultSchema => string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
 
-        public SqlServerAddressProvider(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
+        public QueueAddressProvider(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
         {
-            if (string.IsNullOrWhiteSpace(defaultSchema))
-            {
-                throw new ArgumentOutOfRangeException(nameof(defaultSchema));
-            }
+            Guard.AgainstNullAndEmpty("defaultSchema", defaultSchema);
 
             this.defaultSchema = defaultSchema;
             this.defaultSchemaOverride = defaultSchemaOverride;
             this.schemaOverrider = schemaOverrider;
         }
 
-        public SqlServerAddress Parse(string address)
+        public QueueAddress Parse(string address)
         {
-            var sqlAddress = SqlServerAddress.Parse(address);
+            var sqlAddress = QueueAddress.Parse(address);
 
             if (schemaOverrider != null)
             {
@@ -33,7 +30,7 @@
 
                 if (string.IsNullOrWhiteSpace(schemaOverride) == false)
                 {
-                    return new SqlServerAddress(sqlAddress.TableName, schemaOverride);
+                    return new QueueAddress(sqlAddress.TableName, schemaOverride);
                 }
             }
 
@@ -44,10 +41,10 @@
 
             if (string.IsNullOrWhiteSpace(defaultSchemaOverride) == false)
             {
-                return new SqlServerAddress(sqlAddress.TableName, defaultSchemaOverride);
+                return new QueueAddress(sqlAddress.TableName, defaultSchemaOverride);
             }
 
-            return new SqlServerAddress(sqlAddress.TableName, defaultSchema);
+            return new QueueAddress(sqlAddress.TableName, defaultSchema);
         }     
     }
 }

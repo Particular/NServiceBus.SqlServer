@@ -2,7 +2,7 @@ namespace NServiceBus.Transports.SQLServer
 {
     struct MessageReadResult
     {
-        MessageReadResult(SqlMessage message, bool poison, object[] dataRecord)
+        MessageReadResult(Message message, bool poison, object[] dataRecord)
         {
             Message = message;
             IsPoison = poison;
@@ -15,7 +15,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public bool Successful => Message != null;
 
-        public SqlMessage Message { get; }
+        public Message Message { get; }
 
         public object[] DataRecord { get; }
 
@@ -24,7 +24,7 @@ namespace NServiceBus.Transports.SQLServer
             return new MessageReadResult(null, true, record);
         }
 
-        public static MessageReadResult Success(SqlMessage message)
+        public static MessageReadResult Success(Message message)
         {
             return new MessageReadResult(message, false, null);
         }
