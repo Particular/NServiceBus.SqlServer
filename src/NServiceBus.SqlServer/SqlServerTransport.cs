@@ -52,12 +52,10 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.ConfigureForReceiving"/>
         /// </summary>
-        protected override void ConfigureForReceiving(TransportReceivingConfigurationContext context)
+        protected override TransportReceivingConfigurationResult ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
             var addressParser = CreateAddressParser(context.Settings);
-
-            context.SetQueueCreatorFactory(() => new SqlServerQueueCreator(connectionFactory, addressParser));
             
             var transactionOptions = new TransactionOptions
             {
@@ -71,7 +69,10 @@ namespace NServiceBus
 
             Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
-            context.SetMessagePumpFactory(c => new MessagePump(c, receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker));
+            return new TransportReceivingConfigurationResult(
+                c => new MessagePump(c, receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
+                () => new SqlServerQueueCreator(connectionFactory, addressParser),
+                () => { return Task.FromResult(StartupCheckResult.Success); });
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
@@ -92,12 +93,17 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.ConfigureForSending"/>
         /// </summary>
-        protected override void ConfigureForSending(TransportSendingConfigurationContext context)
+        protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
         {
-            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.GlobalSettings);
-            var parser = CreateAddressParser(context.GlobalSettings);
+            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
+            var parser = CreateAddressParser(context.Settings);
 
-            context.SetDispatcherFactory(() => new SqlServerMessageDispatcher(connectionFactory, parser));
+            return new TransportSendingConfigurationResult(
+                () => new SqlServerMessageDispatcher(connectionFactory, parser),
+                () => {
+                        var result = UsingOldConfigurationCheck.Check();
+                        return Task.FromResult(result);
+                      });
         }
 
         /// <summary>
@@ -148,7 +154,7 @@ namespace NServiceBus
         /// </summary>
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
-            return new OutboundRoutingPolicy(OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend, OutboundRoutingType.DirectSend);
+            return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
         }
 
         /// <summary>

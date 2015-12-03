@@ -4,7 +4,7 @@ namespace NServiceBus.Transports.SQLServer
 
     class ReceiveResult
     {
-        ReceiveResult(Exception exception, TransportMessage message)
+        ReceiveResult(Exception exception, IncomingMessage message)
         {
             Exception = exception;
             Message = message;
@@ -15,7 +15,7 @@ namespace NServiceBus.Transports.SQLServer
             return new ReceiveResult(null, null);
         }
 
-        public static ReceiveResult Received(TransportMessage receivedMessage)
+        public static ReceiveResult Received(IncomingMessage receivedMessage)
         {
             return new ReceiveResult(null, receivedMessage);
         }
@@ -29,6 +29,6 @@ namespace NServiceBus.Transports.SQLServer
 
         public bool HasReceivedMessage => Message != null;
 
-        public TransportMessage Message { get; }
+        public IncomingMessage Message { get; }
     }
 }
