@@ -36,7 +36,10 @@
 
                             using (var bodyStream = message.BodyStream)
                             {
-                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, new NullTransaction(), new ContextBag());
+                                var transportTransaction = new TransportTransaction();
+                                transportTransaction.Set(transaction);
+
+                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, new ContextBag());
                                 pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NativeTransaction, Transaction = transaction});
 
                                 await onMessage(pushContext).ConfigureAwait(false);

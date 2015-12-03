@@ -6,7 +6,7 @@
     using System.Data.Common;
     using System.Linq;
 
-    internal class ConfigurationValidator
+    class ConnectionStringsValidator
     {
         const string TransportConnectionStringPrefix = "NServiceBus/Transport";
         const string SchemaOverridePart = "Queue Schema";

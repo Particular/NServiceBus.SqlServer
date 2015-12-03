@@ -19,7 +19,7 @@
             var result = new Result();
             string message;
 
-            result.Success = new ConfigurationValidator().TryValidate(settings.ToList(), out message);
+            result.Success = new ConnectionStringsValidator().TryValidate(settings.ToList(), out message);
             result.Message = message;
 
             return result;

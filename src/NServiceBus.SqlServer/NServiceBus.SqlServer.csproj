@@ -53,7 +53,7 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-unstable1155\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-unstable1208\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obsolete, Version=4.0.3.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
@@ -72,13 +72,12 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="CircuitBreakerSettingsKeys.cs" />
-    <Compile Include="ConfigurationValidator.cs" />
     <Compile Include="SqlConnectionFactory.cs" />
+    <Compile Include="ConnectionStringsValidator.cs" />
     <Compile Include="SqlServerSettingsKeys.cs" />
     <Compile Include="Guard\Guard.cs" />
     <Compile Include="Guard\Resharper.Annotations.g.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="NullTransaction.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="ReceiveContext.cs" />
     <Compile Include="RepeatedFailuresOvertimeCurcuitBreaker.cs" />
@@ -100,6 +99,7 @@
     <Compile Include="SqlServerQueueCreator.cs" />
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="TableBasedQueue.cs" />
+    <Compile Include="UsingOldConfigurationCheck.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
