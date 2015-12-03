@@ -20,7 +20,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
-            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.DefaultSchemaSettingsKey, schemaName);
+            transportExtensions.GetSettings().Set(SettingsKeys.DefaultSchemaSettingsKey, schemaName);
 
             return transportExtensions;
         }
@@ -33,7 +33,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> schemaForQueueName)
         {
-            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.SchemaOverrideCallbackSettingsKey, schemaForQueueName);
+            transportExtensions.GetSettings().Set(SettingsKeys.SchemaOverrideCallbackSettingsKey, schemaForQueueName);
 
             return transportExtensions;
         }
@@ -47,7 +47,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
-            transportExtensions.GetSettings().Set(CircuitBreakerSettingsKeys.TimeToWaitBeforeTriggering, waitTime);
+            transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
             return transportExtensions;
         }
 
@@ -59,7 +59,7 @@
         /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
         {
-            transportExtensions.GetSettings().Set(SqlServerSettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
+            transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
 
             return transportExtensions;
         }

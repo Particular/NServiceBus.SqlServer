@@ -9,7 +9,7 @@ namespace NServiceBus.Transports.SQLServer
     
     class TableBasedQueue
     {
-        public TableBasedQueue(SqlServerAddress address)
+        public TableBasedQueue(QueueAddress address)
         {
             this.address = address;
         }
@@ -31,7 +31,7 @@ namespace NServiceBus.Transports.SQLServer
 
                 try
                 {
-                    var message = SqlMessageParser.ParseRawData(rawMessageData);
+                    var message = MessageParser.ParseRawData(rawMessageData);
 
                     if (message.TTBRExpried(DateTime.UtcNow))
                     {
@@ -71,7 +71,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public Task SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageData = SqlMessageParser.CreateRawMessageData(message);
+            var messageData = MessageParser.CreateRawMessageData(message);
 
             if (messageData.Length != Sql.Columns.All.Length)
             {
@@ -136,6 +136,6 @@ namespace NServiceBus.Transports.SQLServer
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
         
-        SqlServerAddress address;
+        QueueAddress address;
     }
 }

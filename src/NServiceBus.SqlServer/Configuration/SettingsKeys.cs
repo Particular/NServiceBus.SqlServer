@@ -1,10 +1,11 @@
 ﻿
 namespace NServiceBus.Transports.SQLServer
 {
-    class SqlServerSettingsKeys
+    class SettingsKeys
     {
         public const string DefaultSchemaSettingsKey = "SqlServer.SchemaName";
         public const string SchemaOverrideCallbackSettingsKey = "SqlServer.ScheamOverride.Callback";
         public const string ConnectionFactoryOverride = "SqlServer.ConnectionFactoryOverride";
+        public const string TimeToWaitBeforeTriggering = "SqlServer.CircuitBreaker.TimeToWaitBeforeTriggering";
     }
 }

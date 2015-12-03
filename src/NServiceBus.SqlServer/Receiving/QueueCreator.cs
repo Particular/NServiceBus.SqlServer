@@ -4,12 +4,12 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data.SqlClient;
     using System.Threading.Tasks;
 
-    class SqlServerQueueCreator : ICreateQueues
+    class QueueCreator : ICreateQueues
     {
         readonly SqlConnectionFactory connectionFactory;
-        readonly SqlServerAddressProvider addressProvider;
+        readonly QueueAddressProvider addressProvider;
 
-        public SqlServerQueueCreator(SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider)
         {
             this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
@@ -35,7 +35,7 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        async Task CreateQueue(SqlServerAddress address, SqlConnection connection, SqlTransaction transaction)
+        async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
         {
             var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
 

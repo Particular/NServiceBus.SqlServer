@@ -3,12 +3,12 @@
     using System;
     using System.Linq;
 
-    class SqlServerAddress
+    class QueueAddress
     {
         public string TableName { get; private set; }
         public string SchemaName { get; private set; }
 
-        public SqlServerAddress(string tableName, string schemaName)
+        public QueueAddress(string tableName, string schemaName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
             {
@@ -41,7 +41,7 @@
             return address;
         }
 
-        public static SqlServerAddress Parse(string address)
+        public static QueueAddress Parse(string address)
         {
             if (address.Contains("@"))
             {
@@ -49,10 +49,10 @@
                 var tableName = parts[0];
                 var schemaName = parts[1];
 
-                return new SqlServerAddress(tableName, schemaName);
+                return new QueueAddress(tableName, schemaName);
             }
 
-            return new SqlServerAddress(address, null);
+            return new QueueAddress(address, null);
         }
 
         public override string ToString()

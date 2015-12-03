@@ -8,12 +8,12 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Routing;
 
-    class SqlServerMessageDispatcher : IDispatchMessages
+    class MessageDispatcher : IDispatchMessages
     {
         readonly SqlConnectionFactory connectionFactory;
-        readonly SqlServerAddressProvider addressProvider;
+        readonly QueueAddressProvider addressProvider;
 
-        public SqlServerMessageDispatcher(SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider)
+        public MessageDispatcher(SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider)
         {
             this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;

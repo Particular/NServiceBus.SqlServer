@@ -4,9 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
 
-    class SqlMessage
+    class Message
     {
-        public SqlMessage(string transportId, DateTime? timeToBeReceived, Dictionary<string, string> headers, Stream bodyStream)
+        public Message(string transportId, DateTime? timeToBeReceived, Dictionary<string, string> headers, Stream bodyStream)
         {
             TransportId = transportId;
             TimeToBeReceived = timeToBeReceived;

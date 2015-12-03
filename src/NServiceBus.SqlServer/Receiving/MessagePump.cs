@@ -9,7 +9,7 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, SqlServerAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.connectionFactory = connectionFactory;
@@ -188,7 +188,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
         SqlConnectionFactory connectionFactory;
-        SqlServerAddressProvider addressProvider;
+        QueueAddressProvider addressProvider;
         TimeSpan waitTimeCircuitBreaker;
         CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
