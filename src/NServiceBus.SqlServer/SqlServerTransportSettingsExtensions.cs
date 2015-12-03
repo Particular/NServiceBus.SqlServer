@@ -6,9 +6,8 @@
     using NServiceBus.Configuration.AdvanceExtensibility;
 
     //TODO: let's move classes into subfolders?
-    //TODO: add xml comments
     /// <summary>
-    /// 
+    /// Adds extra configuration for the Sql Server transport.
     /// </summary>
     public static partial class SqlServerTransportSettingsExtensions
     {

@@ -1,7 +1,5 @@
 ﻿#pragma warning disable 1591
 
-//TODO: add meaningful messages 
-
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
