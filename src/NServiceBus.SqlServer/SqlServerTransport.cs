@@ -39,11 +39,11 @@ namespace NServiceBus
 
         SqlConnectionFactory CreateConnectionFactory(string connectionString, ReadOnlySettings settings)
         {
-            Func<string, Task<SqlConnection>> factoryOverride;
+            Func<Task<SqlConnection>> factoryOverride;
 
             if (settings.TryGet(SqlServerSettingsKeys.ConnectionFactoryOverride, out factoryOverride))
             {
-                return new SqlConnectionFactory(connectionString, factoryOverride);
+                return new SqlConnectionFactory(factoryOverride);
             }
 
             return SqlConnectionFactory.Default(connectionString);

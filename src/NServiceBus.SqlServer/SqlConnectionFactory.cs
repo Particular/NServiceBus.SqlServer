@@ -6,25 +6,23 @@
 
     class SqlConnectionFactory
     {
-        readonly string connectionString;
-        readonly Func<string, Task<SqlConnection>> openNewConnection;
+        readonly Func<Task<SqlConnection>> openNewConnection;
 
-        public SqlConnectionFactory(string connectionString, Func<string, Task<SqlConnection>> factory)
+        public SqlConnectionFactory(Func<Task<SqlConnection>> factory)
         {
-            this.connectionString = connectionString;
             openNewConnection = factory;
         }
 
         public async Task<SqlConnection> OpenNewConnection()
         {
-            return await openNewConnection(connectionString);
+            return await openNewConnection();
         }
 
         public static SqlConnectionFactory Default(string connectionString)
         {
-            return new SqlConnectionFactory(connectionString, async cs =>
+            return new SqlConnectionFactory(async () =>
             {
-                var connection = new SqlConnection(cs);
+                var connection = new SqlConnection(connectionString);
                 try
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
