@@ -267,6 +267,7 @@
     <Compile Include="MultiSchema\When_custom_schema_configured.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_transport_discriminator.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_queue_specific_override.cs" />
+    <Compile Include="ServiceControl\When_an_endpoint_connects_to_multiple_databases.cs" />
     <Compile Include="When_using_custom_connection_factory.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -275,6 +276,11 @@
       <Name>NServiceBus.SqlServer</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Callbacks\" />
+    <Folder Include="Persistence\" />
+    <Folder Include="Scenarios\" />
+    <Folder Include="Transactions\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
