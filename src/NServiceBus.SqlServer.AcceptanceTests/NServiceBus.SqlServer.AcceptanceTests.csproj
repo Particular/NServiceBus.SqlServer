@@ -267,6 +267,7 @@
     <Compile Include="MultiSchema\When_custom_schema_configured.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_transport_discriminator.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_queue_specific_override.cs" />
+    <Compile Include="When_a_corrupted_message_is_received.cs" />
     <Compile Include="When_using_custom_connection_factory.cs" />
   </ItemGroup>
   <ItemGroup>
