@@ -17,8 +17,8 @@
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.criticalError = criticalError;
         }
-
-        public void Init(Func<PushContext, Task> pipe, PushSettings settings)
+        
+        public Task Init(Func<PushContext, Task> pipe, PushSettings settings)
         {
             pipeline = pipe;
 
@@ -40,6 +40,8 @@
                     Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
                 }
             }
+
+            return Task.FromResult(0);
         }
 
         public void Start(PushRuntimeSettings limitations)
