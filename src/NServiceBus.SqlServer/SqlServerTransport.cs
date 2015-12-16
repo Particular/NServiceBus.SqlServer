@@ -67,22 +67,22 @@ namespace NServiceBus
             if(context.Settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
 
-            Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
+            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
             return new TransportReceivingConfigurationResult(
-                c => new MessagePump(c, receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
                 () => { return Task.FromResult(StartupCheckResult.Success); });
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransactionSupport minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
-            if (minimumConsistencyGuarantee == TransactionSupport.Distributed)
+            if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
                 return new ReceiveWithTransactionScope(options, connectionFactory);
             }
 
-            if (minimumConsistencyGuarantee == TransactionSupport.None)
+            if (minimumConsistencyGuarantee == TransportTransactionMode.None)
             {
                 return new ReceiveWithNoTransaction(connectionFactory);
             }
@@ -117,12 +117,13 @@ namespace NServiceBus
             };
         }
 
+
         /// <summary>
-        /// <see cref="TransportDefinition.GetTransactionSupport"/>.
+        /// <see cref="TransportDefinition.GetSupportedTransactionMode"/>.
         /// </summary>
-        public override TransactionSupport GetTransactionSupport()
+        public override TransportTransactionMode GetSupportedTransactionMode()
         {
-            return TransactionSupport.Distributed;
+            return TransportTransactionMode.TransactionScope;
         }
 
         /// <summary>

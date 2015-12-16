@@ -26,7 +26,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.Routing().UnicastRoutingTable.AddStatic(typeof(Message), $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}");
+                    c.Routing().UnicastRoutingTable.RouteToEndpoint(typeof(Message), $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}");
                 });
             }
         }
