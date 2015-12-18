@@ -119,13 +119,15 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public int Purge(SqlConnection connection)
+        public async Task<int> Purge(SqlConnection connection)
         {
             var commandText = string.Format(Sql.PurgeText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                return command.ExecuteNonQuery();
+                var rowsCount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+                return rowsCount;
             }
         }
 

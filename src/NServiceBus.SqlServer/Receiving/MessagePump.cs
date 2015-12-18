@@ -9,33 +9,31 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.connectionFactory = connectionFactory;
             this.addressProvider = addressProvider;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
-            this.criticalError = criticalError;
         }
-
-        public void Init(Func<PushContext, Task> pipe, PushSettings settings)
+        
+        public async Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             pipeline = pipe;
 
-            receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionSupport);
+            receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionMode);
 
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
-            
+
             inputQueue = new TableBasedQueue(addressProvider.Parse(settings.InputQueue));
             errorQueue = new TableBasedQueue(addressProvider.Parse(settings.ErrorQueue));
 
             if (settings.PurgeOnStartup)
             {
-                //TODO: this is wrong. Fix after init is made async in core
-                using (var connection = connectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    var purgedRowsCount = inputQueue.Purge(connection);
+                    var purgedRowsCount =  await inputQueue.Purge(connection).ConfigureAwait(false);
 
                     Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
                 }
@@ -186,11 +184,10 @@
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
-        Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory;
+        Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         SqlConnectionFactory connectionFactory;
         QueueAddressProvider addressProvider;
         TimeSpan waitTimeCircuitBreaker;
-        CriticalError criticalError;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource cancellationTokenSource;

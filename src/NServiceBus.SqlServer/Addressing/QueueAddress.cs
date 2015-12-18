@@ -18,9 +18,9 @@
         //TODO: this does not belong here :/
         public static string ToTransportAddressText(LogicalAddress logicalAddress)
         {
-            var endpointNamePart = logicalAddress.EndpointInstanceName.EndpointName.ToString();
+            var endpointNamePart = logicalAddress.EndpointInstance.Endpoint.ToString();
             var qualifierPart = logicalAddress.Qualifier;
-            var userDiscriminatorPart = logicalAddress.EndpointInstanceName.UserDiscriminator;
+            var userDiscriminatorPart = logicalAddress.EndpointInstance.UserDiscriminator;
 
             var nonEmptyParts = new[]
             {
@@ -30,7 +30,7 @@
             }.Where(p => !string.IsNullOrEmpty(p));
 
             var tableName = string.Join(".", nonEmptyParts);
-            var schemaName = logicalAddress.EndpointInstanceName.TransportDiscriminator;
+            var schemaName = logicalAddress.EndpointInstance.TransportDiscriminator;
 
             var address = string.IsNullOrWhiteSpace(schemaName) ? tableName : $"{tableName}@{schemaName}";
 
