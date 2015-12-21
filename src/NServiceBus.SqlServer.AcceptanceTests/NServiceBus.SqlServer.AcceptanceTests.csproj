@@ -254,7 +254,9 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1328\UnitOfWork\When_a_subscription_message_arrives.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1328\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1328\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="Configuration\AppConfig.cs" />
     <Compile Include="ConfigureSqlServerTransport.cs" />
+    <Compile Include="Configuration\When_using_v2_configuration_app_config_for_schema_override.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_default_override.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_message_mappings.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured.cs" />
