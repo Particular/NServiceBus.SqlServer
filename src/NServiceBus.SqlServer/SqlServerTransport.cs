@@ -3,9 +3,11 @@ namespace NServiceBus
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Performance.TimeToBeReceived;
+    using NServiceBus.Routing;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.SQLServer;
@@ -56,7 +58,7 @@ namespace NServiceBus
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
             var addressParser = CreateAddressParser(context.Settings);
-            
+
             var transactionOptions = new TransactionOptions
             {
                 IsolationLevel = context.Settings.Get<IsolationLevel>("Transactions.IsolationLevel"),
@@ -64,15 +66,18 @@ namespace NServiceBus
             };
 
             TimeSpan waitTimeCircuitBreaker;
-            if(context.Settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker) == false)
+
+            if (!context.Settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
+            {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
+            }
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
             return new TransportReceivingConfigurationResult(
                 () => new MessagePump(receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
-                () => { return Task.FromResult(StartupCheckResult.Success); });
+                () => Task.FromResult(StartupCheckResult.Success));
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
@@ -100,10 +105,11 @@ namespace NServiceBus
 
             return new TransportSendingConfigurationResult(
                 () => new MessageDispatcher(connectionFactory, parser),
-                () => {
-                        var result = UsingOldConfigurationCheck.Check();
-                        return Task.FromResult(result);
-                      });
+                () =>
+                {
+                    var result = UsingOldConfigurationCheck.Check();
+                    return Task.FromResult(result);
+                });
         }
 
         /// <summary>
@@ -135,11 +141,11 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportDefinition.GetDiscriminatorForThisEndpointInstance"/>.
+        /// Returns the discriminator for this endpoint instance.
         /// </summary>
-        public override string GetDiscriminatorForThisEndpointInstance(ReadOnlySettings settings)
+        public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance, ReadOnlySettings settings)
         {
-            return CreateAddressParser(settings).DefaultSchema;
+            return instance.SetProperty(SchemaPropertyKey, CreateAddressParser(settings).DefaultSchema);
         }
 
         /// <summary>
@@ -147,7 +153,23 @@ namespace NServiceBus
         /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            return QueueAddress.ToTransportAddressText(logicalAddress);
+            var nonEmptyParts = new[]
+            {
+                logicalAddress.EndpointInstance.Endpoint.ToString(),
+                logicalAddress.Qualifier,
+                logicalAddress.EndpointInstance.Discriminator
+            }.Where(p => !string.IsNullOrEmpty(p));
+
+            var address = string.Join(".", nonEmptyParts);
+
+            string schemaName;
+
+            if (logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName))
+            {
+                address += $"@{schemaName}";
+            }
+
+            return address;
         }
 
         /// <summary>
@@ -167,5 +189,7 @@ namespace NServiceBus
         /// <see cref="TransportDefinition.RequiresConnectionString"/>
         /// </summary>
         public override bool RequiresConnectionString => true;
+
+        const string SchemaPropertyKey = "Schema";
     }
 }
