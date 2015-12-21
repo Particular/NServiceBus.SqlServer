@@ -1,42 +1,18 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    using System.Linq;
-
     class QueueAddress
     {
-        public string TableName { get; private set; }
-        public string SchemaName { get; private set; }
+        public string TableName { get; }
+        public string SchemaName { get; }
 
         public QueueAddress(string tableName, string schemaName)
         {
-            Guard.AgainstNullAndEmpty("tableName", tableName);
+            Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
 
             TableName = tableName;
             SchemaName = schemaName;
         }
-
-        //TODO: this does not belong here :/
-        public static string ToTransportAddressText(LogicalAddress logicalAddress)
-        {
-            var endpointNamePart = logicalAddress.EndpointInstance.Endpoint.ToString();
-            var qualifierPart = logicalAddress.Qualifier;
-            var userDiscriminatorPart = logicalAddress.EndpointInstance.UserDiscriminator;
-
-            var nonEmptyParts = new[]
-            {
-                endpointNamePart,
-                qualifierPart,
-                userDiscriminatorPart
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var tableName = string.Join(".", nonEmptyParts);
-            var schemaName = logicalAddress.EndpointInstance.TransportDiscriminator;
-
-            var address = string.IsNullOrWhiteSpace(schemaName) ? tableName : $"{tableName}@{schemaName}";
-
-            return address;
-        }
-
+        
         public static QueueAddress Parse(string address)
         {
             if (address.Contains("@"))

@@ -1,18 +1,13 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Extensibility;
-    using NServiceBus.Routing;
 
     class MessageDispatcher : IDispatchMessages
     {
-        readonly SqlConnectionFactory connectionFactory;
-        readonly QueueAddressProvider addressProvider;
-
         public MessageDispatcher(SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider)
         {
             this.connectionFactory = connectionFactory;
@@ -20,23 +15,15 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(IEnumerable<TransportOperation> transportOperations, ContextBag context)
+        public async Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            foreach (var operation in transportOperations)
+            foreach (var operation in operations.UnicastTransportOperations)
             {
-                var dispatchOptions = operation.DispatchOptions;
-                var routingStrategy = dispatchOptions.AddressTag as UnicastAddressTag;
-
-                if (routingStrategy == null)
-                {
-                    throw new Exception("The Sql transport only supports the `DirectRoutingStrategy`, strategy required " + dispatchOptions.AddressTag.GetType().Name);
-                }
-
-                var destination = addressProvider.Parse(routingStrategy.Destination);
+                var destination = addressProvider.Parse(operation.Destination);
                 var queue = new TableBasedQueue(destination);
 
                 //Dispatch in separate transaction even if transaction scope already exists
-                if (dispatchOptions.RequiredDispatchConsistency == DispatchConsistency.Isolated)
+                if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
                     await DispatchInIsolatedTransactionScope(queue, operation);
                 }
@@ -53,7 +40,7 @@
             }
         }
 
-        async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, TransportOperation operation)
+        async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, UnicastTransportOperation operation)
         {
             using (var connection = await connectionFactory.OpenNewConnection())
             {
@@ -66,7 +53,7 @@
             }
         }
 
-        async Task DispatchInCurrentReceiveContext(ReceiveContext receiveContext, TableBasedQueue queue, TransportOperation operation)
+        async Task DispatchInCurrentReceiveContext(ReceiveContext receiveContext, TableBasedQueue queue, UnicastTransportOperation operation)
         {
             SqlConnection connection;
             SqlTransaction transaction;
@@ -76,7 +63,7 @@
             await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
         }
 
-        async Task DispatchInIsolatedTransactionScope(TableBasedQueue queue, TransportOperation operation)
+        async Task DispatchInIsolatedTransactionScope(TableBasedQueue queue, UnicastTransportOperation operation)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -109,5 +96,8 @@
                     throw new Exception("Invalid receive type");
             }
         }
+
+        SqlConnectionFactory connectionFactory;
+        QueueAddressProvider addressProvider;
     }
 }
