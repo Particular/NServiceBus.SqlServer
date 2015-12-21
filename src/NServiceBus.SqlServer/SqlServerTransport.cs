@@ -144,7 +144,7 @@ namespace NServiceBus
         {
             throw new NotSupportedException("Sql don't support native pub sub");
         }
-
+        
         /// <summary>
         /// Returns the discriminator for this endpoint instance.
         /// </summary>

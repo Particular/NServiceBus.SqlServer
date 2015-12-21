@@ -16,7 +16,7 @@
             this.addressProvider = addressProvider;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
-        
+
         public async Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
         {
             pipeline = pipe;
@@ -33,7 +33,7 @@
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    var purgedRowsCount =  await inputQueue.Purge(connection).ConfigureAwait(false);
+                    var purgedRowsCount = await inputQueue.Purge(connection).ConfigureAwait(false);
 
                     Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
                 }
@@ -50,7 +50,7 @@
 
             messagePumpTask = Task.Run(() => ProcessMessages(), CancellationToken.None);
         }
-        
+
 
         public async Task Stop()
         {
@@ -72,7 +72,7 @@
             concurrencyLimiter.Dispose();
             runningReceiveTasks.Clear();
         }
-        
+
         async Task ProcessMessages()
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -134,28 +134,28 @@
                 {
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
+                    var tokenSource = new CancellationTokenSource();
+
                     var receiveTask = Task.Run(async () =>
                     {
                         try
                         {
-                            await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, pipeline)
+                            await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, tokenSource, pipeline)
                                 .ConfigureAwait(false);
 
                             receiveCircuitBreaker.Success();
                         }
                         catch (Exception ex)
                         {
-                            if (HandledByRetries(ex) == false)
-                            {
-                                Logger.Warn("Sql receive operation failed", ex);
-                                await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
-                            }
+                            Logger.Warn("Sql receive operation failed", ex);
+                            await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+
                         }
                         finally
                         {
                             concurrencyLimiter.Release();
                         }
-                    }, cancellationToken);
+                    }, cancellationToken).ContinueWith(t => tokenSource.Dispose());
 
                     runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
@@ -174,11 +174,6 @@
                     }, TaskContinuationOptions.ExecuteSynchronously);
                 }
             }
-        }
-
-        static bool HandledByRetries(Exception ex)
-        {
-            return ex.GetType().Name == "MessageProcessingAbortedException";
         }
 
         TableBasedQueue inputQueue;
