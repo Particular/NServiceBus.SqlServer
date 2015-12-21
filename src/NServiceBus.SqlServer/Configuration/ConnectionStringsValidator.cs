@@ -11,6 +11,14 @@
         const string TransportConnectionStringPrefix = "NServiceBus/Transport";
         const string SchemaOverridePart = "Queue Schema";
 
+        const string MultiDatabaseNotSupported = 
+            "Multidatabase setup is not supported in this version of sql transport. " +
+            "Please see documentation for setting up non default schema per each endpoint";
+
+        const string SchemaOverrideNotSupported =
+            "Schema override in connection string is not supported anymore. " +
+            "Please see documentation for setting up non default schema value";
+
         public bool TryValidate(List<ConnectionStringSettings> connectionSettings, out string message)
         {
             Func<string, bool> isTransportConnectionStringName = n => n.StartsWith(TransportConnectionStringPrefix, StringComparison.InvariantCultureIgnoreCase);
@@ -27,8 +35,7 @@
             //More than one transport connection string
             if (transportConnectionSettings.Count() > 1)
             {
-                message = @"Multidatabase setup is not supported in this version of sql transport. 
-                            Please see documentation for setting up non default schema per each endpoint";
+                message = MultiDatabaseNotSupported;
 
                 return false;
             }
@@ -40,8 +47,7 @@
 
             if (isGlobalConnectionString(transportConnectionSetting.Name) == false)
             {
-                message = @"Multidatabase setup is not supported in this version of sql transport. 
-                           Please see documentation for setting up non default schema per each endpoint";
+                message = MultiDatabaseNotSupported;
 
                 return false;
             }
@@ -50,8 +56,7 @@
 
             if (hasSchemaOverride(transportConnectionSetting.ConnectionString))
             {
-                message = @"Schema override in connection string is not supported anymore.
-                            Please see documentation for setting up non defautl scheam value";
+                message = SchemaOverrideNotSupported;
 
                 return false;
             }
