@@ -4,7 +4,7 @@
     using System.Linq;
     using NServiceBus.Logging;
 
-    class UsingOldConfigurationCheck
+    class UsingV2ConfigurationChecker
     {
         public static StartupCheckResult Check()
         {
@@ -23,6 +23,6 @@
             return StartupCheckResult.Success;
         }
 
-        static ILog Logger = LogManager.GetLogger<UsingOldConfigurationCheck>();
+        static ILog Logger = LogManager.GetLogger<UsingV2ConfigurationChecker>();
     }
 }

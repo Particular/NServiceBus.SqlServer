@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -19,25 +18,34 @@
         {
             foreach (var operation in operations.UnicastTransportOperations)
             {
-                var destination = addressProvider.Parse(operation.Destination);
-                var queue = new TableBasedQueue(destination);
-
-                //Dispatch in separate transaction even if transaction scope already exists
-                if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
-                {
-                    await DispatchInIsolatedTransactionScope(queue, operation);
-                }
-
-                ReceiveContext receiveContext;
-                if (context.TryGet(out receiveContext))
-                {
-                    await DispatchInCurrentReceiveContext(receiveContext, queue, operation);
-                }
-                else
-                {
-                    await DispatchAsSeparateSendOperation(queue, operation);
-                }
+                await DispatchUnicastOperation(context, operation).ConfigureAwait(false);
             }
+        }
+
+        async Task DispatchUnicastOperation(ContextBag context, UnicastTransportOperation operation)
+        {
+            var destination = addressProvider.Parse(operation.Destination);
+            var queue = new TableBasedQueue(destination);
+
+            //Dispatch in separate transaction even if transaction scope already exists
+            if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
+            {
+                await DispatchInIsolatedTransactionScope(queue, operation).ConfigureAwait(false);
+
+                return;
+            }
+
+            TransportTransaction transportTransaction;
+            var transportTransactionExists = context.TryGet(out transportTransaction);
+
+            if (transportTransactionExists == false || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            {
+                await DispatchAsSeparateSendOperation(queue, operation).ConfigureAwait(false);
+
+                return;
+            }
+
+            await DispatchInCurrentTransportTransaction(transportTransaction, queue, operation).ConfigureAwait(false);
         }
 
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, UnicastTransportOperation operation)
@@ -53,12 +61,13 @@
             }
         }
 
-        async Task DispatchInCurrentReceiveContext(ReceiveContext receiveContext, TableBasedQueue queue, UnicastTransportOperation operation)
+        async Task DispatchInCurrentTransportTransaction(TransportTransaction transportTransaction, TableBasedQueue queue, UnicastTransportOperation operation)
         {
             SqlConnection connection;
-            SqlTransaction transaction;
+            SqlTransaction transaction;      
 
-            GetSqlResources(receiveContext, out connection, out transaction);
+            transportTransaction.TryGet(out connection);
+            transportTransaction.TryGet(out transaction);
 
             await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
         }
@@ -76,25 +85,11 @@
             }
         }
 
-        void GetSqlResources(ReceiveContext receiveContext, out SqlConnection connection, out SqlTransaction transaction)
+        bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
-            switch (receiveContext.Type)
-            {
-                case ReceiveType.TransactionScope:
-                    connection = receiveContext.Connection;
-                    transaction = null;
-                    break;
-                case ReceiveType.NativeTransaction:
-                    connection = receiveContext.Transaction.Connection;
-                    transaction = receiveContext.Transaction;
-                    break;
-                case ReceiveType.NoTransaction:
-                    connection = receiveContext.Connection;
-                    transaction = null;
-                    break;
-                default:
-                    throw new Exception("Invalid receive type");
-            }
+            bool inReceiveMode;
+
+            return transportTransaction.TryGet(ReceiveWithReceiveOnlyTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
 
         SqlConnectionFactory connectionFactory;

@@ -5,12 +5,15 @@
     using System.Transactions;
     using NServiceBus.Extensibility;
 
-    class ReceiveWithNativeTransaction : ReceiveStrategy
+    class ReceiveWithReceiveOnlyTransaction : ReceiveStrategy
     {
-        public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
+        internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
+
+        public ReceiveWithReceiveOnlyTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
-            isolationLevel = GetSqlIsolationLevel(transactionOptions.IsolationLevel);
+
+            isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
@@ -26,7 +29,9 @@
                         if (readResult.IsPoison)
                         {
                             await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, transaction).ConfigureAwait(false);
+
                             transaction.Commit();
+
                             return;
                         }
 
@@ -37,20 +42,21 @@
                             using (var bodyStream = message.BodyStream)
                             {
                                 var transportTransaction = new TransportTransaction();
+
+                                //those resources are meant to be used by anyone except message dispatcher e.g. persister
+                                transportTransaction.Set(sqlConnection);
                                 transportTransaction.Set(transaction);
 
+                                //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
+                                transportTransaction.Set(ReceiveOnlyTransactionMode, true);
+
                                 var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, new ContextBag());
-                                pushContext.Context.Set(new ReceiveContext {Type = ReceiveType.NativeTransaction, Transaction = transaction});
 
                                 await onMessage(pushContext).ConfigureAwait(false);
-
-                                transaction.Commit();
-
-                                return;
                             }
-                        }
 
-                        transaction.Commit();
+                            transaction.Commit();
+                        }
                     }
                     catch (Exception)
                     {
@@ -61,29 +67,7 @@
             }
         }
 
-        static System.Data.IsolationLevel GetSqlIsolationLevel(IsolationLevel isolationLevel)
-        {
-            switch (isolationLevel)
-            {
-                case IsolationLevel.Serializable:
-                    return System.Data.IsolationLevel.Serializable;
-                case IsolationLevel.RepeatableRead:
-                    return System.Data.IsolationLevel.RepeatableRead;
-                case IsolationLevel.ReadCommitted:
-                    return System.Data.IsolationLevel.ReadCommitted;
-                case IsolationLevel.ReadUncommitted:
-                    return System.Data.IsolationLevel.ReadUncommitted;
-                case IsolationLevel.Snapshot:
-                    return System.Data.IsolationLevel.Snapshot;
-                case IsolationLevel.Chaos:
-                    return System.Data.IsolationLevel.Chaos;
-                case IsolationLevel.Unspecified:
-                    return System.Data.IsolationLevel.Unspecified;
-            }
-
-            return System.Data.IsolationLevel.ReadCommitted;
-        }
-
+       
         System.Data.IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
     }

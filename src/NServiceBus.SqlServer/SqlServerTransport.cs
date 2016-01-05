@@ -87,12 +87,17 @@ namespace NServiceBus
                 return new ReceiveWithTransactionScope(options, connectionFactory);
             }
 
-            if (minimumConsistencyGuarantee == TransportTransactionMode.None)
+            if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithNoTransaction(connectionFactory);
+                return new ReceiveWithSendsAtomicWithReceiveTransaction(options, connectionFactory);    
             }
 
-            return new ReceiveWithNativeTransaction(options, connectionFactory);
+            if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
+            {
+                return new ReceiveWithReceiveOnlyTransaction(options, connectionFactory);
+            }
+
+            return new ReceiveWithNoTransaction(connectionFactory);
         }
 
         /// <summary>
@@ -107,7 +112,7 @@ namespace NServiceBus
                 () => new MessageDispatcher(connectionFactory, parser),
                 () =>
                 {
-                    var result = UsingOldConfigurationCheck.Check();
+                    var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });
         }

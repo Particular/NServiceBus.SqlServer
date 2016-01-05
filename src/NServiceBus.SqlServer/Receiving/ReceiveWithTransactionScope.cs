@@ -24,8 +24,13 @@ namespace NServiceBus.Transports.SQLServer
                 if (readResult.IsPoison)
                 {
                     await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
+
+                    scope.Complete();
+
+                    return;
                 }
-                else if (readResult.Successful)
+
+                if (readResult.Successful)
                 {
                     var message = readResult.Message;
 
@@ -35,13 +40,12 @@ namespace NServiceBus.Transports.SQLServer
                         transportTransaction.Set(sqlConnection);
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, new ContextBag());
-                        pushContext.Context.Set(new ReceiveContext { Type = ReceiveType.TransactionScope, Connection = sqlConnection });
 
                         await onMessage(pushContext).ConfigureAwait(false);
                     }
-                }
 
-                scope.Complete();
+                    scope.Complete();
+                }
             }
         }
 
