@@ -23,6 +23,18 @@ namespace NServiceBus
             return parser;
         }
 
+        }
+
+        EndpointConnectionStringLookup GetEndpointConnectionStringLookup(ReadOnlySettings settings, string defaultConnectionString)
+        {
+            Func<string, Task<string>> endpointConnectionLookup;
+
+            if (settings.TryGet(SettingsKeys.EndpointConnectionLookupFunc, out endpointConnectionLookup))
+            {
+                return new EndpointConnectionStringLookup(endpointConnectionLookup);
+            }
+
+            return EndpointConnectionStringLookup.Default(defaultConnectionString);
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
@@ -30,6 +42,7 @@ namespace NServiceBus
         /// <param name="connectionString"></param>
         /// <returns></returns>
         protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
+            var endpointConnectionStringLookup = GetEndpointConnectionStringLookup(context.Settings, context.ConnectionString);
         {
             var addressParser = CreateAddressParser(settings);
 

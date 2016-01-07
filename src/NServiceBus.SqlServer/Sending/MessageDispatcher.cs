@@ -8,9 +8,11 @@
     class MessageDispatcher : IDispatchMessages
     {
         public MessageDispatcher(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
+        readonly EndpointConnectionStringLookup endpointConnectionStringLookup;
         {
             this.connectionFactory = connectionFactory;
             this.addressParser = addressParser;
+            this.endpointConnectionStringLookup = endpointConnectionStringLookup;
         }
 
         // We need to check if we can support cancellation in here as well?
@@ -51,6 +53,7 @@
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, UnicastTransportOperation operation)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(connectionString))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -74,6 +77,7 @@
 
         async Task DispatchInIsolatedTransactionScope(TableBasedQueue queue, UnicastTransportOperation operation)
         {
+            var connectionString = endpointConnectionStringLookup.ConnectionStringLookup(queue.ToString()).GetAwaiter().GetResult();
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))

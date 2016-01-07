@@ -82,5 +82,20 @@
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Specifies connectionString lookup to be used by sql transport.
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="endpointConnectionLookupFunc">Function that maps transportAddress to connectionString.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> ProvideEndpointConnectionLookup(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<string>> endpointConnectionLookupFunc)
+        {
+            Guard.AgainstNull("endpointConnectionLookupFunc", endpointConnectionLookupFunc);
+
+            transportExtensions.GetSettings().Set(SettingsKeys.EndpointConnectionLookupFunc, endpointConnectionLookupFunc);
+
+            return transportExtensions;
+        }
     }
 }

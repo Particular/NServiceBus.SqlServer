@@ -8,22 +8,24 @@
 
     class ReceiveWithTransactionScope : ReceiveStrategy
     {
-        public ReceiveWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
+        public ReceiveWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, EndpointConnectionStringLookup endpointConnectionStringLookup)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
+            this.endpointConnectionStringLookup = endpointConnectionStringLookup;
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
+            var connectionString = endpointConnectionStringLookup.ConnectionStringLookup(inputQueue.ToString()).GetAwaiter().GetResult();
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
             using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
+                var readResult = await inputQueue.TryReceive(inputConnection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
                 {
-                    await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
+                    var errorConnectionString = endpointConnectionStringLookup.ConnectionStringLookup(errorQueue.ToString()).GetAwaiter().GetResult();
 
                     scope.Complete();
 
@@ -61,5 +63,6 @@
 
         TransactionOptions transactionOptions;
         SqlConnectionFactory connectionFactory;
+        readonly EndpointConnectionStringLookup endpointConnectionStringLookup;
     }
 }

@@ -9,9 +9,10 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(CriticalError criticalError, Func<TransactionSupport, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker, EndpointConnectionStringLookup endpointConnectionStringLookup)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
+            this.endpointConnectionStringLookup = endpointConnectionStringLookup;
             this.connectionFactory = connectionFactory;
             this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -29,11 +30,14 @@
             inputQueue = new TableBasedQueue(addressParser.Parse(settings.InputQueue));
             errorQueue = new TableBasedQueue(addressParser.Parse(settings.ErrorQueue));
 
+            inputConnectionString = endpointConnectionStringLookup.ConnectionStringLookup(inputQueue.ToString()).GetAwaiter().GetResult();
+
             if (settings.PurgeOnStartup)
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var inputConnection = connectionFactory.OpenNewConnection(inputConnectionString).GetAwaiter().GetResult())
                 {
-                    var purgedRowsCount = await inputQueue.Purge(connection).ConfigureAwait(false);
+                    var purgedRowsCount = inputQueue.Purge(inputConnection);
 
                     Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
                 }
@@ -102,7 +106,7 @@
 
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(inputConnectionString))
                     {
                         messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
 
@@ -181,6 +185,8 @@
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
+        EndpointConnectionStringLookup endpointConnectionStringLookup;
+        string inputConnectionString;
         SqlConnectionFactory connectionFactory;
         QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;

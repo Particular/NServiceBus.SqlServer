@@ -8,23 +8,29 @@ namespace NServiceBus.Transports.SQLServer
     class ReceiveWithNoTransaction : ReceiveStrategy
     {
         readonly SqlConnectionFactory connectionFactory;
+        readonly EndpointConnectionStringLookup endpointConnectionStringLookup;
 
-        public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
+        public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory, EndpointConnectionStringLookup endpointConnectionStringLookup)
         {
             this.connectionFactory = connectionFactory;
+            this.endpointConnectionStringLookup = endpointConnectionStringLookup;
         }
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var inputConnection = await connectionFactory.OpenNewConnection(connectionString))
             {
-                var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
+                var readResult = await inputQueue.TryReceive(inputConnection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
                 {
-                    await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
+                    var errorConnectionString = endpointConnectionStringLookup.ConnectionStringLookup(errorQueue.ToString()).GetAwaiter().GetResult();
 
-                    return;
+                    {
+                        await errorQueue.SendRawMessage(readResult.DataRecord, errorConnection, null).ConfigureAwait(false);
+                        return;
+                    }
                 }
 
                 if (readResult.Successful)
@@ -34,7 +40,7 @@ namespace NServiceBus.Transports.SQLServer
                     using (var bodyStream = message.BodyStream)
                     {
                         var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(sqlConnection);
+                        transportTransaction.Set(inputConnection);
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
 
