@@ -77,7 +77,8 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="obsoletes.cs" />
-    <Compile Include="Receiving\ReceiveContext.cs" />
+    <Compile Include="Receiving\IsolationLevelMapper.cs" />
+    <Compile Include="Receiving\ReceiveWithSendsAtomicWithReceiveTransaction.cs" />
     <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
     <Compile Include="Queuing\Sql.cs" />
@@ -90,13 +91,13 @@
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="Queuing\MessageReadResult.cs" />
-    <Compile Include="Receiving\ReceiveWithNativeTransaction.cs" />
+    <Compile Include="Receiving\ReceiveWithReceiveOnlyTransaction.cs" />
     <Compile Include="Receiving\ReceiveWithNoTransaction.cs" />
     <Compile Include="Receiving\ReceiveStrategy.cs" />
     <Compile Include="Receiving\QueueCreator.cs" />
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="Queuing\TableBasedQueue.cs" />
-    <Compile Include="Sending\UsingOldConfigurationCheck.cs" />
+    <Compile Include="Sending\UsingV2ConfigurationChecker.cs" />
     <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>
