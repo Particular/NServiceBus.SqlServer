@@ -3,6 +3,7 @@
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using System.Transactions;
     using NServiceBus.Configuration.AdvanceExtensibility;
 
     //TODO: let's move classes into subfolders?
@@ -67,6 +68,18 @@
 
             transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
 
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Allows the IsolationLevel and transaction timeout to be changed for the TransactionScope used to receive messages.
+        /// </summary>
+        /// <remarks>
+        /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to `ReadCommited`.
+        /// </remarks>
+        public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
+        {
+            transportExtensions.GetSettings().Set<SqlServerTransport.SqlScopeOptions>(new SqlServerTransport.SqlScopeOptions(timeout, isolationLevel));
             return transportExtensions;
         }
     }

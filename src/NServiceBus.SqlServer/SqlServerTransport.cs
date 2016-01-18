@@ -2,10 +2,12 @@ namespace NServiceBus
 {
     using System;
     using System.Collections.Generic;
+    using System.Configuration;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
+    using System.Transactions.Configuration;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Routing;
     using NServiceBus.Settings;
@@ -59,11 +61,11 @@ namespace NServiceBus
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
             var addressParser = CreateAddressParser(context.Settings);
 
-            var transactionOptions = new TransactionOptions
+            SqlScopeOptions scopeOptions;
+            if (!context.Settings.TryGet(out scopeOptions))
             {
-                IsolationLevel = context.Settings.Get<IsolationLevel>("Transactions.IsolationLevel"),
-                Timeout = context.Settings.Get<TimeSpan>("Transactions.DefaultTimeout")
-            };
+                scopeOptions = new SqlScopeOptions();
+            }
 
             TimeSpan waitTimeCircuitBreaker;
 
@@ -72,7 +74,7 @@ namespace NServiceBus
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
 
-            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
+            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
             return new TransportReceivingConfigurationResult(
                 () => new MessagePump(receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
@@ -196,5 +198,57 @@ namespace NServiceBus
         public override bool RequiresConnectionString => true;
 
         const string SchemaPropertyKey = "Schema";
+
+        internal class SqlScopeOptions
+        {
+            public TransactionOptions TransactionOptions { get; }
+
+            public SqlScopeOptions(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
+            {
+                var isolationLevel = IsolationLevel.ReadCommitted;
+                if (requestedIsolationLevel.HasValue)
+                {
+                    isolationLevel = requestedIsolationLevel.Value;
+                }
+
+                var timeout = TransactionManager.DefaultTimeout;
+                if (requestedTimeout.HasValue)
+                {
+                    var maxTimeout = GetMaxTimeout();
+
+                    if (requestedTimeout.Value > maxTimeout)
+                    {
+                        throw new ConfigurationErrorsException(
+                            "Timeout requested is longer than the maximum value for this machine. Please override using the maxTimeout setting of the system.transactions section in machine.config");
+                    }
+
+                    timeout = requestedTimeout.Value;
+                }
+
+                TransactionOptions = new TransactionOptions
+                {
+                    IsolationLevel = isolationLevel,
+                    Timeout = timeout
+                };
+            }
+
+            private static TimeSpan GetMaxTimeout()
+            {
+                //default is always 10 minutes
+                var maxTimeout = TimeSpan.FromMinutes(10);
+
+                var systemTransactionsGroup = ConfigurationManager.OpenMachineConfiguration()
+                    .GetSectionGroup("system.transactions");
+
+                var machineSettings = systemTransactionsGroup?.Sections.Get("machineSettings") as MachineSettingsSection;
+
+                if (machineSettings != null)
+                {
+                    maxTimeout = machineSettings.MaxTimeout;
+                }
+
+                return maxTimeout;
+            }
+        }
     }
 }
