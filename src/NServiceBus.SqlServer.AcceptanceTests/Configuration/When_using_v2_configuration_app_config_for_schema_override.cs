@@ -13,11 +13,11 @@
         [Test]
         public async Task Should_fail_on_startup()
         {
-            var appConfigFilename = $"app.sqlv2.config";
+            var appConfigFilename = "app.sqlv2.config";
             var expectedErrorMessage = "Schema override in connection string is not supported anymore";
 
             File.WriteAllText(appConfigFilename,  
-                        $@"<?xml version='1.0' encoding='utf-8'?>
+                        @"<?xml version='1.0' encoding='utf-8'?>
                             <configuration>
                                 <connectionStrings>
                                   <clear />

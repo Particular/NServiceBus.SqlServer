@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Extensibility;
@@ -14,7 +15,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var sqlConnection = await connectionFactory.OpenNewConnection())
             {
@@ -44,9 +45,15 @@
                                 transportTransaction.Set(sqlConnection);
                                 transportTransaction.Set(transaction);
 
-                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, new ContextBag());
+                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
 
                                 await onMessage(pushContext).ConfigureAwait(false);
+                            }
+
+                            if (cancellationTokenSource.Token.IsCancellationRequested)
+                            {
+                                transaction.Rollback();
+                                return;
                             }
 
                             transaction.Commit();
