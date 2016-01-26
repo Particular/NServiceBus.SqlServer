@@ -48,9 +48,8 @@
 
             cancellationToken = cancellationTokenSource.Token;
 
-            messagePumpTask = Task.Run(() => ProcessMessages(), CancellationToken.None);
+            messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
         }
-
 
         public async Task Stop()
         {
@@ -101,7 +100,7 @@
 
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection())
+                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                     {
                         messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
 
@@ -149,7 +148,6 @@
                         {
                             Logger.Warn("Sql receive operation failed", ex);
                             await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
-
                         }
                         finally
                         {
@@ -167,11 +165,12 @@
                     // antecedent task is aborted the continuation will be scheduled. But in this case we don't need to await
                     // the continuation to complete because only really care about the receive operations. The final operation
                     // when shutting down is a clear of the running tasks anyway.
-                    await receiveTask.ContinueWith(t =>
+                    receiveTask.ContinueWith(t =>
                     {
                         Task toBeRemoved;
                         runningReceiveTasks.TryRemove(t, out toBeRemoved);
-                    }, TaskContinuationOptions.ExecuteSynchronously);
+                    }, TaskContinuationOptions.ExecuteSynchronously)
+                    .Ignore();
                 }
             }
         }

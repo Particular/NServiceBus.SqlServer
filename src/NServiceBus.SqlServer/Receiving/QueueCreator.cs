@@ -17,17 +17,17 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            using (var connection = await connectionFactory.OpenNewConnection())
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
                     foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                     {
-                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
+                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                     }
                     foreach (var receivingAddress in queueBindings.SendingAddresses)
                     {
-                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction);
+                        await CreateQueue(addressProvider.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                     }
 
                     transaction.Commit();
@@ -44,7 +44,7 @@ namespace NServiceBus.Transports.SQLServer
                 CommandType = CommandType.Text
             })
             {
-                await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
     }

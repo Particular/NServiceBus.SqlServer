@@ -16,7 +16,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = await connectionFactory.OpenNewConnection())
+            using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
 

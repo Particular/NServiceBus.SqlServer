@@ -13,9 +13,9 @@
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection()
+        public Task<SqlConnection> OpenNewConnection()
         {
-            return await openNewConnection();
+            return openNewConnection();
         }
 
         public static SqlConnectionFactory Default(string connectionString)
