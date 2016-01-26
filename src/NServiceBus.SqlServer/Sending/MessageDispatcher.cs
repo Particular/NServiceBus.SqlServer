@@ -50,7 +50,7 @@
 
         async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, UnicastTransportOperation operation)
         {
-            using (var connection = await connectionFactory.OpenNewConnection())
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -76,7 +76,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection())
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
                     await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
                 }

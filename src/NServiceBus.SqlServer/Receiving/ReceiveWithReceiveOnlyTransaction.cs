@@ -19,7 +19,7 @@
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = await connectionFactory.OpenNewConnection())
+            using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 using (var transaction = sqlConnection.BeginTransaction(isolationLevel))
                 {
