@@ -38,6 +38,7 @@
                     {
                         var transportTransaction = new TransportTransaction();
                         transportTransaction.Set(sqlConnection);
+                        transportTransaction.Set(Transaction.Current);
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
 
