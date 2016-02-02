@@ -108,10 +108,10 @@ namespace NServiceBus
         protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-            var parser = CreateAddressParser(context.Settings);
+            var addressParser = CreateAddressParser(context.Settings);
 
             return new TransportSendingConfigurationResult(
-                () => new MessageDispatcher(connectionFactory, parser),
+                () => new MessageDispatcher(connectionFactory, addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
@@ -185,6 +185,23 @@ namespace NServiceBus
         public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
         {
             return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.MakeCanonicalForm"/>.
+        /// </summary>
+        /// <param name="transportAddress"></param>
+        /// <returns></returns>
+        public override string MakeCanonicalForm(string transportAddress)
+        {
+            var address = QueueAddress.Parse(transportAddress);
+
+            if (string.IsNullOrEmpty(address.SchemaName))
+            {
+                return new QueueAddress(address.TableName, "dbo").ToString();
+            }
+
+            return base.MakeCanonicalForm(transportAddress);
         }
 
         /// <summary>
