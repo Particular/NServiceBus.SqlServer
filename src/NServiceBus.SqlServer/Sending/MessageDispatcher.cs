@@ -7,10 +7,10 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider)
+        public MessageDispatcher(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
         {
             this.connectionFactory = connectionFactory;
-            this.addressProvider = addressProvider;
+            this.addressParser = addressParser;
         }
 
         // We need to check if we can support cancellation in here as well?
@@ -24,7 +24,7 @@
 
         async Task DispatchUnicastOperation(ContextBag context, UnicastTransportOperation operation)
         {
-            var destination = addressProvider.Parse(operation.Destination);
+            var destination = addressParser.Parse(operation.Destination);
             var queue = new TableBasedQueue(destination);
 
             //Dispatch in separate transaction even if transaction scope already exists
@@ -93,6 +93,6 @@
         }
 
         SqlConnectionFactory connectionFactory;
-        QueueAddressProvider addressProvider;
+        QueueAddressParser addressParser;
     }
 }

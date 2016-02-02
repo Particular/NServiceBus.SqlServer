@@ -86,7 +86,7 @@
     <Compile Include="Queuing\Message.cs" />
     <Compile Include="Queuing\MessageParser.cs" />
     <Compile Include="Addressing\QueueAddress.cs" />
-    <Compile Include="Addressing\QueueAddressProvider.cs" />
+    <Compile Include="Addressing\QueueAddressParser.cs" />
     <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />

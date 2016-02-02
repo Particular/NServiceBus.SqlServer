@@ -28,7 +28,7 @@ namespace NServiceBus
             RequireOutboxConsent = true;
         }
 
-        QueueAddressProvider CreateAddressParser(ReadOnlySettings settings)
+        QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
             Func<string, string> schemaOverrider;
@@ -36,7 +36,7 @@ namespace NServiceBus
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
             settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            var parser = new QueueAddressProvider("dbo", defaultSchemaOverride, schemaOverrider);
+            var parser = new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
 
             return parser;
         }
@@ -59,7 +59,6 @@ namespace NServiceBus
         protected override TransportReceivingConfigurationResult ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-            var addressParser = CreateAddressParser(context.Settings);
 
             SqlScopeOptions scopeOptions;
             if (!context.Settings.TryGet(out scopeOptions))
@@ -108,7 +107,6 @@ namespace NServiceBus
         protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-            var addressParser = CreateAddressParser(context.Settings);
 
             return new TransportSendingConfigurationResult(
                 () => new MessageDispatcher(connectionFactory, addressParser),
@@ -152,6 +150,8 @@ namespace NServiceBus
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance, ReadOnlySettings settings)
         {
+            addressParser = CreateAddressParser(settings);
+
             return instance.SetProperty(SchemaPropertyKey, CreateAddressParser(settings).DefaultSchema);
         }
 
@@ -194,14 +194,8 @@ namespace NServiceBus
         /// <returns></returns>
         public override string MakeCanonicalForm(string transportAddress)
         {
-            var address = QueueAddress.Parse(transportAddress);
-
-            if (string.IsNullOrEmpty(address.SchemaName))
-            {
-                return new QueueAddress(address.TableName, "dbo").ToString();
-            }
-
-            return base.MakeCanonicalForm(transportAddress);
+            //Parsing adds schema value if not specified explicitly
+            return addressParser.Parse(transportAddress).ToString();
         }
 
         /// <summary>
@@ -215,6 +209,8 @@ namespace NServiceBus
         public override bool RequiresConnectionString => true;
 
         const string SchemaPropertyKey = "Schema";
+
+        QueueAddressParser addressParser;
 
         internal class SqlScopeOptions
         {

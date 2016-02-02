@@ -9,11 +9,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.connectionFactory = connectionFactory;
-            this.addressProvider = addressProvider;
+            this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
 
@@ -26,8 +26,8 @@
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
 
-            inputQueue = new TableBasedQueue(addressProvider.Parse(settings.InputQueue));
-            errorQueue = new TableBasedQueue(addressProvider.Parse(settings.ErrorQueue));
+            inputQueue = new TableBasedQueue(addressParser.Parse(settings.InputQueue));
+            errorQueue = new TableBasedQueue(addressParser.Parse(settings.ErrorQueue));
 
             if (settings.PurgeOnStartup)
             {
@@ -180,7 +180,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         SqlConnectionFactory connectionFactory;
-        QueueAddressProvider addressProvider;
+        QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;
