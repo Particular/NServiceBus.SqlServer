@@ -2,12 +2,10 @@ namespace NServiceBus
 {
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
-    using System.Transactions.Configuration;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Routing;
     using NServiceBus.Settings;
@@ -211,57 +209,5 @@ namespace NServiceBus
         const string SchemaPropertyKey = "Schema";
 
         QueueAddressParser addressParser;
-
-        internal class SqlScopeOptions
-        {
-            public TransactionOptions TransactionOptions { get; }
-
-            public SqlScopeOptions(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
-            {
-                var isolationLevel = IsolationLevel.ReadCommitted;
-                if (requestedIsolationLevel.HasValue)
-                {
-                    isolationLevel = requestedIsolationLevel.Value;
-                }
-
-                var timeout = TransactionManager.DefaultTimeout;
-                if (requestedTimeout.HasValue)
-                {
-                    var maxTimeout = GetMaxTimeout();
-
-                    if (requestedTimeout.Value > maxTimeout)
-                    {
-                        throw new ConfigurationErrorsException(
-                            "Timeout requested is longer than the maximum value for this machine. Please override using the maxTimeout setting of the system.transactions section in machine.config");
-                    }
-
-                    timeout = requestedTimeout.Value;
-                }
-
-                TransactionOptions = new TransactionOptions
-                {
-                    IsolationLevel = isolationLevel,
-                    Timeout = timeout
-                };
-            }
-
-            private static TimeSpan GetMaxTimeout()
-            {
-                //default is always 10 minutes
-                var maxTimeout = TimeSpan.FromMinutes(10);
-
-                var systemTransactionsGroup = ConfigurationManager.OpenMachineConfiguration()
-                    .GetSectionGroup("system.transactions");
-
-                var machineSettings = systemTransactionsGroup?.Sections.Get("machineSettings") as MachineSettingsSection;
-
-                if (machineSettings != null)
-                {
-                    maxTimeout = machineSettings.MaxTimeout;
-                }
-
-                return maxTimeout;
-            }
-        }
     }
 }
