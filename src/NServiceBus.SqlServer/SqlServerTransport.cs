@@ -2,12 +2,10 @@ namespace NServiceBus
 {
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
-    using System.Transactions.Configuration;
     using NServiceBus.Performance.TimeToBeReceived;
     using NServiceBus.Routing;
     using NServiceBus.Settings;
@@ -28,7 +26,7 @@ namespace NServiceBus
             RequireOutboxConsent = true;
         }
 
-        QueueAddressProvider CreateAddressParser(ReadOnlySettings settings)
+        QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
             Func<string, string> schemaOverrider;
@@ -36,7 +34,7 @@ namespace NServiceBus
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
             settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            var parser = new QueueAddressProvider("dbo", defaultSchemaOverride, schemaOverrider);
+            var parser = new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
 
             return parser;
         }
@@ -59,7 +57,6 @@ namespace NServiceBus
         protected override TransportReceivingConfigurationResult ConfigureForReceiving(TransportReceivingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-            var addressParser = CreateAddressParser(context.Settings);
 
             SqlScopeOptions scopeOptions;
             if (!context.Settings.TryGet(out scopeOptions))
@@ -108,10 +105,9 @@ namespace NServiceBus
         protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
         {
             var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-            var parser = CreateAddressParser(context.Settings);
 
             return new TransportSendingConfigurationResult(
-                () => new MessageDispatcher(connectionFactory, parser),
+                () => new MessageDispatcher(connectionFactory, addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
@@ -152,6 +148,8 @@ namespace NServiceBus
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance, ReadOnlySettings settings)
         {
+            addressParser = CreateAddressParser(settings);
+
             return instance.SetProperty(SchemaPropertyKey, CreateAddressParser(settings).DefaultSchema);
         }
 
@@ -188,6 +186,17 @@ namespace NServiceBus
         }
 
         /// <summary>
+        /// <see cref="TransportDefinition.MakeCanonicalForm"/>.
+        /// </summary>
+        /// <param name="transportAddress"></param>
+        /// <returns></returns>
+        public override string MakeCanonicalForm(string transportAddress)
+        {
+            //Parsing adds schema value if not specified explicitly
+            return addressParser.Parse(transportAddress).ToString();
+        }
+
+        /// <summary>
         /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage"/>
         /// </summary>
         public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
@@ -199,56 +208,6 @@ namespace NServiceBus
 
         const string SchemaPropertyKey = "Schema";
 
-        internal class SqlScopeOptions
-        {
-            public TransactionOptions TransactionOptions { get; }
-
-            public SqlScopeOptions(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
-            {
-                var isolationLevel = IsolationLevel.ReadCommitted;
-                if (requestedIsolationLevel.HasValue)
-                {
-                    isolationLevel = requestedIsolationLevel.Value;
-                }
-
-                var timeout = TransactionManager.DefaultTimeout;
-                if (requestedTimeout.HasValue)
-                {
-                    var maxTimeout = GetMaxTimeout();
-
-                    if (requestedTimeout.Value > maxTimeout)
-                    {
-                        throw new ConfigurationErrorsException(
-                            "Timeout requested is longer than the maximum value for this machine. Please override using the maxTimeout setting of the system.transactions section in machine.config");
-                    }
-
-                    timeout = requestedTimeout.Value;
-                }
-
-                TransactionOptions = new TransactionOptions
-                {
-                    IsolationLevel = isolationLevel,
-                    Timeout = timeout
-                };
-            }
-
-            private static TimeSpan GetMaxTimeout()
-            {
-                //default is always 10 minutes
-                var maxTimeout = TimeSpan.FromMinutes(10);
-
-                var systemTransactionsGroup = ConfigurationManager.OpenMachineConfiguration()
-                    .GetSectionGroup("system.transactions");
-
-                var machineSettings = systemTransactionsGroup?.Sections.Get("machineSettings") as MachineSettingsSection;
-
-                if (machineSettings != null)
-                {
-                    maxTimeout = machineSettings.MaxTimeout;
-                }
-
-                return maxTimeout;
-            }
-        }
+        QueueAddressParser addressParser;
     }
 }

@@ -2,7 +2,7 @@
 {
     using System;
 
-    class QueueAddressProvider
+    class QueueAddressParser
     {
         readonly string defaultSchema;
         readonly string defaultSchemaOverride;
@@ -11,9 +11,9 @@
 
         public string DefaultSchema => string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
 
-        public QueueAddressProvider(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
+        public QueueAddressParser(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
         {
-            Guard.AgainstNullAndEmpty("defaultSchema", defaultSchema);
+            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             this.defaultSchema = defaultSchema;
             this.defaultSchemaOverride = defaultSchemaOverride;

@@ -79,7 +79,7 @@
         /// </remarks>
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
         {
-            transportExtensions.GetSettings().Set<SqlServerTransport.SqlScopeOptions>(new SqlServerTransport.SqlScopeOptions(timeout, isolationLevel));
+            transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
             return transportExtensions;
         }
     }
