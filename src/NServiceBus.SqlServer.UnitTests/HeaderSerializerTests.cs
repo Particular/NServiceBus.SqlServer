@@ -17,6 +17,7 @@ namespace NServiceBus.SqlServer.UnitTests
             { "lowercaseKey", "lowercaseValue"},
             { "qote\"ke'y", "quote\"valu'e"},
             { "paren}key{}", "parent}value{}"},
+            { "nullKey", null},
         };
 
         [Test]
