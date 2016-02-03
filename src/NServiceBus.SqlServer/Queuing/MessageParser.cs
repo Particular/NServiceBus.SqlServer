@@ -3,12 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using NServiceBus.Serializers.Json;
 
     static class MessageParser
     {
-        static JsonMessageSerializer headerSerializer = new JsonMessageSerializer(null);
-
         internal static Message ParseRawData(object[] rowData)
         {
             var transportId = rowData[0].ToString();
@@ -40,11 +37,13 @@
         static Dictionary<string, string> GetHeaders(object[] rowData)
         {
             var headersAsString = (string) rowData[Sql.Columns.Headers.Index];
+
             if (string.IsNullOrWhiteSpace(headersAsString))
             {
                 return new Dictionary<string, string>();
             }
-            return (Dictionary<string, string>) headerSerializer.DeserializeObject(headersAsString, typeof(Dictionary<string, string>));
+
+            return HeaderSerializer.Deserialize(headersAsString);
         }
 
         internal static object[] CreateRawMessageData(OutgoingMessage message)
@@ -85,7 +84,7 @@
                 }
             }
 
-            data[Sql.Columns.Headers.Index] = new JsonMessageSerializer(null).SerializeObject(message.Headers);
+            data[Sql.Columns.Headers.Index] = HeaderSerializer.Serialize(message.Headers);
 
             if (message.Body == null)
             {
