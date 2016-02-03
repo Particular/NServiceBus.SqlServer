@@ -44,6 +44,9 @@ namespace NServiceBus.SqlServer.UnitTests
 
             var headersDeserialized = HeaderSerializer.Deserialize(JsonConvert.SerializeObject(Expected, Formatting.None, serializerSettings));
             CollectionAssert.AreEquivalent(Expected, headersDeserialized);
+
+            headersDeserialized = (Dictionary<string, string>)JsonConvert.DeserializeObject(HeaderSerializer.Serialialize(Expected), typeof(Dictionary<string, string>));
+            CollectionAssert.AreEquivalent(Expected, headersDeserialized);
         }
     }
 }
