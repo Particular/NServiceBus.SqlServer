@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Newtonsoft.Json;
 
     static class MessageParser
     {
@@ -38,11 +37,13 @@
         static Dictionary<string, string> GetHeaders(object[] rowData)
         {
             var headersAsString = (string) rowData[Sql.Columns.Headers.Index];
+
             if (string.IsNullOrWhiteSpace(headersAsString))
             {
                 return new Dictionary<string, string>();
             }
-            return (Dictionary<string, string>) JsonConvert.DeserializeObject(headersAsString, typeof(Dictionary<string, string>));
+
+            return HeaderSerializer.Deserialize(headersAsString);
         }
 
         internal static object[] CreateRawMessageData(OutgoingMessage message)
@@ -83,7 +84,7 @@
                 }
             }
 
-            data[Sql.Columns.Headers.Index] = JsonConvert.SerializeObject(message.Headers);
+            data[Sql.Columns.Headers.Index] = HeaderSerializer.Serialize(message.Headers);
 
             if (message.Body == null)
             {
