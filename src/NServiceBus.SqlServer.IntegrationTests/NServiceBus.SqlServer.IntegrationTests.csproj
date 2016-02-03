@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="When_using_native_transactions.cs" />
+    <Compile Include="When_using_transaction_scope.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

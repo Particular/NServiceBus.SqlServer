@@ -7,7 +7,7 @@
     using Persistence;
     using NUnit.Framework;
 
-    public class When_using_native_transactions
+    public class When_using_transaction_scope
     {
         const string ConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True";
         IEndpointInstance endpoint;
@@ -20,6 +20,7 @@
             configuration.SendFailedMessagesTo("error");
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);
+            configuration.EnableInstallers();
 
             configuration.UseTransport<SqlServerTransport>()
                 .Transactions(TransportTransactionMode.TransactionScope)
@@ -38,7 +39,7 @@
         }
 
         [Test]
-        public async Task Transport_transaction_should_be_reused_by_nhibernate_persistence()
+        public async Task Transaction_shared_with_nhiberante_persistence_should_not_escalate_to_dtc()
         {
             var options = new SendOptions();
             options.SetMessageId(context.Id.ToString());
