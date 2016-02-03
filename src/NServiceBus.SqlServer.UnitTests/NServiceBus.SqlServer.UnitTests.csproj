@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigurationValidatorTests.cs" />
+    <Compile Include="HeaderSerializerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NServiceBus.snk" />

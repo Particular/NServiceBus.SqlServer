@@ -77,6 +77,7 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="obsoletes.cs" />
+    <Compile Include="Queuing\HeaderSerializer.cs" />
     <Compile Include="Receiving\IsolationLevelMapper.cs" />
     <Compile Include="Receiving\ReceiveWithSendsAtomicWithReceiveTransaction.cs" />
     <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
