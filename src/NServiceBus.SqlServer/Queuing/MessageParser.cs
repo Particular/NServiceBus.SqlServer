@@ -3,12 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using NServiceBus.Serializers.Json;
+    using Newtonsoft.Json;
 
     static class MessageParser
     {
-        static JsonMessageSerializer headerSerializer = new JsonMessageSerializer(null);
-
         internal static Message ParseRawData(object[] rowData)
         {
             var transportId = rowData[0].ToString();
@@ -44,7 +42,7 @@
             {
                 return new Dictionary<string, string>();
             }
-            return (Dictionary<string, string>) headerSerializer.DeserializeObject(headersAsString, typeof(Dictionary<string, string>));
+            return (Dictionary<string, string>) JsonConvert.DeserializeObject(headersAsString, typeof(Dictionary<string, string>));
         }
 
         internal static object[] CreateRawMessageData(OutgoingMessage message)
@@ -85,7 +83,7 @@
                 }
             }
 
-            data[Sql.Columns.Headers.Index] = new JsonMessageSerializer(null).SerializeObject(message.Headers);
+            data[Sql.Columns.Headers.Index] = JsonConvert.SerializeObject(message.Headers);
 
             if (message.Body == null)
             {
