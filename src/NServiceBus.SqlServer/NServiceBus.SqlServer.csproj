@@ -64,6 +64,7 @@
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml" />
@@ -77,6 +78,7 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="obsoletes.cs" />
+    <Compile Include="Queuing\DictionarySerializer.cs" />
     <Compile Include="Receiving\IsolationLevelMapper.cs" />
     <Compile Include="Receiving\ReceiveWithSendsAtomicWithReceiveTransaction.cs" />
     <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
