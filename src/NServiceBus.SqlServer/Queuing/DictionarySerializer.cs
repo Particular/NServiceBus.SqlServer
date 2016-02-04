@@ -9,7 +9,7 @@ namespace NServiceBus.Transports.SQLServer
     {
         public static string Serialize(Dictionary<string, string> instance)
         {
-            var serializer = new DataContractJsonSerializer(typeof(Dictionary<string, string>));
+            var serializer = BuildSerializer();
             using (var stream = new MemoryStream())
             {
                 serializer.WriteObject(stream, instance);
@@ -19,11 +19,20 @@ namespace NServiceBus.Transports.SQLServer
 
         public static Dictionary<string, string> DeSerialize(string json)
         {
-            var serializer = new DataContractJsonSerializer(typeof(Dictionary<string, string>));
+            var serializer = BuildSerializer();
             using (var stream = new MemoryStream(Encoding.Default.GetBytes(json)))
             {
                 return (Dictionary<string, string>)serializer.ReadObject(stream);
             }
+        }
+
+        static DataContractJsonSerializer BuildSerializer()
+        {
+            var settings = new DataContractJsonSerializerSettings
+            {
+                UseSimpleDictionaryFormat = true
+            };
+            return new DataContractJsonSerializer(typeof(Dictionary<string, string>), settings);
         }
     }
 }
