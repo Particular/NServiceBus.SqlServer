@@ -232,7 +232,7 @@ namespace NServiceBus
                 };
             }
 
-            private static TimeSpan GetMaxTimeout()
+            static TimeSpan GetMaxTimeout()
             {
                 //default is always 10 minutes
                 var maxTimeout = TimeSpan.FromMinutes(10);

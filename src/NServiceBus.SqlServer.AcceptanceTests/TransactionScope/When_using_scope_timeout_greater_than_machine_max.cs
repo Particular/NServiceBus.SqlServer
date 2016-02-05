@@ -22,11 +22,11 @@
             Assert.That(exception.InnerException.InnerException.Message.Contains("Timeout requested is longer than the maximum value for this machine"));
         }
 
-        private class Context : ScenarioContext
+        class Context : ScenarioContext
         {
         }
 
-        private class Endpoint : EndpointConfigurationBuilder
+        class Endpoint : EndpointConfigurationBuilder
         {
             public Endpoint()
             {
