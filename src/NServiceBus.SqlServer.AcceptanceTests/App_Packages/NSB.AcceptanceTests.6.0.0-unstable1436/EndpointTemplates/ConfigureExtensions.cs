@@ -47,7 +47,7 @@
             Persistence
         }
 
-        private static async Task ConfigureTestExecution(TestDependencyType type, BusConfiguration config, IDictionary<string,string> settings)
+        static async Task ConfigureTestExecution(TestDependencyType type, BusConfiguration config, IDictionary<string,string> settings)
         {
             var dependencyTypeString = type.ToString();
 

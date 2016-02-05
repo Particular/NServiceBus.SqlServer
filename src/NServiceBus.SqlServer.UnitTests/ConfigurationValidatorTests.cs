@@ -8,13 +8,13 @@
     [TestFixture]
     public class ConfigurationValidatorTests
     {
-        private class Result
+        class Result
         {
             public bool Success { get; set; }
             public string Message { get; set; }
         }
 
-        private Result Validate(params ConnectionStringSettings[] settings)
+        Result Validate(params ConnectionStringSettings[] settings)
         {
             var result = new Result();
             string message;

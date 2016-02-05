@@ -22,18 +22,18 @@
             Assert.AreEqual(IsolationLevel.RepeatableRead, context.IsolationLevel, "Ambient transaction should have configured isolation level");
         }
 
-        private class MyMessage : IMessage
+        class MyMessage : IMessage
         {
         }
 
-        private class Context : ScenarioContext
+        class Context : ScenarioContext
         {
             public bool Done { get; set; }
             public bool AmbientTransactionPresent { get; set; }
             public IsolationLevel IsolationLevel { get; set; }
         }
 
-        private class Endpoint : EndpointConfigurationBuilder
+        class Endpoint : EndpointConfigurationBuilder
         {
             public Endpoint()
             {
