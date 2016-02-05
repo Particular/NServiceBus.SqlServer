@@ -13,14 +13,14 @@ namespace NServiceBus.Transports.SQLServer
             using (var stream = new MemoryStream())
             {
                 serializer.WriteObject(stream, instance);
-                return Encoding.Default.GetString(stream.ToArray());
+                return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
 
         public static Dictionary<string, string> DeSerialize(string json)
         {
             var serializer = BuildSerializer();
-            using (var stream = new MemoryStream(Encoding.Default.GetBytes(json)))
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
             {
                 return (Dictionary<string, string>)serializer.ReadObject(stream);
             }
