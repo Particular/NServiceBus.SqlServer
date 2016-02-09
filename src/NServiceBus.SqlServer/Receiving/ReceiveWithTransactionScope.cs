@@ -50,10 +50,10 @@
                     await onMessage(pushContext).ConfigureAwait(false);
                 }
 
-                if (cancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    return;
-                }
+                    if (cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
                 scope.Complete();
             }

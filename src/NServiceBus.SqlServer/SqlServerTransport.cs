@@ -1,13 +1,6 @@
 namespace NServiceBus
 {
     using System;
-    using System.Collections.Generic;
-    using System.Data.SqlClient;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Transactions;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.SQLServer;
@@ -17,15 +10,6 @@ namespace NServiceBus
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
-        /// <summary>
-        /// Initializes a new insatnce of <see cref="SqlServerTransport"/>.
-        /// </summary>
-        public SqlServerTransport()
-        {
-            //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
-            RequireOutboxConsent = true;
-        }
-
         QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
@@ -39,161 +23,17 @@ namespace NServiceBus
             return parser;
         }
 
-        SqlConnectionFactory CreateConnectionFactory(string connectionString, ReadOnlySettings settings)
-        {
-            Func<Task<SqlConnection>> factoryOverride;
-
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
-            {
-                return new SqlConnectionFactory(factoryOverride);
-            }
-
-            return SqlConnectionFactory.Default(connectionString);
-        }
-
         /// <summary>
-        /// <see cref="TransportDefinition.ConfigureForReceiving"/>
+        /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
-        protected override TransportReceivingConfigurationResult ConfigureForReceiving(TransportReceivingConfigurationContext context)
-        {
-            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-
-            SqlScopeOptions scopeOptions;
-            if (!context.Settings.TryGet(out scopeOptions))
-            {
-                scopeOptions = new SqlScopeOptions();
-            }
-
-            TimeSpan waitTimeCircuitBreaker;
-
-            if (!context.Settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
-            {
-                waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
-            }
-
-            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
-
-            return new TransportReceivingConfigurationResult(
-                () => new MessagePump(receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressParser),
-                () => Task.FromResult(StartupCheckResult.Success));
-        }
-
-        ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
-        {
-            if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
-            {
-                return new ReceiveWithTransactionScope(options, connectionFactory);
-            }
-
-            if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
-            {
-                return new ReceiveWithSendsAtomicWithReceiveTransaction(options, connectionFactory);    
-            }
-
-            if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
-            {
-                return new ReceiveWithReceiveOnlyTransaction(options, connectionFactory);
-            }
-
-            return new ReceiveWithNoTransaction(connectionFactory);
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.ConfigureForSending"/>
-        /// </summary>
-        protected override TransportSendingConfigurationResult ConfigureForSending(TransportSendingConfigurationContext context)
-        {
-            var connectionFactory = CreateConnectionFactory(context.ConnectionString, context.Settings);
-
-            return new TransportSendingConfigurationResult(
-                () => new MessageDispatcher(connectionFactory, addressParser),
-                () =>
-                {
-                    var result = UsingV2ConfigurationChecker.Check();
-                    return Task.FromResult(result);
-                });
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.GetSupportedDeliveryConstraints"/>.
-        /// </summary>
-        public override IEnumerable<Type> GetSupportedDeliveryConstraints()
-        {
-            return new[]
-            {
-                typeof(DiscardIfNotReceivedBefore)
-            };
-        }
-
-
-        /// <summary>
-        /// <see cref="TransportDefinition.GetSupportedTransactionMode"/>.
-        /// </summary>
-        public override TransportTransactionMode GetSupportedTransactionMode()
-        {
-            return TransportTransactionMode.TransactionScope;
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.GetSubscriptionManager"/>.
-        /// </summary>
-        public override IManageSubscriptions GetSubscriptionManager()
-        {
-            throw new NotSupportedException("Sql don't support native pub sub");
-        }
-        
-        /// <summary>
-        /// Returns the discriminator for this endpoint instance.
-        /// </summary>
-        public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance, ReadOnlySettings settings)
-        {
-            addressParser = CreateAddressParser(settings);
-
-            return instance.SetProperty(SchemaPropertyKey, CreateAddressParser(settings).DefaultSchema);
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.ToTransportAddress"/>.
-        /// </summary>
-        public override string ToTransportAddress(LogicalAddress logicalAddress)
-        {
-            var nonEmptyParts = new[]
-            {
-                logicalAddress.EndpointInstance.Endpoint.ToString(),
-                logicalAddress.Qualifier,
-                logicalAddress.EndpointInstance.Discriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var address = string.Join(".", nonEmptyParts);
-
-            string schemaName;
-
-            if (logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName))
-            {
-                address += $"@{schemaName}";
-            }
-
-            return address;
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.GetOutboundRoutingPolicy"/>.
-        /// </summary>
-        public override OutboundRoutingPolicy GetOutboundRoutingPolicy(ReadOnlySettings settings)
-        {
-            return new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.MakeCanonicalForm"/>.
-        /// </summary>
-        /// <param name="transportAddress"></param>
+        /// <param name="settings"></param>
+        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public override string MakeCanonicalForm(string transportAddress)
+        protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
-            //Parsing adds schema value if not specified explicitly
-            return addressParser.Parse(transportAddress).ToString();
+            var addressParser = CreateAddressParser(settings);
+
+            return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
         }
 
         /// <summary>
@@ -205,9 +45,5 @@ namespace NServiceBus
         /// <see cref="TransportDefinition.RequiresConnectionString"/>
         /// </summary>
         public override bool RequiresConnectionString => true;
-
-        const string SchemaPropertyKey = "Schema";
-
-        QueueAddressParser addressParser;
     }
 }
