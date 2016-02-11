@@ -34,30 +34,34 @@
                             return;
                         }
 
-                        if (readResult.Successful)
+                        if (!readResult.Successful)
                         {
-                            var message = readResult.Message;
-
-                            using (var bodyStream = message.BodyStream)
-                            {
-                                var transportTransaction = new TransportTransaction();
-
-                                transportTransaction.Set(sqlConnection);
-                                transportTransaction.Set(transaction);
-
-                                var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
-
-                                await onMessage(pushContext).ConfigureAwait(false);
-                            }
-
-                            if (cancellationTokenSource.Token.IsCancellationRequested)
-                            {
-                                transaction.Rollback();
-                                return;
-                            }
-
                             transaction.Commit();
+
+                            return;
                         }
+
+                        var message = readResult.Message;
+
+                        using (var bodyStream = message.BodyStream)
+                        {
+                            var transportTransaction = new TransportTransaction();
+
+                            transportTransaction.Set(sqlConnection);
+                            transportTransaction.Set(transaction);
+
+                            var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+
+                            await onMessage(pushContext).ConfigureAwait(false);
+                        }
+
+                        if (cancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            transaction.Rollback();
+                            return;
+                        }
+
+                        transaction.Commit();
                     }
                     catch (Exception)
                     {

@@ -30,28 +30,32 @@
                     return;
                 }
 
-                if (readResult.Successful)
+                if (!readResult.Successful)
                 {
-                    var message = readResult.Message;
+                    scope.Complete();
 
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(sqlConnection);
-                        transportTransaction.Set(Transaction.Current);
+                    return;
+                }
 
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+                var message = readResult.Message;
 
-                        await onMessage(pushContext).ConfigureAwait(false);
-                    }
+                using (var bodyStream = message.BodyStream)
+                {
+                    var transportTransaction = new TransportTransaction();
+                    transportTransaction.Set(sqlConnection);
+                    transportTransaction.Set(Transaction.Current);
+
+                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+
+                    await onMessage(pushContext).ConfigureAwait(false);
+                }
 
                 if (cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     return;
                 }
 
-                    scope.Complete();
-                }
+                scope.Complete();
             }
         }
 
