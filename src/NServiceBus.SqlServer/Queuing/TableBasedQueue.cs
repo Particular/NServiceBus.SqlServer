@@ -33,7 +33,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var message = MessageParser.ParseRawData(rawMessageData);
 
-                    if (message.TTBRExpried(DateTime.UtcNow))
+                    if (message.TTBRExpired(DateTime.UtcNow))
                     {
                         var messageId = message.GetLogicalId() ?? message.TransportId;
 
@@ -132,6 +132,28 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         public string TransportAddress => address.ToString();
+
+        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection)
+        {
+            var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, PurgeBatchSize, address.SchemaName, address.TableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                var expiresColumnInfo = Sql.Columns.TimeToBeReceived;
+                command.Parameters.Add(expiresColumnInfo.Name, expiresColumnInfo.Type).Value = DateTime.UtcNow;
+
+                var rowsCount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+                return rowsCount;
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{address.SchemaName}.{address.TableName}";
+        }
+
+        public static int PurgeBatchSize = 10000;
 
         QueueAddress address;
 

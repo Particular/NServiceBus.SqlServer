@@ -14,7 +14,7 @@
             Headers = headers;
         }
 
-        public bool TTBRExpried(DateTime now)
+        public bool TTBRExpired(DateTime now)
         {
             return TimeToBeReceived.HasValue && TimeToBeReceived.Value < now;
         }

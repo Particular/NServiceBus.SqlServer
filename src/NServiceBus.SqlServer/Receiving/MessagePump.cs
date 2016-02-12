@@ -47,6 +47,7 @@
             cancellationToken = cancellationTokenSource.Token;
 
             messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
+            purgeTask = Task.Run(PurgeExpiredMessages, CancellationToken.None);
         }
 
         public async Task Stop()
@@ -57,7 +58,8 @@
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var allTasks = runningReceiveTasks.Values.Concat(new[]
             {
-                messagePumpTask
+                messagePumpTask,
+                purgeTask
             });
             var finishedTask = await Task.WhenAny(Task.WhenAll(allTasks), timeoutTask).ConfigureAwait(false);
 
@@ -154,6 +156,35 @@
             }
         }
 
+        async Task PurgeExpiredMessages()
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        int purgedRowsCount;
+
+                        do
+                        {
+                            purgedRowsCount = await inputQueue.PurgeBatchOfExpiredMessages(connection).ConfigureAwait(false);
+                        } while (purgedRowsCount == TableBasedQueue.PurgeBatchSize);
+
+                        await Task.Delay(purgeDelay, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Graceful shutdown
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Purging expired messages failed", ex);
+                }
+            }
+        }
+
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
@@ -171,6 +202,9 @@
 
         static ILog Logger = LogManager.GetLogger<MessagePump>();
         Task messagePumpTask;
+        Task purgeTask;
         ReceiveStrategy receiveStrategy;
+
+        static TimeSpan purgeDelay = TimeSpan.FromMinutes(5);
     }
 }
