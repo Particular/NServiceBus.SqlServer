@@ -16,7 +16,7 @@
         [SetUp]
         public void SetUp()
         {
-            var configuration = new BusConfiguration();
+            var configuration = new EndpointConfiguration();
             configuration.SendFailedMessagesTo("error");
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);
@@ -43,7 +43,7 @@
         {
             var options = new SendOptions();
             options.SetMessageId(context.Id.ToString());
-            options.RouteToLocalEndpointInstance();
+            options.RouteToThisInstance();
 
             await endpoint.Send(new SagaMessage { Id = context.Id }, options);
 
