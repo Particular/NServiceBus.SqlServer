@@ -49,7 +49,7 @@ namespace NServiceBus.Transports.SQLServer
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 
-        internal const string PurgeBatchOfExpiredMessagesText = @"DELETE TOP({0}) FROM[{1}].[{2}] WHERE [Expires] < @Expires";
+        internal const string PurgeBatchOfExpiredMessagesText = @"DELETE TOP({0}) FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < @Expires";
 
         internal class Columns
         {
