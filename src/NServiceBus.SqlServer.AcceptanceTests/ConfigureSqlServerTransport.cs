@@ -9,10 +9,10 @@ using NServiceBus.Transports;
 
 public class ConfigureSqlServerTransport : IConfigureTestExecution
 {
-    BusConfiguration busConfiguration;
+    EndpointConfiguration busConfiguration;
     string connectionString;
 
-    public Task Configure(BusConfiguration configuration, IDictionary<string, string> settings)
+    public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
     {
         busConfiguration = configuration;
         connectionString = settings["Transport.ConnectionString"];
