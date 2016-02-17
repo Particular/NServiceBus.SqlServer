@@ -26,6 +26,7 @@
                 .Run(TimeSpan.FromMinutes(1));
 
             Assert.IsFalse(context.RepliedToWrongQueue);
+            Assert.IsTrue(context.RepliedToCorrectQueue);
         }
 
         class Request : IMessage
@@ -40,6 +41,7 @@
         {
             public bool Done { get; set; }
             public bool RepliedToWrongQueue { get; set; }
+            public bool RepliedToCorrectQueue { get; set; }
         }
 
         class OriginatingEndpoint : EndpointConfigurationBuilder
@@ -76,6 +78,7 @@
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
+                    Context.RepliedToCorrectQueue = true;
                     Context.Done = true;
                     return Task.FromResult(0);
                 }

@@ -81,7 +81,6 @@
     <Compile Include="LegacyCallbacks\CallbackAddress.cs" />
     <Compile Include="LegacyCallbacks\LegacyCallbackFeature.cs" />
     <Compile Include="LegacyCallbacks\OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader.cs" />
-    <Compile Include="LegacyCallbacks\ReadIncomingLegacyCallbackAddressBehavior.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Queuing\DictionarySerializer.cs" />
     <Compile Include="Receiving\IsolationLevelMapper.cs" />
