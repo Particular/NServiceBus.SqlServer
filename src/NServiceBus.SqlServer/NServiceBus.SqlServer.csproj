@@ -78,7 +78,6 @@
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="LegacyCallbacks\CallbackAddress.cs" />
     <Compile Include="LegacyCallbacks\LegacyCallbackFeature.cs" />
     <Compile Include="LegacyCallbacks\OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader.cs" />
     <Compile Include="obsoletes.cs" />
