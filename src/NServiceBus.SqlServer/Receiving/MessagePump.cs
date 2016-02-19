@@ -69,6 +69,8 @@
             }
 
             concurrencyLimiter.Dispose();
+            cancellationTokenSource.Dispose();
+
             runningReceiveTasks.Clear();
         }
 

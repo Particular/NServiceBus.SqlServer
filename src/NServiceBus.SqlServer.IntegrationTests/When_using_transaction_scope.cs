@@ -21,6 +21,7 @@
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);
             configuration.EnableInstallers();
+            configuration.ScaleOut().InstanceDiscriminator("1");
 
             configuration.UseTransport<SqlServerTransport>()
                 .Transactions(TransportTransactionMode.TransactionScope)
@@ -98,7 +99,7 @@
         {
             public Context TestContext { get; set; }
 
-            public async override Task Invoke(ITransportReceiveContext context, Func<Task> next)
+            public override async Task Invoke(ITransportReceiveContext context, Func<Task> next)
             {
                 await next();
 

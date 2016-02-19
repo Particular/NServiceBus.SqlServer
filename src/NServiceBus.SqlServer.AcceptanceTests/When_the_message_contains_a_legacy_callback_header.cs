@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.RabbitMQ.AcceptanceTests
+﻿namespace NServiceBus.SqlServer.AcceptanceTests
 {
     using System;
     using System.Threading.Tasks;

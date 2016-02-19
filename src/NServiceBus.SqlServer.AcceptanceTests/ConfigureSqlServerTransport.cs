@@ -1,20 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using NServiceBus.Configuration.AdvanceExtensibility;
 using NServiceBus.Transports;
 
 public class ConfigureSqlServerTransport : IConfigureTestExecution
 {
-    EndpointConfiguration busConfiguration;
+    EndpointConfiguration configuration;
     string connectionString;
+
 
     public Task Configure(EndpointConfiguration configuration, IDictionary<string, string> settings)
     {
-        busConfiguration = configuration;
+        this.configuration = configuration;
         connectionString = settings["Transport.ConnectionString"];
         configuration.UseTransport<SqlServerTransport>().ConnectionString(connectionString);
         return Task.FromResult(0);
@@ -22,7 +25,7 @@ public class ConfigureSqlServerTransport : IConfigureTestExecution
 
     public Task Cleanup()
     {
-        var bindings = busConfiguration.GetSettings().Get<QueueBindings>();
+        var bindings = configuration.GetSettings().Get<QueueBindings>();
         var queueNames = new List<string>();
 
         using (var conn = new SqlConnection(connectionString))
@@ -50,4 +53,9 @@ public class ConfigureSqlServerTransport : IConfigureTestExecution
 
         return Task.FromResult(0);
     }
+
+    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes { get; } = new[]
+    {
+        typeof(AllTransportsWithCentralizedPubSubSupport)
+    };
 }
