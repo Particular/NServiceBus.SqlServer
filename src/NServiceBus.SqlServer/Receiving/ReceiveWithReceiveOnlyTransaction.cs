@@ -19,27 +19,25 @@
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                using (var transaction = sqlConnection.BeginTransaction(isolationLevel))
+                using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
                     try
                     {
-                        var readResult = await inputQueue.TryReceive(sqlConnection, transaction).ConfigureAwait(false);
+                        var readResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
                         if (readResult.IsPoison)
                         {
-                            await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, transaction).ConfigureAwait(false);
+                            await errorQueue.SendRawMessage(readResult.DataRecord, connection, transaction).ConfigureAwait(false);
 
                             transaction.Commit();
-
                             return;
                         }
 
                         if (!readResult.Successful)
                         {
                             transaction.Commit();
-
                             return;
                         }
 
@@ -50,7 +48,7 @@
                             var transportTransaction = new TransportTransaction();
 
                             //those resources are meant to be used by anyone except message dispatcher e.g. persister
-                            transportTransaction.Set(sqlConnection);
+                            transportTransaction.Set(connection);
                             transportTransaction.Set(transaction);
 
                             //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends

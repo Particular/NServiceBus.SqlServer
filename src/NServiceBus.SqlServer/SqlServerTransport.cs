@@ -1,9 +1,12 @@
 namespace NServiceBus
 {
     using System;
+    using System.Data.SqlClient;
+    using System.Threading.Tasks;
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.SQLServer;
+    using NServiceBus.Transports.SQLServer.Legacy.MultiInstance;
 
     /// <summary>
     /// SqlServer Transport
@@ -23,18 +26,13 @@ namespace NServiceBus
             return parser;
         }
 
+        bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
+        {
+            Func<string, Task<SqlConnection>> legacyModeTurnedOn;
+
+            return settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out legacyModeTurnedOn);
         }
 
-        EndpointConnectionStringLookup GetEndpointConnectionStringLookup(ReadOnlySettings settings, string defaultConnectionString)
-        {
-            Func<string, Task<string>> endpointConnectionLookup;
-
-            if (settings.TryGet(SettingsKeys.EndpointConnectionLookupFunc, out endpointConnectionLookup))
-            {
-                return new EndpointConnectionStringLookup(endpointConnectionLookup);
-            }
-
-            return EndpointConnectionStringLookup.Default(defaultConnectionString);
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
@@ -42,9 +40,13 @@ namespace NServiceBus
         /// <param name="connectionString"></param>
         /// <returns></returns>
         protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
-            var endpointConnectionStringLookup = GetEndpointConnectionStringLookup(context.Settings, context.ConnectionString);
         {
             var addressParser = CreateAddressParser(settings);
+
+            if (LegacyMultiInstanceModeTurnedOn(settings))
+            {
+                return new LegacySqlServerTransportInfrastructure(addressParser, settings, connectionString);
+            }
 
             return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
         }

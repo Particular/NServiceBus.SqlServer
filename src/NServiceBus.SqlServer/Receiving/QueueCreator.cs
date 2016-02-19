@@ -8,40 +8,30 @@ namespace NServiceBus.Transports.SQLServer
     {
         readonly SqlConnectionFactory connectionFactory;
         readonly QueueAddressParser addressParser;
-        readonly EndpointConnectionStringLookup endpointConnectionLookup;
 
         public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressProvider addressProvider, EndpointConnectionStringLookup endpointConnectionLookup)
         {
             this.connectionFactory = connectionFactory;
             this.addressParser = addressParser;
-            this.endpointConnectionLookup = endpointConnectionLookup;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
-            foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var connectionString = endpointConnectionLookup.ConnectionStringLookup(receivingAddress).GetAwaiter().GetResult();
-                using (var connection = await connectionFactory.OpenNewConnection(connectionString))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var transaction = connection.BeginTransaction())
+                    foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                     {
                         await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
-                        transaction.Commit();
                     }
-                }
-            }
-            foreach (var sendingAddress in queueBindings.SendingAddresses)
-            {
-                var connectionString = endpointConnectionLookup.ConnectionStringLookup(sendingAddress).GetAwaiter().GetResult();
-                using (var connection = await connectionFactory.OpenNewConnection(connectionString))
-                {
-                    using (var transaction = connection.BeginTransaction())
+
+                    foreach (var receivingAddress in queueBindings.SendingAddresses)
                     {
-                        await CreateQueue(addressProvider.Parse(sendingAddress), connection, transaction);
-                        transaction.Commit();
+                        await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                     }
+
+                    transaction.Commit();
                 }
             }
         }

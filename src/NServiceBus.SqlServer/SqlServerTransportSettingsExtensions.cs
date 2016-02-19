@@ -6,7 +6,6 @@
     using System.Transactions;
     using NServiceBus.Configuration.AdvanceExtensibility;
 
-    //TODO: let's move classes into subfolders?
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
@@ -84,16 +83,17 @@
         }
 
         /// <summary>
-        /// Specifies connectionString lookup to be used by sql transport.
+        /// Enables legacy multi-instance mode. 
         /// </summary>
         /// <param name="transportExtensions"></param>
-        /// <param name="endpointConnectionLookupFunc">Function that maps transportAddress to connectionString.</param>
+        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
         /// <returns></returns>
-        public static TransportExtensions<SqlServerTransport> ProvideEndpointConnectionLookup(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<string>> endpointConnectionLookupFunc)
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
+        public static TransportExtensions<SqlServerTransport> EnableLagacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
-            Guard.AgainstNull("endpointConnectionLookupFunc", endpointConnectionLookupFunc);
+            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.EndpointConnectionLookupFunc, endpointConnectionLookupFunc);
+            transportExtensions.GetSettings().Set(SettingsKeys.LegacyMultiInstanceConnectionFactory, sqlConnectionFactory);
 
             return transportExtensions;
         }

@@ -13,10 +13,12 @@ namespace NServiceBus
     using NServiceBus.Transports.SQLServer;
 
     /// <summary>
-    /// SqlServer Transport Infrastructure
+    ///     SqlServer Transport Infrastructure
     /// </summary>
     internal class SqlServerTransportInfrastructure : TransportInfrastructure
     {
+        const string SchemaPropertyKey = "Schema";
+
         internal SqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString)
         {
             this.addressParser = addressParser;
@@ -28,13 +30,29 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure"/>
+        ///     <see cref="TransportInfrastructure.DeliveryConstraints" />
+        /// </summary>
+        public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
+        {
+            typeof(DiscardIfNotReceivedBefore)
+        };
+
+        /// <summary>
+        ///     <see cref="TransportInfrastructure.TransactionMode" />
+        /// </summary>
+        public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
+
+        /// <summary>
+        ///     <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
+        /// </summary>
+        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
+
+        /// <summary>
+        ///     <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
         /// </summary>
         /// <returns></returns>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
-            var connectionFactory = CreateConnectionFactory();
-
             SqlScopeOptions scopeOptions;
             if (!settings.TryGet(out scopeOptions))
             {
@@ -42,17 +60,21 @@ namespace NServiceBus
             }
 
             TimeSpan waitTimeCircuitBreaker;
-
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
 
-            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory = 
+            var connectionFactory = CreateConnectionFactory();
+
+            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
                 guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
+            var queuePurger = new QueuePurger(connectionFactory);
+            var queuePeeker = new QueuePeeker(connectionFactory);
+
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, connectionFactory, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queuePurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
@@ -90,7 +112,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSendInfrastructure"/>
+        ///     <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
         /// </summary>
         /// <returns></returns>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
@@ -104,10 +126,10 @@ namespace NServiceBus
                     var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });
-        }
+        }       
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure"/>
+        ///     <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
         /// </summary>
         /// <returns></returns>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
@@ -116,7 +138,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.BindToLocalEndpoint"/>
+        ///     <see cref="TransportInfrastructure.BindToLocalEndpoint" />
         /// </summary>
         /// <param name="instance"></param>
         /// <returns></returns>
@@ -126,7 +148,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.ToTransportAddress"/>
+        ///     <see cref="TransportInfrastructure.ToTransportAddress" />
         /// </summary>
         /// <param name="logicalAddress"></param>
         /// <returns></returns>
@@ -152,7 +174,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportInfrastructure.MakeCanonicalForm"/>
+        ///     <see cref="TransportInfrastructure.MakeCanonicalForm" />
         /// </summary>
         /// <param name="transportAddress"></param>
         /// <returns></returns>
@@ -161,25 +183,8 @@ namespace NServiceBus
             return addressParser.Parse(transportAddress).ToString();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.DeliveryConstraints"/>
-        /// </summary>
-        public override IEnumerable<Type> DeliveryConstraints { get; } = new[] { typeof(DiscardIfNotReceivedBefore) };
-
-        /// <summary>
-        /// <see cref="TransportInfrastructure.TransactionMode"/>
-        /// </summary>
-        public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
-
-        /// <summary>
-        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy"/>
-        /// </summary>
-        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
-
-        const string SchemaPropertyKey = "Schema";
-
         QueueAddressParser addressParser;
-        SettingsHolder settings;
         string connectionString;
+        SettingsHolder settings;
     }
 }

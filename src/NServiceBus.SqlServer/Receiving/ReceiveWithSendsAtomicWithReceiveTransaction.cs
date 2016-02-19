@@ -17,27 +17,25 @@
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                using (var transaction = sqlConnection.BeginTransaction(isolationLevel))
+                using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
                     try
                     {
-                        var readResult = await inputQueue.TryReceive(sqlConnection, transaction).ConfigureAwait(false);
+                        var readResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
                         if (readResult.IsPoison)
                         {
-                            await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, transaction).ConfigureAwait(false);
+                            await errorQueue.SendRawMessage(readResult.DataRecord, connection, transaction).ConfigureAwait(false);
 
                             transaction.Commit();
-
                             return;
                         }
 
                         if (!readResult.Successful)
                         {
                             transaction.Commit();
-
                             return;
                         }
 
@@ -47,7 +45,7 @@
                         {
                             var transportTransaction = new TransportTransaction();
 
-                            transportTransaction.Set(sqlConnection);
+                            transportTransaction.Set(connection);
                             transportTransaction.Set(transaction);
 
                             var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());

@@ -131,13 +131,10 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public override string ToString()
-        {
-            return $"{address.SchemaName}.{address.TableName}";
-        }
+        public string TransportAddress => address.ToString();
+
+        QueueAddress address;
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
-        
-        QueueAddress address;
     }
 }
