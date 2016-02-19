@@ -19,10 +19,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests
             var context = new Context();
             Scenario.Define(context)
                    .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/OtherEndpoint", OtherDatabaseConnectionString)))
+                   .AllowExceptions()
                    .Done(c => true)
                    .Run();
 
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
+            StringAssert.Contains(ExceptionText, context.Exceptions);
         }
         
         [Test]
@@ -33,10 +34,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests
                    .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
                        EndpointConnectionInfo.For("A").UseConnectionString(OtherDatabaseConnectionString)
                        )))
+                   .AllowExceptions()
                    .Done(c => true)
                    .Run();
 
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
+            StringAssert.Contains(ExceptionText, context.Exceptions);
         } 
         
         [Test]
@@ -47,10 +49,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests
                    .WithEndpoint<Receiver>(b => b.CustomConfig(c => c.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(
                        e => ConnectionInfo.Create().UseSchema("nsb")
                        )))
+                   .AllowExceptions()
                    .Done(c => true)
                    .Run();
 
-            Assert.IsTrue(context.Exceptions.Contains(ExceptionText));
+            StringAssert.Contains(ExceptionText, context.Exceptions);
         }
 
         [Test]

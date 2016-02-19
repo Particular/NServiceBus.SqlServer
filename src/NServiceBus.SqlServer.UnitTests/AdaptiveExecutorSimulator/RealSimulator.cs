@@ -42,7 +42,8 @@
                 new QueuePurger(new SecondaryReceiveConfiguration(_ => SecondaryReceiveSettings.Disabled()), localConnectionParams, ConnectionFactory.Default()), 
                 new SecondaryReceiveConfiguration(_ => SecondaryReceiveSettings.Disabled()),
                 transportNotifications,
-                new RepeatedFailuresOverTimeCircuitBreaker("A", TimeSpan.FromDays(1000), _ => { }));
+                new RepeatedFailuresOverTimeCircuitBreaker("A", TimeSpan.FromDays(1000), _ => { }),
+                ConnectionFactory.Default());
 
             dequeueStrategy.Init(Address.Parse(address), new TransactionSettings(true, TimeSpan.FromMinutes(2), System.Transactions.IsolationLevel.ReadCommitted, 1, false, false),
                 ProcessMessage, (message, exception) => { });

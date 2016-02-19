@@ -189,6 +189,34 @@ namespace NServiceBus.Transports.SQLServer
             return (T)value;
         }
 
+        public int PurgeBatchOfExpiredMessages(SqlConnection connection)
+        {
+            var commandText = string.Format(SqlPurgeBatchOfExpiredMessages, PurgeBatchSize, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                command.Parameters.Add("UTCNow", SqlDbType.DateTime).Value = DateTime.UtcNow;
+
+                return command.ExecuteNonQuery();
+            }
+        }
+
+        public void LogWarningWhenIndexIsMissing(SqlConnection connection)
+        {
+            var commandText = string.Format(SqlCheckIfExpiresIndexIsPresent, ExpiresIndexName, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                var rowsCount = (int) command.ExecuteScalar();
+
+                if (rowsCount == 0)
+                {
+                    Logger.Warn($@"Table [{schema}].[{tableName}] does not contain index '{ExpiresIndexName}'.
+Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
+                }
+            }
+        }
+
         public override string ToString()
         {
             return tableName;
@@ -213,8 +241,6 @@ namespace NServiceBus.Transports.SQLServer
             SqlDbType.VarBinary
         };
 
-
-
         const string SqlSend =
             @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
@@ -224,6 +250,16 @@ namespace NServiceBus.Transports.SQLServer
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
+
+        const string SqlPurgeBatchOfExpiredMessages =
+            @"DELETE TOP({0}) FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < @UTCNow";
+
+        const string SqlCheckIfExpiresIndexIsPresent =
+            @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
+
+        public const int PurgeBatchSize = 10000;
+
+        const string ExpiresIndexName = "Index_Expires";
 
         const int IdColumn = 0;
         const int CorrelationIdColumn = 1;
