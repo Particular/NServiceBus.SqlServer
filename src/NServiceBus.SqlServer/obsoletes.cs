@@ -78,6 +78,13 @@ namespace NServiceBus.Transports.SQLServer.ConnectionStrings
         {
             throw new NotImplementedException();
         }
+
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
+            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+        public ConnectionInfo UseConnectionString(string connectionString)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class EndpointConnectionInfo
