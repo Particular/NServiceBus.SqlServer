@@ -7,5 +7,7 @@ namespace NServiceBus.Transports.SQLServer
         public const string SchemaOverrideCallbackSettingsKey = "SqlServer.ScheamOverride.Callback";
         public const string ConnectionFactoryOverride = "SqlServer.ConnectionFactoryOverride";
         public const string TimeToWaitBeforeTriggering = "SqlServer.CircuitBreaker.TimeToWaitBeforeTriggering";
+
+        public const string LegacyMultiInstanceConnectionFactory = "SqlServer.LegacyMultiInstanceConnectionFactory";
     }
 }

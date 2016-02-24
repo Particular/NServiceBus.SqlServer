@@ -6,7 +6,6 @@
     using System.Transactions;
     using NServiceBus.Configuration.AdvanceExtensibility;
 
-    //TODO: let's move classes into subfolders?
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
@@ -80,6 +79,22 @@
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
         {
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Enables legacy multi-instance mode. 
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
+        /// <returns></returns>
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
+        public static TransportExtensions<SqlServerTransport> EnableLagacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
+        {
+            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
+
+            transportExtensions.GetSettings().Set(SettingsKeys.LegacyMultiInstanceConnectionFactory, sqlConnectionFactory);
+
             return transportExtensions;
         }
     }

@@ -7,8 +7,6 @@ namespace NServiceBus.Transports.SQLServer
 
     class ReceiveWithNoTransaction : ReceiveStrategy
     {
-        readonly SqlConnectionFactory connectionFactory;
-
         public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
@@ -16,13 +14,13 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
-            using (var sqlConnection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var readResult = await inputQueue.TryReceive(sqlConnection, null).ConfigureAwait(false);
+                var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
                 {
-                    await errorQueue.SendRawMessage(readResult.DataRecord, sqlConnection, null).ConfigureAwait(false);
+                    await errorQueue.SendRawMessage(readResult.DataRecord, connection, null).ConfigureAwait(false);
 
                     return;
                 }
@@ -34,7 +32,7 @@ namespace NServiceBus.Transports.SQLServer
                     using (var bodyStream = message.BodyStream)
                     {
                         var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(sqlConnection);
+                        transportTransaction.Set(connection);
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
 
@@ -43,5 +41,7 @@ namespace NServiceBus.Transports.SQLServer
                 }
             }
         }
+
+        SqlConnectionFactory connectionFactory;
     }
 }

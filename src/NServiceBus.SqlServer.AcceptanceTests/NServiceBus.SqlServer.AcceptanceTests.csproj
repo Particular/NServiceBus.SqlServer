@@ -273,6 +273,9 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1564\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1564\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.0.0-unstable1564\Volatile\When_sending_to_non_durable_endpoint.cs" />
+    <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance.cs" />
+    <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_mode_with_custom_schema.cs" />
+    <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_with_transaction_mode_different_from_distributed.cs" />
     <Compile Include="When_the_message_contains_a_legacy_callback_header.cs" />
     <Compile Include="Configuration\AppConfig.cs" />
     <Compile Include="ConfigureSqlServerTransport.cs" />

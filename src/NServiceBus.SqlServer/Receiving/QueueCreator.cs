@@ -25,6 +25,7 @@ namespace NServiceBus.Transports.SQLServer
                     {
                         await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                     }
+
                     foreach (var receivingAddress in queueBindings.SendingAddresses)
                     {
                         await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);

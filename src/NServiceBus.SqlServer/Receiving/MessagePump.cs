@@ -9,10 +9,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, SqlConnectionFactory connectionFactory, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
-            this.connectionFactory = connectionFactory;
+            this.queuePurger = queuePurger;
+            this.queuePeeker = queuePeeker;
             this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
@@ -31,12 +32,9 @@
 
             if (settings.PurgeOnStartup)
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                {
-                    var purgedRowsCount = await inputQueue.Purge(connection).ConfigureAwait(false);
+                var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                    Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
-                }
+                Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
             }
         }
 
@@ -98,33 +96,12 @@
         {
             while (!cancellationTokenSource.IsCancellationRequested)
             {
-                int messageCount;
+                var messageCount = await queuePeeker.Peek(inputQueue, peekCircuitBreaker, cancellationToken).ConfigureAwait(false);
 
-                try
-                {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    {
-                        messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
-
-                        peekCircuitBreaker.Success();
-
-                        if (messageCount == 0)
-                        {
-                            await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
-                            continue;
-                        }
-                    }
-                }
-                catch (OperationCanceledException)
+                if (messageCount == 0)
                 {
                     continue;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Sql peek operation failed", ex);
-                    await peekCircuitBreaker.Failure(ex).ConfigureAwait(false);
-                    continue;
-                }
+                }               
 
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
@@ -181,7 +158,8 @@
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
-        SqlConnectionFactory connectionFactory;
+        IPurgeQueues queuePurger;
+        IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
@@ -194,6 +172,5 @@
         static ILog Logger = LogManager.GetLogger<MessagePump>();
         Task messagePumpTask;
         ReceiveStrategy receiveStrategy;
-        static TimeSpan peekDelay = TimeSpan.FromSeconds(1);
     }
 }
