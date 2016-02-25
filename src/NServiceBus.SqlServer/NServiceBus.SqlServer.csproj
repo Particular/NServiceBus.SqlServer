@@ -105,6 +105,7 @@
     <Compile Include="Observable.cs" />
     <Compile Include="IConnectionStore.cs" />
     <Compile Include="PipelineNotifications.cs" />
+    <Compile Include="PurgeExpiredMessagesParams.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="ReceiveRampUpController.cs" />

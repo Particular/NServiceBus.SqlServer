@@ -189,9 +189,9 @@ namespace NServiceBus.Transports.SQLServer
             return (T)value;
         }
 
-        public int PurgeBatchOfExpiredMessages(SqlConnection connection)
+        public int PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = string.Format(SqlPurgeBatchOfExpiredMessages, PurgeBatchSize, this.schema, this.tableName);
+            var commandText = string.Format(SqlPurgeBatchOfExpiredMessages, purgeBatchSize, this.schema, this.tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -256,8 +256,6 @@ Adding this index will speed up the process of purging expired messages from the
 
         const string SqlCheckIfExpiresIndexIsPresent =
             @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
-
-        public const int PurgeBatchSize = 10000;
 
         const string ExpiresIndexName = "Index_Expires";
 

@@ -7,22 +7,20 @@
 
     class ExpiredMessagesPurger : IExecutor
     {
-        static readonly TimeSpan purgeTaskDelay = TimeSpan.FromMinutes(5);
-
-        static readonly ILog Logger = LogManager.GetLogger(typeof(ExpiredMessagesPurger));
+ static readonly ILog Logger = LogManager.GetLogger(typeof(ExpiredMessagesPurger));
 
         readonly TableBasedQueue queue;
         readonly Func<SqlConnection> openConnection;
+        readonly PurgeExpiredMessagesParams parameters;
 
         Timer purgeTaskTimer;
         CancellationToken token;
 
-        object lockObject = new object();
-
-        public ExpiredMessagesPurger(TableBasedQueue queue, Func<SqlConnection> openConnection)
+        public ExpiredMessagesPurger(TableBasedQueue queue, Func<SqlConnection> openConnection, PurgeExpiredMessagesParams parameters)
         {
             this.queue = queue;
             this.openConnection = openConnection;
+            this.parameters = parameters;
         }
 
         public void Start(int maximumConcurrency, CancellationToken token)
@@ -30,7 +28,7 @@
             LogWarningWhenIndexIsMissing();
 
             this.token = token;
-            purgeTaskTimer = new Timer(PurgeExpiredMessagesCallback, null, TimeSpan.Zero, purgeTaskDelay);
+            purgeTaskTimer = new Timer(PurgeExpiredMessagesCallback, null, TimeSpan.Zero, Timeout.InfiniteTimeSpan);
         }
 
         public void Stop()
@@ -66,25 +64,15 @@
                 return;
             }
 
-            var lockTaken = false;
-            try
-            {
-                Monitor.TryEnter(lockObject, ref lockTaken);
-                if (!lockTaken)
-                {
-                    Logger.DebugFormat("An expired message purge task for table {0} is already running. Nothing to do.", queue);
-                    return;
-                }
+            PurgeExpiredMessages();
 
-                PurgeExpiredMessages();
-            }
-            finally
+            if (token.IsCancellationRequested)
             {
-                if (lockTaken)
-                {
-                    Monitor.Exit(lockObject);
-                }
+                return;
             }
+
+            Logger.DebugFormat("Scheduling next expired message purge task for table {0} in {1}", queue, parameters.PurgeTaskDelay);
+            purgeTaskTimer.Change(parameters.PurgeTaskDelay, Timeout.InfiniteTimeSpan);
         }
 
         void PurgeExpiredMessages()
@@ -99,10 +87,10 @@
 
                     while (continuePurging && !token.IsCancellationRequested)
                     {
-                        var purgedRowsCount = queue.PurgeBatchOfExpiredMessages(connection);
+                        var purgedRowsCount = queue.PurgeBatchOfExpiredMessages(connection, parameters.PurgeBatchSize);
 
                         totalPurgedRowsCount += purgedRowsCount;
-                        continuePurging = (purgedRowsCount == TableBasedQueue.PurgeBatchSize);
+                        continuePurging = (purgedRowsCount == parameters.PurgeBatchSize);
                     }
                 }
 

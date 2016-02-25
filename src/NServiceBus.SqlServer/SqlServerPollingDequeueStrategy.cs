@@ -19,7 +19,8 @@
             SecondaryReceiveConfiguration secondaryReceiveConfiguration,
             TransportNotifications transportNotifications, 
             RepeatedFailuresOverTimeCircuitBreaker circuitBreaker,
-            ConnectionFactory connectionFactory)
+            ConnectionFactory connectionFactory,
+            PurgeExpiredMessagesParams purgeExpiredMessagesParams)
         {
             this.locaConnectionParams = locaConnectionParams;
             this.receiveStrategyFactory = receiveStrategyFactory;
@@ -28,6 +29,7 @@
             this.transportNotifications = transportNotifications;
             this.circuitBreaker = circuitBreaker;
             this.connectionFactory = connectionFactory;
+            this.purgeExpiredMessagesParams = purgeExpiredMessagesParams;
         }
 
         /// <summary>
@@ -63,7 +65,7 @@
                 secondaryReceiver = new NullExecutor();
             }
 
-            expiredMessagesPurger = new ExpiredMessagesPurger(primaryQueue, () => connectionFactory.OpenNewConnection(locaConnectionParams.ConnectionString));
+            expiredMessagesPurger = new ExpiredMessagesPurger(primaryQueue, () => connectionFactory.OpenNewConnection(locaConnectionParams.ConnectionString), purgeExpiredMessagesParams);
         }
 
         /// <summary>
@@ -125,6 +127,7 @@
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
         readonly ConnectionFactory connectionFactory;
+        readonly PurgeExpiredMessagesParams purgeExpiredMessagesParams;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
         [SkipWeaving] //Do not dispose with dequeue strategy
