@@ -42,7 +42,8 @@ namespace NServiceBus
         protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var addressParser = CreateAddressParser(settings);
-
+            settings.SetDefault(SettingsKeys.SubscriptionStoreSchemaKey, "dbo");
+            settings.SetDefault(SettingsKeys.SubscriptionStoreTableKey, "Subscriptions");
             if (LegacyMultiInstanceModeTurnedOn(settings))
             {
                 return new LegacySqlServerTransportInfrastructure(addressParser, settings, connectionString);

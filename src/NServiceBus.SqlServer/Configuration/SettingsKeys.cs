@@ -9,5 +9,9 @@ namespace NServiceBus.Transports.SQLServer
         public const string TimeToWaitBeforeTriggering = "SqlServer.CircuitBreaker.TimeToWaitBeforeTriggering";
 
         public const string LegacyMultiInstanceConnectionFactory = "SqlServer.LegacyMultiInstanceConnectionFactory";
+
+        public const string SubscriptionStoreConnectionStringKey = "SqlServer.Subscriptions.ConnectionString";
+        public const string SubscriptionStoreSchemaKey = "SqlServer.Subscriptions.Schema";
+        public const string SubscriptionStoreTableKey = "SqlServer.Subscriptions.Table";
     }
 }

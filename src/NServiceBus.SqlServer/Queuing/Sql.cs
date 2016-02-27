@@ -44,6 +44,27 @@ namespace NServiceBus.Transports.SQLServer
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 
+        public const string CreateSubscriptionTableText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+                  BEGIN
+                    EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
+
+                    IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+                    BEGIN
+                        CREATE TABLE [{0}].[{1}](
+	                        [Endpoint] [varchar](300) NOT NULL,
+	                        [TransportAddress] [varchar](300) NOT NULL,
+	                        [TypeName] [varchar](300) NOT NULL,
+                         CONSTRAINT [PK_Subscriptions] PRIMARY KEY CLUSTERED 
+                        (
+	                        [Endpoint] ASC,
+	                        [TransportAddress] ASC,
+	                        [TypeName] ASC
+                        )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                        ) ON [PRIMARY]
+                    END
+                    EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
+                  END";
+
         internal class Columns
         {
             internal static ColumnInfo Id = new ColumnInfo
@@ -113,5 +134,7 @@ namespace NServiceBus.Transports.SQLServer
             public string Name { get; set; }
             public SqlDbType Type { get; set; }
         }
+
+        
     }
 }

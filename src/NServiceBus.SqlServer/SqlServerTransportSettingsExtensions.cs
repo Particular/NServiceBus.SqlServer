@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NServiceBus.Configuration.AdvanceExtensibility;
+    using NServiceBus.Settings;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -96,6 +97,58 @@
             transportExtensions.GetSettings().Set(SettingsKeys.LegacyMultiInstanceConnectionFactory, sqlConnectionFactory);
 
             return transportExtensions;
+        }
+
+        /// <summary>
+        /// Allows to customize subscription store settings.
+        /// </summary>
+        public static SubscriptionStoreSettings CustomizeSubscriptionStore(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            return new SubscriptionStoreSettings(transportExtensions.GetSettings());
+        }
+    }
+
+    /// <summary>
+    /// Allows to customize settings of subscription store.
+    /// </summary>
+    public class SubscriptionStoreSettings : ExposeSettings
+    {
+        internal SubscriptionStoreSettings(SettingsHolder settings) 
+            : base(settings)
+        {
+        }
+
+        /// <summary>
+        /// Overrides the connection string for subscription store. 
+        /// </summary>
+        /// <param name="connectionString">Connection string.</param>
+        public SubscriptionStoreSettings ConnectionString(string connectionString)
+        {
+            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+            this.GetSettings().Set(SettingsKeys.SubscriptionStoreConnectionStringKey, connectionString);
+            return this;
+        }
+
+        /// <summary>
+        /// Overrides the schema for subscription store (defaults to "dbo").
+        /// </summary>
+        /// <param name="schemaName">Schema.</param>
+        public SubscriptionStoreSettings Schema(string schemaName)
+        {
+            Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
+            this.GetSettings().Set(SettingsKeys.SubscriptionStoreSchemaKey, schemaName);
+            return this;
+        }
+
+        /// <summary>
+        /// Overrides the table name for subscription store (defaults to "Subscriptions")
+        /// </summary>
+        /// <param name="tableName">Table name.</param>
+        public SubscriptionStoreSettings Table(string tableName)
+        {
+            Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
+            this.GetSettings().Set(SettingsKeys.SubscriptionStoreTableKey, tableName);
+            return this;
         }
     }
 }

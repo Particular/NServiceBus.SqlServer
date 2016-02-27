@@ -31,14 +31,29 @@ namespace NServiceBus.Transports.SQLServer
                         await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                     }
 
+                    await CreateSubscriptionTable(connection, transaction).ConfigureAwait(false);
+
                     transaction.Commit();
                 }
             }
         }
 
-        async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
         {
             var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
+
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
+            {
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+        }
+
+        static async Task CreateSubscriptionTable(SqlConnection connection, SqlTransaction transaction)
+        {
+            var sql = string.Format(Sql.CreateQueueText, "dbo", "Subscriptions");
 
             using (var command = new SqlCommand(sql, connection, transaction)
             {
