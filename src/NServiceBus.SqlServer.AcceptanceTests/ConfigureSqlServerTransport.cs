@@ -56,6 +56,6 @@ public class ConfigureSqlServerTransport : IConfigureTestExecution
 
     public IEnumerable<Type> UnsupportedScenarioDescriptorTypes { get; } = new[]
     {
-        typeof(AllTransportsWithCentralizedPubSubSupport)
+        typeof(AllTransportsWithMessageDrivenPubSub)
     };
 }

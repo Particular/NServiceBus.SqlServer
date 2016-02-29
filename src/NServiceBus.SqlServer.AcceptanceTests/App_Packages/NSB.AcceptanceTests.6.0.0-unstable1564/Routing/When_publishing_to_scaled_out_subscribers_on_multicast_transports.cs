@@ -5,6 +5,7 @@
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
 
     public class When_publishing_to_scaled_out_subscribers_on_multicast_transports : NServiceBusAcceptanceTest
     {
@@ -49,10 +50,19 @@
 
         public class Publisher : EndpointConfigurationBuilder
         {
+            public Publisher()
+            {
+                EndpointSetup<DefaultServer>();
+            }
         }
 
         public class SubscriberA : EndpointConfigurationBuilder
         {
+            public SubscriberA()
+            {
+                EndpointSetup<DefaultServer>();
+            }
+
             public class MyEventHandler : IHandleMessages<MyEvent>
             {
                 public Context Context { get; set; }
@@ -67,6 +77,11 @@
 
         public class SubscriberB : EndpointConfigurationBuilder
         {
+            public SubscriberB()
+            {
+                EndpointSetup<DefaultServer>();
+            }
+
             public class MyEventHandler : IHandleMessages<MyEvent>
             {
                 public Context Context { get; set; }

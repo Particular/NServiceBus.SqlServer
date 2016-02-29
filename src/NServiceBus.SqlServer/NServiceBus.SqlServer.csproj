@@ -103,6 +103,8 @@
     <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Configuration\SqlScopeOptions.cs" />
+    <Compile Include="Subscriptions\SubscriptionStoreSettings.cs" />
+    <Compile Include="Subscriptions\SubscriptionReader.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="Queuing\MessageReadResult.cs" />
@@ -114,6 +116,8 @@
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
     <Compile Include="Queuing\TableBasedQueue.cs" />
     <Compile Include="Sending\UsingV2ConfigurationChecker.cs" />
+    <Compile Include="Subscriptions\SubscriptionManager.cs" />
+    <Compile Include="Subscriptions\Subscriber.cs" />
     <Compile Include="TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>

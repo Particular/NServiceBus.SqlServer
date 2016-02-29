@@ -34,7 +34,7 @@ namespace NServiceBus
         /// </summary>
         public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
         {
-            typeof(DiscardIfNotReceivedBefore)
+            typeof(DiscardIfNotReceivedBefore),
         };
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
         /// </summary>
-        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
+        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         /// <summary>
         ///     <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
@@ -120,13 +120,14 @@ namespace NServiceBus
             var connectionFactory = CreateConnectionFactory();
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(connectionFactory, addressParser),
+                () => new MessageDispatcher(connectionFactory, addressParser, CreateSubscriptionReader(connectionFactory)),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });
-        }       
+        }
+
 
         /// <summary>
         ///     <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
@@ -134,7 +135,41 @@ namespace NServiceBus
         /// <returns></returns>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            throw new NotImplementedException();
+            var connectionFactory = CreateConnectionFactory();
+            return new TransportSubscriptionInfrastructure(() => CreateSubscriptionManager(connectionFactory));
+        }
+
+        SubscriptionReader CreateSubscriptionReader(SqlConnectionFactory defaultConnectionFactory)
+        {
+            var subscriptionsSchema = settings.Get<string>(SettingsKeys.SubscriptionStoreSchemaKey);
+            var subscriptionsTable = settings.Get<string>(SettingsKeys.SubscriptionStoreTableKey);
+            var conventions = settings.Get<Conventions>();
+            var factory = GetSubscriptionStoreConnectionFactory(defaultConnectionFactory);
+            var allMessageTypes = settings.GetAvailableTypes().Where(t => conventions.IsMessageType(t)).ToList();
+            return new SubscriptionReader(subscriptionsSchema, subscriptionsTable, factory, allMessageTypes);
+        }
+
+        SubscriptionManager CreateSubscriptionManager(SqlConnectionFactory defaultConnectionFactory)
+        {
+            var subscriptionsSchema = settings.Get<string>(SettingsKeys.SubscriptionStoreSchemaKey);
+            var subscriptionsTable = settings.Get<string>(SettingsKeys.SubscriptionStoreTableKey);
+            var factory = GetSubscriptionStoreConnectionFactory(defaultConnectionFactory);
+            return new SubscriptionManager(settings.EndpointName().ToString(), settings.LocalAddress(), subscriptionsSchema, subscriptionsTable, factory);
+        }
+
+        SqlConnectionFactory GetSubscriptionStoreConnectionFactory(SqlConnectionFactory connectionFactory)
+        {
+            string subscriptionsConnectionString;
+            if (settings.TryGet(SettingsKeys.SubscriptionStoreConnectionStringKey, out subscriptionsConnectionString))
+            {
+                return new SqlConnectionFactory(() =>
+                {
+                    var connection = new SqlConnection(subscriptionsConnectionString);
+                    connection.Open();
+                    return Task.FromResult(connection);
+                });
+            }
+            return connectionFactory;
         }
 
         /// <summary>

@@ -97,5 +97,13 @@
 
             return transportExtensions;
         }
+
+        /// <summary>
+        /// Allows to customize subscription store settings.
+        /// </summary>
+        public static SubscriptionStoreSettings CustomizeSubscriptionStore(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            return new SubscriptionStoreSettings(transportExtensions.GetSettings());
+        }
     }
 }
