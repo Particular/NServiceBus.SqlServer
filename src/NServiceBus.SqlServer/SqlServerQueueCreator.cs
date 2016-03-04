@@ -27,7 +27,13 @@ namespace NServiceBus.Transports.SQLServer
                     CREATE NONCLUSTERED INDEX [Index_Expires] ON [{0}].[{1}]
                     (
 	                    [Expires] ASC
-                    )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+                    )
+                    INCLUDE
+                    (
+                        [Id],
+                        [RowVersion]
+                    )
+                    WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 
                   END";
 
