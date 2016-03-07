@@ -78,7 +78,7 @@ namespace NServiceBus.Transports.SQLServer
             }
             else
             {
-                data[TimeToBeReceivedColumn] = DateTime.UtcNow.Add(message.TimeToBeReceived);
+                data[TimeToBeReceivedColumn] = message.TimeToBeReceived.TotalMilliseconds;
             }
             data[HeadersColumn] = HeaderSerializer.SerializeObject(message.Headers);
             if (message.Body == null)
@@ -129,14 +129,14 @@ namespace NServiceBus.Transports.SQLServer
             {
                 var id = rowData[0].ToString();
 
-                DateTime? expireDateTime = null;
+                int? millisecondsToExpiry = null;
                 if (rowData[TimeToBeReceivedColumn] != DBNull.Value)
                 {
-                    expireDateTime = (DateTime)rowData[TimeToBeReceivedColumn];
+                    millisecondsToExpiry = (int)rowData[TimeToBeReceivedColumn];
                 }
 
                 //Has message expired?
-                if (expireDateTime.HasValue && expireDateTime.Value < DateTime.UtcNow)
+                if (millisecondsToExpiry.HasValue && millisecondsToExpiry.Value < 0L)
                 {
                     Logger.InfoFormat("Message with ID={0} has expired. Removing it from queue.", id);
                     return MessageReadResult.NoMessage;
@@ -161,9 +161,9 @@ namespace NServiceBus.Transports.SQLServer
                     message.Headers[Headers.ReplyToAddress] = replyToAddress;
                 }
 
-                if (expireDateTime.HasValue)
+                if (millisecondsToExpiry.HasValue)
                 {
-                    message.TimeToBeReceived = TimeSpan.FromTicks(expireDateTime.Value.Ticks - DateTime.UtcNow.Ticks);
+                    message.TimeToBeReceived = TimeSpan.FromMilliseconds(millisecondsToExpiry.Value);
                 }
 
                 return MessageReadResult.Success(message);
@@ -189,6 +189,32 @@ namespace NServiceBus.Transports.SQLServer
             return (T)value;
         }
 
+        public int PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
+        {
+            var commandText = string.Format(SqlPurgeBatchOfExpiredMessages, purgeBatchSize, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                return command.ExecuteNonQuery();
+            }
+        }
+
+        public void LogWarningWhenIndexIsMissing(SqlConnection connection)
+        {
+            var commandText = string.Format(SqlCheckIfExpiresIndexIsPresent, ExpiresIndexName, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                var rowsCount = (int) command.ExecuteScalar();
+
+                if (rowsCount == 0)
+                {
+                    Logger.Warn($@"Table [{schema}].[{tableName}] does not contain index '{ExpiresIndexName}'.
+Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
+                }
+            }
+        }
+
         public override string ToString()
         {
             return tableName;
@@ -200,7 +226,7 @@ namespace NServiceBus.Transports.SQLServer
         readonly string schema;
         static  readonly JsonMessageSerializer HeaderSerializer = new JsonMessageSerializer(null);
 
-        static readonly string[] Parameters = { "Id", "CorrelationId", "ReplyToAddress", "Recoverable", "Expires", "Headers", "Body" };
+        static readonly string[] Parameters = { "Id", "CorrelationId", "ReplyToAddress", "Recoverable", "TimeToBeReceivedMs", "Headers", "Body" };
 
         static readonly SqlDbType[] ParameterTypes =
         {
@@ -208,22 +234,28 @@ namespace NServiceBus.Transports.SQLServer
             SqlDbType.VarChar,
             SqlDbType.VarChar,
             SqlDbType.Bit,
-            SqlDbType.DateTime,
+            SqlDbType.Int,
             SqlDbType.VarChar,
             SqlDbType.VarBinary
         };
 
-
-
         const string SqlSend =
             @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,IIF(@TimeToBeReceivedMs IS NOT NULL, DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()), NULL),@Headers,@Body)";
 
         const string SqlReceive =
             @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
+			deleted.Recoverable, IIF(deleted.Expires IS NOT NULL, DATEDIFF(ms, GETUTCDATE(), deleted.Expires), NULL), deleted.Headers, deleted.Body;";
+
+        const string SqlPurgeBatchOfExpiredMessages =
+            @"DELETE FROM [{1}].[{2}] WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
+
+        const string SqlCheckIfExpiresIndexIsPresent =
+            @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
+
+        const string ExpiresIndexName = "Index_Expires";
 
         const int IdColumn = 0;
         const int CorrelationIdColumn = 1;

@@ -70,6 +70,7 @@
     <Compile Include="BoundedExponentialBackOff.cs" />
     <Compile Include="CallbackQueueCreator.cs" />
     <Compile Include="ExecutorTaskState.cs" />
+    <Compile Include="ExpiredMessagesPurger.cs" />
     <Compile Include="IBackOffStrategy.cs" />
     <Compile Include="ICallbackAddressStore.cs" />
     <Compile Include="CollectionConnectionStringProvider.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="Observable.cs" />
     <Compile Include="IConnectionStore.cs" />
     <Compile Include="PipelineNotifications.cs" />
+    <Compile Include="PurgeExpiredMessagesParams.cs" />
     <Compile Include="QueuePurger.cs" />
     <Compile Include="ReadIncomingCallbackAddressBehavior.cs" />
     <Compile Include="ReceiveRampUpController.cs" />

@@ -18,7 +18,9 @@
             IQueuePurger queuePurger, 
             SecondaryReceiveConfiguration secondaryReceiveConfiguration,
             TransportNotifications transportNotifications, 
-            RepeatedFailuresOverTimeCircuitBreaker circuitBreaker)
+            RepeatedFailuresOverTimeCircuitBreaker circuitBreaker,
+            ConnectionFactory connectionFactory,
+            PurgeExpiredMessagesParams purgeExpiredMessagesParams)
         {
             this.locaConnectionParams = locaConnectionParams;
             this.receiveStrategyFactory = receiveStrategyFactory;
@@ -26,6 +28,8 @@
             this.secondaryReceiveConfiguration = secondaryReceiveConfiguration;
             this.transportNotifications = transportNotifications;
             this.circuitBreaker = circuitBreaker;
+            this.connectionFactory = connectionFactory;
+            this.purgeExpiredMessagesParams = purgeExpiredMessagesParams;
         }
 
         /// <summary>
@@ -48,7 +52,8 @@
             secondaryReceiveSettings = secondaryReceiveConfiguration.GetSettings(primaryAddress.Queue);
             var receiveStrategy = receiveStrategyFactory.Create(transactionSettings, tryProcessMessage);
 
-            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, new TableBasedQueue(primaryAddress, locaConnectionParams.Schema), endProcessMessage, circuitBreaker, transportNotifications);
+            var primaryQueue = new TableBasedQueue(primaryAddress, locaConnectionParams.Schema);
+            primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, primaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
 
             if (secondaryReceiveSettings.IsEnabled)
             {
@@ -59,6 +64,8 @@
             {
                 secondaryReceiver = new NullExecutor();
             }
+
+            expiredMessagesPurger = new ExpiredMessagesPurger(primaryQueue, () => connectionFactory.OpenNewConnection(locaConnectionParams.ConnectionString), purgeExpiredMessagesParams);
         }
 
         /// <summary>
@@ -73,6 +80,7 @@
 
             primaryReceiver.Start(maximumConcurrencyLevel, tokenSource.Token);
             secondaryReceiver.Start(SecondaryReceiveSettings.MaximumConcurrencyLevel, tokenSource.Token);
+            expiredMessagesPurger.Start(maximumConcurrencyLevel, tokenSource.Token);
         }
 
         /// <summary>
@@ -89,6 +97,7 @@
 
             primaryReceiver.Stop();
             secondaryReceiver.Stop();
+            expiredMessagesPurger.Stop();
 
             tokenSource.Dispose();
         }
@@ -112,10 +121,13 @@
 
         IExecutor primaryReceiver;
         IExecutor secondaryReceiver;
+        IExecutor expiredMessagesPurger;
         RepeatedFailuresOverTimeCircuitBreaker circuitBreaker;
         readonly LocalConnectionParams locaConnectionParams;
         readonly ReceiveStrategyFactory receiveStrategyFactory;
         readonly IQueuePurger queuePurger;
+        readonly ConnectionFactory connectionFactory;
+        readonly PurgeExpiredMessagesParams purgeExpiredMessagesParams;
 
         readonly SecondaryReceiveConfiguration secondaryReceiveConfiguration;
         [SkipWeaving] //Do not dispose with dequeue strategy
