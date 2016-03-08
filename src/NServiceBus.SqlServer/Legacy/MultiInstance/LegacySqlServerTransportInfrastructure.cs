@@ -31,6 +31,8 @@
             var queuePurger = new LegacyQueuePurger(connectionFactory);
             var queuePeeker = new LegacyQueuePeeker(connectionFactory);
 
+            var expiredMessagesPurger = new ExpiredMessagesPurger(settings, queue => connectionFactory.OpenNewConnection(queue.TransportAddress));
+
             SqlScopeOptions scopeOptions;
             if (!settings.TryGet(out scopeOptions))
             {
@@ -55,7 +57,7 @@
                 };
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queuePurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
                 () => new LegacyQueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }

@@ -9,10 +9,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, IPurgeExpiredMessages expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
+            this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
             this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -162,25 +163,11 @@
             {
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    {
-                        int purgedRowsCount;
-
-                        do
-                        {
-                            purgedRowsCount = await inputQueue.PurgeBatchOfExpiredMessages(connection).ConfigureAwait(false);
-                        } while (purgedRowsCount == TableBasedQueue.PurgeBatchSize);
-
-                        await Task.Delay(purgeDelay, cancellationToken).ConfigureAwait(false);
-                    }
+                    await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     // Graceful shutdown
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Purging expired messages failed", ex);
                 }
             }
         }
@@ -190,6 +177,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
+        IPurgeExpiredMessages expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
@@ -204,7 +192,5 @@
         Task messagePumpTask;
         Task purgeTask;
         ReceiveStrategy receiveStrategy;
-
-        static TimeSpan purgeDelay = TimeSpan.FromMinutes(5);
     }
 }

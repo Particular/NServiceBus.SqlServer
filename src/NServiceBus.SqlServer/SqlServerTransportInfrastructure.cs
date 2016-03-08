@@ -73,8 +73,10 @@ namespace NServiceBus
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory);
 
+            var expiredMessagesPurger = new ExpiredMessagesPurger(settings, _ => connectionFactory.OpenNewConnection());
+
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queuePurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }

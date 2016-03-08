@@ -11,10 +11,10 @@
         {
             var transportId = rowData[0].ToString();
 
-            DateTime? expireDateTime = null;
+            int? millisecondsToExpiry = null;
             if (rowData[Sql.Columns.TimeToBeReceived.Index] != DBNull.Value)
             {
-                expireDateTime = (DateTime) rowData[Sql.Columns.TimeToBeReceived.Index];
+                millisecondsToExpiry = (int) rowData[Sql.Columns.TimeToBeReceived.Index];
             }
 
             var headers = GetHeaders(rowData);
@@ -23,7 +23,7 @@
 
             var memoryStream = new MemoryStream(body);
 
-            var message = new Message(transportId, expireDateTime, headers, memoryStream);
+            var message = new Message(transportId, millisecondsToExpiry, headers, memoryStream);
 
             var replyToAddress = GetNullableValue<string>(rowData[Sql.Columns.ReplyToAddress.Index]);
 
@@ -79,7 +79,7 @@
                 TimeSpan TTBR;
                 if (TimeSpan.TryParse(message.Headers[Headers.TimeToBeReceived], out TTBR) && TTBR != TimeSpan.MaxValue)
                 {
-                    data[Sql.Columns.TimeToBeReceived.Index] = DateTime.UtcNow.Add(TTBR);
+                    data[Sql.Columns.TimeToBeReceived.Index] = TTBR.TotalMilliseconds;
                 }
             }
 

@@ -6,18 +6,18 @@
 
     class Message
     {
-        public Message(string transportId, DateTime? timeToBeReceived, Dictionary<string, string> headers, Stream bodyStream)
+        public Message(string transportId, int? millisecondsToExpiry, Dictionary<string, string> headers, Stream bodyStream)
         {
             TransportId = transportId;
-            TimeToBeReceived = timeToBeReceived;
+            if (millisecondsToExpiry.HasValue)
+            {
+                TimeToBeReceived = TimeSpan.FromMilliseconds(millisecondsToExpiry.Value);
+            }
             BodyStream = bodyStream;
             Headers = headers;
         }
 
-        public bool TTBRExpired(DateTime now)
-        {
-            return TimeToBeReceived.HasValue && TimeToBeReceived.Value < now;
-        }
+        public bool TTBRExpired => TimeToBeReceived.HasValue && TimeToBeReceived.Value.TotalMilliseconds < 0L;
 
         public string GetLogicalId()
         {
@@ -28,7 +28,7 @@
         }
 
         public string TransportId { get; }
-        public DateTime? TimeToBeReceived { get; }
+        public TimeSpan? TimeToBeReceived { get; }
         public Stream BodyStream { get; }
         public Dictionary<string, string> Headers { get; }
     }

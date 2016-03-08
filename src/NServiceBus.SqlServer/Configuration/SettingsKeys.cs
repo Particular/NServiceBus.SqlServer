@@ -9,5 +9,8 @@ namespace NServiceBus.Transports.SQLServer
         public const string TimeToWaitBeforeTriggering = "SqlServer.CircuitBreaker.TimeToWaitBeforeTriggering";
 
         public const string LegacyMultiInstanceConnectionFactory = "SqlServer.LegacyMultiInstanceConnectionFactory";
+
+        public const string PurgeTaskDelayKey = "SqlServer.PurgeTaskDelay";
+        public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
     }
 }

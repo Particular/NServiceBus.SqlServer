@@ -89,6 +89,7 @@
     <Compile Include="Legacy\MultiInstance\LegacySqlServerTransportInfrastructure.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Queuing\DictionarySerializer.cs" />
+    <Compile Include="Receiving\ExpiredMessagesPurger.cs" />
     <Compile Include="Receiving\IsolationLevelMapper.cs" />
     <Compile Include="Receiving\QueuePeeker.cs" />
     <Compile Include="Receiving\QueuePurger.cs" />

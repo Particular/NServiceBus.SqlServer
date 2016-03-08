@@ -33,7 +33,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var message = MessageParser.ParseRawData(rawMessageData);
 
-                    if (message.TTBRExpired(DateTime.UtcNow))
+                    if (message.TTBRExpired)
                     {
                         var messageId = message.GetLogicalId() ?? message.TransportId;
 
@@ -133,18 +133,29 @@ namespace NServiceBus.Transports.SQLServer
 
         public string TransportAddress => address.ToString();
 
-        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection)
+        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, PurgeBatchSize, address.SchemaName, address.TableName);
+            var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                var expiresColumnInfo = Sql.Columns.TimeToBeReceived;
-                command.Parameters.Add(expiresColumnInfo.Name, expiresColumnInfo.Type).Value = DateTime.UtcNow;
+                return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+        }
 
-                var rowsCount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+        public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
+        {
+            var commandText = string.Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, this.address.SchemaName, this.address.TableName);
 
-                return rowsCount;
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+
+                if (rowsCount == 0)
+                {
+                    Logger.WarnFormat(@"Table [{0}].[{1}] does not contain index '{2}'.
+Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", this.address.SchemaName, this.address.TableName, Sql.ExpiresIndexName);
+                }
             }
         }
 
@@ -152,8 +163,6 @@ namespace NServiceBus.Transports.SQLServer
         {
             return $"{address.SchemaName}.{address.TableName}";
         }
-
-        public static int PurgeBatchSize = 10000;
 
         QueueAddress address;
 
