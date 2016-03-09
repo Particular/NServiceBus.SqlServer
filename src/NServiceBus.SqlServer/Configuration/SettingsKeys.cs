@@ -10,7 +10,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public const string LegacyMultiInstanceConnectionFactory = "SqlServer.LegacyMultiInstanceConnectionFactory";
 
-        public const string PurgeTaskDelayKey = "SqlServer.PurgeTaskDelay";
+        public const string PurgeTaskDelayTimeSpanKey = "SqlServer.PurgeTaskDelayTimeSpan";
         public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
     }
 }

@@ -9,7 +9,7 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, IPurgeExpiredMessages expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
@@ -37,6 +37,8 @@
 
                 Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
             }
+
+            await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -164,6 +166,9 @@
                 try
                 {
                     await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
+
+                    Logger.DebugFormat("Scheduling next expired message purge task for table {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
+                    await Task.Delay(expiredMessagesPurger.PurgeTaskDelay, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -177,7 +182,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
-        IPurgeExpiredMessages expiredMessagesPurger;
+        ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
