@@ -73,8 +73,10 @@ namespace NServiceBus
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory);
 
+            var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queuePurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
@@ -109,6 +111,14 @@ namespace NServiceBus
             }
 
             return new ReceiveWithNoTransaction(connectionFactory);
+        }
+
+        ExpiredMessagesPurger CreateExpiredMessagesPurger(SqlConnectionFactory connectionFactory)
+        {
+            var purgeTaskDelay = settings.HasSetting(SettingsKeys.PurgeTaskDelayTimeSpanKey) ? settings.Get<TimeSpan?>(SettingsKeys.PurgeTaskDelayTimeSpanKey) : null;
+            var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+
+            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeTaskDelay, purgeBatchSize);
         }
 
         /// <summary>

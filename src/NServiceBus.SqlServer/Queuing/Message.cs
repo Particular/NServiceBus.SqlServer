@@ -1,22 +1,16 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
 
     class Message
     {
-        public Message(string transportId, DateTime? timeToBeReceived, Dictionary<string, string> headers, Stream bodyStream)
+        public Message(string transportId, int? millisecondsToExpiry, Dictionary<string, string> headers, Stream bodyStream)
         {
             TransportId = transportId;
-            TimeToBeReceived = timeToBeReceived;
+            TTBRExpired = millisecondsToExpiry.HasValue && millisecondsToExpiry.Value < 0;
             BodyStream = bodyStream;
             Headers = headers;
-        }
-
-        public bool TTBRExpried(DateTime now)
-        {
-            return TimeToBeReceived.HasValue && TimeToBeReceived.Value < now;
         }
 
         public string GetLogicalId()
@@ -28,7 +22,7 @@
         }
 
         public string TransportId { get; }
-        public DateTime? TimeToBeReceived { get; }
+        public bool TTBRExpired { get; }
         public Stream BodyStream { get; }
         public Dictionary<string, string> Headers { get; }
     }

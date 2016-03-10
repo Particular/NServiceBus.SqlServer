@@ -8,13 +8,13 @@ namespace NServiceBus.Transports.SQLServer
 
         internal const string SendText =
             @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,IIF(@TimeToBeReceivedMs IS NOT NULL, DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()), NULL),@Headers,@Body)";
 
         internal const string ReceiveText =
             @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion]) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
+			deleted.Recoverable, IIF(deleted.Expires IS NOT NULL, DATEDIFF(ms, GETUTCDATE(), deleted.Expires), NULL), deleted.Headers, deleted.Body;";
         
         internal const string PeekText = @"SELECT count(*) Id FROM [{0}].[{1}];";
 
@@ -39,10 +39,27 @@ namespace NServiceBus.Transports.SQLServer
                         (
 	                        [RowVersion] ASC
                         )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+
+                        CREATE NONCLUSTERED INDEX [Index_Expires] ON [{0}].[{1}]
+                        (
+	                        [Expires] ASC
+                        )
+                        INCLUDE
+                        (
+                            [Id],
+                            [RowVersion]
+                        )
+                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
                     END
     
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
+
+        internal const string PurgeBatchOfExpiredMessagesText = @"DELETE FROM [{1}].[{2}] WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
+
+        internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
+
+        internal const string ExpiresIndexName = "Index_Expires";
 
         internal class Columns
         {
@@ -77,8 +94,8 @@ namespace NServiceBus.Transports.SQLServer
             internal static ColumnInfo TimeToBeReceived = new ColumnInfo
             {
                 Index = 4,
-                Name = "Expires",
-                Type = SqlDbType.DateTime
+                Name = "TimeToBeReceivedMs",
+                Type = SqlDbType.Int
             };
 
             internal static ColumnInfo Headers = new ColumnInfo

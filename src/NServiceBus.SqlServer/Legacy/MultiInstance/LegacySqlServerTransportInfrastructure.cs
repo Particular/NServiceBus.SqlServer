@@ -31,6 +31,8 @@
             var queuePurger = new LegacyQueuePurger(connectionFactory);
             var queuePeeker = new LegacyQueuePeeker(connectionFactory);
 
+            var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+
             SqlScopeOptions scopeOptions;
             if (!settings.TryGet(out scopeOptions))
             {
@@ -55,9 +57,17 @@
                 };
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queuePurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
                 () => new LegacyQueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
+        }
+
+        ExpiredMessagesPurger CreateExpiredMessagesPurger(LegacySqlConnectionFactory connectionFactory)
+        {
+            var purgeTaskDelay = settings.HasSetting(SettingsKeys.PurgeTaskDelayTimeSpanKey) ? settings.Get<TimeSpan?>(SettingsKeys.PurgeTaskDelayTimeSpanKey) : null;
+            var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+
+            return new ExpiredMessagesPurger(queue => connectionFactory.OpenNewConnection(queue.TransportAddress), purgeTaskDelay, purgeBatchSize);
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()

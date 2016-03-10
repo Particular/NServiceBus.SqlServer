@@ -9,10 +9,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
+            this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
             this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -36,6 +37,8 @@
 
                 Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
             }
+
+            await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -47,6 +50,7 @@
             cancellationToken = cancellationTokenSource.Token;
 
             messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
+            purgeTask = Task.Run(PurgeExpiredMessages, CancellationToken.None);
         }
 
         public async Task Stop()
@@ -57,7 +61,8 @@
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
             var allTasks = runningReceiveTasks.Values.Concat(new[]
             {
-                messagePumpTask
+                messagePumpTask,
+                purgeTask
             });
             var finishedTask = await Task.WhenAny(Task.WhenAll(allTasks), timeoutTask).ConfigureAwait(false);
 
@@ -154,11 +159,30 @@
             }
         }
 
+        async Task PurgeExpiredMessages()
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
+
+                    Logger.DebugFormat("Scheduling next expired message purge task for table {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
+                    await Task.Delay(expiredMessagesPurger.PurgeTaskDelay, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Graceful shutdown
+                }
+            }
+        }
+
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
+        ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
@@ -171,6 +195,7 @@
 
         static ILog Logger = LogManager.GetLogger<MessagePump>();
         Task messagePumpTask;
+        Task purgeTask;
         ReceiveStrategy receiveStrategy;
     }
 }
