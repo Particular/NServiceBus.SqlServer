@@ -20,6 +20,10 @@
                 var parts = address.Split('@');
                 var tableName = parts[0];
                 var schemaName = parts[1];
+                if (schemaName.StartsWith("[") && schemaName.EndsWith("]"))
+                {
+                    schemaName = schemaName.Substring(1, schemaName.Length - 2);
+                }
 
                 return new QueueAddress(tableName, schemaName);
             }
@@ -29,7 +33,14 @@
 
         public override string ToString()
         {
-            return $"{TableName}@{SchemaName}";
+            var escapedSchema = SchemaName ?? "";
+            if (!string.IsNullOrWhiteSpace(escapedSchema) && !(escapedSchema.StartsWith("[") && escapedSchema.EndsWith("]")))
+            {
+                escapedSchema = $"[{escapedSchema}]";
+            }
+            if (!string.IsNullOrWhiteSpace(escapedSchema))
+                escapedSchema = "@" + escapedSchema;
+            return $"{TableName}{escapedSchema}";
         }
     }
 }

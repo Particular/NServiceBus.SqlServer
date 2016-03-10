@@ -165,12 +165,10 @@ namespace NServiceBus
 
             string schemaName;
 
-            if (logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName))
-            {
-                address += $"@{schemaName}";
-            }
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName);
+            var queueAddress = new QueueAddress(address, schemaName);
 
-            return address;
+            return queueAddress.ToString();
         }
 
         /// <summary>
