@@ -12,6 +12,7 @@
         {
             Scenario.Define<Context>()
                     .WithEndpoint<StartedEndpoint>()
+                    .AllowExceptions()
                     .Done(c => c.IsDone)
                     .Run();
         }
