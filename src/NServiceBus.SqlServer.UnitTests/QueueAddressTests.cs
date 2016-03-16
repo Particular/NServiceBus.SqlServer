@@ -23,19 +23,16 @@
 
 
         [Test]
-        [TestCase("table", "schema", "schema")]
-        [TestCase("my.table", "my.schema", "my.schema")]
-        [TestCase("table", "", null)]
-        [TestCase("table", null, null)]
-        [TestCase("table", "[my.schema]", "my.schema")]
-        [TestCase("[my.table]", "[my.schema]", "my.schema")]
-        public void Should_parse_address(string tableName, string schemaName, string expectedSchema)
+        [TestCase("table@schema", "table", "schema")]
+        [TestCase("my.table@my.schema@my.schema", "my.table", "my.schema")]
+        [TestCase("table", "table", null)]
+        [TestCase("table@[my.schema]", "table", "my.schema")]
+        [TestCase("[my.table]@[my.schema]", "[my.table]", "my.schema")]
+        public void Should_parse_address(string transportAddress, string expectedTableName, string expectedSchema)
         {
-            var address = new QueueAddress(tableName, schemaName);
+            var parsedAddress = QueueAddress.Parse(transportAddress);
 
-            var parsedAddress = QueueAddress.Parse(address.ToString());
-
-            Assert.AreEqual(tableName, parsedAddress.TableName);
+            Assert.AreEqual(expectedTableName, parsedAddress.TableName);
             Assert.AreEqual(expectedSchema, parsedAddress.SchemaName);
         }
     }

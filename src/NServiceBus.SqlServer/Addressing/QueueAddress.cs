@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System.Text.RegularExpressions;
+
     class QueueAddress
     {
         public string TableName { get; }
@@ -10,7 +12,7 @@
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
 
             TableName = tableName;
-            SchemaName = schemaName;
+            SchemaName = UnescapeSchema(schemaName);
         }
         
         public static QueueAddress Parse(string address)
@@ -19,11 +21,7 @@
             {
                 var parts = address.Split('@');
                 var tableName = parts[0];
-                var schemaName = parts[1];
-                if (schemaName.StartsWith("[") && schemaName.EndsWith("]"))
-                {
-                    schemaName = schemaName.Substring(1, schemaName.Length - 2);
-                }
+                var schemaName = UnescapeSchema(parts[1]);
 
                 return new QueueAddress(tableName, schemaName);
             }
@@ -34,13 +32,29 @@
         public override string ToString()
         {
             var escapedSchema = SchemaName ?? "";
-            if (!string.IsNullOrWhiteSpace(escapedSchema) && !(escapedSchema.StartsWith("[") && escapedSchema.EndsWith("]")))
+            if (!string.IsNullOrWhiteSpace(escapedSchema) && !IsEscapedSchema(escapedSchema))
             {
                 escapedSchema = $"[{escapedSchema}]";
             }
             if (!string.IsNullOrWhiteSpace(escapedSchema))
                 escapedSchema = "@" + escapedSchema;
             return $"{TableName}{escapedSchema}";
+        }
+
+        private static string UnescapeSchema(string schemaName)
+        {
+            if (schemaName == null) return null;
+            if (IsEscapedSchema(schemaName))
+            {
+                return schemaName.Substring(1, schemaName.Length - 2);
+            }
+            return schemaName;
+        }
+
+        private static bool IsEscapedSchema(string schema)
+        {
+            if (schema == null) return true;
+            return Regex.IsMatch(schema, "^\\[(.*)\\]$");
         }
     }
 }
