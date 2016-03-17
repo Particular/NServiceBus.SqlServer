@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System.Text.RegularExpressions;
+
     class QueueAddress
     {
         public string TableName { get; }
@@ -10,7 +12,7 @@
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
 
             TableName = tableName;
-            SchemaName = schemaName;
+            SchemaName = UnescapeSchema(schemaName);
         }
         
         public static QueueAddress Parse(string address)
@@ -29,7 +31,32 @@
 
         public override string ToString()
         {
-            return $"{TableName}@{SchemaName}";
+            if (!string.IsNullOrWhiteSpace(SchemaName))
+            {
+                return $"{TableName}@[{SchemaName}]";
+            }
+
+            return TableName;
+        }
+
+        private static string UnescapeSchema(string schemaName)
+        {
+            if (IsEscapedSchema(schemaName))
+            {
+                return schemaName.Substring(1, schemaName.Length - 2);
+            }
+
+            return schemaName;
+        }
+
+        private static bool IsEscapedSchema(string schema)
+        {
+            if (schema == null)
+            {
+                return false;
+            }
+
+            return Regex.IsMatch(schema, "^\\[(.*)\\]$");
         }
     }
 }
