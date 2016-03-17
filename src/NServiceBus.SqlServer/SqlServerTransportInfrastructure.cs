@@ -161,12 +161,12 @@ namespace NServiceBus
                 logicalAddress.EndpointInstance.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));
 
-            var address = string.Join(".", nonEmptyParts);
+            var tableName = string.Join(".", nonEmptyParts);
 
             string schemaName;
 
             logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName);
-            var queueAddress = new QueueAddress(address, schemaName);
+            var queueAddress = new QueueAddress(tableName, schemaName);
 
             return queueAddress.ToString();
         }

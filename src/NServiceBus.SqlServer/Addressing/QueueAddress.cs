@@ -21,7 +21,7 @@
             {
                 var parts = address.Split('@');
                 var tableName = parts[0];
-                var schemaName = UnescapeSchema(parts[1]);
+                var schemaName = parts[1];
 
                 return new QueueAddress(tableName, schemaName);
             }
@@ -31,29 +31,31 @@
 
         public override string ToString()
         {
-            var escapedSchema = SchemaName ?? "";
-            if (!string.IsNullOrWhiteSpace(escapedSchema) && !IsEscapedSchema(escapedSchema))
+            if (!string.IsNullOrWhiteSpace(SchemaName))
             {
-                escapedSchema = $"[{escapedSchema}]";
+                return $"{TableName}@[{SchemaName}]";
             }
-            if (!string.IsNullOrWhiteSpace(escapedSchema))
-                escapedSchema = "@" + escapedSchema;
-            return $"{TableName}{escapedSchema}";
+
+            return TableName;
         }
 
         private static string UnescapeSchema(string schemaName)
         {
-            if (schemaName == null) return null;
             if (IsEscapedSchema(schemaName))
             {
                 return schemaName.Substring(1, schemaName.Length - 2);
             }
+
             return schemaName;
         }
 
         private static bool IsEscapedSchema(string schema)
         {
-            if (schema == null) return true;
+            if (schema == null)
+            {
+                return false;
+            }
+
             return Regex.IsMatch(schema, "^\\[(.*)\\]$");
         }
     }
