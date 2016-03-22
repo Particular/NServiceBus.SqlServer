@@ -241,13 +241,13 @@ Adding this index will speed up the process of purging expired messages from the
 
         const string SqlSend =
             @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,IIF(@TimeToBeReceivedMs IS NOT NULL, DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()), NULL),@Headers,@Body)";
+                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,CASE WHEN @TimeToBeReceivedMs IS NOT NULL THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,@Headers,@Body)";
 
         const string SqlReceive =
             @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
-			deleted.Recoverable, IIF(deleted.Expires IS NOT NULL, DATEDIFF(ms, GETUTCDATE(), deleted.Expires), NULL), deleted.Headers, deleted.Body;";
+			deleted.Recoverable, CASE WHEN deleted.Expires IS NOT NULL THEN DATEDIFF(ms, GETUTCDATE(), deleted.Expires) END, deleted.Headers, deleted.Body;";
 
         const string SqlPurgeBatchOfExpiredMessages =
             @"DELETE FROM [{1}].[{2}] WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
