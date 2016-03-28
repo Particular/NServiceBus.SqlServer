@@ -59,6 +59,6 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.RequiresConnectionString"/>
         /// </summary>
-        public override bool RequiresConnectionString => true;
+        public override bool RequiresConnectionString => false;
     }
 }
