@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.Configuration
 {
+    using System;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -16,8 +17,8 @@
             var appConfigFilename = "app.sqlv2.config";
             var expectedErrorMessage = "Schema override in connection string is not supported anymore";
 
-            File.WriteAllText(appConfigFilename,  
-                        @"<?xml version='1.0' encoding='utf-8'?>
+            File.WriteAllText(appConfigFilename,
+                @"<?xml version='1.0' encoding='utf-8'?>
                             <configuration>
                                 <connectionStrings>
                                   <clear />
@@ -27,12 +28,21 @@
 
             using (AppConfig.Change(appConfigFilename))
             {
-                var scenario = await Scenario.Define<Context>()
-                    .WithEndpoint<Endpoint>()
-                    .Run();
+                try
+                {
+                    await Scenario.Define<Context>()
+                        .WithEndpoint<Endpoint>()
+                        .Run();
+                }
+                catch (AggregateException exception)
+                {
+                    Assert.IsTrue(exception.InnerExceptions.Count > 0);
+                    Assert.IsTrue(exception.InnerExceptions.Any(e => e.InnerException != null && e.InnerException.Message.Contains(expectedErrorMessage)));
 
-                Assert.IsTrue(scenario.Exceptions.Count > 0);
-                Assert.IsTrue(scenario.Exceptions.Any(e => e.Message.Contains(expectedErrorMessage)));
+                    return;
+                }
+
+                Assert.Fail("Endpoint should fail on startup due to unsupported v2 configuration.");
             }
         }
 

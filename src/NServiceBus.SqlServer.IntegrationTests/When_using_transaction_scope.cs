@@ -16,7 +16,7 @@
         [SetUp]
         public void SetUp()
         {
-            var configuration = new EndpointConfiguration();
+            var configuration = new EndpointConfiguration("NHibernate_Integration_Endpoint");
             configuration.SendFailedMessagesTo("error");
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);

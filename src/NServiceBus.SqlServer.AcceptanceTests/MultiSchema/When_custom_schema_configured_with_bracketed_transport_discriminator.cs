@@ -28,7 +28,7 @@
                 {
                     var ReceiverName = $"{EndpointNamingConvention(typeof(Receiver))}";
                     
-                    c.Routing().UnicastRoutingTable.RouteToEndpoint(typeof(Message), $"{ReceiverName}@[{ReceiverSchema}]");
+                    c.UnicastRouting().RouteToEndpoint(typeof(Message), $"{ReceiverName}@[{ReceiverSchema}]");
                 });
             }
         }
