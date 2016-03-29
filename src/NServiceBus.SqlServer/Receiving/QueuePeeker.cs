@@ -5,11 +5,6 @@
     using System.Threading.Tasks;
     using NServiceBus.Logging;
 
-    interface IPeekMessagesInQueue
-    {
-        Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken);
-    }
-
     class QueuePeeker : IPeekMessagesInQueue
     {
         public QueuePeeker(SqlConnectionFactory connectionFactory)

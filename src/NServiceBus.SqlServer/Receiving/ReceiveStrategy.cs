@@ -4,7 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    interface ReceiveStrategy
+    internal interface ReceiveStrategy
     {
         Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage);
     }

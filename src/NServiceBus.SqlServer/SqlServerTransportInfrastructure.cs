@@ -11,11 +11,8 @@ namespace NServiceBus
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.SQLServer;
-
-    /// <summary>
-    ///     SqlServer Transport Infrastructure
-    /// </summary>
-    internal class SqlServerTransportInfrastructure : TransportInfrastructure
+    
+    class SqlServerTransportInfrastructure : TransportInfrastructure
     {
         const string SchemaPropertyKey = "Schema";
 

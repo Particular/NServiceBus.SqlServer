@@ -5,7 +5,7 @@
     using System.Runtime.Serialization.Json;
     using System.Text;
 
-    static class DictionarySerializer
+    internal static class DictionarySerializer
     {
         public static string Serialize(Dictionary<string, string> instance)
         {

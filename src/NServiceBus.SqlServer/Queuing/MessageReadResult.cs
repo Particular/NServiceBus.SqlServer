@@ -1,6 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
-    struct MessageReadResult
+    internal struct MessageReadResult
     {
         MessageReadResult(Message message, bool poison, object[] dataRecord)
         {

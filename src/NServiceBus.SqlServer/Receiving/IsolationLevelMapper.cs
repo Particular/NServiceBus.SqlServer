@@ -2,7 +2,7 @@
 {
     using System.Transactions;
 
-    static class IsolationLevelMapper
+    internal static class IsolationLevelMapper
     {
         public static System.Data.IsolationLevel Map(IsolationLevel isolationLevel)
         {

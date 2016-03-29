@@ -6,8 +6,8 @@ namespace NServiceBus.Transports.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        readonly SqlConnectionFactory connectionFactory;
-        readonly QueueAddressParser addressParser;
+        SqlConnectionFactory connectionFactory;
+        QueueAddressParser addressParser;
 
         public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
         {

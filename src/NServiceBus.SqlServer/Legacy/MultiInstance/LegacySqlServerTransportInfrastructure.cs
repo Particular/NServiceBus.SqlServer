@@ -7,8 +7,8 @@
 
     class LegacySqlServerTransportInfrastructure : SqlServerTransportInfrastructure
     {
-        private readonly QueueAddressParser addressParser;
-        private readonly SettingsHolder settings;
+        QueueAddressParser addressParser;
+        SettingsHolder settings;
 
         public LegacySqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString) 
             : base(addressParser, settings, connectionString)

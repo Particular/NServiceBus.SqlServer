@@ -5,7 +5,7 @@
     using System.Threading.Tasks;
     using NServiceBus.Logging;
 
-    class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
+    internal class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
     {
         public RepeatedFailuresOverTimeCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<Exception> triggerAction)
         {

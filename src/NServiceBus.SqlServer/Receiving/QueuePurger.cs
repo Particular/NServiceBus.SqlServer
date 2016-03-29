@@ -2,11 +2,6 @@
 {
     using System.Threading.Tasks;
 
-    internal interface IPurgeQueues
-    {
-        Task<int> Purge(TableBasedQueue queue);
-    }
-
     class QueuePurger : IPurgeQueues
     {
         public QueuePurger(SqlConnectionFactory connectionFactory)

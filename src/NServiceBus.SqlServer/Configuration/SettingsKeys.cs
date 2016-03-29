@@ -1,5 +1,4 @@
-﻿
-namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transports.SQLServer
 {
     class SettingsKeys
     {

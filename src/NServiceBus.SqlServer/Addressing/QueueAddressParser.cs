@@ -4,8 +4,8 @@
 
     class QueueAddressParser
     {
-        readonly string defaultSchema;
-        readonly string defaultSchemaOverride;
+        string defaultSchema;
+        string defaultSchemaOverride;
 
         Func<string, string> schemaOverrider;
 
