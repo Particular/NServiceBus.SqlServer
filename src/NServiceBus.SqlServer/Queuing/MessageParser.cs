@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
 
-    internal static class MessageParser
+    static class MessageParser
     {
 
         internal static Message ParseRawData(object[] rowData)
