@@ -16,7 +16,7 @@
         [SetUp]
         public void SetUp()
         {
-            var configuration = new EndpointConfiguration();
+            var configuration = new EndpointConfiguration("When_using_transaction_scope_something_else");
             configuration.SendFailedMessagesTo("error");
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);
