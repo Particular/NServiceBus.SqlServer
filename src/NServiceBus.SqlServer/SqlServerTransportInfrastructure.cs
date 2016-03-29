@@ -11,11 +11,8 @@ namespace NServiceBus
     using NServiceBus.Settings;
     using NServiceBus.Transports;
     using NServiceBus.Transports.SQLServer;
-
-    /// <summary>
-    ///     SqlServer Transport Infrastructure
-    /// </summary>
-    internal class SqlServerTransportInfrastructure : TransportInfrastructure
+    
+    class SqlServerTransportInfrastructure : TransportInfrastructure
     {
         const string SchemaPropertyKey = "Schema";
 
@@ -50,7 +47,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
         /// </summary>
-        /// <returns></returns>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
             SqlScopeOptions scopeOptions;
@@ -124,7 +120,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
         /// </summary>
-        /// <returns></returns>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
@@ -141,7 +136,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
         /// </summary>
-        /// <returns></returns>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
@@ -150,8 +144,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.BindToLocalEndpoint" />
         /// </summary>
-        /// <param name="instance"></param>
-        /// <returns></returns>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
             return instance.SetProperty(SchemaPropertyKey, addressParser.DefaultSchema);
@@ -160,8 +152,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.ToTransportAddress" />
         /// </summary>
-        /// <param name="logicalAddress"></param>
-        /// <returns></returns>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             var nonEmptyParts = new[]
@@ -184,8 +174,6 @@ namespace NServiceBus
         /// <summary>
         ///     <see cref="TransportInfrastructure.MakeCanonicalForm" />
         /// </summary>
-        /// <param name="transportAddress"></param>
-        /// <returns></returns>
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressParser.Parse(transportAddress).ToString();

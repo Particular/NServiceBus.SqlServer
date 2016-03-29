@@ -36,9 +36,6 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
         protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var addressParser = CreateAddressParser(settings);

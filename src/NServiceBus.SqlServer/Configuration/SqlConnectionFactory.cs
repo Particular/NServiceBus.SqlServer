@@ -6,7 +6,7 @@
 
     class SqlConnectionFactory
     {
-        readonly Func<Task<SqlConnection>> openNewConnection;
+        Func<Task<SqlConnection>> openNewConnection;
 
         public SqlConnectionFactory(Func<Task<SqlConnection>> factory)
         {

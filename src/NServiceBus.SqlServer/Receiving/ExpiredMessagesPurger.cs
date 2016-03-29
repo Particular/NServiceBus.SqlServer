@@ -66,7 +66,7 @@
 
         int PurgeBatchSize { get; }
 
-        static readonly TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);
+        static TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);
         const int DefaultPurgeBatchSize = 10000;
 
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();

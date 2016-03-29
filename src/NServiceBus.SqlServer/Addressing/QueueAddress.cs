@@ -39,7 +39,7 @@
             return TableName;
         }
 
-        private static string UnescapeSchema(string schemaName)
+        static string UnescapeSchema(string schemaName)
         {
             if (IsEscapedSchema(schemaName))
             {
@@ -49,7 +49,7 @@
             return schemaName;
         }
 
-        private static bool IsEscapedSchema(string schema)
+        static bool IsEscapedSchema(string schema)
         {
             if (schema == null)
             {
