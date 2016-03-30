@@ -25,7 +25,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", 
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             IEnumerable<EndpointConnectionInfo> connectionInformationCollection)
@@ -34,7 +34,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             params EndpointConnectionInfo[] connectionInformationCollection)
@@ -43,7 +43,7 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             Func<string, ConnectionInfo> connectionInformationProvider)
@@ -66,21 +66,21 @@ namespace NServiceBus.Transports.SQLServer.ConnectionStrings
     public class ConnectionInfo
     {
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static ConnectionInfo Create()
         {
             throw new NotImplementedException();
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`.")]
         public ConnectionInfo UseSchema(string schemaName)
         {
             throw new NotImplementedException();
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public ConnectionInfo UseConnectionString(string connectionString)
         {
             throw new NotImplementedException();
@@ -90,14 +90,14 @@ namespace NServiceBus.Transports.SQLServer.ConnectionStrings
     public class EndpointConnectionInfo
     {
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static EndpointConnectionInfo For(string endpoint)
         {
             throw new NotImplementedException();
         }
 
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
-            Message = "Multi-database setup is currently not supported. To specify schema use `UseSpecificSchema()`.")]
+            Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`.")]
         public EndpointConnectionInfo UseSchema(string schemaName)
         {
             throw new NotImplementedException();
