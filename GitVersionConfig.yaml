@@ -3,3 +3,4 @@ next-version: 3.0
 branches:
   develop:
     tag: alpha
+    prevent-increment-of-merged-branch-version: true
