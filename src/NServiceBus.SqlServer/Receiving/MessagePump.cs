@@ -117,28 +117,7 @@
                 {
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                    var tokenSource = new CancellationTokenSource();
-
-                    var receiveTask = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, tokenSource, pipeline)
-                                .ConfigureAwait(false);
-
-                            receiveCircuitBreaker.Success();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warn("Sql receive operation failed", ex);
-                            await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            concurrencyLimiter.Release();
-                        }
-                    }, cancellationToken).ContinueWith(t => tokenSource.Dispose());
-
+                    var receiveTask = InnerReceive();
                     runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
                     // We insert the original task into the runningReceiveTasks because we want to await the completion
@@ -155,6 +134,29 @@
                         runningReceiveTasks.TryRemove(t, out toBeRemoved);
                     }, TaskContinuationOptions.ExecuteSynchronously)
                     .Ignore();
+                }
+            }
+        }
+
+        async Task InnerReceive()
+        {
+            using (var tokenSource = new CancellationTokenSource())
+            {
+                try
+                {
+                    await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, tokenSource, pipeline)
+                        .ConfigureAwait(false);
+
+                    receiveCircuitBreaker.Success();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Sql receive operation failed", ex);
+                    await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                }
+                finally
+                {
+                    concurrencyLimiter.Release();
                 }
             }
         }
