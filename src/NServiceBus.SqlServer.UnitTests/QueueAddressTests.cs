@@ -1,12 +1,11 @@
 ﻿namespace NServiceBus.SqlServer.UnitTests
 {
-    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
+    using Transports.SQLServer;
 
     [TestFixture]
     public class QueueAddressTests
     {
-
         [Test]
         [TestCase("table", "schema", "table@[schema]")]
         [TestCase("my.table", "my.schema", "my.table@[my.schema]")]

@@ -3,16 +3,12 @@
     using System;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Pipeline;
-    using Persistence;
     using NUnit.Framework;
+    using Persistence;
+    using Pipeline;
 
     public class When_using_transaction_scope
     {
-        const string ConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True";
-        IEndpointInstance endpoint;
-        Context context;
-
         [SetUp]
         public void SetUp()
         {
@@ -46,7 +42,10 @@
             options.SetMessageId(context.Id.ToString());
             options.RouteToThisInstance();
 
-            await endpoint.Send(new SagaMessage { Id = context.Id }, options);
+            await endpoint.Send(new SagaMessage
+            {
+                Id = context.Id
+            }, options);
 
             await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(20)), context.CompletionSource.Task);
 
@@ -56,15 +55,18 @@
             Assert.AreEqual(1, context.SagaCounterValue, "Saga value should be incremented only once");
         }
 
+        IEndpointInstance endpoint;
+        Context context;
+        const string ConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True";
+
         public class Context
         {
-            public readonly Guid Id = Guid.NewGuid();
-
             public int SagaCounterValue { get; set; }
 
             public int SagaHandlerInvocationNumber { get; set; }
 
             public bool TransactionEscalatedToDTC { get; set; }
+            public readonly Guid Id = Guid.NewGuid();
 
             public TaskCompletionSource<int> CompletionSource = new TaskCompletionSource<int>();
         }
@@ -84,7 +86,10 @@
                     TestContext.SagaCounterValue = Data.Counter;
                     TestContext.SagaHandlerInvocationNumber++;
 
-                    await context.SendLocal(new ReplyMessage {Id = message.Id});
+                    await context.SendLocal(new ReplyMessage
+                    {
+                        Id = message.Id
+                    });
                 }
             }
 

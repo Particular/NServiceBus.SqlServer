@@ -2,18 +2,12 @@
 {
     using System.Configuration;
     using System.Linq;
-    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
+    using Transports.SQLServer;
 
     [TestFixture]
     public class ConfigurationValidatorTests
     {
-        class Result
-        {
-            public bool Success { get; set; }
-            public string Message { get; set; }
-        }
-
         Result Validate(params ConnectionStringSettings[] settings)
         {
             var result = new Result();
@@ -81,6 +75,12 @@
 
             Assert.IsTrue(result.Success);
             Assert.IsNullOrEmpty(result.Message);
+        }
+
+        class Result
+        {
+            public bool Success { get; set; }
+            public string Message { get; set; }
         }
     }
 }
