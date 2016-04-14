@@ -1,25 +1,21 @@
-﻿using System;
-using System.Configuration;
-using System.Linq;
-using System.Reflection;
-
-namespace NServiceBus.SqlServer.AcceptanceTests.Configuration
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.Configuration
 {
+    using System;
+    using System.Configuration;
+    using System.Linq;
+    using System.Reflection;
+
     public abstract class AppConfig : IDisposable
     {
+        public abstract void Dispose();
+
         public static AppConfig Change(string path)
         {
             return new ChangeAppConfig(path);
         }
 
-        public abstract void Dispose();
-
         class ChangeAppConfig : AppConfig
         {
-            readonly string oldConfig = AppDomain.CurrentDomain.GetData("APP_CONFIG_FILE").ToString();
-
-            bool disposedValue;
-
             public ChangeAppConfig(string path)
             {
                 AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", path);
@@ -59,6 +55,10 @@ namespace NServiceBus.SqlServer.AcceptanceTests.Configuration
                                            BindingFlags.Static)
                     .SetValue(null, null);
             }
+
+            readonly string oldConfig = AppDomain.CurrentDomain.GetData("APP_CONFIG_FILE").ToString();
+
+            bool disposedValue;
         }
     }
 }

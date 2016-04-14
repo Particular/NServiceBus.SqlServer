@@ -80,9 +80,13 @@
             }
         }
 
-        protected class Message : ICommand { }
+        protected class Message : ICommand
+        {
+        }
 
-        protected class Reply : IMessage { }
+        protected class Reply : IMessage
+        {
+        }
 
         protected class Context : ScenarioContext
         {

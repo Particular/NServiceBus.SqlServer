@@ -2,12 +2,12 @@
 {
     using System.Data.SqlClient;
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Transports.SQLServer;
+    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
+    using Transports.SQLServer;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {
@@ -15,11 +15,11 @@
         public async void Should_use_provided_ready_to_use_connection()
         {
             await Scenario.Define<Context>()
-               .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
-               .Done(c => c.MessageReceived)
-               .Repeat(r => r.For(Transports.Default))
-               .Should(c => Assert.True(c.MessageReceived, "Message should be properly received"))
-               .Run();
+                .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
+                .Done(c => c.MessageReceived)
+                .Repeat(r => r.For(Transports.Default))
+                .Should(c => Assert.True(c.MessageReceived, "Message should be properly received"))
+                .Run();
         }
 
         public class Endpoint : EndpointConfigurationBuilder
@@ -44,7 +44,7 @@
             class Handler : IHandleMessages<Message>
             {
                 public Context Context { get; set; }
-                     
+
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
                     Context.MessageReceived = true;
@@ -59,7 +59,8 @@
             public bool MessageReceived { get; set; }
         }
 
-        public class Message : IMessage { }
-
+        public class Message : IMessage
+        {
+        }
     }
 }

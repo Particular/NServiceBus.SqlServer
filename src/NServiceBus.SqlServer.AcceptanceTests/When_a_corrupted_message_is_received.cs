@@ -6,16 +6,14 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
     {
-        const string connString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;";
-        const string errorQueueName = "error";
-
         [TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
@@ -36,7 +34,7 @@
                         });
                         b.When((bus, c) =>
                         {
-                            var endpoint = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Endpoint));
+                            var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
                             using (var conn = new SqlConnection(connString))
                             {
@@ -92,7 +90,7 @@
                         });
                         b.When((bus, c) =>
                         {
-                            var endpoint = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Endpoint));
+                            var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
                             using (var conn = new SqlConnection(connString))
                             {
@@ -108,16 +106,16 @@
                                 command.Parameters.Add("Recoverable", SqlDbType.Bit).Value = true;
                                 command.Parameters.Add("Expires", SqlDbType.DateTime).Value = DateTime.Now.AddHours(1);
                                 command.Parameters.Add("Headers", SqlDbType.VarChar).Value = "{\"NServiceBus.MessageIntent\":\"Send\",\"NServiceBus.CorrelationId\":\"{guid}\"," +
-                                                                                              "\"NServiceBus.OriginatingMachine\":\"SCHMETTERLING\",\"NServiceBus.OriginatingEndpoint\":\"ReceivingWithNativeMultiQueueTransaction.Endpoint\"," +
-                                                                                              "\"$.diagnostics.originating.hostid\":\"3c921610dc4d3ddde4347cd65addcb9f\"," +
-                                                                                              "\"NServiceBus.ReplyToAddress\":\"ReceivingWithNativeMultiQueueTransaction.Endpoint@dbo\"," +
-                                                                                              "\"NServiceBus.ContentType\":\"text/xml\"," +
-                                                                                              "\"NServiceBus.EnclosedMessageTypes\":\"NServiceBus.AcceptanceTests.Tx.When_receiving_with_native_multi_queue_transaction + When_receiving_with_native_multi_queue_transaction.MessageHandledEvent, NServiceBus.SqlServer.AcceptanceTests, Version = 0.0.0.0, Culture = neutral, PublicKeyToken = null\"" +
-                                                                                              ",\"NServiceBus.RelatedTo\":\"{guid}\"," +
-                                                                                              "\"NServiceBus.ConversationId\":\"{guid}\"," +
-                                                                                              "\"NServiceBus.MessageId\":\"{guid}\"," +
-                                                                                              "\"NServiceBus.Version\":\"6.0.0\"," +
-                                                                                              "\"NServiceBus.TimeSent\":\"2015-12-16 11:53:22:631646 Z\"}";
+                                                                                             "\"NServiceBus.OriginatingMachine\":\"SCHMETTERLING\",\"NServiceBus.OriginatingEndpoint\":\"ReceivingWithNativeMultiQueueTransaction.Endpoint\"," +
+                                                                                             "\"$.diagnostics.originating.hostid\":\"3c921610dc4d3ddde4347cd65addcb9f\"," +
+                                                                                             "\"NServiceBus.ReplyToAddress\":\"ReceivingWithNativeMultiQueueTransaction.Endpoint@dbo\"," +
+                                                                                             "\"NServiceBus.ContentType\":\"text/xml\"," +
+                                                                                             "\"NServiceBus.EnclosedMessageTypes\":\"NServiceBus.AcceptanceTests.Tx.When_receiving_with_native_multi_queue_transaction + When_receiving_with_native_multi_queue_transaction.MessageHandledEvent, NServiceBus.SqlServer.AcceptanceTests, Version = 0.0.0.0, Culture = neutral, PublicKeyToken = null\"" +
+                                                                                             ",\"NServiceBus.RelatedTo\":\"{guid}\"," +
+                                                                                             "\"NServiceBus.ConversationId\":\"{guid}\"," +
+                                                                                             "\"NServiceBus.MessageId\":\"{guid}\"," +
+                                                                                             "\"NServiceBus.Version\":\"6.0.0\"," +
+                                                                                             "\"NServiceBus.TimeSent\":\"2015-12-16 11:53:22:631646 Z\"}";
 
                                 command.Parameters.Add("Body", SqlDbType.VarBinary).Value = Encoding.UTF8.GetBytes("body corrupted");
 
@@ -161,6 +159,9 @@
                 return sqlDataReader.GetInt32(0) == 1;
             }
         }
+
+        const string connString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;";
+        const string errorQueueName = "error";
 
         public class Context : ScenarioContext
         {

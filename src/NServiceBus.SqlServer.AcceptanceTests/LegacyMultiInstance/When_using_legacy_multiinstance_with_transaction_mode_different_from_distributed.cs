@@ -4,9 +4,9 @@
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
-    using NServiceBus.Transports.SQLServer;
+    using AcceptanceTesting;
     using NUnit.Framework;
+    using Transports.SQLServer;
 
     public class When_using_legacy_multiinstance_with_transaction_mode_different_from_distributed : When_using_legacy_multiinstance
     {

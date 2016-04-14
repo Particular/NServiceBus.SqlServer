@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
 {
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NUnit.Framework;
 
     public class When_using_legacy_multiinstance_mode_with_custom_schema : When_using_legacy_multiinstance

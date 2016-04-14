@@ -2,8 +2,8 @@
 {
     using System;
     using System.Threading.Tasks;
-    using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTesting.Customization;
+    using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -89,9 +89,7 @@
         {
             public ReceivingEndpoint()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                });
+                EndpointSetup<DefaultServer>(c => { });
             }
 
             public class RequestHandler : IHandleMessages<Request>

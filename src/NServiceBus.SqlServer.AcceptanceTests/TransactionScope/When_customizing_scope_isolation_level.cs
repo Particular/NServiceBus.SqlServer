@@ -2,11 +2,11 @@
 {
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using NServiceBus.Transports.SQLServer;
+    using Transports.SQLServer;
 
     public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
     {

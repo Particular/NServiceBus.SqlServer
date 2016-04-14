@@ -1,10 +1,10 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
-    using NServiceBus.Transports.SQLServer;
     using NUnit.Framework;
+    using Transports.SQLServer;
 
     public class When_custom_schema_configured_with_default_override : When_custom_schema_configured
     {
@@ -24,12 +24,8 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema);
-                }).AddMapping<Message>(typeof(Receiver));
+                EndpointSetup<DefaultServer>(c => { c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema); }).AddMapping<Message>(typeof(Receiver));
             }
         }
     }
 }
- 

@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
-    using NServiceBus.AcceptanceTesting;
+    using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
@@ -27,7 +27,7 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     var ReceiverName = $"{EndpointNamingConvention(typeof(Receiver))}";
-                    
+
                     c.UnicastRouting().RouteToEndpoint(typeof(Message), $"{ReceiverName}@[{ReceiverSchema}]");
                 });
             }
