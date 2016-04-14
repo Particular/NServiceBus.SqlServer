@@ -4,14 +4,13 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Configuration.AdvanceExtensibility;
+    using Configuration.AdvanceExtensibility;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
     public static partial class SqlServerTransportSettingsExtensions
     {
-
         /// <summary>
         /// Sets a default schema for both input and output queues
         /// </summary>
@@ -25,9 +24,10 @@
         }
 
         /// <summary>
-        /// Specifies callback which provides custom schema name for given table name. If null value is returned a default schema name will be used.
+        /// Specifies callback which provides custom schema name for given table name. If null value is returned a default schema
+        /// name will be used.
         /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}"/> to extend.</param>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="schemaForQueueName">Function which takes table name and returns schema name.</param>
         public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> schemaForQueueName)
         {
@@ -39,10 +39,11 @@
         }
 
         /// <summary>
-        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure in case there are numerous errors
+        /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure
+        /// in case there are numerous errors
         /// while trying to receive messages.
         /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}"/> to extend.</param>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
@@ -53,7 +54,7 @@
         /// <summary>
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}"/> to extend.</param>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
         {
@@ -68,7 +69,8 @@
         /// Allows the IsolationLevel and transaction timeout to be changed for the TransactionScope used to receive messages.
         /// </summary>
         /// <remarks>
-        /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to `ReadCommited`.
+        /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to
+        /// `ReadCommited`.
         /// </remarks>
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
         {
@@ -77,9 +79,9 @@
         }
 
         /// <summary>
-        /// Enables legacy multi-instance mode. 
+        /// Enables legacy multi-instance mode.
         /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}"/> to extend.</param>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
         public static TransportExtensions<SqlServerTransport> EnableLagacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)

@@ -3,7 +3,7 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class MessageDispatcher : IDispatchMessages
     {
@@ -64,7 +64,7 @@
         async Task DispatchInCurrentTransportTransaction(TransportTransaction transportTransaction, TableBasedQueue queue, UnicastTransportOperation operation)
         {
             SqlConnection connection;
-            SqlTransaction transaction;      
+            SqlTransaction transaction;
 
             transportTransaction.TryGet(out connection);
             transportTransaction.TryGet(out transaction);

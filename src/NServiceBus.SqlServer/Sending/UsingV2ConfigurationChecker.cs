@@ -2,7 +2,7 @@
 {
     using System.Configuration;
     using System.Linq;
-    using NServiceBus.Logging;
+    using Logging;
 
     class UsingV2ConfigurationChecker
     {

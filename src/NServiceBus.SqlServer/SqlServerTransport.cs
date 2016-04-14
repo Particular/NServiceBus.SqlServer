@@ -3,16 +3,26 @@ namespace NServiceBus
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NServiceBus.Transports.SQLServer;
-    using NServiceBus.Transports.SQLServer.Legacy.MultiInstance;
+    using Settings;
+    using Transports;
+    using Transports.SQLServer;
+    using Transports.SQLServer.Legacy.MultiInstance;
 
     /// <summary>
     /// SqlServer Transport
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
+        /// <summary>
+        /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
+        /// </summary>
+        public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+
+        /// <summary>
+        /// <see cref="TransportDefinition.RequiresConnectionString" />
+        /// </summary>
+        public override bool RequiresConnectionString => false;
+
         QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
@@ -34,7 +44,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportDefinition.Initialize"/>
+        /// <see cref="TransportDefinition.Initialize" />
         /// </summary>
         protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
@@ -47,15 +57,5 @@ namespace NServiceBus
 
             return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
         }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage"/>
-        /// </summary>
-        public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-
-        /// <summary>
-        /// <see cref="TransportDefinition.RequiresConnectionString"/>
-        /// </summary>
-        public override bool RequiresConnectionString => false;
     }
 }

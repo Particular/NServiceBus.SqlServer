@@ -1,31 +1,30 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
-    using System.Transactions;
+    using System.Data;
 
     static class IsolationLevelMapper
     {
-        public static System.Data.IsolationLevel Map(IsolationLevel isolationLevel)
+        public static IsolationLevel Map(System.Transactions.IsolationLevel isolationLevel)
         {
             switch (isolationLevel)
             {
-                case IsolationLevel.Serializable:
-                    return System.Data.IsolationLevel.Serializable;
-                case IsolationLevel.RepeatableRead:
-                    return System.Data.IsolationLevel.RepeatableRead;
-                case IsolationLevel.ReadCommitted:
-                    return System.Data.IsolationLevel.ReadCommitted;
-                case IsolationLevel.ReadUncommitted:
-                    return System.Data.IsolationLevel.ReadUncommitted;
-                case IsolationLevel.Snapshot:
-                    return System.Data.IsolationLevel.Snapshot;
-                case IsolationLevel.Chaos:
-                    return System.Data.IsolationLevel.Chaos;
-                case IsolationLevel.Unspecified:
-                    return System.Data.IsolationLevel.Unspecified;
+                case System.Transactions.IsolationLevel.Serializable:
+                    return IsolationLevel.Serializable;
+                case System.Transactions.IsolationLevel.RepeatableRead:
+                    return IsolationLevel.RepeatableRead;
+                case System.Transactions.IsolationLevel.ReadCommitted:
+                    return IsolationLevel.ReadCommitted;
+                case System.Transactions.IsolationLevel.ReadUncommitted:
+                    return IsolationLevel.ReadUncommitted;
+                case System.Transactions.IsolationLevel.Snapshot:
+                    return IsolationLevel.Snapshot;
+                case System.Transactions.IsolationLevel.Chaos:
+                    return IsolationLevel.Chaos;
+                case System.Transactions.IsolationLevel.Unspecified:
+                    return IsolationLevel.Unspecified;
             }
 
-            return System.Data.IsolationLevel.ReadCommitted;
+            return IsolationLevel.ReadCommitted;
         }
-
     }
 }

@@ -6,7 +6,6 @@
 
     static class MessageParser
     {
-
         internal static Message ParseRawData(object[] rowData)
         {
             var transportId = rowData[0].ToString();

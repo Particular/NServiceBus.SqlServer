@@ -1,7 +1,6 @@
-﻿using System;
-
-namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System;
     using JetBrains.Annotations;
 
     class Guard

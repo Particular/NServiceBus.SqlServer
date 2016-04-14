@@ -3,14 +3,11 @@
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
-    using NServiceBus.Settings;
+    using Settings;
 
     class LegacySqlServerTransportInfrastructure : SqlServerTransportInfrastructure
     {
-        QueueAddressParser addressParser;
-        SettingsHolder settings;
-
-        public LegacySqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString) 
+        public LegacySqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString)
             : base(addressParser, settings, connectionString)
         {
             this.addressParser = addressParser;
@@ -82,5 +79,8 @@
                     return Task.FromResult(result);
                 });
         }
+
+        QueueAddressParser addressParser;
+        SettingsHolder settings;
     }
 }

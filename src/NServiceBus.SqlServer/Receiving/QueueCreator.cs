@@ -6,9 +6,6 @@ namespace NServiceBus.Transports.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        SqlConnectionFactory connectionFactory;
-        QueueAddressParser addressParser;
-
         public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
         {
             this.connectionFactory = connectionFactory;
@@ -48,5 +45,8 @@ namespace NServiceBus.Transports.SQLServer
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
+
+        SqlConnectionFactory connectionFactory;
+        QueueAddressParser addressParser;
     }
 }

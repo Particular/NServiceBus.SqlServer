@@ -1,10 +1,10 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
-    using System.Threading.Tasks;
     using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using Logging;
 
     class MessagePump : IPushMessages
@@ -106,7 +106,7 @@
                 if (messageCount == 0)
                 {
                     continue;
-                }               
+                }
 
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
@@ -194,10 +194,10 @@
         CancellationToken cancellationToken;
         RepeatedFailuresOverTimeCircuitBreaker peekCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker receiveCircuitBreaker;
-
-        static ILog Logger = LogManager.GetLogger<MessagePump>();
         Task messagePumpTask;
         Task purgeTask;
         ReceiveStrategy receiveStrategy;
+
+        static ILog Logger = LogManager.GetLogger<MessagePump>();
     }
 }

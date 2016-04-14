@@ -6,8 +6,6 @@
 
     class SqlConnectionFactory
     {
-        Func<Task<SqlConnection>> openNewConnection;
-
         public SqlConnectionFactory(Func<Task<SqlConnection>> factory)
         {
             openNewConnection = factory;
@@ -36,5 +34,7 @@
                 return connection;
             });
         }
+
+        Func<Task<SqlConnection>> openNewConnection;
     }
 }

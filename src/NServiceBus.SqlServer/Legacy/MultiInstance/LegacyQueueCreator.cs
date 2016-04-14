@@ -43,7 +43,10 @@
         {
             var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
 
-            using (var command = new SqlCommand(sql, connection, transaction) { CommandType = CommandType.Text })
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
             {
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }

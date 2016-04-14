@@ -7,8 +7,6 @@ namespace NServiceBus
 
     class SqlScopeOptions
     {
-        public TransactionOptions TransactionOptions { get; }
-
         public SqlScopeOptions(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
         {
             var timeout = TransactionManager.DefaultTimeout;
@@ -32,6 +30,8 @@ namespace NServiceBus
                 Timeout = timeout
             };
         }
+
+        public TransactionOptions TransactionOptions { get; }
 
         static TimeSpan GetMaxTimeout()
         {

@@ -8,17 +8,6 @@
 
     class ConnectionStringsValidator
     {
-        const string TransportConnectionStringPrefix = "NServiceBus/Transport";
-        const string SchemaOverridePart = "Queue Schema";
-
-        const string MultiDatabaseNotSupported = 
-            "Multidatabase setup is not supported in this version of sql transport. " +
-            "Please see documentation for setting up non default schema per each endpoint";
-
-        const string SchemaOverrideNotSupported =
-            "Schema override in connection string is not supported anymore. " +
-            "Please see documentation for setting up non default schema value";
-
         public bool TryValidate(List<ConnectionStringSettings> connectionSettings, out string message)
         {
             Func<string, bool> isTransportConnectionStringName = n => n.StartsWith(TransportConnectionStringPrefix, StringComparison.InvariantCultureIgnoreCase);
@@ -52,7 +41,10 @@
                 return false;
             }
 
-            Func<string, bool> hasSchemaOverride = cs => new DbConnectionStringBuilder { ConnectionString = cs }.ContainsKey(SchemaOverridePart);
+            Func<string, bool> hasSchemaOverride = cs => new DbConnectionStringBuilder
+            {
+                ConnectionString = cs
+            }.ContainsKey(SchemaOverridePart);
 
             if (hasSchemaOverride(transportConnectionSetting.ConnectionString))
             {
@@ -64,5 +56,16 @@
             message = null;
             return true;
         }
+
+        const string TransportConnectionStringPrefix = "NServiceBus/Transport";
+        const string SchemaOverridePart = "Queue Schema";
+
+        const string MultiDatabaseNotSupported =
+            "Multidatabase setup is not supported in this version of sql transport. " +
+            "Please see documentation for setting up non default schema per each endpoint";
+
+        const string SchemaOverrideNotSupported =
+            "Schema override in connection string is not supported anymore. " +
+            "Please see documentation for setting up non default schema value";
     }
 }

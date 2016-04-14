@@ -2,7 +2,7 @@
 {
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class LegacyMessageDispatcher : IDispatchMessages
     {

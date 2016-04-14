@@ -1,6 +1,6 @@
 namespace NServiceBus
 {
-    using NServiceBus.Features;
+    using Features;
 
     class LegacyCallbackFeature : Feature
     {

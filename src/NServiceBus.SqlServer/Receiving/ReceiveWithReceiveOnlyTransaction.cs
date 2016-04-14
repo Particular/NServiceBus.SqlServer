@@ -4,12 +4,11 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
+    using IsolationLevel = System.Data.IsolationLevel;
 
     class ReceiveWithReceiveOnlyTransaction : ReceiveStrategy
     {
-        internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
-
         public ReceiveWithReceiveOnlyTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
@@ -76,7 +75,8 @@
             }
         }
 
-        System.Data.IsolationLevel isolationLevel;
+        IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
+        internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
 }

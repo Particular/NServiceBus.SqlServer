@@ -2,10 +2,10 @@
 {
     using System;
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Pipeline;
-    using NServiceBus.Routing;
-    using NServiceBus.Transports;
+    using Extensibility;
+    using Pipeline;
+    using Routing;
+    using Transports;
 
     class OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader : Behavior<IRoutingContext>
     {
@@ -13,7 +13,7 @@
         {
             string legacyCallbackAddress;
             string messageIntent;
-            if (TryGetLegacyCallbackAddress(context, out legacyCallbackAddress) 
+            if (TryGetLegacyCallbackAddress(context, out legacyCallbackAddress)
                 && context.Message.Headers.TryGetValue(Headers.MessageIntent, out messageIntent)
                 && messageIntent == MessageIntentEnum.Reply.ToString())
             {
@@ -29,8 +29,8 @@
         {
             callbackAddress = null;
             IncomingMessage incomingMessage;
-            return context.Extensions.TryGet(out incomingMessage) 
-                && incomingMessage.Headers.TryGetValue("NServiceBus.SqlServer.CallbackQueue", out callbackAddress);
+            return context.Extensions.TryGet(out incomingMessage)
+                   && incomingMessage.Headers.TryGetValue("NServiceBus.SqlServer.CallbackQueue", out callbackAddress);
         }
     }
 }

@@ -3,7 +3,7 @@
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Logging;
+    using Logging;
 
     class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
     {
@@ -14,6 +14,11 @@
             this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
 
             timer = new Timer(CircuitBreakerTriggered);
+        }
+
+        public void Dispose()
+        {
+            //Injected
         }
 
         public void Success()
@@ -43,11 +48,6 @@
             return Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        public void Dispose()
-        {
-            //Injected
-        }
-
         void CircuitBreakerTriggered(object state)
         {
             if (Interlocked.Read(ref failureCount) > 0)
@@ -57,14 +57,14 @@
             }
         }
 
-        static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
-        static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();
-
         string name;
         TimeSpan timeToWaitBeforeTriggering;
         Timer timer;
         Action<Exception> triggerAction;
         long failureCount;
         Exception lastException;
+
+        static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
+        static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();
     }
 }

@@ -1,14 +1,14 @@
-﻿#pragma warning disable 1591
+﻿
+#pragma warning disable 1591
 
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Collections.Generic;
-    using NServiceBus.Transports.SQLServer.ConnectionStrings;
+    using ConnectionStrings;
 
     public static partial class SqlServerTransportSettingsExtensions
     {
-
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", Message = "Replaced by NServiceBus.Callbacks package")]
         public static TransportExtensions<SqlServerTransport> DisableCallbackReceiver(
             this TransportExtensions<SqlServerTransport> transportExtensions)
@@ -24,7 +24,7 @@ namespace NServiceBus.Transports.SQLServer
             throw new NotImplementedException();
         }
 
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0", 
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "3.0",
             Message = "Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLagacyMultiInstanceMode()`.")]
         public static TransportExtensions<SqlServerTransport> UseSpecificConnectionInformation(
             this TransportExtensions<SqlServerTransport> transportExtensions,

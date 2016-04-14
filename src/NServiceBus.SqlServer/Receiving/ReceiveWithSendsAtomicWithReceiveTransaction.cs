@@ -4,7 +4,8 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
+    using IsolationLevel = System.Data.IsolationLevel;
 
     class ReceiveWithSendsAtomicWithReceiveTransaction : ReceiveStrategy
     {
@@ -70,7 +71,7 @@
             }
         }
 
-        System.Data.IsolationLevel isolationLevel;
+        IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
     }
 }

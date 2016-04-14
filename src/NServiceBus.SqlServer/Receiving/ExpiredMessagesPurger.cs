@@ -4,7 +4,7 @@
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Logging;
+    using Logging;
 
     class ExpiredMessagesPurger
     {
@@ -15,6 +15,10 @@
             PurgeTaskDelay = purgeTaskDelay ?? DefaultPurgeTaskDelay;
             PurgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
+
+        public TimeSpan PurgeTaskDelay { get; }
+
+        int PurgeBatchSize { get; }
 
         public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
         {
@@ -61,13 +65,9 @@
         }
 
         Func<TableBasedQueue, Task<SqlConnection>> openConnection;
-
-        public TimeSpan PurgeTaskDelay { get; }
-
-        int PurgeBatchSize { get; }
+        const int DefaultPurgeBatchSize = 10000;
 
         static TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);
-        const int DefaultPurgeBatchSize = 10000;
 
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

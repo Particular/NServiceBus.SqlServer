@@ -6,16 +6,14 @@ namespace NServiceBus
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Performance.TimeToBeReceived;
-    using NServiceBus.Routing;
-    using NServiceBus.Settings;
-    using NServiceBus.Transports;
-    using NServiceBus.Transports.SQLServer;
-    
+    using Performance.TimeToBeReceived;
+    using Routing;
+    using Settings;
+    using Transports;
+    using Transports.SQLServer;
+
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        const string SchemaPropertyKey = "Schema";
-
         internal SqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString)
         {
             this.addressParser = addressParser;
@@ -27,7 +25,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.DeliveryConstraints" />
+        /// <see cref="TransportInfrastructure.DeliveryConstraints" />
         /// </summary>
         public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
         {
@@ -35,17 +33,17 @@ namespace NServiceBus
         };
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.TransactionMode" />
+        /// <see cref="TransportInfrastructure.TransactionMode" />
         /// </summary>
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
+        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
         /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
+        /// <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
         /// </summary>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
@@ -118,7 +116,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
+        /// <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
         /// </summary>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
@@ -131,10 +129,10 @@ namespace NServiceBus
                     var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });
-        }       
+        }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
+        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
         /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
@@ -142,7 +140,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.BindToLocalEndpoint" />
+        /// <see cref="TransportInfrastructure.BindToLocalEndpoint" />
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
@@ -150,7 +148,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.ToTransportAddress" />
+        /// <see cref="TransportInfrastructure.ToTransportAddress" />
         /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
@@ -172,7 +170,7 @@ namespace NServiceBus
         }
 
         /// <summary>
-        ///     <see cref="TransportInfrastructure.MakeCanonicalForm" />
+        /// <see cref="TransportInfrastructure.MakeCanonicalForm" />
         /// </summary>
         public override string MakeCanonicalForm(string transportAddress)
         {
@@ -182,5 +180,6 @@ namespace NServiceBus
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;
+        const string SchemaPropertyKey = "Schema";
     }
 }

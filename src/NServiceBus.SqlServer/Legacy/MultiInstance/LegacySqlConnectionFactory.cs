@@ -16,6 +16,6 @@
             return factory(transportAddress);
         }
 
-        Func<string, Task<SqlConnection>>  factory;
+        Func<string, Task<SqlConnection>> factory;
     }
 }

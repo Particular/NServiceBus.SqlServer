@@ -4,13 +4,6 @@
 
     class QueueAddressParser
     {
-        string defaultSchema;
-        string defaultSchemaOverride;
-
-        Func<string, string> schemaOverrider;
-
-        public string DefaultSchema => string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
-
         public QueueAddressParser(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
         {
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
@@ -19,6 +12,8 @@
             this.defaultSchemaOverride = defaultSchemaOverride;
             this.schemaOverrider = schemaOverrider;
         }
+
+        public string DefaultSchema => string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
 
         public QueueAddress Parse(string address)
         {
@@ -45,6 +40,11 @@
             }
 
             return new QueueAddress(sqlAddress.TableName, defaultSchema);
-        }     
+        }
+
+        string defaultSchema;
+        string defaultSchemaOverride;
+
+        Func<string, string> schemaOverrider;
     }
 }

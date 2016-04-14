@@ -4,9 +4,6 @@
 
     class QueueAddress
     {
-        public string TableName { get; }
-        public string SchemaName { get; }
-
         public QueueAddress(string tableName, string schemaName)
         {
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
@@ -14,7 +11,10 @@
             TableName = tableName;
             SchemaName = UnescapeSchema(schemaName);
         }
-        
+
+        public string TableName { get; }
+        public string SchemaName { get; }
+
         public static QueueAddress Parse(string address)
         {
             if (address.Contains("@"))

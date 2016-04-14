@@ -5,7 +5,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Logging;
+    using Logging;
 
     class TableBasedQueue
     {
@@ -13,6 +13,8 @@ namespace NServiceBus.Transports.SQLServer
         {
             this.address = address;
         }
+
+        public string TransportAddress => address.ToString();
 
         public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
@@ -131,8 +133,6 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public string TransportAddress => address.ToString();
-
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
             var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
@@ -145,7 +145,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            var commandText = string.Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, this.address.SchemaName, this.address.TableName);
+            var commandText = string.Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -153,7 +153,7 @@ namespace NServiceBus.Transports.SQLServer
 
                 if (rowsCount == 0)
                 {
-                    Logger.WarnFormat(@"Table [{0}].[{1}] does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", this.address.SchemaName, this.address.TableName, Sql.ExpiresIndexName);
+                    Logger.WarnFormat(@"Table [{0}].[{1}] does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", address.SchemaName, address.TableName, Sql.ExpiresIndexName);
                 }
             }
         }

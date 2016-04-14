@@ -4,7 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ReceiveWithTransactionScope : ReceiveStrategy
     {
@@ -17,44 +17,46 @@
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-                if (readResult.IsPoison)
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
+                    var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
+
+                    if (readResult.IsPoison)
+                    {
                         await errorQueue.SendRawMessage(readResult.DataRecord, connection, null).ConfigureAwait(false);
 
                         scope.Complete();
                         return;
-                }
+                    }
 
-                if (!readResult.Successful)
-                {
-                    scope.Complete();
+                    if (!readResult.Successful)
+                    {
+                        scope.Complete();
 
-                    return;
-                }
+                        return;
+                    }
 
-                var message = readResult.Message;
+                    var message = readResult.Message;
 
-                using (var bodyStream = message.BodyStream)
-                {
-                    var transportTransaction = new TransportTransaction();
-                    transportTransaction.Set(connection);
-                    transportTransaction.Set(Transaction.Current);
+                    using (var bodyStream = message.BodyStream)
+                    {
+                        var transportTransaction = new TransportTransaction();
+                        transportTransaction.Set(connection);
+                        transportTransaction.Set(Transaction.Current);
 
-                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
 
-                    await onMessage(pushContext).ConfigureAwait(false);
-                }
+                        await onMessage(pushContext).ConfigureAwait(false);
+                    }
 
                     if (cancellationTokenSource.Token.IsCancellationRequested)
                     {
                         return;
                     }
 
-                scope.Complete();
+                    scope.Complete();
+                }
             }
         }
 

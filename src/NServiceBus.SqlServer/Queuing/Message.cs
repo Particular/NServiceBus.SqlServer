@@ -13,6 +13,11 @@
             Headers = headers;
         }
 
+        public string TransportId { get; }
+        public bool TTBRExpired { get; }
+        public Stream BodyStream { get; }
+        public Dictionary<string, string> Headers { get; }
+
         public string GetLogicalId()
         {
             string logicalId;
@@ -20,10 +25,5 @@
 
             return logicalId;
         }
-
-        public string TransportId { get; }
-        public bool TTBRExpired { get; }
-        public Stream BodyStream { get; }
-        public Dictionary<string, string> Headers { get; }
     }
 }
