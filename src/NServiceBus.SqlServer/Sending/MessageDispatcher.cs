@@ -1,6 +1,8 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
+    using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
     using Extensibility;
@@ -16,68 +18,71 @@
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            foreach (var operation in operations.UnicastTransportOperations)
-            {
-                await DispatchUnicastOperation(context, operation).ConfigureAwait(false);
-            }
+            var isolatedConsistencyOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == DispatchConsistency.Isolated).ToList();
+            await DispatchAsIsolated(isolatedConsistencyOperations).ConfigureAwait(false);
+
+            var defaultConsistencyOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == DispatchConsistency.Default).ToList();
+            await DispatchAsNonIsolated(context, defaultConsistencyOperations).ConfigureAwait(false);
         }
 
-        async Task DispatchUnicastOperation(ContextBag context, UnicastTransportOperation operation)
+        async Task DispatchAsNonIsolated(ContextBag context, List<UnicastTransportOperation> defaultConsistencyOperations)
         {
-            var destination = addressParser.Parse(operation.Destination);
-            var queue = new TableBasedQueue(destination);
-
-            //Dispatch in separate transaction even if transaction scope already exists
-            if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
-            {
-                await DispatchInIsolatedTransactionScope(queue, operation).ConfigureAwait(false);
-
-                return;
-            }
-
             TransportTransaction transportTransaction;
             var transportTransactionExists = context.TryGet(out transportTransaction);
 
             if (transportTransactionExists == false || InReceiveOnlyTransportTransactionMode(transportTransaction))
             {
-                await DispatchAsSeparateSendOperation(queue, operation).ConfigureAwait(false);
-
+                await DispatchOperationsWithNewConnectionAndTransaction(defaultConsistencyOperations).ConfigureAwait(false);
                 return;
             }
 
-            await DispatchInCurrentTransportTransaction(transportTransaction, queue, operation).ConfigureAwait(false);
+            await DispatchUsingReceiveTransaction(transportTransaction, defaultConsistencyOperations).ConfigureAwait(false);
         }
 
-        async Task DispatchAsSeparateSendOperation(TableBasedQueue queue, UnicastTransportOperation operation)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<UnicastTransportOperation> defaultConsistencyOperations)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+            SqlConnection sqlTransportConnection;
+            SqlTransaction sqlTransportTransaction;
 
-                    transaction.Commit();
-                }
+            transportTransaction.TryGet(out sqlTransportConnection);
+            transportTransaction.TryGet(out sqlTransportTransaction);
+
+            foreach (var operation in defaultConsistencyOperations)
+            {
+                var destination = addressParser.Parse(operation.Destination);
+                var queue = new TableBasedQueue(destination);
+
+                await queue.SendMessage(operation.Message, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
             }
         }
 
-        async Task DispatchInCurrentTransportTransaction(TransportTransaction transportTransaction, TableBasedQueue queue, UnicastTransportOperation operation)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(List<UnicastTransportOperation> defaultConsistencyOperations)
         {
-            SqlConnection connection;
-            SqlTransaction transaction;
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var transaction = connection.BeginTransaction())
+            {
+                foreach (var operation in defaultConsistencyOperations)
+                {
+                    var destination = addressParser.Parse(operation.Destination);
+                    var queue = new TableBasedQueue(destination);
 
-            transportTransaction.TryGet(out connection);
-            transportTransaction.TryGet(out transaction);
+                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                }
 
-            await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                transaction.Commit();
+            }
         }
 
-        async Task DispatchInIsolatedTransactionScope(TableBasedQueue queue, UnicastTransportOperation operation)
+        async Task DispatchAsIsolated(List<UnicastTransportOperation> isolatedConsistencyOperations)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                foreach (var operation in isolatedConsistencyOperations)
                 {
+                    var destination = addressParser.Parse(operation.Destination);
+                    var queue = new TableBasedQueue(destination);
+
                     await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
                 }
 
@@ -85,14 +90,15 @@
             }
         }
 
-        bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
+        static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
             bool inReceiveMode;
 
             return transportTransaction.TryGet(ReceiveWithReceiveOnlyTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
 
-        SqlConnectionFactory connectionFactory;
         QueueAddressParser addressParser;
+
+        SqlConnectionFactory connectionFactory;
     }
 }
