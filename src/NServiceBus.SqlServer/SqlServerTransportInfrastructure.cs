@@ -123,7 +123,7 @@ namespace NServiceBus
             var connectionFactory = CreateConnectionFactory();
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(connectionFactory, addressParser),
+                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
