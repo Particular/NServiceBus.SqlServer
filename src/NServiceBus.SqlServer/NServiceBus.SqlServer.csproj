@@ -89,6 +89,7 @@
     <Compile Include="Legacy\MultiInstance\LegacyReceiveWithTransactionScope.cs" />
     <Compile Include="Legacy\MultiInstance\LegacySqlConnectionFactory.cs" />
     <Compile Include="Legacy\MultiInstance\LegacySqlServerTransportInfrastructure.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyTableBasedQueueDispatcher.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Queuing\DictionarySerializer.cs" />
     <Compile Include="Receiving\ExpiredMessagesPurger.cs" />

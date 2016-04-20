@@ -1,54 +1,39 @@
 ﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
-    using System.Transactions;
     using Extensibility;
 
     class LegacyMessageDispatcher : IDispatchMessages
     {
-        public LegacyMessageDispatcher(LegacySqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
+        public LegacyMessageDispatcher(LegacyTableBasedQueueDispatcher dispatcher, QueueAddressParser addressParser)
         {
-            this.connectionFactory = connectionFactory;
+            this.dispatcher = dispatcher;
             this.addressParser = addressParser;
         }
 
-        public async Task Dispatch(TransportOperations outgoingMessages, ContextBag context)
+        public async Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            foreach (var operation in outgoingMessages.UnicastTransportOperations)
-            {
-                await DispatchUnicastOperation(operation).ConfigureAwait(false);
-            }
+            var isolatedOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == DispatchConsistency.Isolated);
+            var deduplicatedIsolatedOperations = DeduplicateBasedOnMessageIdAndQueueAddress(isolatedOperations).ToList();
+            await dispatcher.DispatchAsIsolated(deduplicatedIsolatedOperations).ConfigureAwait(false);
+
+            var nonIsolatedOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == DispatchConsistency.Default);
+            var deduplicatedNonIsolatedOperations = DeduplicateBasedOnMessageIdAndQueueAddress(nonIsolatedOperations).ToList();
+            await dispatcher.DispatchAsNonIsolated(deduplicatedNonIsolatedOperations).ConfigureAwait(false);
         }
 
-        async Task DispatchUnicastOperation(UnicastTransportOperation operation)
+        IEnumerable<MessageWithAddress> DeduplicateBasedOnMessageIdAndQueueAddress(IEnumerable<UnicastTransportOperation> isolatedConsistencyOperations)
         {
-            var destination = addressParser.Parse(operation.Destination);
-            var queue = new TableBasedQueue(destination);
-
-            //Dispatch in separate scope to make sure transaction does not get enlisted
-            if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
-            {
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
-                    {
-                        await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                    }
-
-                    scope.Complete();
-                }
-
-                return;
-            }
-
-            //If dispatch is not isolated then transaction scope has already been created by <see cref="LegacyReceiveWithTransactionScope"/>
-            using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
-            {
-                await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-            }
+            var deduplicated = isolatedConsistencyOperations
+                .Select(o => new MessageWithAddress(o.Message, addressParser.Parse(o.Destination)))
+                .Distinct(OperationByMessageIdAndQueueAddressComparer);
+            return deduplicated;
         }
 
-        LegacySqlConnectionFactory connectionFactory;
         QueueAddressParser addressParser;
+        LegacyTableBasedQueueDispatcher dispatcher;
+        static OperationByMessageIdAndQueueAddressComparer OperationByMessageIdAndQueueAddressComparer = new OperationByMessageIdAndQueueAddressComparer();
     }
 }
