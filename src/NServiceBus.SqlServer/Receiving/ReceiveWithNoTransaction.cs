@@ -12,7 +12,7 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -29,15 +29,20 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var message = readResult.Message;
 
+                    using (var pushCancellationTokenSource = new CancellationTokenSource())
                     using (var bodyStream = message.BodyStream)
                     {
                         var transportTransaction = new TransportTransaction();
                         transportTransaction.Set(connection);
 
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
 
                         await onMessage(pushContext).ConfigureAwait(false);
                     }
+                }
+                else
+                {
+                    receiveCancellationTokenSource.Cancel();
                 }
             }
         }
