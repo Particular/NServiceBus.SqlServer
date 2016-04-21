@@ -82,7 +82,7 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\Callbacks\LegacyCallbackFeature.cs" />
     <Compile Include="Legacy\Callbacks\OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyMessageDispatcher.cs" />
+    <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueuePeeker.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueuePurger.cs" />
@@ -109,6 +109,8 @@
     <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Configuration\SqlScopeOptions.cs" />
+    <Compile Include="Sending\MessageWithAddress.cs" />
+    <Compile Include="Sending\OperationByMessageIdAndQueueAddressComparer.cs" />
     <Compile Include="Sending\TableBasedQueueDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />

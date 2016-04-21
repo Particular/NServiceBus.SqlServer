@@ -3,41 +3,47 @@ namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Extensibility;
 
-    class LegacyTableBasedQueueDispatcher
+    class LegacyTableBasedQueueDispatcher : IQueueDispatcher
     {
         public LegacyTableBasedQueueDispatcher(LegacySqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task DispatchAsNonIsolated(List<MessageWithAddress> defaultConsistencyOperations)
+        public virtual async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
         {
-            foreach (var operation in defaultConsistencyOperations)
+            //If dispatch is not isolated then either TS has been created by the receive operation or needs to be created here.
+            using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
             {
-                var queue = new TableBasedQueue(operation.Address);
-
-                //If dispatch is not isolated then transaction scope has already been created by <see cref="LegacyReceiveWithTransactionScope"/>
-                using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                foreach (var operation in operations)
                 {
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    var queue = new TableBasedQueue(operation.Address);
+
+                    using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                    {
+                        await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    }
                 }
+                scope.Complete();
             }
         }
 
-        public virtual async Task DispatchAsIsolated(List<MessageWithAddress> isolatedConsistencyOperations)
+        public virtual async Task DispatchAsIsolated(List<MessageWithAddress> operations)
         {
-            foreach (var operation in isolatedConsistencyOperations)
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                var queue = new TableBasedQueue(operation.Address);
-
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                foreach (var operation in operations)
                 {
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    var queue = new TableBasedQueue(operation.Address);
 
-                    scope.Complete();
+                    using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                    {
+                        await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    }
                 }
+                scope.Complete();
             }
         }
 

@@ -4,8 +4,9 @@ namespace NServiceBus.Transports.SQLServer
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Extensibility;
 
-    class TableBasedQueueDispatcher
+    class TableBasedQueueDispatcher : IQueueDispatcher
     {
         SqlConnectionFactory connectionFactory;
 
@@ -14,23 +15,58 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
+        public async Task DispatchAsIsolated(List<MessageWithAddress> operations)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                foreach (var operation in defaultConsistencyOperations)
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    var queue = new TableBasedQueue(operation.Address);
+                    foreach (var operation in operations)
+                    {
+                        var queue = new TableBasedQueue(operation.Address);
 
-                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                        await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    }
+
+                    scope.Complete();
                 }
-
-                transaction.Commit();
             }
         }
 
-        public virtual async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
+        public async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+        {
+            TransportTransaction transportTransaction;
+            var transportTransactionExists = context.TryGet(out transportTransaction);
+
+            if (transportTransactionExists == false || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            {
+                await DispatchOperationsWithNewConnectionAndTransaction(operations).ConfigureAwait(false);
+                return;
+            }
+
+            await DispatchUsingReceiveTransaction(transportTransaction, operations).ConfigureAwait(false);
+        }
+
+
+        async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
+        {
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    foreach (var operation in defaultConsistencyOperations)
+                    {
+                        var queue = new TableBasedQueue(operation.Address);
+
+                        await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                    }
+
+                    transaction.Commit();
+                }
+            }
+        }
+
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
@@ -46,20 +82,10 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public virtual async Task DispatchAsIsolated(List<MessageWithAddress> isolatedConsistencyOperations)
+        static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                foreach (var operation in isolatedConsistencyOperations)
-                {
-                    var queue = new TableBasedQueue(operation.Address);
-
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                }
-
-                scope.Complete();
-            }
+            bool inReceiveMode;
+            return transportTransaction.TryGet(ReceiveWithReceiveOnlyTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
     }
 }

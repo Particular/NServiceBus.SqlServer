@@ -66,30 +66,19 @@
             return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination));
         }
 
-        class FakeTableBasedQueueDispatcher : TableBasedQueueDispatcher
+        class FakeTableBasedQueueDispatcher : IQueueDispatcher
         {
             public List<string> DispatchedMessageIds = new List<string>();
 
-            public FakeTableBasedQueueDispatcher() 
-                : base(null)
+            public Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
             {
-            }
-
-            public override Task DispatchAsIsolated(List<MessageWithAddress> isolatedConsistencyOperations)
-            {
-                DispatchedMessageIds.AddRange(isolatedConsistencyOperations.Select(x => x.Message.MessageId));
+                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
 
-            public override Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
+            public Task DispatchAsIsolated(List<MessageWithAddress> operations)
             {
-                DispatchedMessageIds.AddRange(defaultConsistencyOperations.Select(x => x.Message.MessageId));
-                return Task.FromResult(0);
-            }
-
-            public override Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
-            {
-                DispatchedMessageIds.AddRange(defaultConsistencyOperations.Select(x => x.Message.MessageId));
+                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
         }
