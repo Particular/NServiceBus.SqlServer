@@ -92,6 +92,7 @@
     <Compile Include="Legacy\MultiInstance\LegacyTableBasedQueueDispatcher.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Queuing\DictionarySerializer.cs" />
+    <Compile Include="Queuing\MessageReadResultParser.cs" />
     <Compile Include="Receiving\ExpiredMessagesPurger.cs" />
     <Compile Include="Receiving\IPeekMessagesInQueue.cs" />
     <Compile Include="Receiving\IPurgeQueues.cs" />
