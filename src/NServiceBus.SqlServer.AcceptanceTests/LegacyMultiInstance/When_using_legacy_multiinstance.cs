@@ -21,7 +21,7 @@
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
                         .UseSpecificSchema(queueName => queueName.Contains("Receiver") ? "receiver" : "sender")
-                        .EnableLagacyMultiInstanceMode(async address =>
+                        .EnableLegacyMultiInstanceMode(async address =>
                         {
                             var connectionString = address.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
                             var connection = new SqlConnection(connectionString);
@@ -56,7 +56,7 @@
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
                         .UseSpecificSchema(queueName => queueName.Contains("Sender") ? "sender" : "receiver")
-                        .EnableLagacyMultiInstanceMode(async address =>
+                        .EnableLegacyMultiInstanceMode(async address =>
                         {
                             var connectionString = address.Contains("Sender") ? SenderConnectionString : ReceiverConnectionString;
                             var connection = new SqlConnection(connectionString);

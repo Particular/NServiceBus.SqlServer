@@ -142,7 +142,7 @@
             {
                 conn.Open();
                 var command = conn.CreateCommand();
-                command.CommandText = @"DELETE FROM " + errorQueueName;
+                command.CommandText = "DELETE FROM " + errorQueueName;
                 command.ExecuteNonQuery();
             }
         }
@@ -153,7 +153,7 @@
             {
                 conn.Open();
                 var command = conn.CreateCommand();
-                command.CommandText = @"SELECT COUNT(1) FROM " + errorQueueName;
+                command.CommandText = "SELECT COUNT(1) FROM " + errorQueueName;
                 var sqlDataReader = command.ExecuteReader();
                 sqlDataReader.Read();
                 return sqlDataReader.GetInt32(0) == 1;

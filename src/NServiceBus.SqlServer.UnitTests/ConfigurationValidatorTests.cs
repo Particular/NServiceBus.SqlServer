@@ -49,7 +49,7 @@
         }
 
         [Test]
-        public void Validation_passes_when_there_are_more_connection_strings_but_only_one_is_trasport()
+        public void Validation_passes_when_there_are_more_connection_strings_but_only_one_is_transport()
         {
             var result = Validate(
                 new ConnectionStringSettings("NServiceBus/Transport", "Soruce = xxx;"),

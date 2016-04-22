@@ -84,7 +84,7 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
-        public static TransportExtensions<SqlServerTransport> EnableLagacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
+        public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
             Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
 

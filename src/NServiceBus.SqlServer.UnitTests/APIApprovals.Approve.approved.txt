@@ -49,7 +49,7 @@ namespace NServiceBus.Transports.SQLServer
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         [System.ObsoleteAttribute("Multi-instance mode will be removed in future versions of SqlServer transport. Wi" +
             "ll be treated as an error from version 4.0.0. Will be removed in version 4.0.0.", false)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> EnableLagacyMultiInstanceMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> EnableLegacyMultiInstanceMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
         [System.ObsoleteAttribute("That config option is no longer supported. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PauseAfterReceiveFailure(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan delayTime) { }

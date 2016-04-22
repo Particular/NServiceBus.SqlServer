@@ -25,7 +25,7 @@
 #pragma warning disable 0618
                             c.UseTransport<SqlServerTransport>()
                                 .DefaultSchema("sender")
-                                .EnableLagacyMultiInstanceMode(async address =>
+                                .EnableLegacyMultiInstanceMode(async address =>
                                 {
                                     var connection = new SqlConnection(SenderConnectionString);
 
