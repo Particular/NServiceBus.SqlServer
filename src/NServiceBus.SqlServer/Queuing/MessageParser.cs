@@ -2,29 +2,36 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.SqlClient;
     using System.IO;
+    using System.Threading.Tasks;
 
     static class MessageParser
     {
-        internal static Message ParseRawData(object[] rowData)
+        // We are assuming sequential access, order is important
+        internal static async Task<Message> ParseRawData(SqlDataReader dataReader)
         {
-            var transportId = rowData[0].ToString();
+            var transportId = (await dataReader.GetFieldValueAsync<Guid>(Sql.Columns.Id.Index).ConfigureAwait(false)).ToString();
+
+            // Wwe need to read all even if not used!
+            await GetNullableValueAsync<string>(dataReader, Sql.Columns.CorrelationId.Index).ConfigureAwait(false);
+
+            var replyToAddress = await GetNullableValueAsync<string>(dataReader, Sql.Columns.ReplyToAddress.Index).ConfigureAwait(false);
+
+            // We need to read all even if not used!
+            await dataReader.GetFieldValueAsync<bool>(Sql.Columns.Recoverable.Index).ConfigureAwait(false);
 
             int? millisecondsToExpiry = null;
-            if (rowData[Sql.Columns.TimeToBeReceived.Index] != DBNull.Value)
+            if (!dataReader.IsDBNull(Sql.Columns.TimeToBeReceived.Index))
             {
-                millisecondsToExpiry = (int) rowData[Sql.Columns.TimeToBeReceived.Index];
+                millisecondsToExpiry = await dataReader.GetFieldValueAsync<int>(Sql.Columns.TimeToBeReceived.Index).ConfigureAwait(false);
             }
 
-            var headers = GetHeaders(rowData);
+            var headers = await GetHeaders(dataReader, Sql.Columns.Headers.Index).ConfigureAwait(false);
 
-            var body = GetNullableValue<byte[]>(rowData[Sql.Columns.Body.Index]) ?? new byte[0];
+            var bodyStream = await GetBody(dataReader, Sql.Columns.Body.Index).ConfigureAwait(false);
 
-            var memoryStream = new MemoryStream(body);
-
-            var message = new Message(transportId, millisecondsToExpiry, headers, memoryStream);
-
-            var replyToAddress = GetNullableValue<string>(rowData[Sql.Columns.ReplyToAddress.Index]);
+            var message = new Message(transportId, millisecondsToExpiry, headers, bodyStream);
 
             if (!string.IsNullOrEmpty(replyToAddress))
             {
@@ -34,14 +41,34 @@
             return message;
         }
 
-        static Dictionary<string, string> GetHeaders(object[] rowData)
+        static async Task<Dictionary<string, string>> GetHeaders(SqlDataReader dataReader, int headersIndex)
         {
-            var headersAsString = (string) rowData[Sql.Columns.Headers.Index];
-            if (string.IsNullOrWhiteSpace(headersAsString))
+            if (await dataReader.IsDBNullAsync(headersIndex).ConfigureAwait(false))
             {
                 return new Dictionary<string, string>();
             }
-            return DictionarySerializer.DeSerialize(headersAsString);
+
+            using (var textReader = dataReader.GetTextReader(headersIndex))
+            {
+                var headersAsString = await textReader.ReadToEndAsync().ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(headersAsString))
+                {
+                    return new Dictionary<string, string>();
+                }
+                return DictionarySerializer.DeSerialize(headersAsString);
+            }
+        }
+
+        static async Task<MemoryStream> GetBody(SqlDataReader dataReader, int bodyIndex)
+        {
+            var memoryStream = new MemoryStream();
+            // Null values will be returned as an empty (zero bytes) Stream.
+            using (var stream = dataReader.GetStream(bodyIndex))
+            {
+                await stream.CopyToAsync(memoryStream).ConfigureAwait(false);
+            }
+            memoryStream.Position = 0;
+            return memoryStream;
         }
 
         internal static object[] CreateRawMessageData(OutgoingMessage message)
@@ -96,13 +123,13 @@
             return data;
         }
 
-        static T GetNullableValue<T>(object value)
+        static async Task<T> GetNullableValueAsync<T>(SqlDataReader dataReader, int index)
         {
-            if (value == DBNull.Value)
+            if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
                 return default(T);
             }
-            return (T) value;
+            return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
         }
     }
 }

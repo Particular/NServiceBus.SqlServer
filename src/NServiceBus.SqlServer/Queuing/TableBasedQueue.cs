@@ -3,7 +3,6 @@ namespace NServiceBus.Transports.SQLServer
     using System;
     using System.Data;
     using System.Data.SqlClient;
-    using System.Threading;
     using System.Threading.Tasks;
     using Logging;
 
@@ -24,50 +23,21 @@ namespace NServiceBus.Transports.SQLServer
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
-                var rawMessageData = await ReadRawMessageData(command).ConfigureAwait(false);
-
-                if (rawMessageData == null)
-                {
-                    return MessageReadResult.NoMessage;
-                }
-
-                try
-                {
-                    var message = MessageParser.ParseRawData(rawMessageData);
-
-                    if (message.TTBRExpired)
-                    {
-                        var messageId = message.GetLogicalId() ?? message.TransportId;
-
-                        Logger.InfoFormat($"Message with ID={messageId} has expired. Removing it from queue.");
-
-                        return MessageReadResult.NoMessage;
-                    }
-
-                    return MessageReadResult.Success(message);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
-
-                    return MessageReadResult.Poison(rawMessageData);
-                }
+                return await ReadRawMessageData(command).ConfigureAwait(false);
             }
         }
 
-        static async Task<object[]> ReadRawMessageData(SqlCommand command)
+        static async Task<MessageReadResult> ReadRawMessageData(SqlCommand command)
         {
-            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
+            // We need sequential access to not buffer everything into memory
+            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow | CommandBehavior.SequentialAccess).ConfigureAwait(false))
             {
                 if (await dataReader.ReadAsync().ConfigureAwait(false))
                 {
-                    var rowData = new object[dataReader.FieldCount];
-                    dataReader.GetValues(rowData);
-
-                    return rowData;
+                    return await MessageReadResultParser.ParseData(dataReader).ConfigureAwait(false);
                 }
 
-                return null;
+                return MessageReadResult.NoMessage;
             }
         }
 
@@ -106,14 +76,10 @@ namespace NServiceBus.Transports.SQLServer
             using (var command = new SqlCommand(commandText, connection))
             using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
             {
-                if (await dataReader.ReadAsync(token).ConfigureAwait(false))
-                {
-                    var rowData = new object[1];
-                    dataReader.GetValues(rowData);
+                // ReSharper disable once MethodSupportsCancellation
+                var numberOfMessages = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
 
-                    return Convert.ToInt32(rowData[0]);
-                }
-                return 0;
+                return numberOfMessages;
             }
         }
 
