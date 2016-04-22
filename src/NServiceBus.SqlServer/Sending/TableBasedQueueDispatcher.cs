@@ -2,6 +2,7 @@ namespace NServiceBus.Transports.SQLServer
 {
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
 
@@ -19,47 +20,40 @@ namespace NServiceBus.Transports.SQLServer
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             using (var transaction = connection.BeginTransaction())
             {
-                foreach (var operation in defaultConsistencyOperations)
-                {
-                    var queue = new TableBasedQueue(operation.Address);
-
-                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
-                }
+                await Task.WhenAll(GetSendOperations(defaultConsistencyOperations, connection, transaction)).ConfigureAwait(false);
 
                 transaction.Commit();
             }
         }
 
+
         public virtual async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
         {
-            SqlConnection sqlTransportConnection;
-            SqlTransaction sqlTransportTransaction;
+            SqlConnection sqlConnection;
+            SqlTransaction sqlTransaction;
 
-            transportTransaction.TryGet(out sqlTransportConnection);
-            transportTransaction.TryGet(out sqlTransportTransaction);
+            transportTransaction.TryGet(out sqlConnection);
+            transportTransaction.TryGet(out sqlTransaction);
 
-            foreach (var operation in defaultConsistencyOperations)
-            {
-                var queue = new TableBasedQueue(operation.Address);
-
-                await queue.SendMessage(operation.Message, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
-            }
+            await Task.WhenAll(GetSendOperations(defaultConsistencyOperations, sqlConnection, sqlTransaction)).ConfigureAwait(false);
         }
+
 
         public virtual async Task DispatchAsIsolated(List<MessageWithAddress> isolatedConsistencyOperations)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                foreach (var operation in isolatedConsistencyOperations)
-                {
-                    var queue = new TableBasedQueue(operation.Address);
-
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                }
-
+                await Task.WhenAll(GetSendOperations(isolatedConsistencyOperations, connection, null)).ConfigureAwait(false);
                 scope.Complete();
             }
+        }
+
+        static IEnumerable<Task> GetSendOperations(List<MessageWithAddress> defaultConsistencyOperations, SqlConnection connection, SqlTransaction transaction)
+        {
+            return from operation in defaultConsistencyOperations
+                   let queue = new TableBasedQueue(operation.Address)
+                   select queue.SendMessage(operation.Message, connection, transaction);
         }
     }
 }

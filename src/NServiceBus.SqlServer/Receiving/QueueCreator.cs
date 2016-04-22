@@ -1,5 +1,6 @@
 namespace NServiceBus.Transports.SQLServer
 {
+    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
@@ -15,21 +16,24 @@ namespace NServiceBus.Transports.SQLServer
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var transaction = connection.BeginTransaction())
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    foreach (var receivingAddress in queueBindings.ReceivingAddresses)
-                    {
-                        await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
-                    }
+                await Task.WhenAll(GetQueueCreationTasks(queueBindings, connection, transaction))
+                    .ConfigureAwait(false);
+                transaction.Commit();
+            }
+        }
 
-                    foreach (var receivingAddress in queueBindings.SendingAddresses)
-                    {
-                        await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
-                    }
+        IEnumerable<Task> GetQueueCreationTasks(QueueBindings queueBindings, SqlConnection connection, SqlTransaction transaction)
+        {
+            foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+            {
+                yield return CreateQueue(addressParser.Parse(receivingAddress), connection, transaction);
+            }
 
-                    transaction.Commit();
-                }
+            foreach (var receivingAddress in queueBindings.SendingAddresses)
+            {
+                yield return CreateQueue(addressParser.Parse(receivingAddress), connection, transaction);
             }
         }
 
