@@ -11,17 +11,27 @@ namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task DispatchAsNonIsolated(List<MessageWithAddress> defaultConsistencyOperations)
+        public virtual Task DispatchAsNonIsolated(List<MessageWithAddress> defaultConsistencyOperations)
+        {
+            return Task.WhenAll(GetDispatchTasks(defaultConsistencyOperations));
+        }
+
+        IEnumerable<Task> GetDispatchTasks(List<MessageWithAddress> defaultConsistencyOperations)
         {
             foreach (var operation in defaultConsistencyOperations)
             {
-                var queue = new TableBasedQueue(operation.Address);
+                yield return GetDispatchTask(operation);
+            }
+        }
 
-                //If dispatch is not isolated then transaction scope has already been created by <see cref="LegacyReceiveWithTransactionScope"/>
-                using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
-                {
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                }
+        async Task GetDispatchTask(MessageWithAddress operation)
+        {
+            var queue = new TableBasedQueue(operation.Address);
+
+            //If dispatch is not isolated then transaction scope has already been created by <see cref="LegacyReceiveWithTransactionScope"/>
+            using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+            {
+                await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
             }
         }
 
