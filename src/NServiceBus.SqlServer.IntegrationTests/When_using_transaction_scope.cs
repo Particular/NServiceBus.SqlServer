@@ -31,6 +31,8 @@
             configuration.RegisterComponents(c => c.ConfigureComponent(() => context, DependencyLifecycle.SingleInstance));
 
             configuration.Pipeline.Register<BehaviorThatThrowsAfterFirstMessage.Registration>();
+            //Hack to include these messages in the scanning despite the fact that the assembly is signed with Particular key.
+            configuration.Conventions().Conventions.AddSystemMessagesConventions(t => t == typeof(SagaMessage) || t == typeof(ReplyMessage));
 
             endpoint = Endpoint.Start(configuration).GetAwaiter().GetResult();
         }
