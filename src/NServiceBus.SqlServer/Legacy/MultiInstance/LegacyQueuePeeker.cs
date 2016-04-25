@@ -12,7 +12,7 @@
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task<int> Peek(ITableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken)
+        public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken)
         {
             var messageCount = 0;
 

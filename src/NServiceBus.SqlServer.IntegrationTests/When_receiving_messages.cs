@@ -22,7 +22,7 @@
 
             var pump = new MessagePump(
                 m => new ReceiveWithNoTransaction(sqlConnectionFactory),
-                qa => qa.TableName == "input" ? (ITableBasedQueue)inputQueue : new TableBasedQueue(qa), 
+                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa), 
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory),
@@ -36,39 +36,47 @@
 
             pump.Start(new PushRuntimeSettings(1));
 
-            while (inputQueue.NumberOfPeeks < 2)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
+            await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
             await pump.Stop();
 
-            Assert.AreEqual(successfulReceives + 2, inputQueue.NumberOfReceives, "Pump should stop receives after first unsuccessful attempt.");
+            Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }
 
+        static async Task WaitUntil(Func<bool> condition, int timeoutInSeconds = 5)
+        {
+            var startTime = DateTime.UtcNow;
+
+            while (DateTime.UtcNow.Subtract(startTime) < TimeSpan.FromSeconds(timeoutInSeconds))
+            {
+                if (condition())
+                {
+                    return;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+
+            throw new Exception("Condition has not been met in predefined timespan.");
+        }
 
         static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
 
-        class FakeTableBasedQueue : ITableBasedQueue
+        class FakeTableBasedQueue : TableBasedQueue
         {
             public int NumberOfReceives { get; set; }
             public int NumberOfPeeks { get; set; }
 
-            QueueAddress queue;
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(QueueAddress queue, int queueSize, int successfulReceives)
+            public FakeTableBasedQueue(QueueAddress address, int queueSize, int successfulReceives) : base(address)
             {
-                this.queue = queue;
-
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;
             }
 
-            public string TransportAddress => queue.ToString();
-
-            public Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
+            public override  Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
             {
                 NumberOfReceives ++;
 
@@ -79,36 +87,11 @@
                 return Task.FromResult(readResult);
             }
 
-            public Task SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token)
             {
                 NumberOfPeeks ++;
 
                 return Task.FromResult(NumberOfPeeks == 1 ? queueSize : 0);
-            }
-
-            public Task<int> Purge(SqlConnection connection)
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
-            {
-                return Task.FromResult(0);
-            }
-
-            public Task LogWarningWhenIndexIsMissing(SqlConnection connection)
-            {
-                return Task.FromResult(0);
             }
         }
     }

@@ -69,7 +69,7 @@ namespace NServiceBus
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
-            Func<QueueAddress, ITableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
+            Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),

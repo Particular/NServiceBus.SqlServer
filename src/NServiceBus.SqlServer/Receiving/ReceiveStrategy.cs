@@ -6,6 +6,6 @@
 
     interface ReceiveStrategy
     {
-        Task ReceiveMessage(ITableBasedQueue inputQueue, ITableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage);
+        Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage);
     }
 }

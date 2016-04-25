@@ -8,7 +8,7 @@
 
     class ExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<ITableBasedQueue, Task<SqlConnection>> openConnection, TimeSpan? purgeTaskDelay, int? purgeBatchSize)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, TimeSpan? purgeTaskDelay, int? purgeBatchSize)
         {
             this.openConnection = openConnection;
 
@@ -20,7 +20,7 @@
 
         int PurgeBatchSize { get; }
 
-        public async Task Purge(ITableBasedQueue queue, CancellationToken cancellationToken)
+        public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
 
@@ -49,7 +49,7 @@
             }
         }
 
-        public async Task Initialize(ITableBasedQueue queue)
+        public async Task Initialize(TableBasedQueue queue)
         {
             try
             {
@@ -64,7 +64,7 @@
             }
         }
 
-        Func<ITableBasedQueue, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, Task<SqlConnection>> openConnection;
         const int DefaultPurgeBatchSize = 10000;
 
         static TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);

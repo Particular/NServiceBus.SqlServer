@@ -12,7 +12,7 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task ReceiveMessage(ITableBasedQueue inputQueue, ITableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
