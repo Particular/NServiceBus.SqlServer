@@ -142,7 +142,10 @@
             {
                 conn.Open();
                 var command = conn.CreateCommand();
-                command.CommandText = "DELETE FROM " + errorQueueName;
+                command.CommandText = $@"IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{errorQueueName}]') AND type in (N'U'))
+BEGIN
+    DELETE FROM dbo.{errorQueueName}
+END";
                 command.ExecuteNonQuery();
             }
         }
