@@ -7,7 +7,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Threading.Tasks;
     using Logging;
 
-    class TableBasedQueue
+    class TableBasedQueue : ITableBasedQueue
     {
         public TableBasedQueue(QueueAddress address)
         {

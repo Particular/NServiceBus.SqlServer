@@ -82,6 +82,7 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\Callbacks\LegacyCallbackFeature.cs" />
     <Compile Include="Legacy\Callbacks\OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader.cs" />
+    <Compile Include="Queuing\ITableBasedQueue.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueuePeeker.cs" />

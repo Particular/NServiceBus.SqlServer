@@ -53,7 +53,7 @@
                     return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory);
                 };
 
-            Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
+            Func<QueueAddress, ITableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),

@@ -4,6 +4,6 @@
 
     interface IPurgeQueues
     {
-        Task<int> Purge(TableBasedQueue queue);
+        Task<int> Purge(ITableBasedQueue queue);
     }
 }
