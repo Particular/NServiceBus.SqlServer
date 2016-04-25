@@ -144,6 +144,10 @@
             {
                 try
                 {
+                    // We need to force the method to continue asynchronously because SqlConnection
+                    // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
+                    await Task.Yield();
+
                     await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, tokenSource, pipeline)
                         .ConfigureAwait(false);
 
