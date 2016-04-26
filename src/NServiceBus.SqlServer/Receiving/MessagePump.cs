@@ -186,7 +186,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
-        readonly Func<QueueAddress, TableBasedQueue> queueFactory;
+        Func<QueueAddress, TableBasedQueue> queueFactory;
         ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;
