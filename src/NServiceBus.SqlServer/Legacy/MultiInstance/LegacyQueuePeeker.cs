@@ -20,7 +20,7 @@
             {
                 using (var connection = await connectionFactory.OpenNewConnection(inputQueue.TransportAddress).ConfigureAwait(false))
                 {
-                    messageCount = await inputQueue.TryPeek(connection).ConfigureAwait(false);
+                    messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
 
                     circuitBreaker.Success();
 

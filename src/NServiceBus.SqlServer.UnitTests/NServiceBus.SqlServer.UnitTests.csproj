@@ -52,6 +52,10 @@
       <HintPath>..\packages\ApprovalUtilities.3.0.11\lib\net45\ApprovalUtilities.Net45.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="HdrHistogram, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6f45871cdfcff67a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HdrHistogram.1.0.120-prerelease\lib\net45\HdrHistogram.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Mono.Cecil, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <HintPath>..\packages\Mono.Cecil.0.9.6.1\lib\net45\Mono.Cecil.dll</HintPath>
       <Private>True</Private>
@@ -92,6 +96,7 @@
     <Compile Include="App_Packages\ApiApprover.3.0.1\PublicApiApprover.cs" />
     <Compile Include="App_Packages\ApiApprover.3.0.1\PublicApiGenerator.cs" />
     <Compile Include="ConfigurationValidatorTests.cs" />
+    <Compile Include="Queueing\MessageParsingPerformanceTests.cs" />
     <Compile Include="Sending\MessageDispatcherTests.cs" />
     <Compile Include="QueueAddressTests.cs" />
   </ItemGroup>

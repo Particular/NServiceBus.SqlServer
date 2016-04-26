@@ -22,7 +22,7 @@
             await dataReader.GetFieldValueAsync<bool>(Sql.Columns.Recoverable.Index).ConfigureAwait(false);
 
             int? millisecondsToExpiry = null;
-            if (!dataReader.IsDBNull(Sql.Columns.TimeToBeReceived.Index))
+            if (!await dataReader.IsDBNullAsync(Sql.Columns.TimeToBeReceived.Index).ConfigureAwait(false))
             {
                 millisecondsToExpiry = await dataReader.GetFieldValueAsync<int>(Sql.Columns.TimeToBeReceived.Index).ConfigureAwait(false);
             }
