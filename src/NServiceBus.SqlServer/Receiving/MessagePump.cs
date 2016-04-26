@@ -9,10 +9,11 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<QueueAddress, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
+            this.queueFactory = queueFactory;
             this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
             this.addressParser = addressParser;
@@ -28,8 +29,8 @@
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
 
-            inputQueue = new TableBasedQueue(addressParser.Parse(settings.InputQueue));
-            errorQueue = new TableBasedQueue(addressParser.Parse(settings.ErrorQueue));
+            inputQueue = queueFactory(addressParser.Parse(settings.InputQueue));
+            errorQueue = queueFactory(addressParser.Parse(settings.ErrorQueue));
 
             if (settings.PurgeOnStartup)
             {
@@ -113,21 +114,21 @@
                     return;
                 }
 
+                // We cannot dispose this token source because of potential race conditions of concurrent receives
+                var loopCancellationTokenSource = new CancellationTokenSource();
+
                 for (var i = 0; i < messageCount; i++)
                 {
+                    if (loopCancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                    var receiveTask = InnerReceive();
+                    var receiveTask = InnerReceive(loopCancellationTokenSource);
                     runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
-                    // We insert the original task into the runningReceiveTasks because we want to await the completion
-                    // of the running receives. ExecuteSynchronously is a request to execute the continuation as part of
-                    // the transition of the antecedents completion phase. This means in most of the cases the continuation
-                    // will be executed during this transition and the antecedent task goes into the completion state only 
-                    // after the continuation is executed. This is not always the case. When the TPL thread handling the
-                    // antecedent task is aborted the continuation will be scheduled. But in this case we don't need to await
-                    // the continuation to complete because only really care about the receive operations. The final operation
-                    // when shutting down is a clear of the running tasks anyway.
                     receiveTask.ContinueWith(t =>
                     {
                         Task toBeRemoved;
@@ -138,30 +139,27 @@
             }
         }
 
-        async Task InnerReceive()
+        async Task InnerReceive(CancellationTokenSource loopCancellationTokenSource)
         {
-            using (var tokenSource = new CancellationTokenSource())
+            try
             {
-                try
-                {
                     // We need to force the method to continue asynchronously because SqlConnection
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, tokenSource, pipeline)
+                    await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, loopCancellationTokenSource, pipeline)
                         .ConfigureAwait(false);
 
-                    receiveCircuitBreaker.Success();
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Sql receive operation failed", ex);
-                    await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
-                }
-                finally
-                {
-                    concurrencyLimiter.Release();
-                }
+                receiveCircuitBreaker.Success();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("Sql receive operation failed", ex);
+                await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+            }
+            finally
+            {
+                concurrencyLimiter.Release();
             }
         }
 
@@ -188,6 +186,7 @@
         Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
+        Func<QueueAddress, TableBasedQueue> queueFactory;
         ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         QueueAddressParser addressParser;

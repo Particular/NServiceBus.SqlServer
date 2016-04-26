@@ -14,7 +14,7 @@
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -37,25 +37,28 @@
                     {
                         scope.Complete();
 
+                        receiveCancellationTokenSource.Cancel();
+
                         return;
                     }
 
                     var message = readResult.Message;
 
+                    using (var pushCancellationTokenSource = new CancellationTokenSource())
                     using (var bodyStream = message.BodyStream)
                     {
                         var transportTransaction = new TransportTransaction();
                         transportTransaction.Set(inputConnection);
                         transportTransaction.Set(Transaction.Current);
 
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
 
                         await onMessage(pushContext).ConfigureAwait(false);
-                    }
 
-                    if (cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        return;
+                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            return;
+                        }
                     }
 
                     scope.Complete();

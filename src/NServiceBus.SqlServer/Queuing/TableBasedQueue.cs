@@ -7,7 +7,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Threading.Tasks;
     using Logging;
 
-    class TableBasedQueue
+    class TableBasedQueue 
     {
         public TableBasedQueue(QueueAddress address)
         {
@@ -16,7 +16,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public string TransportAddress => address.ToString();
 
-        public async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
+        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
             //HINT: We do not have to escape schema and tableName. The are delimited identifiers in sql text.
             //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
@@ -98,7 +98,7 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
             var commandText = string.Format(Sql.PeekText, address.SchemaName, address.TableName);
 

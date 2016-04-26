@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="When_dispatching_messages.cs" />
+    <Compile Include="When_receiving_messages.cs" />
     <Compile Include="When_using_transaction_scope.cs" />
   </ItemGroup>
   <ItemGroup>

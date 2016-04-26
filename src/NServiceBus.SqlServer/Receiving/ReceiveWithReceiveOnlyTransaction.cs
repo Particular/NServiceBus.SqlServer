@@ -16,7 +16,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource cancellationTokenSource, Func<PushContext, Task> onMessage)
+        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -37,11 +37,15 @@
                         if (!readResult.Successful)
                         {
                             transaction.Commit();
+
+                            receiveCancellationTokenSource.Cancel();
+
                             return;
                         }
 
                         var message = readResult.Message;
 
+                        using (var pushCancellationTokenSource = new CancellationTokenSource())
                         using (var bodyStream = message.BodyStream)
                         {
                             var transportTransaction = new TransportTransaction();
@@ -53,11 +57,11 @@
                             //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
                             transportTransaction.Set(ReceiveOnlyTransactionMode, true);
 
-                            var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, cancellationTokenSource, new ContextBag());
+                            var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
 
                             await onMessage(pushContext).ConfigureAwait(false);
 
-                            if (cancellationTokenSource.Token.IsCancellationRequested)
+                            if (pushCancellationTokenSource.Token.IsCancellationRequested)
                             {
                                 transaction.Rollback();
                                 return;
