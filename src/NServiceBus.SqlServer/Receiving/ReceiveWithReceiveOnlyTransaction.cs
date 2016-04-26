@@ -27,12 +27,10 @@
 
                     if (readResult.IsPoison)
                     {
-                        await errorQueue.SendRawMessage(readResult.DataRecord, connection, transaction).ConfigureAwait(false);
-
+                        await errorQueue.DeadLetterMessage(readResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
                         transaction.Commit();
                         return;
                     }
-
                     if (!readResult.Successful)
                     {
                         transaction.Commit();

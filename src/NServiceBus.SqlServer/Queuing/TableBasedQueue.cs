@@ -1,6 +1,7 @@
 namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading;
@@ -44,27 +45,52 @@ namespace NServiceBus.Transports.SQLServer
 
         public Task SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageData = MessageParser.CreateRawMessageData(message);
-
-            if (messageData.Length != Sql.Columns.All.Length)
-            {
-                throw new InvalidOperationException("The length of message data array must match the name of Parameters array.");
-            }
+            var messageData = ToMessageRow(message);
 
             return SendRawMessage(messageData, connection, transaction);
         }
 
-        public async Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
+        static MessageRow ToMessageRow(OutgoingMessage message)
+        {
+            return new MessageRow(
+                Guid.NewGuid(),
+                TryGetHeaderValue(message.Headers, Headers.CorrelationId, s => s),
+                TryGetHeaderValue(message.Headers, Headers.ReplyToAddress, s => s),
+                true,
+                TryGetHeaderValue(message.Headers, Headers.TimeToBeReceived, s =>
+                {
+                    TimeSpan ttbr;
+                    return TimeSpan.TryParse(s, out ttbr)
+                    ? (int?)ttbr.TotalMilliseconds
+                    : null;
+                }),
+                DictionarySerializer.Serialize(message.Headers),
+                message.Body);
+        }
+
+        static T TryGetHeaderValue<T>(Dictionary<string, string> headers, string name, Func<string, T> conversion)
+        {
+            string text;
+            if (!headers.TryGetValue(name, out text))
+            {
+                return default(T);
+            }
+            var value = conversion(text);
+            return value;
+        }
+
+        public Task DeadLetterMessage(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction)
+        {
+            return SendRawMessage(poisonMessage, connection, transaction);
+        }
+
+        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
         {
             var commandText = string.Format(Sql.SendText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
-                foreach (var column in Sql.Columns.All)
-                {
-                    command.Parameters.Add(column.Name, column.Type).Value = data[column.Index];
-                }
-
+                message.PrepareSendCommand(command);
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }

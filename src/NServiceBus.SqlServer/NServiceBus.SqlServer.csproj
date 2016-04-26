@@ -104,7 +104,7 @@
     <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
     <Compile Include="Queuing\Sql.cs" />
     <Compile Include="Queuing\Message.cs" />
-    <Compile Include="Queuing\MessageParser.cs" />
+    <Compile Include="Queuing\MessageRow.cs" />
     <Compile Include="Addressing\QueueAddress.cs" />
     <Compile Include="Addressing\QueueAddressParser.cs" />
     <Compile Include="Resharper.Annotations.g.cs" />
