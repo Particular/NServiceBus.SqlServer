@@ -27,7 +27,7 @@
 
                     if (readResult.IsPoison)
                     {
-                        await errorQueue.DeadLetterMessage(readResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+                        await errorQueue.DeadLetter(readResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
                         transaction.Commit();
                         return;
                     }

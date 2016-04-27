@@ -89,7 +89,7 @@
 
                     using (var transaction = connection.BeginTransaction())
                     {
-                        await table.SendMessage(new OutgoingMessage(i.ToString(), headers, GenerateBody(random, bodySizeInKB)), connection, transaction);
+                        await table.Send(new OutgoingMessage(i.ToString(), headers, GenerateBody(random, bodySizeInKB)), connection, transaction);
                         transaction.Commit();
                     }
 

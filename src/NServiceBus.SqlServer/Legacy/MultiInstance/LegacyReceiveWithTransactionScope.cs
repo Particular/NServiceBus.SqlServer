@@ -26,7 +26,7 @@
                     {
                         using (var errorConnection = await connectionFactory.OpenNewConnection(errorQueue.TransportAddress).ConfigureAwait(false))
                         {
-                            await errorQueue.DeadLetterMessage(readResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
+                            await errorQueue.DeadLetter(readResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
 
                             scope.Complete();
                             return;

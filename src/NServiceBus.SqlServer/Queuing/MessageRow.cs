@@ -6,54 +6,87 @@
     using System.Data.SqlClient;
     using System.IO;
     using System.Threading.Tasks;
+    using Logging;
+    using static System.String;
 
     class MessageRow
     {
-        public Guid Id { get; }
-        public string CorrelationId { get; }
-        public string ReplyToAddress { get; }
-        public bool Recoverable { get; }
-        public int? TimeToBeReceived { get; }
-        public string Headers { get; }
-        public byte[] Body { get; }
-
-        public MessageRow(Guid id, string correlationId, string replyToAddress, bool recoverable, int? timeToBeReceived, string headers, byte[] body)
+        MessageRow()
         {
-            Id = id;
-            CorrelationId = correlationId;
-            ReplyToAddress = replyToAddress;
-            Recoverable = recoverable;
-            TimeToBeReceived = timeToBeReceived;
-            Headers = headers;
-            Body = body;
         }
 
-        // We are assuming sequential access, order is important
-        internal static async Task<MessageRow> ParseRawData(SqlDataReader dataReader)
+        public MessageRow(OutgoingMessage message)
         {
-            var transportId = await dataReader.GetFieldValueAsync<Guid>(Sql.Columns.Id.Index).ConfigureAwait(false);
-
-            var correlationId = await GetNullableValueAsync<string>(dataReader, Sql.Columns.CorrelationId.Index).ConfigureAwait(false);
-
-            var replyToAddress = await GetNullableValueAsync<string>(dataReader, Sql.Columns.ReplyToAddress.Index).ConfigureAwait(false);
-
-            var recoverable = await dataReader.GetFieldValueAsync<bool>(Sql.Columns.Recoverable.Index).ConfigureAwait(false);
-
-            int? millisecondsToExpiry = null;
-            if (!await dataReader.IsDBNullAsync(Sql.Columns.TimeToBeReceived.Index).ConfigureAwait(false))
+            id = Guid.NewGuid();
+            correlationId = TryGetHeaderValue(message.Headers, Headers.CorrelationId, s => s);
+            replyToAddress = TryGetHeaderValue(message.Headers, Headers.ReplyToAddress, s => s);
+            recoverable = true;
+            timeToBeReceived = TryGetHeaderValue(message.Headers, Headers.TimeToBeReceived, s =>
             {
-                millisecondsToExpiry = await dataReader.GetFieldValueAsync<int>(Sql.Columns.TimeToBeReceived.Index).ConfigureAwait(false);
-            }
-
-            var headers = await GetHeaders(dataReader, Sql.Columns.Headers.Index).ConfigureAwait(false);
-
-            var bodyStream = await GetBody(dataReader, Sql.Columns.Body.Index).ConfigureAwait(false);
-
-            var message = new MessageRow(transportId, correlationId, replyToAddress, recoverable, millisecondsToExpiry, headers, bodyStream);
-
-
-            return message;
+                TimeSpan ttbr;
+                return TimeSpan.TryParse(s, out ttbr)
+                    ? (int?) ttbr.TotalMilliseconds
+                    : null;
+            });
+            headers = DictionarySerializer.Serialize(message.Headers);
+            bodyBytes = message.Body;
         }
+
+        /// <summary>
+        /// Reads the values from the data reader.
+        /// </summary>
+        /// <remarks>
+        /// We are assuming sequential access, order is important
+        /// </remarks>
+        public static async Task<MessageRow> Read(SqlDataReader dataReader)
+        {
+            var row = new MessageRow();
+            for (var col = 0; col < columns.Length; col++)
+            {
+                await columns[col].Read(dataReader, row, col).ConfigureAwait(false);
+            }
+            return row;
+        }
+
+        public MessageReadResult TryParse()
+        {
+            try
+            {
+                var parsedHeaders = IsNullOrEmpty(headers)
+                    ? new Dictionary<string, string>()
+                    : DictionarySerializer.DeSerialize(headers);
+
+                if (!IsNullOrEmpty(replyToAddress))
+                {
+                    parsedHeaders[Headers.ReplyToAddress] = replyToAddress;
+                }
+
+                var expired = timeToBeReceived.HasValue && timeToBeReceived.Value < 0;
+                if (expired)
+                {
+                    Logger.InfoFormat($"Message with ID={id} has expired. Removing it from queue.");
+                    return MessageReadResult.NoMessage;
+                }
+                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyStream));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
+                return MessageReadResult.Poison(this);
+            }
+        }
+
+        static T TryGetHeaderValue<T>(Dictionary<string, string> headers, string name, Func<string, T> conversion)
+        {
+            string text;
+            if (!headers.TryGetValue(name, out text))
+            {
+                return default(T);
+            }
+            var value = conversion(text);
+            return value;
+        }
+
 
         static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex)
         {
@@ -69,7 +102,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
+        static async Task<MemoryStream> GetBody(SqlDataReader dataReader, int bodyIndex)
         {
             var memoryStream = new MemoryStream();
             // Null values will be returned as an empty (zero bytes) Stream.
@@ -77,32 +110,89 @@
             {
                 await stream.CopyToAsync(memoryStream).ConfigureAwait(false);
             }
-            return memoryStream.GetBuffer();
-        }        
+            memoryStream.Position = 0;
+            return memoryStream;
+        }
 
         public void PrepareSendCommand(SqlCommand command)
         {
-            command.Parameters.Add(Sql.Columns.Id.Name, SqlDbType.UniqueIdentifier).Value = Id;
-            command.Parameters.Add(Sql.Columns.CorrelationId.Name, SqlDbType.VarChar).Value = Nullable(CorrelationId);
-            command.Parameters.Add(Sql.Columns.ReplyToAddress.Name, SqlDbType.VarChar).Value = Nullable(ReplyToAddress);
-            command.Parameters.Add(Sql.Columns.Recoverable.Name, SqlDbType.Bit).Value = Recoverable;
-            command.Parameters.Add(Sql.Columns.TimeToBeReceived.Name, SqlDbType.Int).Value = Nullable(TimeToBeReceived);
-            command.Parameters.Add(Sql.Columns.Headers.Name, SqlDbType.VarChar).Value = Headers;
-            command.Parameters.Add(Sql.Columns.Body.Name, SqlDbType.VarBinary).Value = Body;
+            foreach (var columnInfo in columns)
+            {
+                columnInfo.AddParameter(command, this);
+            }
         }
 
-        static object Nullable(object value)
-        {
-            return value ?? DBNull.Value;
-        }
-
-        static async Task<T> GetNullableValueAsync<T>(SqlDataReader dataReader, int index)
+        static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index)
+            where T : class
         {
             if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
                 return default(T);
             }
             return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
+        }
+
+        static async Task<T?> GetNullableValueAsync<T>(SqlDataReader dataReader, int index)
+            where T : struct
+        {
+            if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
+            {
+                return default(T);
+            }
+            return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
+        }
+
+        Guid id;
+        string correlationId;
+        string replyToAddress;
+        bool recoverable;
+        int? timeToBeReceived;
+        string headers;
+        byte[] bodyBytes;
+        MemoryStream bodyStream;
+
+        static readonly ColumnInfo[] columns =
+        {
+            new ColumnInfo("Id", SqlDbType.UniqueIdentifier, r => r.id, async (row, reader, column) => { row.id = await reader.GetFieldValueAsync<Guid>(column).ConfigureAwait(false); }),
+            new ColumnInfo("CorrelationId", SqlDbType.VarChar, r => r.correlationId, async (row, reader, column) => { row.correlationId = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo("ReplyToAddress", SqlDbType.VarChar, r => r.replyToAddress, async (row, reader, column) => { row.replyToAddress = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo("Recoverable", SqlDbType.Bit, r => r.recoverable, async (row, reader, column) => { row.recoverable = await reader.GetFieldValueAsync<bool>(column).ConfigureAwait(false); }),
+            new ColumnInfo("TimeToBeReceivedMs", SqlDbType.Int, r => r.timeToBeReceived, async (row, reader, column) => { row.timeToBeReceived = await GetNullableValueAsync<int>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo("Headers", SqlDbType.VarChar, r => r.headers, async (row, reader, column) => { row.headers = await GetHeaders(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo("Body", SqlDbType.VarBinary, r => r.bodyBytes ?? r.bodyStream.ToArray(), async (row, reader, column) => { row.bodyStream = await GetBody(reader, column).ConfigureAwait(false); })
+        };
+
+        static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
+
+        class ColumnInfo
+        {
+            public ColumnInfo(string name, SqlDbType type, Func<MessageRow, object> getValue, Func<MessageRow, SqlDataReader, int, Task> setValue)
+            {
+                this.name = name;
+                this.type = type;
+                this.getValue = getValue;
+                this.setValue = setValue;
+            }
+
+            public void AddParameter(SqlCommand command, MessageRow row)
+            {
+                command.Parameters.Add(name, type).Value = ReplaceNullWithDBNull(getValue(row));
+            }
+
+            public Task Read(SqlDataReader dataReader, MessageRow row, int column)
+            {
+                return setValue(row, dataReader, column);
+            }
+
+            static object ReplaceNullWithDBNull(object value)
+            {
+                return value ?? DBNull.Value;
+            }
+
+            string name;
+            SqlDbType type;
+            Func<MessageRow, object> getValue;
+            Func<MessageRow, SqlDataReader, int, Task> setValue;
         }
     }
 }

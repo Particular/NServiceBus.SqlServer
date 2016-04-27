@@ -23,7 +23,7 @@
 
                 if (readResult.IsPoison)
                 {
-                    await errorQueue.DeadLetterMessage(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
+                    await errorQueue.DeadLetter(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
                     scope.Complete();
                     return;
                 }
