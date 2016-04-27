@@ -1,4 +1,4 @@
-namespace NServiceBus
+namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Collections.Generic;
@@ -10,7 +10,6 @@ namespace NServiceBus
     using Routing;
     using Settings;
     using Transports;
-    using Transports.SQLServer;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {

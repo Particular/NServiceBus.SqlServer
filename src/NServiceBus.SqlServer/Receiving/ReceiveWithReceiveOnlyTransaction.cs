@@ -19,62 +19,58 @@
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var transaction = connection.BeginTransaction(isolationLevel))
             {
-                using (var transaction = connection.BeginTransaction(isolationLevel))
+                try
                 {
-                    try
+                    var readResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+
+                    if (readResult.IsPoison)
                     {
-                        var readResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
-
-                        if (readResult.IsPoison)
-                        {
-                            await errorQueue.SendRawMessage(readResult.DataRecord, connection, transaction).ConfigureAwait(false);
-
-                            transaction.Commit();
-                            return;
-                        }
-
-                        if (!readResult.Successful)
-                        {
-                            transaction.Commit();
-
-                            receiveCancellationTokenSource.Cancel();
-
-                            return;
-                        }
-
-                        var message = readResult.Message;
-
-                        using (var pushCancellationTokenSource = new CancellationTokenSource())
-                        using (var bodyStream = message.BodyStream)
-                        {
-                            var transportTransaction = new TransportTransaction();
-
-                            //those resources are meant to be used by anyone except message dispatcher e.g. persister
-                            transportTransaction.Set(connection);
-                            transportTransaction.Set(transaction);
-
-                            //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
-                            transportTransaction.Set(ReceiveOnlyTransactionMode, true);
-
-                            var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                            await onMessage(pushContext).ConfigureAwait(false);
-
-                            if (pushCancellationTokenSource.Token.IsCancellationRequested)
-                            {
-                                transaction.Rollback();
-                                return;
-                            }
-                        }
+                        await errorQueue.SendRawMessage(readResult.DataRecord, connection, transaction).ConfigureAwait(false);
 
                         transaction.Commit();
+                        return;
                     }
-                    catch (Exception)
+
+                    if (!readResult.Successful)
                     {
-                        transaction.Rollback();
-                        throw;
+                        transaction.Commit();
+                        receiveCancellationTokenSource.Cancel();
+                        return;
                     }
+
+                    var message = readResult.Message;
+
+                    using (var pushCancellationTokenSource = new CancellationTokenSource())
+                    using (var bodyStream = message.BodyStream)
+                    {
+                        var transportTransaction = new TransportTransaction();
+
+                        //those resources are meant to be used by anyone except message dispatcher e.g. persister
+                        transportTransaction.Set(connection);
+                        transportTransaction.Set(transaction);
+
+                        //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
+                        transportTransaction.Set(ReceiveOnlyTransactionMode, true);
+
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
+
+                        await onMessage(pushContext).ConfigureAwait(false);
+
+                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            transaction.Rollback();
+                            return;
+                        }
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
         }

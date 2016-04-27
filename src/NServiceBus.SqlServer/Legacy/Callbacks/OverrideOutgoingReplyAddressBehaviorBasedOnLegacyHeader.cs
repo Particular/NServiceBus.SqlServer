@@ -1,4 +1,4 @@
-﻿namespace NServiceBus
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Threading.Tasks;

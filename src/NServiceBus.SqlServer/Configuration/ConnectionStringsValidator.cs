@@ -22,7 +22,7 @@
             }
 
             //More than one transport connection string
-            if (transportConnectionSettings.Count() > 1)
+            if (transportConnectionSettings.Count > 1)
             {
                 message = MultiDatabaseNotSupported;
 

@@ -22,7 +22,6 @@
         {
             string logicalId;
             Headers.TryGetValue(NServiceBus.Headers.MessageId, out logicalId);
-
             return logicalId;
         }
     }

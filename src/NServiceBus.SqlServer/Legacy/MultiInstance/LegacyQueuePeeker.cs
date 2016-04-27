@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Threading;

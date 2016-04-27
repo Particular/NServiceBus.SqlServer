@@ -44,7 +44,6 @@
 
         string defaultSchema;
         string defaultSchemaOverride;
-
         Func<string, string> schemaOverrider;
     }
 }

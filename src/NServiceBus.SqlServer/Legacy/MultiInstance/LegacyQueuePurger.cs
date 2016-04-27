@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System.Threading.Tasks;
 
@@ -13,9 +13,7 @@
         {
             using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
             {
-                var purgedRowsCount = await queue.Purge(connection).ConfigureAwait(false);
-
-                return purgedRowsCount;
+                return await queue.Purge(connection).ConfigureAwait(false);
             }
         }
 

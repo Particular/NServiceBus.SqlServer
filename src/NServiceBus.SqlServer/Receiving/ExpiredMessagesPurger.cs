@@ -66,9 +66,7 @@
 
         Func<TableBasedQueue, Task<SqlConnection>> openConnection;
         const int DefaultPurgeBatchSize = 10000;
-
         static TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);
-
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
 }
