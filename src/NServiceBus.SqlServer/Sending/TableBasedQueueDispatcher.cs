@@ -18,18 +18,16 @@ namespace NServiceBus.Transports.SQLServer
         public async Task DispatchAsIsolated(List<MessageWithAddress> operations)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                foreach (var operation in operations)
                 {
-                    foreach (var operation in operations)
-                    {
-                        var queue = new TableBasedQueue(operation.Address);
+                    var queue = new TableBasedQueue(operation.Address);
 
-                        await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
-                    }
-
-                    scope.Complete();
+                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
                 }
+
+                scope.Complete();
             }
         }
 
@@ -51,18 +49,16 @@ namespace NServiceBus.Transports.SQLServer
         async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var transaction = connection.BeginTransaction())
             {
-                using (var transaction = connection.BeginTransaction())
+                foreach (var operation in defaultConsistencyOperations)
                 {
-                    foreach (var operation in defaultConsistencyOperations)
-                    {
-                        var queue = new TableBasedQueue(operation.Address);
+                    var queue = new TableBasedQueue(operation.Address);
 
-                        await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
-                    }
-
-                    transaction.Commit();
+                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
                 }
+
+                transaction.Commit();
             }
         }
 

@@ -18,7 +18,6 @@
         public async Task Dispatch(TransportOperations operations, ContextBag context)
         {
             await Dispatch(operations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-
             await Dispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, context), DispatchConsistency.Default).ConfigureAwait(false);
         }
 
@@ -31,13 +30,12 @@
 
         IEnumerable<MessageWithAddress> DeduplicateBasedOnMessageIdAndQueueAddress(IEnumerable<UnicastTransportOperation> isolatedConsistencyOperations)
         {
-            var deduplicated = isolatedConsistencyOperations
+            return isolatedConsistencyOperations
                 .Select(o => new MessageWithAddress(o.Message, addressParser.Parse(o.Destination)))
                 .Distinct(OperationByMessageIdAndQueueAddressComparer);
-            return deduplicated;
         }
 
-        readonly IQueueDispatcher dispatcher;
+        IQueueDispatcher dispatcher;
         QueueAddressParser addressParser;
         static OperationByMessageIdAndQueueAddressComparer OperationByMessageIdAndQueueAddressComparer = new OperationByMessageIdAndQueueAddressComparer();
     }

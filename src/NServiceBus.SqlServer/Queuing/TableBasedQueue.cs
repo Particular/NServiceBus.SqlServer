@@ -7,7 +7,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Threading.Tasks;
     using Logging;
 
-    class TableBasedQueue 
+    class TableBasedQueue
     {
         public TableBasedQueue(QueueAddress address)
         {
@@ -101,42 +101,34 @@ namespace NServiceBus.Transports.SQLServer
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
             var commandText = string.Format(Sql.PeekText, address.SchemaName, address.TableName);
-
+            // ReSharper disable once MethodSupportsCancellation
+            // ExecuteReaderAsync throws InvalidOperationException instead of TaskCancelledException with localized exception message
             using (var command = new SqlCommand(commandText, connection))
+            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
             {
-                // ReSharper disable once MethodSupportsCancellation
-                // ExecuteReaderAsync throws InvalidOperationException instead of TaskCancelledException with localized exception message 
-                using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
+                if (await dataReader.ReadAsync(token).ConfigureAwait(false))
                 {
-                    if (await dataReader.ReadAsync(token).ConfigureAwait(false))
-                    {
-                        var rowData = new object[1];
-                        dataReader.GetValues(rowData);
+                    var rowData = new object[1];
+                    dataReader.GetValues(rowData);
 
-                        return Convert.ToInt32(rowData[0]);
-                    }
-
-                    return 0;
+                    return Convert.ToInt32(rowData[0]);
                 }
+                return 0;
             }
         }
 
         public async Task<int> Purge(SqlConnection connection)
         {
             var commandText = string.Format(Sql.PurgeText, address.SchemaName, address.TableName);
-
             using (var command = new SqlCommand(commandText, connection))
             {
-                var rowsCount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-                return rowsCount;
+                return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
             var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
-
             using (var command = new SqlCommand(commandText, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);

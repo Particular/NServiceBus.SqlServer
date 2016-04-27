@@ -17,50 +17,47 @@
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
+
+                if (readResult.IsPoison)
                 {
-                    var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-                    if (readResult.IsPoison)
-                    {
-                        await errorQueue.SendRawMessage(readResult.DataRecord, connection, null).ConfigureAwait(false);
-
-                        scope.Complete();
-                        return;
-                    }
-
-                    if (!readResult.Successful)
-                    {
-                        scope.Complete();
-
-                        receiveCancellationTokenSource.Cancel();
-
-                        return;
-                    }
-
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(connection);
-                        transportTransaction.Set(Transaction.Current);
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                        await onMessage(pushContext).ConfigureAwait(false);
-
-
-                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            return;
-                        }
-                    }
+                    await errorQueue.SendRawMessage(readResult.DataRecord, connection, null).ConfigureAwait(false);
 
                     scope.Complete();
+                    return;
                 }
+
+                if (!readResult.Successful)
+                {
+                    scope.Complete();
+
+                    receiveCancellationTokenSource.Cancel();
+
+                    return;
+                }
+
+                var message = readResult.Message;
+
+                using (var pushCancellationTokenSource = new CancellationTokenSource())
+                using (var bodyStream = message.BodyStream)
+                {
+                    var transportTransaction = new TransportTransaction();
+                    transportTransaction.Set(connection);
+                    transportTransaction.Set(Transaction.Current);
+
+                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
+
+                    await onMessage(pushContext).ConfigureAwait(false);
+
+                    if (pushCancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                }
+
+                scope.Complete();
             }
         }
 

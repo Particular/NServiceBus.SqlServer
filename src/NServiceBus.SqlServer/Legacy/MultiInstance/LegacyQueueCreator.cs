@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System.Data;
     using System.Data.SqlClient;
@@ -17,24 +17,20 @@
             foreach (var receivingAddress in queueBindings.ReceivingAddresses)
             {
                 using (var connection = await connectionFactory.OpenNewConnection(receivingAddress).ConfigureAwait(false))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
-                        transaction.Commit();
-                    }
+                    await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
+                    transaction.Commit();
                 }
             }
 
             foreach (var sendingAddress in queueBindings.SendingAddresses)
             {
                 using (var connection = await connectionFactory.OpenNewConnection(sendingAddress).ConfigureAwait(false))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        await CreateQueue(addressParser.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
-                        transaction.Commit();
-                    }
+                    await CreateQueue(addressParser.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
+                    transaction.Commit();
                 }
             }
         }

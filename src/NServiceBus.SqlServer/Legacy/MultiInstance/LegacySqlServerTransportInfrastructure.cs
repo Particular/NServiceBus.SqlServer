@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Data.SqlClient;
@@ -72,7 +72,6 @@
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateLegacyConnectionFactory();
-
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
                 () =>

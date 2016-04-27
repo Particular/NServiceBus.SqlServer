@@ -7,13 +7,13 @@ namespace NServiceBus.Transports.SQLServer
         internal const string PurgeText = "DELETE FROM [{0}].[{1}]";
 
         internal const string SendText =
-            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,CASE WHEN @TimeToBeReceivedMs IS NOT NULL THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,@Headers,@Body)";
 
         internal const string ReceiveText =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion]) 
-			DELETE FROM message 
-			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
+            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion])
+			DELETE FROM message
+			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress,
 			deleted.Recoverable, CASE WHEN deleted.Expires IS NOT NULL THEN DATEDIFF(ms, GETUTCDATE(), deleted.Expires) END, deleted.Headers, deleted.Body;";
 
         internal const string PeekText = "SELECT count(*) Id FROM [{0}].[{1}];";
@@ -33,9 +33,9 @@ namespace NServiceBus.Transports.SQLServer
 	                        [Headers] [varchar](max) NOT NULL,
 	                        [Body] [varbinary](max) NULL,
 	                        [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
-                        ) ON [PRIMARY];                    
+                        ) ON [PRIMARY];
 
-                        CREATE CLUSTERED INDEX [Index_RowVersion] ON [{0}].[{1}] 
+                        CREATE CLUSTERED INDEX [Index_RowVersion] ON [{0}].[{1}]
                         (
 	                        [RowVersion] ASC
                         )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
@@ -51,7 +51,7 @@ namespace NServiceBus.Transports.SQLServer
                         )
                         WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
                     END
-    
+
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 

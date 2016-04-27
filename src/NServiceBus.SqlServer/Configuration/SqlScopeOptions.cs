@@ -1,4 +1,4 @@
-namespace NServiceBus
+namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Configuration;
@@ -15,8 +15,7 @@ namespace NServiceBus
             {
                 if (requestedTimeout.Value > GetMaxTimeout())
                 {
-                    var message = "Timeout requested is longer than the maximum value for this machine. " +
-                                  "Please override using the maxTimeout setting of the system.transactions section in machine.config";
+                    var message = "Timeout requested is longer than the maximum value for this machine. Override using the maxTimeout setting of the system.transactions section in machine.config";
 
                     throw new ConfigurationErrorsException(message);
                 }
@@ -35,21 +34,18 @@ namespace NServiceBus
 
         static TimeSpan GetMaxTimeout()
         {
-            //default is always 10 minutes
-            var maxTimeout = TimeSpan.FromMinutes(10);
-
             var systemTransactionsGroup = ConfigurationManager
                 .OpenMachineConfiguration()
                 .GetSectionGroup("system.transactions");
 
             var machineSettings = systemTransactionsGroup?.Sections.Get("machineSettings") as MachineSettingsSection;
 
-            if (machineSettings != null)
+            if (machineSettings == null)
             {
-                maxTimeout = machineSettings.MaxTimeout;
+                //default is always 10 minutes
+                return TimeSpan.FromMinutes(10);
             }
-
-            return maxTimeout;
+            return machineSettings.MaxTimeout;
         }
     }
 }

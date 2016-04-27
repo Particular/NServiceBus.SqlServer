@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer.Legacy.MultiInstance
+﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
     using System.Threading;
@@ -27,7 +27,6 @@
                         using (var errorConnection = await connectionFactory.OpenNewConnection(errorQueue.TransportAddress).ConfigureAwait(false))
                         {
                             await errorQueue.SendRawMessage(readResult.DataRecord, errorConnection, null).ConfigureAwait(false);
-
                             scope.Complete();
                             return;
                         }
@@ -36,9 +35,7 @@
                     if (!readResult.Successful)
                     {
                         scope.Complete();
-
                         receiveCancellationTokenSource.Cancel();
-
                         return;
                     }
 

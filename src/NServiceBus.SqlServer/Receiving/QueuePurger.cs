@@ -13,9 +13,7 @@
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var purgedRowsCount = await queue.Purge(connection).ConfigureAwait(false);
-
-                return purgedRowsCount;
+                return await queue.Purge(connection).ConfigureAwait(false);
             }
         }
 

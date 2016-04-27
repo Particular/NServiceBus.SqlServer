@@ -6,7 +6,6 @@ namespace NServiceBus
     using Settings;
     using Transports;
     using Transports.SQLServer;
-    using Transports.SQLServer.Legacy.MultiInstance;
 
     /// <summary>
     /// SqlServer Transport
@@ -31,9 +30,7 @@ namespace NServiceBus
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
             settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            var parser = new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
-
-            return parser;
+            return new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
         }
 
         bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
