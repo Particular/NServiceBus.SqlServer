@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transports.SQLServer
 {
     using System;
+    using System.Diagnostics;
     using System.Threading.Tasks;
     using Extensibility;
     using Pipeline;
@@ -12,10 +13,9 @@
         public override Task Invoke(IRoutingContext context, Func<Task> next)
         {
             string legacyCallbackAddress;
-            string messageIntent;
             if (TryGetLegacyCallbackAddress(context, out legacyCallbackAddress)
-                && context.Message.Headers.TryGetValue(Headers.MessageIntent, out messageIntent)
-                && messageIntent == MessageIntentEnum.Reply.ToString())
+                && !IsAuditMessage(context)
+                && IsReplyMessage(context))
             {
                 context.RoutingStrategies = new[]
                 {
@@ -23,6 +23,19 @@
                 };
             }
             return next();
+        }
+
+        static bool IsReplyMessage(IRoutingContext context)
+        {
+            string messageIntent;
+            var headers = context.Message.Headers;
+            return headers.TryGetValue(Headers.MessageIntent, out messageIntent) &&
+                   messageIntent == MessageIntentEnum.Reply.ToString();
+        }
+
+        static bool IsAuditMessage(IRoutingContext context)
+        {
+            return context.Message.Headers.ContainsKey(Headers.ProcessingEndpoint);
         }
 
         static bool TryGetLegacyCallbackAddress(IExtendable context, out string callbackAddress)
