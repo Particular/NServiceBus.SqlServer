@@ -2,16 +2,15 @@ namespace NServiceBus.Transports.SQLServer
 {
     struct MessageReadResult
     {
-        MessageReadResult(Message message, MessageRow poisonMessage, bool poison)
+        MessageReadResult(Message message, MessageRow poisonMessage)
         {
             Message = message;
-            IsPoison = poison;
             PoisonMessage = poisonMessage;
         }
 
-        public static MessageReadResult NoMessage = new MessageReadResult(null, null, false);
+        public static MessageReadResult NoMessage = new MessageReadResult(null, null);
 
-        public bool IsPoison { get; }
+        public bool IsPoison => PoisonMessage != null;
 
         public bool Successful => Message != null;
 
@@ -21,12 +20,12 @@ namespace NServiceBus.Transports.SQLServer
 
         public static MessageReadResult Poison(MessageRow messageRow)
         {
-            return new MessageReadResult(null, messageRow, true);
+            return new MessageReadResult(null, messageRow);
         }
 
         public static MessageReadResult Success(Message message)
         {
-            return new MessageReadResult(message, null, false);
+            return new MessageReadResult(message, null);
         }
     }
 }
