@@ -11,7 +11,7 @@
 
     class MessageRow
     {
-        private MessageRow() { }
+        MessageRow() { }
 
         public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
         {
