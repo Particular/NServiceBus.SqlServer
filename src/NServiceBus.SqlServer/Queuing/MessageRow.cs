@@ -114,14 +114,6 @@
             return memoryStream;
         }
 
-        public void PrepareSendCommand(SqlCommand command)
-        {
-            foreach (var columnInfo in columns)
-            {
-                columnInfo.AddParameter(command, this);
-            }
-        }
-
         static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index)
             where T : class
         {
@@ -142,6 +134,22 @@
             return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
         }
 
+        public void PrepareSendCommand(SqlCommand command)
+        {
+            AddParameter(command, "Id", SqlDbType.UniqueIdentifier, id);
+            AddParameter(command, "CorrelationId", SqlDbType.VarChar, correlationId);
+            AddParameter(command, "ReplyToAddress", SqlDbType.VarChar, replyToAddress);
+            AddParameter(command, "Recoverable", SqlDbType.Bit, recoverable);
+            AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
+            AddParameter(command, "Headers", SqlDbType.VarChar, headers);
+            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes ?? bodyStream.ToArray());
+        }
+
+        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
+        {
+            command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
+        }
+
         Guid id;
         string correlationId;
         string replyToAddress;
@@ -153,31 +161,24 @@
 
         static readonly ColumnInfo[] columns =
         {
-            new ColumnInfo("Id", SqlDbType.UniqueIdentifier, r => r.id, async (row, reader, column) => { row.id = await reader.GetFieldValueAsync<Guid>(column).ConfigureAwait(false); }),
-            new ColumnInfo("CorrelationId", SqlDbType.VarChar, r => r.correlationId, async (row, reader, column) => { row.correlationId = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
-            new ColumnInfo("ReplyToAddress", SqlDbType.VarChar, r => r.replyToAddress, async (row, reader, column) => { row.replyToAddress = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
-            new ColumnInfo("Recoverable", SqlDbType.Bit, r => r.recoverable, async (row, reader, column) => { row.recoverable = await reader.GetFieldValueAsync<bool>(column).ConfigureAwait(false); }),
-            new ColumnInfo("TimeToBeReceivedMs", SqlDbType.Int, r => r.timeToBeReceived, async (row, reader, column) => { row.timeToBeReceived = await GetNullableValueAsync<int>(reader, column).ConfigureAwait(false); }),
-            new ColumnInfo("Headers", SqlDbType.VarChar, r => r.headers, async (row, reader, column) => { row.headers = await GetHeaders(reader, column).ConfigureAwait(false); }),
-            new ColumnInfo("Body", SqlDbType.VarBinary, r => r.bodyBytes ?? r.bodyStream.ToArray(), async (row, reader, column) => { row.bodyStream = await GetBody(reader, column).ConfigureAwait(false); })
+            new ColumnInfo(async (row, reader, column) => { row.id = await reader.GetFieldValueAsync<Guid>(column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.correlationId = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.replyToAddress = await GetNullableAsync<string>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.recoverable = await reader.GetFieldValueAsync<bool>(column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.timeToBeReceived = await GetNullableValueAsync<int>(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.headers = await GetHeaders(reader, column).ConfigureAwait(false); }),
+            new ColumnInfo(async (row, reader, column) => { row.bodyStream = await GetBody(reader, column).ConfigureAwait(false); })
         };
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
 
         class ColumnInfo
         {
-            public ColumnInfo(string name, SqlDbType type, Func<MessageRow, object> getValue, Func<MessageRow, SqlDataReader, int, Task> setValue)
+            public ColumnInfo(Func<MessageRow, SqlDataReader, int, Task> setValue)
             {
-                this.name = name;
-                this.type = type;
-                this.getValue = getValue;
                 this.setValue = setValue;
             }
 
-            public void AddParameter(SqlCommand command, MessageRow row)
-            {
-                command.Parameters.Add(name, type).Value = ReplaceNullWithDBNull(getValue(row));
-            }
 
             public Task Read(SqlDataReader dataReader, MessageRow row, int column)
             {
@@ -189,9 +190,6 @@
                 return value ?? DBNull.Value;
             }
 
-            string name;
-            SqlDbType type;
-            Func<MessageRow, object> getValue;
             Func<MessageRow, SqlDataReader, int, Task> setValue;
         }
     }
