@@ -20,9 +20,11 @@ namespace NServiceBus.Transports.SQLServer
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
         {
             var commandText = Format(Sql.PeekText, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(commandText, connection))
             {
                 var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+
                 return numberOfMessages;
             }
         }
@@ -46,7 +48,9 @@ namespace NServiceBus.Transports.SQLServer
 
         public Task Send(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
         {
-            return SendRawMessage(new MessageRow(message), connection, transaction);
+            var messageRow = MessageRow.From(message.Headers, message.Body);
+
+            return SendRawMessage(messageRow, connection, transaction);
         }
 
         static async Task<MessageReadResult> ReadMessage(SqlCommand command)
@@ -58,8 +62,10 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     return MessageReadResult.NoMessage;
                 }
-                var messageRow = await MessageRow.Read(dataReader).ConfigureAwait(false);
-                return messageRow.TryParse();
+
+                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
+
+                return readResult;
             }
         }
 
@@ -70,6 +76,7 @@ namespace NServiceBus.Transports.SQLServer
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
                 message.PrepareSendCommand(command);
+
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
@@ -77,6 +84,7 @@ namespace NServiceBus.Transports.SQLServer
         public async Task<int> Purge(SqlConnection connection)
         {
             var commandText = Format(Sql.PurgeText, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(commandText, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -86,6 +94,7 @@ namespace NServiceBus.Transports.SQLServer
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
             var commandText = Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(commandText, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
