@@ -1,7 +1,5 @@
 namespace NServiceBus.Transports.SQLServer
 {
-    using System.Data;
-
     class Sql
     {
         internal const string PurgeText = "DELETE FROM [{0}].[{1}]";
@@ -60,75 +58,5 @@ namespace NServiceBus.Transports.SQLServer
         internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
 
         internal const string ExpiresIndexName = "Index_Expires";
-
-        internal class Columns
-        {
-            internal static ColumnInfo Id = new ColumnInfo
-            {
-                Index = 0,
-                Name = "Id",
-                Type = SqlDbType.UniqueIdentifier
-            };
-
-            internal static ColumnInfo CorrelationId = new ColumnInfo
-            {
-                Index = 1,
-                Name = "CorrelationId",
-                Type = SqlDbType.VarChar
-            };
-
-            internal static ColumnInfo ReplyToAddress = new ColumnInfo
-            {
-                Index = 2,
-                Name = "ReplyToAddress",
-                Type = SqlDbType.VarChar
-            };
-
-            internal static ColumnInfo Recoverable = new ColumnInfo
-            {
-                Index = 3,
-                Name = "Recoverable",
-                Type = SqlDbType.Bit
-            };
-
-            internal static ColumnInfo TimeToBeReceived = new ColumnInfo
-            {
-                Index = 4,
-                Name = "TimeToBeReceivedMs",
-                Type = SqlDbType.Int
-            };
-
-            internal static ColumnInfo Headers = new ColumnInfo
-            {
-                Index = 5,
-                Name = "Headers",
-                Type = SqlDbType.VarChar
-            };
-
-            internal static ColumnInfo Body = new ColumnInfo
-            {
-                Index = 6,
-                Name = "Body",
-                Type = SqlDbType.VarBinary
-            };
-
-            public static ColumnInfo[] All =
-            {
-                Id,
-                CorrelationId,
-                ReplyToAddress,
-                Recoverable,
-                TimeToBeReceived,
-                Headers,
-                Body
-            };
-        }
-
-        internal class ColumnInfo
-        {
-            public int Index { get; set; }
-            public string Name { get; set; }
-            public SqlDbType Type { get; set; }
-        }
     }
 }

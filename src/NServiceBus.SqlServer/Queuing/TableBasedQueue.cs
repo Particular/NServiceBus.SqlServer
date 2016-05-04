@@ -6,6 +6,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using static System.String;
 
     class TableBasedQueue
     {
@@ -16,110 +17,74 @@ namespace NServiceBus.Transports.SQLServer
 
         public string TransportAddress => address.ToString();
 
+        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+        {
+            var commandText = Format(Sql.PeekText, address.SchemaName, address.TableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+
+                return numberOfMessages;
+            }
+        }
+
         public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
             //HINT: We do not have to escape schema and tableName. The are delimited identifiers in sql text.
             //      see: https://msdn.microsoft.com/en-us/library/ms175874.aspx
-            var commandText = string.Format(Sql.ReceiveText, address.SchemaName, address.TableName);
+            var commandText = Format(Sql.ReceiveText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
-                var rawMessageData = await ReadRawMessageData(command).ConfigureAwait(false);
+                return await ReadMessage(command).ConfigureAwait(false);
+            }
+        }
 
-                if (rawMessageData == null)
+        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction)
+        {
+            return SendRawMessage(poisonMessage, connection, transaction);
+        }
+
+        public Task Send(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
+        {
+            var messageRow = MessageRow.From(message.Headers, message.Body);
+
+            return SendRawMessage(messageRow, connection, transaction);
+        }
+
+        static async Task<MessageReadResult> ReadMessage(SqlCommand command)
+        {
+            // We need sequential access to not buffer everything into memory
+            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow | CommandBehavior.SequentialAccess).ConfigureAwait(false))
+            {
+                if (!await dataReader.ReadAsync().ConfigureAwait(false))
                 {
                     return MessageReadResult.NoMessage;
                 }
 
-                try
-                {
-                    var message = MessageParser.ParseRawData(rawMessageData);
+                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
 
-                    if (message.TTBRExpired)
-                    {
-                        var messageId = message.GetLogicalId() ?? message.TransportId;
-
-                        Logger.InfoFormat($"Message with ID={messageId} has expired. Removing it from queue.");
-
-                        return MessageReadResult.NoMessage;
-                    }
-
-                    return MessageReadResult.Success(message);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
-
-                    return MessageReadResult.Poison(rawMessageData);
-                }
+                return readResult;
             }
         }
 
-        static async Task<object[]> ReadRawMessageData(SqlCommand command)
+        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
         {
-            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
-            {
-                if (await dataReader.ReadAsync().ConfigureAwait(false))
-                {
-                    var rowData = new object[dataReader.FieldCount];
-                    dataReader.GetValues(rowData);
-
-                    return rowData;
-                }
-
-                return null;
-            }
-        }
-
-        public Task SendMessage(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
-        {
-            var messageData = MessageParser.CreateRawMessageData(message);
-
-            if (messageData.Length != Sql.Columns.All.Length)
-            {
-                throw new InvalidOperationException("The length of message data array must match the name of Parameters array.");
-            }
-
-            return SendRawMessage(messageData, connection, transaction);
-        }
-
-        public async Task SendRawMessage(object[] data, SqlConnection connection, SqlTransaction transaction)
-        {
-            var commandText = string.Format(Sql.SendText, address.SchemaName, address.TableName);
+            var commandText = Format(Sql.SendText, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
-                foreach (var column in Sql.Columns.All)
-                {
-                    command.Parameters.Add(column.Name, column.Type).Value = data[column.Index];
-                }
+                message.PrepareSendCommand(command);
 
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
-        {
-            var commandText = string.Format(Sql.PeekText, address.SchemaName, address.TableName);
-            // ReSharper disable once MethodSupportsCancellation
-            // ExecuteReaderAsync throws InvalidOperationException instead of TaskCancelledException with localized exception message
-            using (var command = new SqlCommand(commandText, connection))
-            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
-            {
-                if (await dataReader.ReadAsync(token).ConfigureAwait(false))
-                {
-                    var rowData = new object[1];
-                    dataReader.GetValues(rowData);
-
-                    return Convert.ToInt32(rowData[0]);
-                }
-                return 0;
-            }
-        }
-
         public async Task<int> Purge(SqlConnection connection)
         {
-            var commandText = string.Format(Sql.PurgeText, address.SchemaName, address.TableName);
+            var commandText = Format(Sql.PurgeText, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(commandText, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -128,7 +93,8 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = string.Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
+            var commandText = Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.SchemaName, address.TableName);
+
             using (var command = new SqlCommand(commandText, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -137,7 +103,7 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            var commandText = string.Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, address.SchemaName, address.TableName);
+            var commandText = Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, address.SchemaName, address.TableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -156,7 +122,6 @@ namespace NServiceBus.Transports.SQLServer
         }
 
         QueueAddress address;
-
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
     }
 }

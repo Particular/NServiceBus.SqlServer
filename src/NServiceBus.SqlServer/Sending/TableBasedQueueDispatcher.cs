@@ -24,7 +24,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var queue = new TableBasedQueue(operation.Address);
 
-                    await queue.SendMessage(operation.Message, connection, null).ConfigureAwait(false);
+                    await queue.Send(operation.Message, connection, null).ConfigureAwait(false);
                 }
 
                 scope.Complete();
@@ -55,7 +55,7 @@ namespace NServiceBus.Transports.SQLServer
                 {
                     var queue = new TableBasedQueue(operation.Address);
 
-                    await queue.SendMessage(operation.Message, connection, transaction).ConfigureAwait(false);
+                    await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
                 }
 
                 transaction.Commit();
@@ -74,7 +74,7 @@ namespace NServiceBus.Transports.SQLServer
             {
                 var queue = new TableBasedQueue(operation.Address);
 
-                await queue.SendMessage(operation.Message, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+                await queue.Send(operation.Message, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
             }
         }
 
