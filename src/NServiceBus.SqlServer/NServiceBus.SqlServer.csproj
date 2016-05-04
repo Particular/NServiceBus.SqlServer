@@ -80,8 +80,7 @@
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="Legacy\Callbacks\LegacyCallbackFeature.cs" />
-    <Compile Include="Legacy\Callbacks\OverrideOutgoingReplyAddressBehaviorBasedOnLegacyHeader.cs" />
+    <Compile Include="Legacy\Callbacks\LegacyCallbacks.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueuePeeker.cs" />

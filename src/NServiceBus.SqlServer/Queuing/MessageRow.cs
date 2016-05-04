@@ -89,8 +89,11 @@
                 if (expired)
                 {
                     Logger.InfoFormat($"Message with ID={id} has expired. Removing it from queue.");
+
                     return MessageReadResult.NoMessage;
                 }
+
+                LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
 
                 return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyStream));
             }
