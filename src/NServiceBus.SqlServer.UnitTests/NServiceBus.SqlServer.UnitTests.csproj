@@ -96,7 +96,6 @@
     <Compile Include="App_Packages\ApiApprover.3.0.1\PublicApiApprover.cs" />
     <Compile Include="App_Packages\ApiApprover.3.0.1\PublicApiGenerator.cs" />
     <Compile Include="ConfigurationValidatorTests.cs" />
-    <Compile Include="Queueing\MessageParsingPerformanceTests.cs" />
     <Compile Include="Sending\MessageDispatcherTests.cs" />
     <Compile Include="QueueAddressTests.cs" />
   </ItemGroup>
