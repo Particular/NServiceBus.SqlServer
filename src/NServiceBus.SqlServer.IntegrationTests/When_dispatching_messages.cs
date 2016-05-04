@@ -104,22 +104,22 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory), addressParser);
         }
 
-        async Task PurgeOutputQueue(QueueAddressParser addressParser)
+        Task PurgeOutputQueue(QueueAddressParser addressParser)
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressParser.Parse(validAddress);
             queue = new TableBasedQueue(queueAddress);
 
-            await purger.Purge(queue);
+            return purger.Purge(queue);
         }
 
-        static async Task CreateOutputQueueIfNecessary(QueueAddressParser addressParser)
+        static Task CreateOutputQueueIfNecessary(QueueAddressParser addressParser)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 
-            await queueCreator.CreateQueueIfNecessary(queueBindings, "");
+            return queueCreator.CreateQueueIfNecessary(queueBindings, "");
         }
 
         interface IContextProvider : IDisposable
