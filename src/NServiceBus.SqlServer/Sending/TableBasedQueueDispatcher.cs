@@ -17,6 +17,10 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task DispatchAsIsolated(List<MessageWithAddress> operations)
         {
+            if (operations.Count == 0)
+            {
+                return;
+            }
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -33,6 +37,10 @@ namespace NServiceBus.Transports.SQLServer
 
         public async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
         {
+            if (operations.Count == 0)
+            {
+                return;
+            }
             TransportTransaction transportTransaction;
             var transportTransactionExists = context.TryGet(out transportTransaction);
 
@@ -54,10 +62,8 @@ namespace NServiceBus.Transports.SQLServer
                 foreach (var operation in defaultConsistencyOperations)
                 {
                     var queue = new TableBasedQueue(operation.Address);
-
                     await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
                 }
-
                 transaction.Commit();
             }
         }
