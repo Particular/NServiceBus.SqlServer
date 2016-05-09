@@ -66,16 +66,10 @@
             return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination));
         }
 
-        class FakeTableBasedQueueDispatcher : IQueueDispatcher
+        class FakeTableBasedQueueDispatcher : IDispatchPolicy
         {
             public List<string> DispatchedMessageIds = new List<string>();
-            
-            public IDispatchStrategy CreateIsolatedDispatchStrategy()
-            {
-                return new DispatchStrategy(DispatchedMessageIds);
-            }
-
-            public IDispatchStrategy CreateNonIsolatedDispatchStrategy()
+            public IDispatchStrategy CreateDispatchStrategy(DispatchConsistency dispatchConsistency)
             {
                 return new DispatchStrategy(DispatchedMessageIds);
             }

@@ -27,7 +27,7 @@
             await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
             {
                 IDispatchStrategy dispatchStrategy;
-                Assert.IsTrue(context.TransportTransaction.TryGet(out dispatchStrategy));
+                Assert.IsTrue(context.Context.TryGet(out dispatchStrategy));
                 received = true;
                 return Task.FromResult(0);
             });

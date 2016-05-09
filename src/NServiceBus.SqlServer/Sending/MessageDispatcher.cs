@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -9,37 +8,39 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressParser addressParser)
+        public MessageDispatcher(IDispatchPolicy dispatchPolicy, QueueAddressParser addressParser)
         {
-            this.dispatcher = dispatcher;
+            this.dispatchPolicy = dispatchPolicy;
             this.addressParser = addressParser;
         }
 
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, ContextBag context)
         {
-            await Dispatch(operations, DispatchUsingStrategy, DispatchConsistency.Isolated, GetDispatchStrategySetByReceiver(context) ?? dispatcher.CreateIsolatedDispatchStrategy()).ConfigureAwait(false);
-            await Dispatch(operations, DispatchUsingStrategy, DispatchConsistency.Default, GetDispatchStrategySetByReceiver(context) ?? dispatcher.CreateNonIsolatedDispatchStrategy()).ConfigureAwait(false);
+            await Dispatch(operations, context, DispatchConsistency.Isolated).ConfigureAwait(false);
+            await Dispatch(operations, context, DispatchConsistency.Default).ConfigureAwait(false);
         }
 
-        static IDispatchStrategy GetDispatchStrategySetByReceiver(ContextBag context)
+        Task Dispatch(TransportOperations operations, ReadOnlyContextBag contextBag, DispatchConsistency dispatchConsistency)
         {
-            TransportTransaction transportTransaction;
-            return context.TryGet(out transportTransaction) 
-                ? transportTransaction.Get<IDispatchStrategy>() 
-                : null;
+            var isolatedOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == dispatchConsistency);
+            var deduplicatedIsolatedOperations = DeduplicateBasedOnMessageIdAndQueueAddress(isolatedOperations).ToList();
+
+            var dispatchStrategy = GetDispatchStrategySetByReceiver(contextBag) ?? dispatchPolicy.CreateDispatchStrategy(dispatchConsistency);
+
+            return DispatchUsingStrategy(deduplicatedIsolatedOperations, dispatchStrategy);
         }
 
-        Task DispatchUsingStrategy(List<MessageWithAddress> operations, IDispatchStrategy dispatchStrategy)
+        static Task DispatchUsingStrategy(List<MessageWithAddress> operations, IDispatchStrategy dispatchStrategy)
         {
             return dispatchStrategy.Dispatch(operations);
         }
 
-        Task Dispatch(TransportOperations operations, Func<List<MessageWithAddress>, IDispatchStrategy, Task> dispatchMethod, DispatchConsistency dispatchConsistency, IDispatchStrategy dispatchStrategy)
+        static IDispatchStrategy GetDispatchStrategySetByReceiver(ReadOnlyContextBag context)
         {
-            var isolatedOperations = operations.UnicastTransportOperations.Where(o => o.RequiredDispatchConsistency == dispatchConsistency);
-            var deduplicatedIsolatedOperations = DeduplicateBasedOnMessageIdAndQueueAddress(isolatedOperations).ToList();
-            return dispatchMethod(deduplicatedIsolatedOperations, dispatchStrategy);
+            IDispatchStrategy dispatchStrategy;
+            context.TryGet(out dispatchStrategy);
+            return dispatchStrategy;
         }
 
         IEnumerable<MessageWithAddress> DeduplicateBasedOnMessageIdAndQueueAddress(IEnumerable<UnicastTransportOperation> isolatedConsistencyOperations)
@@ -49,7 +50,7 @@
                 .Distinct(OperationByMessageIdAndQueueAddressComparer);
         }
 
-        IQueueDispatcher dispatcher;
+        IDispatchPolicy dispatchPolicy;
         QueueAddressParser addressParser;
         static OperationByMessageIdAndQueueAddressComparer OperationByMessageIdAndQueueAddressComparer = new OperationByMessageIdAndQueueAddressComparer();
     }

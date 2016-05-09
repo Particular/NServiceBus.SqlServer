@@ -124,7 +124,7 @@ namespace NServiceBus.Transport.SQLServer
             var connectionFactory = CreateConnectionFactory();
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new DispatchPolicy(connectionFactory), addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();

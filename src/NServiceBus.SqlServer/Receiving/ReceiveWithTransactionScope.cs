@@ -47,9 +47,10 @@
                     transportTransaction.Set(connection);
                     transportTransaction.Set(Transaction.Current);
 
-                    transportTransaction.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(transportTransaction));
+                    var context = new ContextBag();
+                    context.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(connection, null));
 
-                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
+                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, context);
 
                     await onMessage(pushContext).ConfigureAwait(false);
 

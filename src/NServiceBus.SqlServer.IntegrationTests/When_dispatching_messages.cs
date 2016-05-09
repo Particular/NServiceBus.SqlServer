@@ -101,7 +101,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory), addressParser);
+            dispatcher = new MessageDispatcher(new DispatchPolicy(sqlConnectionFactory), addressParser);
         }
 
         Task PurgeOutputQueue(QueueAddressParser addressParser)
@@ -155,7 +155,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                 transportTransaction.Set(sqlConnection);
                 transportTransaction.Set(sqlTransaction);
 
-                transportTransaction.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(transportTransaction));
+                Context.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(sqlConnection, sqlTransaction));
 
                 Context.Set(transportTransaction);
             }

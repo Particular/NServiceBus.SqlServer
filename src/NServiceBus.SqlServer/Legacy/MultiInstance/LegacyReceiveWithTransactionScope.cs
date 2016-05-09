@@ -43,9 +43,10 @@
 
                 var message = readResult.Message;
 
-                        transportTransaction.Set<IDispatchStrategy>(new LegacyNonIsolatedDispatchStrategy(connectionFactory));
+                        var context = new ContextBag();
+                        context.Set<IDispatchStrategy>(new LegacyNonIsolatedDispatchStrategy(connectionFactory));
 
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
+                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, context);
                     await onMessage(pushContext).ConfigureAwait(false);
 
                     if (pushCancellationTokenSource.Token.IsCancellationRequested)
