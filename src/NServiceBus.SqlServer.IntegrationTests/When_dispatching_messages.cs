@@ -155,6 +155,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                 transportTransaction.Set(sqlConnection);
                 transportTransaction.Set(sqlTransaction);
 
+                transportTransaction.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(transportTransaction));
+
                 Context.Set(transportTransaction);
             }
 

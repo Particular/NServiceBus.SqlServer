@@ -51,10 +51,9 @@
                         transportTransaction.Set(transaction);
 
                         //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
-                        transportTransaction.Set(ReceiveOnlyTransactionMode, true);
+                        transportTransaction.Set<IDispatchStrategy>(new SeparateConnectionDispatchStrategy(connectionFactory));
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
                         await onMessage(pushContext).ConfigureAwait(false);
 
                         if (pushCancellationTokenSource.Token.IsCancellationRequested)
@@ -76,6 +75,5 @@
 
         IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
-        internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
 }

@@ -69,17 +69,31 @@
         class FakeTableBasedQueueDispatcher : IQueueDispatcher
         {
             public List<string> DispatchedMessageIds = new List<string>();
-
-            public Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+            
+            public IDispatchStrategy CreateIsolatedDispatchStrategy()
             {
-                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
-                return Task.FromResult(0);
+                return new DispatchStrategy(DispatchedMessageIds);
             }
 
-            public Task DispatchAsIsolated(List<MessageWithAddress> operations)
+            public IDispatchStrategy CreateNonIsolatedDispatchStrategy()
             {
-                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
-                return Task.FromResult(0);
+                return new DispatchStrategy(DispatchedMessageIds);
+            }
+
+            class DispatchStrategy : IDispatchStrategy
+            {
+                List<string> dispatchedMessageIds;
+
+                public DispatchStrategy(List<string> dispatchedMessageIds)
+                {
+                    this.dispatchedMessageIds = dispatchedMessageIds;
+                }
+
+                public Task Dispatch(List<MessageWithAddress> operations)
+                {
+                    dispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
+                    return Task.FromResult(0);
+                }
             }
         }
     }

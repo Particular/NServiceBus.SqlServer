@@ -18,7 +18,7 @@
     {
 
         [TestCaseSource(nameof(TestCases))]
-        public async Task It_should_expose_transport_transaction(ReceiveStrategy receiveStrategy, TransportTransactionMode transactionMode)
+        public async Task It_should_set_dispatch_strategy(ReceiveStrategy receiveStrategy, TransportTransactionMode transactionMode)
         {
             var received = false;
 
@@ -26,17 +26,8 @@
 
             await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
             {
-                SqlTransaction nativeTransaction;
-                Transaction ambientTransaction;
-                var transportTransactionExposed = context.TransportTransaction.TryGet(out nativeTransaction) || context.TransportTransaction.TryGet(out ambientTransaction);
-                if (transactionMode == TransportTransactionMode.None || transactionMode == TransportTransactionMode.ReceiveOnly)
-                {
-                    Assert.IsFalse(transportTransactionExposed);
-                }
-                else
-                {
-                    Assert.IsTrue(transportTransactionExposed);
-                }
+                IDispatchStrategy dispatchStrategy;
+                Assert.IsTrue(context.TransportTransaction.TryGet(out dispatchStrategy));
                 received = true;
                 return Task.FromResult(0);
             });
