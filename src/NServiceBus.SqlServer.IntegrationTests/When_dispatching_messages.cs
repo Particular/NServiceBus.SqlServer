@@ -10,7 +10,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using NUnit.Framework;
     using Routing;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_dispatching_messages
     {

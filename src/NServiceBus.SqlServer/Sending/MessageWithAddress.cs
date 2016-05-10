@@ -1,5 +1,7 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
+    using Transports;
+
     class MessageWithAddress
     {
         public QueueAddress Address { get; }

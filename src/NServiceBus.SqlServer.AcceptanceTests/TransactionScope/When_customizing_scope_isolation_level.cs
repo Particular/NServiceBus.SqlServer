@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
     {

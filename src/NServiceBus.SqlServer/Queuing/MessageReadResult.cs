@@ -1,4 +1,4 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     struct MessageReadResult
     {

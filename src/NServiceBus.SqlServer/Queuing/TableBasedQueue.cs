@@ -1,4 +1,4 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data;
@@ -6,6 +6,7 @@ namespace NServiceBus.Transports.SQLServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using Transports;
     using static System.String;
 
     class TableBasedQueue

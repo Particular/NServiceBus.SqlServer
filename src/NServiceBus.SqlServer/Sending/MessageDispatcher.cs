@@ -1,10 +1,11 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Extensibility;
+    using Transports;
 
     class MessageDispatcher : IDispatchMessages
     {

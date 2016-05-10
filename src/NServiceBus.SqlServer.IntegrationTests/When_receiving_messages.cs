@@ -8,7 +8,7 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_receiving_messages
     {

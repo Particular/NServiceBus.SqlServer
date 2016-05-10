@@ -8,8 +8,8 @@
     <ProjectGuid>{FA1193BF-325C-4201-BB78-484032E09809}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NServiceBus.Transports.SQLServer</RootNamespace>
-    <AssemblyName>NServiceBus.Transports.SQLServer</AssemblyName>
+    <RootNamespace>NServiceBus.Transport.SQLServer</RootNamespace>
+    <AssemblyName>NServiceBus.Transport.SQLServer</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SignAssembly>true</SignAssembly>
@@ -27,7 +27,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\binaries\NServiceBus.Transports.SQLServer.xml</DocumentationFile>
+    <DocumentationFile>..\..\binaries\NServiceBus.Transport.SQLServer.xml</DocumentationFile>
     <NoWarn>
     </NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
@@ -41,7 +41,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\binaries\NServiceBus.Transports.SQLServer.xml</DocumentationFile>
+    <DocumentationFile>..\..\binaries\NServiceBus.Transport.SQLServer.xml</DocumentationFile>
     <NoWarn>
     </NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
@@ -80,7 +80,7 @@
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="Legacy\Callbacks\LegacyCallbacks.cs" />
+    <Compile Include="Legacy\LegacyCallbacks.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueuePeeker.cs" />

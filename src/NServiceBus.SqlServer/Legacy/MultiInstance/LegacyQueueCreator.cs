@@ -1,8 +1,9 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Transports;
 
     class LegacyQueueCreator : ICreateQueues
     {
