@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
-    using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
@@ -24,7 +23,7 @@
 
             await SendMessage();
 
-            await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
+            await receiveStrategy.ReceiveMessage(queue, errorQueue, context =>
             {
                 IDispatchStrategy dispatchStrategy;
                 Assert.IsTrue(context.Context.TryGet(out dispatchStrategy));
@@ -34,7 +33,7 @@
             Assert.IsTrue(received);
             Assert.AreEqual(0, await queuePurger.Purge(queue)); //No messages in the input queue
         }
-
+        
         [TestCaseSource(nameof(TestCases))]
         public async Task It_should_dead_letter_and_delete_unparsable_messages(ReceiveStrategy receiveStrategy, TransportTransactionMode transactionMode)
         {
@@ -42,7 +41,7 @@
 
             await SendPoisonMessage();
 
-            await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
+            await receiveStrategy.ReceiveMessage(queue, errorQueue, context =>
             {
                 received = true;
                 return Task.FromResult(0);
@@ -57,14 +56,13 @@
         {
             var received = false;
 
-            var receiveCancellationTokenSource = new CancellationTokenSource();
-            await receiveStrategy.ReceiveMessage(queue, errorQueue, receiveCancellationTokenSource, context =>
+            var result = await receiveStrategy.ReceiveMessage(queue, errorQueue, context =>
             {
                 received = true;
                 return Task.FromResult(0);
             });
             Assert.IsFalse(received);
-            Assert.IsTrue(receiveCancellationTokenSource.IsCancellationRequested);
+            Assert.AreEqual(ReceiveStrategyResult.NoMessage, result);
         }
 
         [TestCaseSource(nameof(TestCases))]
@@ -76,7 +74,7 @@
             }
 
             await SendMessage();
-            await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
+            await receiveStrategy.ReceiveMessage(queue, errorQueue, context =>
             {
                 context.ReceiveCancellationTokenSource.Cancel();
                 return Task.FromResult(0);
@@ -90,7 +88,7 @@
             var received = false;
 
             await SendMessage();
-            await receiveStrategy.ReceiveMessage(queue, errorQueue, new CancellationTokenSource(), context =>
+            await receiveStrategy.ReceiveMessage(queue, errorQueue, context =>
             {
                 received = true;
                 return Task.FromResult(0);

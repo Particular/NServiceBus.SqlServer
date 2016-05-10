@@ -1,10 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System;
-    using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Extensibility;
     using Transports;
     using IsolationLevel = System.Data.IsolationLevel;
 
@@ -17,62 +14,13 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
+        protected override async Task<ReceiveStrategyContext> CreateContext(TableBasedQueue inputQueue)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction(isolationLevel))
-            {
-                try
-                {
-                    var readResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
-
-                    if (readResult.IsPoison)
-                    {
-                        await errorQueue.DeadLetter(readResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
-                        transaction.Commit();
-                        return;
-                    }
-
-                    if (!readResult.Successful)
-                    {
-                        transaction.Commit();
-                        receiveCancellationTokenSource.Cancel();
-                        return;
-                    }
-
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-
-                        transportTransaction.Set(connection);
-                        transportTransaction.Set(transaction);
-
-                        var context = new ContextBag();
-                        context.Set<IDispatchStrategy>(new ReceiveConnectionDispatchStrategy(connection, transaction));
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, context);
-                        await onMessage(pushContext).ConfigureAwait(false);
-
-                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            transaction.Rollback();
-                            return;
-                        }
-                    }
-
-                    transaction.Commit();
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    throw;
-                }
-            }
+            var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false);
+            var transaction = connection.BeginTransaction(isolationLevel);
+            return new ReceiveStrategyContext(connection, transaction, new ReceiveConnectionDispatchStrategy(connection, transaction));
         }
-
+        
         IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
     }

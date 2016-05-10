@@ -84,6 +84,9 @@
     <Compile Include="Legacy\Callbacks\LegacyCallbacks.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyIsolatedDispatchStrategy.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyNonIsolatedDispatchStrategy.cs" />
+    <Compile Include="Receiving\ReceiveStrategyContext.cs" />
+    <Compile Include="Receiving\ReceiveStrategyResult.cs" />
+    <Compile Include="Receiving\ReceiveStrategy.cs" />
     <Compile Include="Sending\IDispatchStrategy.cs" />
     <Compile Include="Sending\IDispatchPolicy.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
@@ -123,7 +126,6 @@
     <Compile Include="Queuing\MessageReadResult.cs" />
     <Compile Include="Receiving\ReceiveWithReceiveOnlyTransaction.cs" />
     <Compile Include="Receiving\ReceiveWithNoTransaction.cs" />
-    <Compile Include="Receiving\ReceiveStrategy.cs" />
     <Compile Include="Receiving\QueueCreator.cs" />
     <Compile Include="SqlServerTransportInfrastructure.cs" />
     <Compile Include="SqlServerTransportSettingsExtensions.cs" />
