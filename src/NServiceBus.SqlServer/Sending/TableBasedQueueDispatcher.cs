@@ -1,10 +1,11 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
     using Extensibility;
+    using Transports;
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {

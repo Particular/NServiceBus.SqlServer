@@ -7,7 +7,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {

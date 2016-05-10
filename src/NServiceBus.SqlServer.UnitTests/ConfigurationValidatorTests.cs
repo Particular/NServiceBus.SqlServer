@@ -3,7 +3,7 @@
     using System.Configuration;
     using System.Linq;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     [TestFixture]
     public class ConfigurationValidatorTests

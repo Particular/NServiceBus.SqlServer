@@ -4,7 +4,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schem_configured_with_queue_specific_override : When_custom_schema_configured

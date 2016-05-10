@@ -1,10 +1,11 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using Extensibility;
+    using Transports;
 
     class ReceiveWithTransactionScope : ReceiveStrategy
     {

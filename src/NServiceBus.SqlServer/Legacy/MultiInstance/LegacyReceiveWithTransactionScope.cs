@@ -1,10 +1,11 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using Extensibility;
+    using Transports;
 
     class LegacyReceiveWithTransactionScope : ReceiveStrategy
     {
@@ -17,50 +18,49 @@
         public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+
+            using (var inputConnection = await connectionFactory.OpenNewConnection(inputQueue.TransportAddress).ConfigureAwait(false))
             {
-                using (var inputConnection = await connectionFactory.OpenNewConnection(inputQueue.TransportAddress).ConfigureAwait(false))
+                var readResult = await inputQueue.TryReceive(inputConnection, null).ConfigureAwait(false);
+
+                if (readResult.IsPoison)
                 {
-                    var readResult = await inputQueue.TryReceive(inputConnection, null).ConfigureAwait(false);
-
-                    if (readResult.IsPoison)
+                    using (var errorConnection = await connectionFactory.OpenNewConnection(errorQueue.TransportAddress).ConfigureAwait(false))
                     {
-                        using (var errorConnection = await connectionFactory.OpenNewConnection(errorQueue.TransportAddress).ConfigureAwait(false))
-                        {
-                            await errorQueue.DeadLetter(readResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
+                        await errorQueue.DeadLetter(readResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
 
-                            scope.Complete();
-                            return;
-                        }
-                    }
-
-                    if (!readResult.Successful)
-                    {
                         scope.Complete();
-                        receiveCancellationTokenSource.Cancel();
                         return;
                     }
-
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(inputConnection);
-                        transportTransaction.Set(Transaction.Current);
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                        await onMessage(pushContext).ConfigureAwait(false);
-
-                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            return;
-                        }
-                    }
-
-                    scope.Complete();
                 }
+
+                if (!readResult.Successful)
+                {
+                    scope.Complete();
+                    receiveCancellationTokenSource.Cancel();
+                    return;
+                }
+
+                var message = readResult.Message;
+
+                using (var pushCancellationTokenSource = new CancellationTokenSource())
+                using (var bodyStream = message.BodyStream)
+                {
+                    var transportTransaction = new TransportTransaction();
+                    transportTransaction.Set(inputConnection);
+                    transportTransaction.Set(Transaction.Current);
+
+                    var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
+
+                    await onMessage(pushContext).ConfigureAwait(false);
+
+                    if (pushCancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                }
+
+                scope.Complete();
             }
         }
 
