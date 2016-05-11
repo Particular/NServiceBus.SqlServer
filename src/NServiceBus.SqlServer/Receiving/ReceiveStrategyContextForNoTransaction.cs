@@ -9,8 +9,6 @@ namespace NServiceBus.Transport.SQLServer
     [SkipWeaving]
     class ReceiveStrategyContextForNoTransaction : IReceiveStrategyContext
     {
-        public SqlConnection Connection { get; private set; }
-
         public ReceiveStrategyContextForNoTransaction(Func<Task<SqlConnection>> connectionFactory)
         {
             this.connectionFactory = connectionFactory;
@@ -19,23 +17,23 @@ namespace NServiceBus.Transport.SQLServer
 
         public void Dispose()
         {
-            Connection?.Dispose();
+            connection?.Dispose();
         }
 
         public async Task Initialize()
         {
-            Connection = await connectionFactory().ConfigureAwait(false);
-            TransportTransaction.Set(Connection);
+            connection = await connectionFactory().ConfigureAwait(false);
+            TransportTransaction.Set(connection);
         }
 
         public Task<MessageReadResult> TryReceive(TableBasedQueue queue)
         {
-            return queue.TryReceive(Connection, null);
+            return queue.TryReceive(connection, null);
         }
 
         public Task DeadLetter(TableBasedQueue queue, MessageRow poisonMessage)
         {
-            return queue.DeadLetter(poisonMessage, Connection, null);
+            return queue.DeadLetter(poisonMessage, connection, null);
         }
 
         public TransportTransaction TransportTransaction { get; }
@@ -51,5 +49,6 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         Func<Task<SqlConnection>> connectionFactory;
+        SqlConnection connection;
     }
 }

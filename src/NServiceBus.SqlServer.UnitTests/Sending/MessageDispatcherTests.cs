@@ -71,14 +71,14 @@
             public List<string> DispatchedMessageIds = new List<string>();
             public IDispatchStrategy CreateDispatchStrategy(DispatchConsistency dispatchConsistency)
             {
-                return new DispatchStrategy(DispatchedMessageIds);
+                return new FakeDispatchStrategy(DispatchedMessageIds);
             }
 
-            class DispatchStrategy : IDispatchStrategy
+            class FakeDispatchStrategy : IDispatchStrategy
             {
                 List<string> dispatchedMessageIds;
 
-                public DispatchStrategy(List<string> dispatchedMessageIds)
+                public FakeDispatchStrategy(List<string> dispatchedMessageIds)
                 {
                     this.dispatchedMessageIds = dispatchedMessageIds;
                 }
