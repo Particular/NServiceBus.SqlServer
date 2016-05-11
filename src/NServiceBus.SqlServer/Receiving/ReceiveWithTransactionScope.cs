@@ -1,10 +1,9 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System.Threading.Tasks;
     using System.Transactions;
     using Transports;
 
-    class ReceiveWithTransactionScope : ReceiveStrategy
+    class ReceiveWithTransactionScope : ReceiveStrategy<ReceiveStrategyContextForAmbientTransaction>
     {
         public ReceiveWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
@@ -12,12 +11,14 @@
             this.connectionFactory = connectionFactory;
         }
 
-        protected override async Task<ReceiveStrategyContext> CreateContext(TableBasedQueue inputQueue)
+        protected override ReceiveStrategyContextForAmbientTransaction CreateContext(TableBasedQueue inputQueue)
         {
-            var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);
-            var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false);
+            return new ReceiveStrategyContextForAmbientTransaction(() => connectionFactory.OpenNewConnection(), transactionOptions);
+        }
 
-            return new ReceiveStrategyContext(connection, scope, new ReceiveConnectionDispatchStrategy(connection, null));
+        protected override IDispatchStrategy CreateDispatchStrategy(ReceiveStrategyContextForAmbientTransaction context)
+        {
+            return new ReceiveConnectionDispatchStrategy(context.Connection, null);
         }
 
         TransactionOptions transactionOptions;

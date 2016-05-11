@@ -13,8 +13,7 @@
 
         public async Task Dispatch(List<MessageWithAddress> operations)
         {
-            //If dispatch is not isolated then either TS has been created by the receive operation or needs to be created here.
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
                 foreach (var operation in operations)
                 {
@@ -29,5 +28,6 @@
         }
 
         LegacySqlConnectionFactory connectionFactory;
+
     }
 }

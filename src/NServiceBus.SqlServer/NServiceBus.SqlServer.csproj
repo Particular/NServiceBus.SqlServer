@@ -82,9 +82,12 @@
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />
     <Compile Include="Legacy\Callbacks\LegacyCallbacks.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyIsolatedDispatchStrategy.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyNonIsolatedDispatchStrategy.cs" />
-    <Compile Include="Receiving\ReceiveStrategyContext.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyIsolatedDispatchStrategy.cs" />
+    <Compile Include="Receiving\ReceiveStrategyContextForNativeTransaction.cs" />
+    <Compile Include="Receiving\ReceiveStrategyContextForAmbientTransaction.cs" />
+    <Compile Include="Receiving\ReceiveStrategyContextForNoTransaction.cs" />
+    <Compile Include="Receiving\IReceiveStrategyContext.cs" />
     <Compile Include="Receiving\ReceiveStrategyResult.cs" />
     <Compile Include="Receiving\ReceiveStrategy.cs" />
     <Compile Include="Sending\IDispatchStrategy.cs" />

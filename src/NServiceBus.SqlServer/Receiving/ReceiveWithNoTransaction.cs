@@ -1,19 +1,20 @@
 namespace NServiceBus.Transport.SQLServer
 {
-    using System.Threading.Tasks;
-
-
-    class ReceiveWithNoTransaction : ReceiveStrategy
+    class ReceiveWithNoTransaction : ReceiveStrategy<ReceiveStrategyContextForNoTransaction>
     {
         public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
 
-        protected override async Task<ReceiveStrategyContext> CreateContext(TableBasedQueue inputQueue)
+        protected override ReceiveStrategyContextForNoTransaction CreateContext(TableBasedQueue inputQueue)
         {
-            var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false);
-            return new ReceiveStrategyContext(connection, new SeparateConnectionDispatchStrategy(connectionFactory));
+            return new ReceiveStrategyContextForNoTransaction(() => connectionFactory.OpenNewConnection());
+        }
+
+        protected override IDispatchStrategy CreateDispatchStrategy(ReceiveStrategyContextForNoTransaction context)
+        {
+            return new SeparateConnectionDispatchStrategy(connectionFactory);
         }
 
         SqlConnectionFactory connectionFactory;

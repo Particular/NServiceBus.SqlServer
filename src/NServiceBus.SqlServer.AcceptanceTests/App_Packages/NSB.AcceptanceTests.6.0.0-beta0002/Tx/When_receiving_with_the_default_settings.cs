@@ -31,7 +31,7 @@
         {
             public TransactionalEndpoint()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(c => c.LimitMessageProcessingConcurrencyTo(1));
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>

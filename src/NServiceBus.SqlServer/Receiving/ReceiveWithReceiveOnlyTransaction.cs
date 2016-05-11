@@ -1,11 +1,10 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System.Threading.Tasks;
     using System.Transactions;
     using Transports;
     using IsolationLevel = System.Data.IsolationLevel;
 
-    class ReceiveWithReceiveOnlyTransaction : ReceiveStrategy
+    class ReceiveWithReceiveOnlyTransaction : ReceiveStrategy<ReceiveStrategyContextForNativeTransaction>
     {
         public ReceiveWithReceiveOnlyTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory)
         {
@@ -14,13 +13,16 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        protected override async Task<ReceiveStrategyContext> CreateContext(TableBasedQueue inputQueue)
+        protected override ReceiveStrategyContextForNativeTransaction CreateContext(TableBasedQueue inputQueue)
         {
-            var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false);
-            var transaction = connection.BeginTransaction(isolationLevel);
-            return new ReceiveStrategyContext(connection, transaction, new SeparateConnectionDispatchStrategy(connectionFactory));
+            return new ReceiveStrategyContextForNativeTransaction(() => connectionFactory.OpenNewConnection(), isolationLevel);
         }
-        
+
+        protected override IDispatchStrategy CreateDispatchStrategy(ReceiveStrategyContextForNativeTransaction context)
+        {
+            return new SeparateConnectionDispatchStrategy(connectionFactory);
+        }
+
         IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
     }

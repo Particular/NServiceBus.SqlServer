@@ -7,10 +7,17 @@
 
     abstract class ReceiveStrategy
     {
-        public async Task<ReceiveStrategyResult> ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
+        public abstract Task<ReceiveStrategyResult> ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage);
+    }
+
+    abstract class ReceiveStrategy<T> : ReceiveStrategy
+        where T : IReceiveStrategyContext
+    {
+        public sealed override async Task<ReceiveStrategyResult> ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<PushContext, Task> onMessage)
         {
-            using (var context = await CreateContext(inputQueue).ConfigureAwait(false))
+            using (var context = CreateContext(inputQueue))
             {
+                await context.Initialize().ConfigureAwait(false);
                 try
                 {
                     var readResult = await context.TryReceive(inputQueue).ConfigureAwait(false);
@@ -36,7 +43,7 @@
                         var transportTransaction = context.TransportTransaction;
 
                         var bag = new ContextBag();
-                        bag.Set(context.CreateDispatchStrategy());
+                        bag.Set(CreateDispatchStrategy(context));
 
                         var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, bag);
                         await onMessage(pushContext).ConfigureAwait(false);
@@ -59,9 +66,11 @@
             }
         }
 
-        protected abstract Task<ReceiveStrategyContext> CreateContext(TableBasedQueue inputQueue);
+        protected abstract T CreateContext(TableBasedQueue inputQueue);
 
-        protected virtual async Task DeadLetterPoisonMessage(TableBasedQueue errorQueue, ReceiveStrategyContext context, MessageRow poisonMessage)
+        protected abstract IDispatchStrategy CreateDispatchStrategy(T context);
+
+        protected virtual async Task DeadLetterPoisonMessage(TableBasedQueue errorQueue, IReceiveStrategyContext context, MessageRow poisonMessage)
         {
             await context.DeadLetter(errorQueue, poisonMessage).ConfigureAwait(false);
         }
