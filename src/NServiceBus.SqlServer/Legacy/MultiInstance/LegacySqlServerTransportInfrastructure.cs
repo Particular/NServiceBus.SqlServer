@@ -74,7 +74,7 @@
         {
             var connectionFactory = CreateLegacyConnectionFactory();
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new LegacyDispatchPolicy(connectionFactory), addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();

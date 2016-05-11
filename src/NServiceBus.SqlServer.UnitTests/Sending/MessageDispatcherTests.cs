@@ -66,20 +66,28 @@
             return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination));
         }
 
-        class FakeTableBasedQueueDispatcher : IQueueDispatcher
+        class FakeTableBasedQueueDispatcher : IDispatchPolicy
         {
             public List<string> DispatchedMessageIds = new List<string>();
-
-            public Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+            public IDispatchStrategy CreateDispatchStrategy(DispatchConsistency dispatchConsistency)
             {
-                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
-                return Task.FromResult(0);
+                return new FakeDispatchStrategy(DispatchedMessageIds);
             }
 
-            public Task DispatchAsIsolated(List<MessageWithAddress> operations)
+            class FakeDispatchStrategy : IDispatchStrategy
             {
-                DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
-                return Task.FromResult(0);
+                List<string> dispatchedMessageIds;
+
+                public FakeDispatchStrategy(List<string> dispatchedMessageIds)
+                {
+                    this.dispatchedMessageIds = dispatchedMessageIds;
+                }
+
+                public Task Dispatch(List<MessageWithAddress> operations)
+                {
+                    dispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
+                    return Task.FromResult(0);
+                }
             }
         }
     }

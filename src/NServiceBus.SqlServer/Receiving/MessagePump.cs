@@ -116,22 +116,26 @@
                 }
 
                 // We cannot dispose this token source because of potential race conditions of concurrent receives
-                var loopCancellationTokenSource = new CancellationTokenSource();
+                var noMoreMessageSignal = new CancellationTokenSource();
 
                 for (var i = 0; i < messageCount; i++)
                 {
-                    if (loopCancellationTokenSource.Token.IsCancellationRequested)
+                    if (noMoreMessageSignal.IsCancellationRequested)
                     {
                         break;
                     }
 
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                    var receiveTask = InnerReceive(loopCancellationTokenSource);
+                    var receiveTask = InnerReceive();
                     runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
                     receiveTask.ContinueWith(t =>
                     {
+                        if (!t.IsFaulted && t.Result == ReceiveStrategyResult.NoMessage)
+                        {
+                            noMoreMessageSignal.Cancel();
+                        }
                         Task toBeRemoved;
                         runningReceiveTasks.TryRemove(t, out toBeRemoved);
                     }, TaskContinuationOptions.ExecuteSynchronously)
@@ -140,7 +144,7 @@
             }
         }
 
-        async Task InnerReceive(CancellationTokenSource loopCancellationTokenSource)
+        async Task<ReceiveStrategyResult> InnerReceive()
         {
             try
             {
@@ -148,15 +152,15 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, loopCancellationTokenSource, pipeline)
-                    .ConfigureAwait(false);
-
+                var result = await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, pipeline).ConfigureAwait(false);
                 receiveCircuitBreaker.Success();
+                return result;
             }
             catch (Exception ex)
             {
                 Logger.Warn("Sql receive operation failed", ex);
                 await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                throw;
             }
             finally
             {

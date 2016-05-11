@@ -1,51 +1,20 @@
 namespace NServiceBus.Transport.SQLServer
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Extensibility;
-    using Transports;
-
-    class ReceiveWithNoTransaction : ReceiveStrategy
+    class ReceiveWithNoTransaction : ReceiveStrategy<ReceiveStrategyContextForNoTransaction>
     {
         public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
+        protected override ReceiveStrategyContextForNoTransaction CreateContext(TableBasedQueue inputQueue)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
+            return new ReceiveStrategyContextForNoTransaction(() => connectionFactory.OpenNewConnection());
+        }
 
-                if (readResult.IsPoison)
-                {
-                    await errorQueue.DeadLetter(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
-
-                    return;
-                }
-
-                if (readResult.Successful)
-                {
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(connection);
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                        await onMessage(pushContext).ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    receiveCancellationTokenSource.Cancel();
-                }
-            }
+        protected override IDispatchStrategy CreateDispatchStrategy(ReceiveStrategyContextForNoTransaction context)
+        {
+            return new SeparateConnectionDispatchStrategy(connectionFactory);
         }
 
         SqlConnectionFactory connectionFactory;
