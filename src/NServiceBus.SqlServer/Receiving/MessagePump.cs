@@ -160,7 +160,7 @@
             {
                 Logger.Warn("Sql receive operation failed", ex);
                 await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
-                return ReceiveStrategyResult.Error;
+                throw;
             }
             finally
             {

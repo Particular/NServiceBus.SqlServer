@@ -6,6 +6,5 @@
         NoMessage,
         Success,
         ProcessingAborted,
-        Error
     }
 }
