@@ -2,7 +2,6 @@
 {
     using System.Threading.Tasks;
     using System.Transactions;
-    using Transports;
 
     class LegacyReceiveWithTransactionScope : ReceiveStrategy<ReceiveStrategyContextForAmbientTransaction>
     {

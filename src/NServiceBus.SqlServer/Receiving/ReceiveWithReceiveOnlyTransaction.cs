@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System.Transactions;
-    using Transports;
     using IsolationLevel = System.Data.IsolationLevel;
 
     class ReceiveWithReceiveOnlyTransaction : ReceiveStrategy<ReceiveStrategyContextForNativeTransaction>

@@ -81,7 +81,6 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />
-    <Compile Include="Legacy\Callbacks\LegacyCallbacks.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyNonIsolatedDispatchStrategy.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyIsolatedDispatchStrategy.cs" />
     <Compile Include="Receiving\ReceiveStrategyContextForNativeTransaction.cs" />

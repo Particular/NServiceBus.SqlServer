@@ -1,6 +1,7 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using Transports;
 
     class DispatchPolicy : IDispatchPolicy
     {

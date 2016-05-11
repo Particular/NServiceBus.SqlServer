@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System.Transactions;
-    using Transports;
 
     class ReceiveWithTransactionScope : ReceiveStrategy<ReceiveStrategyContextForAmbientTransaction>
     {

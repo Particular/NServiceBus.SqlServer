@@ -8,9 +8,9 @@
     using System.Transactions;
     using NUnit.Framework;
     using Transports;
-    using Transports.SQLServer;
     using static System.String;
     using IsolationLevel = System.Transactions.IsolationLevel;
+    using Transport.SQLServer;
 
     [TestFixture]
     class ReceiveStrategyTests
