@@ -57,13 +57,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                    CreateTransportOperation(id: "4", destination: invalidAddress, consistency: dispatchConsistency)
                    );
 
-                TestDelegate dispatch = async () =>
+                Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
                     await dispatcher.Dispatch(invalidOperations, contextProvider.Context);
                     contextProvider.Complete();
-                };
-
-                Assert.That(dispatch, Throws.Exception);
+                });
             }
 
             var messagesSent = await purger.Purge(queue);
