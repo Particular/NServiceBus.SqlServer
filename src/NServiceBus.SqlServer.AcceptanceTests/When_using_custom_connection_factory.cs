@@ -12,9 +12,9 @@
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {
         [Test]
-        public async void Should_use_provided_ready_to_use_connection()
+        public Task Should_use_provided_ready_to_use_connection()
         {
-            await Scenario.Define<Context>()
+            return Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                 .Done(c => c.MessageReceived)
                 .Repeat(r => r.For(Transports.Default))

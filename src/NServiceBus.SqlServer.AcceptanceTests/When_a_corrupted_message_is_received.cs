@@ -32,17 +32,17 @@
                             c.UseTransport<SqlServerTransport>()
                                 .Transactions(txMode);
                         });
-                        b.When((bus, c) =>
+                        b.When(async (bus, c) =>
                         {
                             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
                             using (var conn = new SqlConnection(connString))
                             {
-                                conn.Open();
+                                await conn.OpenAsync();
                                 var command = conn.CreateCommand();
                                 var guid = Guid.NewGuid();
                                 command.CommandText =
-                                    $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+                                    $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
                                 command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = guid;
                                 command.Parameters.Add("CorrelationId", SqlDbType.UniqueIdentifier).Value = guid;
@@ -53,10 +53,8 @@
 
                                 command.Parameters.Add("Body", SqlDbType.VarBinary).Value = Encoding.UTF8.GetBytes("");
 
-                                command.ExecuteNonQuery();
+                                await command.ExecuteNonQueryAsync();
                             }
-
-                            return Task.FromResult(0);
                         });
                     })
                     .Done(c => c.Logs.Any(l => l.Level == "error"))
@@ -88,17 +86,17 @@
                             c.UseTransport<SqlServerTransport>()
                                 .Transactions(txMode);
                         });
-                        b.When((bus, c) =>
+                        b.When(async (bus, c) =>
                         {
                             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
                             using (var conn = new SqlConnection(connString))
                             {
-                                conn.Open();
+                                await conn.OpenAsync();
                                 var command = conn.CreateCommand();
                                 var guid = Guid.NewGuid();
                                 command.CommandText =
-                                    $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+                                    $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
                                 command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = guid;
                                 command.Parameters.Add("CorrelationId", SqlDbType.UniqueIdentifier).Value = guid;
@@ -119,10 +117,8 @@
 
                                 command.Parameters.Add("Body", SqlDbType.VarBinary).Value = Encoding.UTF8.GetBytes("body corrupted");
 
-                                command.ExecuteNonQuery();
+                                await command.ExecuteNonQueryAsync();
                             }
-
-                            return Task.FromResult(0);
                         });
                     })
                     .Done(c => c.Logs.Any(l => l.Level == "error"))
