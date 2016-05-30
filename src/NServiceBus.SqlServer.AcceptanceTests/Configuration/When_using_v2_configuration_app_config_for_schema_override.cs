@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
@@ -12,12 +11,14 @@
     public class When_using_v2_configuration_app_config_for_schema_override : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_fail_on_startup()
+        public Task Should_fail_on_startup()
         {
             var appConfigFilename = "app.sqlv2.config";
+            var appConfigPath = Path.Combine(Directory.GetCurrentDirectory(), appConfigFilename);
+
             var expectedErrorMessage = "Schema override in connection string is not supported anymore";
 
-            File.WriteAllText(appConfigFilename,
+            File.WriteAllText(appConfigPath,
                 @"<?xml version='1.0' encoding='utf-8'?>
                             <configuration>
                                 <connectionStrings>
@@ -26,23 +27,35 @@
                                 </connectionStrings>
                             </configuration>");
 
-            using (AppConfig.Change(appConfigFilename))
+            using (AppConfig.Change(appConfigPath))
             {
-                try
-                {
-                    await Scenario.Define<Context>()
-                        .WithEndpoint<Endpoint>()
-                        .Run();
-                }
-                catch (AggregateException exception)
-                {
-                    Assert.IsTrue(exception.InnerExceptions.Count > 0);
-                    Assert.IsTrue(exception.InnerExceptions.Any(e => e.InnerException != null && e.InnerException.Message.Contains(expectedErrorMessage)));
+                var configurationExceptionThrown = false;
 
-                    return;
-                }
+                Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
+                {
+                    try
+                    {
+                        await Scenario.Define<Context>()
+                            .WithEndpoint<Endpoint>()
+                            .Run();
+                    }
+                    catch (AggregateException exception)
+                    {
+                        exception.Handle(ie =>
+                        {
+                            if (ie.InnerException != null && ie.InnerException.Message.Contains(expectedErrorMessage))
+                            {
+                                configurationExceptionThrown = true;
+                            }
 
-                Assert.Fail("Endpoint should fail on startup due to unsupported v2 configuration.");
+                            return false;
+                        });
+                    }
+                }, "Endpoint startup should throw and exception");
+
+                Assert.IsTrue(configurationExceptionThrown, "Endpoint should fail on startup due to unsupported v2 configuration.");
+
+                return Task.FromResult(0);
             }
         }
 
