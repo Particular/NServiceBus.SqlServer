@@ -18,11 +18,11 @@ namespace NServiceBus.Transport.SQLServer
 
         public string TransportAddress => address.ToString();
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
         {
             var commandText = Format(Sql.PeekText, address.SchemaName, address.TableName);
 
-            using (var command = new SqlCommand(commandText, connection))
+            using (var command = new SqlCommand(commandText, connection) {CommandTimeout = timeoutInSeconds})
             {
                 var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
 
