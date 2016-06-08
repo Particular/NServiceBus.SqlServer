@@ -37,7 +37,7 @@
             {
                 var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                Logger.InfoFormat("{0} messages was purged from table {1}", purgedRowsCount, settings.InputQueue);
+                Logger.InfoFormat("{0:N} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
             }
 
             await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
@@ -57,10 +57,11 @@
 
         public async Task Stop()
         {
+            const int timeoutDurationInSeconds = 30;
             cancellationTokenSource.Cancel();
 
             // ReSharper disable once MethodSupportsCancellation
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutDurationInSeconds));
             var allTasks = runningReceiveTasks.Values.Concat(new[]
             {
                 messagePumpTask,
@@ -70,7 +71,7 @@
 
             if (finishedTask.Equals(timeoutTask))
             {
-                Logger.Error("The message pump failed to stop with in the time allowed(30s)");
+                Logger.ErrorFormat("The message pump failed to stop within the time allowed ({0}s)", timeoutDurationInSeconds);
             }
 
             concurrencyLimiter.Dispose();
@@ -172,7 +173,7 @@
                 {
                     await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
 
-                    Logger.DebugFormat("Scheduling next expired message purge task for table {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
+                    Logger.DebugFormat("Scheduling next expired message purge task for queue {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
                     await Task.Delay(expiredMessagesPurger.PurgeTaskDelay, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
