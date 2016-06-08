@@ -43,8 +43,9 @@
                 using (var pushCancellationTokenSource = new CancellationTokenSource())
                 using (var bodyStream = message.BodyStream)
                 {
+                    connection.Close();
+
                     var transportTransaction = new TransportTransaction();
-                    transportTransaction.Set(connection);
                     transportTransaction.Set(Transaction.Current);
 
                     var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
