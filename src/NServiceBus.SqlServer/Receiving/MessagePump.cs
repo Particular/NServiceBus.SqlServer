@@ -36,7 +36,7 @@
             {
                 var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                Logger.InfoFormat("{0:N} messages purged from table {1}", purgedRowsCount, settings.InputQueue);
+                Logger.InfoFormat("{0:N} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
             }
 
             await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
@@ -172,7 +172,7 @@
                 {
                     await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
 
-                    Logger.DebugFormat("Scheduling next expired message purge task for table {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
+                    Logger.DebugFormat("Scheduling next expired message purge task for queue {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
                     await Task.Delay(expiredMessagesPurger.PurgeTaskDelay, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
