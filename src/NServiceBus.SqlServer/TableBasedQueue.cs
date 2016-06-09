@@ -17,8 +17,10 @@ namespace NServiceBus.Transports.SQLServer
 
         public TableBasedQueue(string tableName, string schema)
         {
-            this.tableName = tableName;
-            this.schema = schema;
+            var sanitizer = new SqlCommandBuilder();
+
+            this.tableName = sanitizer.QuoteIdentifier(tableName);
+            this.schema = sanitizer.QuoteIdentifier(schema);
         }
 
         public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
@@ -209,7 +211,7 @@ namespace NServiceBus.Transports.SQLServer
 
                 if (rowsCount == 0)
                 {
-                    Logger.Warn($@"Table [{schema}].[{tableName}] does not contain index '{ExpiresIndexName}'.
+                    Logger.Warn($@"Table {schema}.{tableName} does not contain index '{ExpiresIndexName}'.
 Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
                 }
             }
@@ -217,7 +219,7 @@ Adding this index will speed up the process of purging expired messages from the
 
         public override string ToString()
         {
-            return tableName;
+            return $"{schema}.{tableName}";
         }
 
         static readonly ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
@@ -240,20 +242,20 @@ Adding this index will speed up the process of purging expired messages from the
         };
 
         const string SqlSend =
-            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO {0}.{1} ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,CASE WHEN @TimeToBeReceivedMs IS NOT NULL THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,@Headers,@Body)";
 
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, CASE WHEN deleted.Expires IS NOT NULL THEN DATEDIFF(ms, GETUTCDATE(), deleted.Expires) END, deleted.Headers, deleted.Body;";
 
         const string SqlPurgeBatchOfExpiredMessages =
-            @"DELETE FROM [{1}].[{2}] WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
+            @"DELETE FROM {1}.{2} WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM {1}.{2} WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
 
         const string SqlCheckIfExpiresIndexIsPresent =
-            @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
+            @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
         const string ExpiresIndexName = "Index_Expires";
 
