@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System.Text.RegularExpressions;
+    using System.Data.SqlClient;
 
     class QueueAddress
     {
@@ -41,22 +41,12 @@
 
         static string UnescapeSchema(string schemaName)
         {
-            if (IsEscapedSchema(schemaName))
+            if (string.IsNullOrWhiteSpace(schemaName))
             {
-                return schemaName.Substring(1, schemaName.Length - 2);
+                return schemaName;
             }
 
-            return schemaName;
-        }
-
-        static bool IsEscapedSchema(string schema)
-        {
-            if (schema == null)
-            {
-                return false;
-            }
-
-            return Regex.IsMatch(schema, "^\\[(.*)\\]$");
+            return new SqlCommandBuilder().UnquoteIdentifier(schemaName);
         }
     }
 }

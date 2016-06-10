@@ -2,19 +2,19 @@ namespace NServiceBus.Transport.SQLServer
 {
     class Sql
     {
-        internal const string PurgeText = "DELETE FROM [{0}].[{1}]";
+        internal const string PurgeText = "DELETE FROM {0}.{1}";
 
         internal const string SendText =
-            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
+            @"INSERT INTO {0}.{1} ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,CASE WHEN @TimeToBeReceivedMs IS NOT NULL THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,@Headers,@Body)";
 
         internal const string ReceiveText =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion])
+            @"WITH message AS (SELECT TOP(1) * FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion])
 			DELETE FROM message
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress,
 			deleted.Recoverable, CASE WHEN deleted.Expires IS NOT NULL THEN DATEDIFF(ms, GETUTCDATE(), deleted.Expires) END, deleted.Headers, deleted.Body;";
 
-        internal const string PeekText = "SELECT count(*) Id FROM [{0}].[{1}] WITH (READPAST)";
+        internal const string PeekText = "SELECT count(*) Id FROM {0}.{1} WITH (READPAST)";
 
         internal const string CreateQueueText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN
@@ -53,9 +53,9 @@ namespace NServiceBus.Transport.SQLServer
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 
-        internal const string PurgeBatchOfExpiredMessagesText = "DELETE FROM [{1}].[{2}] WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM [{1}].[{2}] WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
+        internal const string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE [Id] IN (SELECT TOP ({0}) [Id] FROM {1}.{2} WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] < GETUTCDATE() ORDER BY [RowVersion])";
 
-        internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('[{1}].[{2}]')";
+        internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
         internal const string ExpiresIndexName = "Index_Expires";
     }

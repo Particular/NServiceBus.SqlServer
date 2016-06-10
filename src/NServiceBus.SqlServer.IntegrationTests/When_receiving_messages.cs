@@ -18,7 +18,7 @@
             var successfulReceives = 46;
             var queueSize = 1000;
 
-            var inputQueue = new FakeTableBasedQueue(QueueAddress.Parse("dbo.input"), queueSize, successfulReceives);
+            var inputQueue = new FakeTableBasedQueue(QueueAddress.Parse("input@dbo"), queueSize, successfulReceives);
 
             var pump = new MessagePump(
                 m => new ReceiveWithNoTransaction(sqlConnectionFactory),
