@@ -14,9 +14,9 @@
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
-        public async Task Should_remove_expired_messages_from_queue(TransportTransactionMode transactionMode)
+        public Task Should_remove_expired_messages_from_queue(TransportTransactionMode transactionMode)
         {
-            await Scenario.Define<Context>()
+            return Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b =>
                 {
                     b.CustomConfig(c =>

@@ -1,17 +1,18 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
+    using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_custom_schema_configured_with_default_override : When_custom_schema_configured
     {
         [Test]
-        public async void Should_receive_message()
+        public Task Should_receive_message()
         {
-            await Scenario.Define<Context>()
+            return Scenario.Define<Context>()
                 .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
                 .WithEndpoint<Receiver>()
                 .Done(c => c.MessageReceived)

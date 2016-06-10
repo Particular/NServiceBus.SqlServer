@@ -1,4 +1,4 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     class Sql
     {
@@ -14,7 +14,7 @@ namespace NServiceBus.Transports.SQLServer
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress,
 			deleted.Recoverable, CASE WHEN deleted.Expires IS NOT NULL THEN DATEDIFF(ms, GETUTCDATE(), deleted.Expires) END, deleted.Headers, deleted.Body;";
 
-        internal const string PeekText = "SELECT count(*) Id FROM [{0}].[{1}];";
+        internal const string PeekText = "SELECT count(*) Id FROM [{0}].[{1}] WITH (READPAST)";
 
         internal const string CreateQueueText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN

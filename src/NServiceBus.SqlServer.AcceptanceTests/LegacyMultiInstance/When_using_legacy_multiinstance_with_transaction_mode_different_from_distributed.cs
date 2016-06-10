@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_using_legacy_multiinstance_with_transaction_mode_different_from_distributed : When_using_legacy_multiinstance
     {

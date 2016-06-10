@@ -1,9 +1,10 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using Settings;
+    using Transports;
 
     class LegacySqlServerTransportInfrastructure : SqlServerTransportInfrastructure
     {

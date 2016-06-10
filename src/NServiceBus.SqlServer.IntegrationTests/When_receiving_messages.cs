@@ -8,7 +8,7 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_receiving_messages
     {
@@ -87,7 +87,7 @@
                 return Task.FromResult(readResult);
             }
 
-            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
             {
                 NumberOfPeeks ++;
 

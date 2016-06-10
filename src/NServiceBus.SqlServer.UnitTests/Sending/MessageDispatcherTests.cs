@@ -7,7 +7,7 @@
     using NUnit.Framework;
     using Routing;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     [TestFixture]
     public class MessageDispatcherTests

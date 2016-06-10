@@ -10,7 +10,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using NUnit.Framework;
     using Routing;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
+    using Unicast.Queuing;
 
     public class When_dispatching_messages
     {
@@ -57,18 +58,23 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                    CreateTransportOperation(id: "4", destination: invalidAddress, consistency: dispatchConsistency)
                    );
 
-                TestDelegate dispatch = async () =>
+                Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
                     await dispatcher.Dispatch(invalidOperations, contextProvider.Context);
                     contextProvider.Complete();
-                };
-
-                Assert.That(dispatch, Throws.Exception);
+                });
             }
 
             var messagesSent = await purger.Purge(queue);
 
             Assert.AreEqual(0, messagesSent);
+        }
+
+        [Test]
+        public void Proper_exception_is_thrown_if_queue_does_not_exist()
+        {
+            var operation = new TransportOperation(new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag("InvalidQueue"));
+            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new ContextBag()), Throws.TypeOf<QueueNotFoundException>());
         }
 
         static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");

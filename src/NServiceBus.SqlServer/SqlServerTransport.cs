@@ -5,7 +5,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using Settings;
     using Transports;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     /// <summary>
     /// SqlServer Transport

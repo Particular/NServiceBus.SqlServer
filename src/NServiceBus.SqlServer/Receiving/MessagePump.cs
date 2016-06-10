@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Concurrent;
@@ -6,6 +6,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using Transports;
 
     class MessagePump : IPushMessages
     {
