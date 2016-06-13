@@ -7,6 +7,7 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading.Tasks;
     using Logging;
     using Transports;
+    using Unicast.Queuing;
     using static System.String;
 
     class TableBasedQueue
@@ -74,12 +75,45 @@ namespace NServiceBus.Transport.SQLServer
         {
             var commandText = Format(Sql.SendText, address.SchemaName, address.TableName);
 
-            using (var command = new SqlCommand(commandText, connection, transaction))
+            try
             {
-                message.PrepareSendCommand(command);
+                using (var command = new SqlCommand(commandText, connection, transaction))
+                {
+                    message.PrepareSendCommand(command);
 
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
             }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 208)
+                {
+                    ThrowQueueNotFoundException(address, ex);
+                }
+
+                ThrowFailedToSendException(address, ex);
+            }
+            catch (Exception ex)
+            {
+                ThrowFailedToSendException(address, ex);
+            }
+        }
+
+        static void ThrowQueueNotFoundException(QueueAddress destination, SqlException ex)
+        {
+            var msg = destination == null
+                ? "Failed to send message. Target address is null."
+                : $"Failed to send message to {destination}";
+
+            throw new QueueNotFoundException(destination?.ToString(), msg, ex);
+        }
+        static void ThrowFailedToSendException(QueueAddress address, Exception ex)
+        {
+            if (address == null)
+            {
+                throw new Exception("Failed to send message.", ex);
+            }
+            throw new Exception($"Failed to send message to {address}", ex);
         }
 
         public async Task<int> Purge(SqlConnection connection)
