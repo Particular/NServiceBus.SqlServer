@@ -16,10 +16,10 @@ namespace NServiceBus.Transport.SQLServer
         {
             var sanitizer = new SqlCommandBuilder();
 
-            this.tableName = sanitizer.QuoteIdentifier(address.TableName);
-            this.schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
+            tableName = sanitizer.QuoteIdentifier(address.TableName);
+            schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
 
-            this.TransportAddress = address.ToString();
+            TransportAddress = address.ToString();
         }
 
         public string TransportAddress { get; }
@@ -28,9 +28,12 @@ namespace NServiceBus.Transport.SQLServer
         {
             var commandText = Format(Sql.PeekText, schemaName, tableName);
 
-            using (var command = new SqlCommand(commandText, connection) {CommandTimeout = timeoutInSeconds})
+            using (var command = new SqlCommand(commandText, connection)
             {
-                var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                CommandTimeout = timeoutInSeconds
+            })
+            {
+                var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
 
                 return numberOfMessages;
             }
@@ -91,32 +94,37 @@ namespace NServiceBus.Transport.SQLServer
             {
                 if (ex.Number == 208)
                 {
-                    ThrowQueueNotFoundException(address, ex);
+                    ThrowQueueNotFoundException(ex);
                 }
 
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(ex);
             }
             catch (Exception ex)
             {
-                ThrowFailedToSendException(address, ex);
+                ThrowFailedToSendException(ex);
             }
         }
 
-        static void ThrowQueueNotFoundException(QueueAddress destination, SqlException ex)
+        void ThrowQueueNotFoundException(SqlException ex)
         {
-            var msg = destination == null
-                ? "Failed to send message. Target address is null."
-                : $"Failed to send message to {destination}";
+            var queue = tableName == null
+                ? null
+                : ToString();
 
-            throw new QueueNotFoundException(destination?.ToString(), msg, ex);
+            var msg = tableName == null
+                ? "Failed to send message. Target address is null."
+                : $"Failed to send message to {queue}";
+
+            throw new QueueNotFoundException(queue, msg, ex);
         }
-        static void ThrowFailedToSendException(QueueAddress address, Exception ex)
+
+        void ThrowFailedToSendException(Exception ex)
         {
-            if (address == null)
+            if (tableName == null)
             {
                 throw new Exception("Failed to send message.", ex);
             }
-            throw new Exception($"Failed to send message to {address}", ex);
+            throw new Exception($"Failed to send message to {ToString()}", ex);
         }
 
         public async Task<int> Purge(SqlConnection connection)
