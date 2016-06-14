@@ -21,7 +21,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 {
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
     {
-        this.configuration = configuration;
+        queueBindings = configuration.GetSettings().Get<QueueBindings>();
         connectionString = settings.Get<string>("Transport.ConnectionString");
         configuration.UseTransport<SqlServerTransport>().ConnectionString(connectionString);
         return Task.FromResult(0);
@@ -29,20 +29,22 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public Task Cleanup()
     {
-        var bindings = configuration.GetSettings().Get<QueueBindings>();
         var queueNames = new List<string>();
 
         using (var conn = new SqlConnection(connectionString))
         {
             conn.Open();
 
-            var qn = bindings.ReceivingAddresses.ToList().ToList();
+            var qn = queueBindings.ReceivingAddresses.ToList().ToList();
             qn.ForEach(n =>
             {
                 var nameParts = n.Split('@');
                 if (nameParts.Length == 2)
                 {
-                    queueNames.Add($"[{nameParts[1]}].[{nameParts[0]}]");
+                    var sanitizedSchemaName = SanitizeIdentifier(nameParts[1]);
+                    var sanitizedTableName = SanitizeIdentifier(nameParts[0]);
+
+                    queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
                 }
                 else
                 {
@@ -62,6 +64,14 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         return Task.FromResult(0);
     }
 
-    EndpointConfiguration configuration;
+    string SanitizeIdentifier(string identifier)
+    {
+        // Identifier may initially quoted or unquoted.
+        return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
+    }
+
+    readonly SqlCommandBuilder sanitizer = new SqlCommandBuilder();
+
     string connectionString;
+    QueueBindings queueBindings;
 }
