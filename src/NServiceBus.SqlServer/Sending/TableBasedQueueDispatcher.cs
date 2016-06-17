@@ -50,33 +50,45 @@ namespace NServiceBus.Transport.SQLServer
         }
 
 
-        async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> operations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                if (defaultConsistencyOperations.Count == 1)
+                if (operations.Count == 1)
                 {
-                    await Send(defaultConsistencyOperations, connection, null).ConfigureAwait(false);
+                    await Send(operations, connection, null).ConfigureAwait(false);
                     return;
                 }
 
                 using (var transaction = connection.BeginTransaction())
                 {
-                    await Send(defaultConsistencyOperations, connection, transaction).ConfigureAwait(false);
+                    await Send(operations, connection, transaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
             }
         }
 
-        static Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> operations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
+            Transaction ambientTransaction;
 
             transportTransaction.TryGet(out sqlTransportConnection);
             transportTransaction.TryGet(out sqlTransportTransaction);
+            transportTransaction.TryGet(out ambientTransaction);
 
-            return Send(defaultConsistencyOperations, sqlTransportConnection, sqlTransportTransaction);
+            if (ambientTransaction != null)
+            {
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                    await Send(operations, connection, null).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await Send(operations, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+            }
         }
 
         static async Task Send(List<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
