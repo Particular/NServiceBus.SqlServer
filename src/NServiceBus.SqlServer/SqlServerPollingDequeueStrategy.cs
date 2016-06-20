@@ -63,9 +63,12 @@
                 Timeout = transactionSettings.TransactionTimeout
             };
 
-            tableName = TableNameUtils.GetTableName(address);
+            var sanitizer = new SqlCommandBuilder();
 
-            sql = string.Format(SqlReceive, SchemaName, tableName);
+            quotedSchemaName = sanitizer.QuoteIdentifier(SchemaName);
+            quotedTableName = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
+
+            sql = string.Format(SqlReceive, quotedSchemaName, quotedTableName);
 
             if (PurgeOnStartup)
             {
@@ -110,14 +113,14 @@
             {
                 connection.Open();
 
-                using (var command = new SqlCommand(string.Format(SqlPurge, SchemaName, tableName), connection)
+                using (var command = new SqlCommand(string.Format(SqlPurge, quotedSchemaName, quotedTableName), connection)
                 {
                     CommandType = CommandType.Text
                 })
                 {
                     var numberOfPurgedRows = command.ExecuteNonQuery();
 
-                    Logger.InfoFormat("{0} messages was purged from table {1}", numberOfPurgedRows, tableName);
+                    Logger.InfoFormat("{0} messages was purged from table {1}", numberOfPurgedRows, quotedTableName);
                 }
             }
         }
@@ -405,12 +408,12 @@
         }
 
         const string SqlReceive =
-            @"WITH message AS (SELECT TOP(1) * FROM [{0}].[{1}] WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC) 
+            @"WITH message AS (SELECT TOP(1) * FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK) ORDER BY [RowVersion] ASC)
 			DELETE FROM message 
 			OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, 
 			deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body;";
 
-        const string SqlPurge = @"DELETE FROM [{0}].[{1}]";
+        const string SqlPurge = @"DELETE FROM {0}.{1}";
 
         static readonly JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
         static readonly ILog Logger = LogManager.GetLogger(typeof(SqlServerPollingDequeueStrategy));
@@ -425,7 +428,8 @@
         Action<TransportMessage, Exception> endProcessMessage;
         TransactionSettings settings;
         string sql;
-        string tableName;
+        string quotedSchemaName;
+        string quotedTableName;
         CancellationTokenSource tokenSource;
         TransactionOptions transactionOptions;
         Func<TransportMessage, bool> tryProcessMessage;
