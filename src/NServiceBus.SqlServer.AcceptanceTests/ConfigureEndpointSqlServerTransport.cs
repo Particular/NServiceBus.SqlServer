@@ -41,10 +41,13 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
                 var nameParts = n.Split('@');
                 if (nameParts.Length == 2)
                 {
-                    var sanitizedSchemaName = SanitizeIdentifier(nameParts[1]);
-                    var sanitizedTableName = SanitizeIdentifier(nameParts[0]);
+                    using (var sanitizer = new SqlCommandBuilder())
+                    {
+                        var sanitizedSchemaName = SanitizeIdentifier(nameParts[1], sanitizer);
+                        var sanitizedTableName = SanitizeIdentifier(nameParts[0], sanitizer);
 
-                    queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
+                        queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
+                    }
                 }
                 else
                 {
@@ -64,13 +67,11 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         return Task.FromResult(0);
     }
 
-    string SanitizeIdentifier(string identifier)
+    static string SanitizeIdentifier(string identifier, SqlCommandBuilder sanitizer)
     {
         // Identifier may initially quoted or unquoted.
         return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
     }
-
-    readonly SqlCommandBuilder sanitizer = new SqlCommandBuilder();
 
     string connectionString;
     QueueBindings queueBindings;

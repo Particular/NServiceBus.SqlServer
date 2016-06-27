@@ -14,10 +14,11 @@ namespace NServiceBus.Transport.SQLServer
     {
         public TableBasedQueue(QueueAddress address)
         {
-            var sanitizer = new SqlCommandBuilder();
-
-            tableName = sanitizer.QuoteIdentifier(address.TableName);
-            schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                tableName = sanitizer.QuoteIdentifier(address.TableName);
+                schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
+            }
 
             TransportAddress = address.ToString();
         }

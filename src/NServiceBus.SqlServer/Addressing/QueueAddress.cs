@@ -46,7 +46,10 @@
                 return schemaName;
             }
 
-            return new SqlCommandBuilder().UnquoteIdentifier(schemaName);
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                return sanitizer.UnquoteIdentifier(schemaName);
+            }
         }
     }
 }
