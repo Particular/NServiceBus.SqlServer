@@ -17,10 +17,11 @@ namespace NServiceBus.Transports.SQLServer
 
         public TableBasedQueue(string tableName, string schema)
         {
-            var sanitizer = new SqlCommandBuilder();
-
-            this.tableName = sanitizer.QuoteIdentifier(tableName);
-            this.schema = sanitizer.QuoteIdentifier(schema);
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                this.tableName = sanitizer.QuoteIdentifier(tableName);
+                this.schema = sanitizer.QuoteIdentifier(schema);
+            }
         }
 
         public void Send(TransportMessage message, SendOptions sendOptions, SqlConnection connection, SqlTransaction transaction = null)
