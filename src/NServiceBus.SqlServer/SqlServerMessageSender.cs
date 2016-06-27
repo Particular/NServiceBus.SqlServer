@@ -116,12 +116,13 @@
 
         static string SendSqlCommandText(string schemaName, Address address)
         {
-            var sanitizer = new SqlCommandBuilder();
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                var quotedSchema = sanitizer.QuoteIdentifier(schemaName);
+                var quotedTable = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
 
-            var quotedSchema = sanitizer.QuoteIdentifier(schemaName);
-            var quotedTable = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
-
-            return string.Format(SqlSend, quotedSchema, quotedTable);
+                return string.Format(SqlSend, quotedSchema, quotedTable);
+            }
         }
 
         private static void ThrowFailedToSendException(Address address, Exception ex)

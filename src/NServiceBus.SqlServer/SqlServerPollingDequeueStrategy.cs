@@ -63,10 +63,11 @@
                 Timeout = transactionSettings.TransactionTimeout
             };
 
-            var sanitizer = new SqlCommandBuilder();
-
-            quotedSchemaName = sanitizer.QuoteIdentifier(SchemaName);
-            quotedTableName = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                quotedSchemaName = sanitizer.QuoteIdentifier(SchemaName);
+                quotedTableName = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
+            }
 
             sql = string.Format(SqlReceive, quotedSchemaName, quotedTableName);
 
