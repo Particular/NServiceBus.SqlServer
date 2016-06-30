@@ -131,11 +131,12 @@
                     var receiveTask = InnerReceive(loopCancellationTokenSource);
                     runningReceiveTasks.TryAdd(receiveTask, receiveTask);
 
-                    receiveTask.ContinueWith(t =>
+                    receiveTask.ContinueWith((t, state) =>
                     {
+                        var receiveTasks = (ConcurrentDictionary<Task, Task>) state;
                         Task toBeRemoved;
-                        runningReceiveTasks.TryRemove(t, out toBeRemoved);
-                    }, TaskContinuationOptions.ExecuteSynchronously)
+                        receiveTasks.TryRemove(t, out toBeRemoved);
+                    }, runningReceiveTasks, TaskContinuationOptions.ExecuteSynchronously)
                     .Ignore();
                 }
             }
