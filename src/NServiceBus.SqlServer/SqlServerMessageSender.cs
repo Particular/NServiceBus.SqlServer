@@ -15,7 +15,7 @@
     public class SqlServerMessageSender : ISendMessages
     {
         const string SqlSend =
-            @"INSERT INTO [{0}].[{1}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body]) 
+            @"INSERT INTO {0}.{1} ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
                                     VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
 
         static JsonMessageSerializer Serializer = new JsonMessageSerializer(null);
@@ -71,7 +71,7 @@
                     //if there is an active transaction for the connection, we can use the same native transaction
                     var transaction = UnitOfWork.GetTransaction(queueConnectionString);
 
-                    using (var command = new SqlCommand(string.Format(SqlSend, schemaName, TableNameUtils.GetTableName(address)), transaction.Connection, transaction)
+                    using (var command = new SqlCommand(SendSqlCommandText(schemaName, address), transaction.Connection, transaction)
                         {
                             CommandType = CommandType.Text
                         })
@@ -85,7 +85,7 @@
                     using (var connection = new SqlConnection(queueConnectionString))
                     {
                         connection.Open();
-                        using (var command = new SqlCommand(string.Format(SqlSend, schemaName, TableNameUtils.GetTableName(address)), connection)
+                        using (var command = new SqlCommand(SendSqlCommandText(schemaName, address), connection)
                             {
                                 CommandType = CommandType.Text
                             })
@@ -114,6 +114,16 @@
             }
         }
 
+        static string SendSqlCommandText(string schemaName, Address address)
+        {
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                var quotedSchema = sanitizer.QuoteIdentifier(schemaName);
+                var quotedTable = sanitizer.QuoteIdentifier(TableNameUtils.GetTableName(address));
+
+                return string.Format(SqlSend, quotedSchema, quotedTable);
+            }
+        }
 
         private static void ThrowFailedToSendException(Address address, Exception ex)
         {
