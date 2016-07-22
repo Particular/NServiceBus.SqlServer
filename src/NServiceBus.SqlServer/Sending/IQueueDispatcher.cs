@@ -6,8 +6,8 @@ namespace NServiceBus.Transport.SQLServer
 
     interface IQueueDispatcher
     {
-        Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context);
+        Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context);
 
-        Task DispatchAsIsolated(List<MessageWithAddress> operations);
+        Task DispatchAsIsolated(HashSet<MessageWithAddress> operations);
     }
 }
