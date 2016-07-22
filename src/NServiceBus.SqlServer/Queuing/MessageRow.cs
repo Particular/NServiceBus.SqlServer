@@ -64,9 +64,8 @@
             row.correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false);
             row.replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false);
             row.recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false);
-            row.timeToBeReceived = await GetNullableValueAsync<int>(dataReader, 4).ConfigureAwait(false);
-            row.headers = await GetHeaders(dataReader, 5).ConfigureAwait(false);
-            row.bodyStream = await GetBody(dataReader, 6).ConfigureAwait(false);
+            row.headers = await GetHeaders(dataReader, 4).ConfigureAwait(false);
+            row.bodyStream = await GetBody(dataReader, 5).ConfigureAwait(false);
 
             return row;
         }
@@ -82,15 +81,6 @@
                 if (!IsNullOrEmpty(replyToAddress))
                 {
                     parsedHeaders[Headers.ReplyToAddress] = replyToAddress;
-                }
-
-                var expired = timeToBeReceived.HasValue && timeToBeReceived.Value < 0;
-
-                if (expired)
-                {
-                    Logger.InfoFormat($"Message with ID={id} has expired. Removing it from queue.");
-
-                    return MessageReadResult.NoMessage;
                 }
 
                 LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
@@ -142,16 +132,6 @@
         }
 
         static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class
-        {
-            if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
-            {
-                return default(T);
-            }
-
-            return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
-        }
-
-        static async Task<T?> GetNullableValueAsync<T>(SqlDataReader dataReader, int index) where T : struct
         {
             if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
