@@ -107,15 +107,12 @@
                 }
             }
 
-            using (var bodyStream = message.BodyStream)
+            var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+            if (messageProcessed)
             {
-                var messageProcessed = await TryProcessingMessage(message, bodyStream, transportTransaction).ConfigureAwait(false);
-                if (messageProcessed)
-                {
-                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
-                }
-                return messageProcessed;
+                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
+            return messageProcessed;
         }
 
         IsolationLevel isolationLevel;

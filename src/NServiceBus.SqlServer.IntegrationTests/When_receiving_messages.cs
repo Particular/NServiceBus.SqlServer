@@ -22,7 +22,7 @@
 
             var pump = new MessagePump(
                 m => new ReceiveWithNoTransaction(sqlConnectionFactory),
-                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa), 
+                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory),
@@ -82,7 +82,7 @@
                 NumberOfReceives ++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new MemoryStream()))
+                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0]))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
