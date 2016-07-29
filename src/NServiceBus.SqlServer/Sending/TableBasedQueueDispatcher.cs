@@ -16,7 +16,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task DispatchAsIsolated(List<MessageWithAddress> operations)
+        public async Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
         {
             if (operations.Count == 0)
             {
@@ -31,7 +31,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context)
         {
             if (operations.Count == 0)
             {
@@ -50,7 +50,7 @@ namespace NServiceBus.Transport.SQLServer
         }
 
 
-        async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> operations)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(HashSet<MessageWithAddress> operations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -68,7 +68,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> operations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, HashSet<MessageWithAddress> operations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
@@ -91,7 +91,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task Send(List<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
         {
             foreach (var operation in operations)
             {

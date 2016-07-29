@@ -70,13 +70,13 @@
         {
             public List<string> DispatchedMessageIds = new List<string>();
 
-            public Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+            public Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
 
-            public Task DispatchAsIsolated(List<MessageWithAddress> operations)
+            public Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);

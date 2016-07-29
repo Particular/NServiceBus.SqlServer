@@ -12,7 +12,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+        public virtual async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context)
         {
             //If dispatch is not isolated then either TS has been created by the receive operation or needs to be created here.
             using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
@@ -29,7 +29,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public virtual async Task DispatchAsIsolated(List<MessageWithAddress> operations)
+        public virtual async Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
