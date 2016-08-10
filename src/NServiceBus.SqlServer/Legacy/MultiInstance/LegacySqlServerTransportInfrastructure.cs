@@ -4,7 +4,7 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using Settings;
-    using Transports;
+    using Transport;
 
     class LegacySqlServerTransportInfrastructure : SqlServerTransportInfrastructure
     {
@@ -51,7 +51,7 @@
                         throw new Exception("Legacy multiinstance mode is supported only with TransportTransactionMode=TransactionScope");
                     }
 
-                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory);
+                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
                 };
 
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);

@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.SQLServer
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
-    using Transports;
+    using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
@@ -92,17 +92,17 @@ namespace NServiceBus.Transport.SQLServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ReceiveWithTransactionScope(options, connectionFactory);
+                return new ReceiveWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithSendsAtomicWithReceiveTransaction(options, connectionFactory);
+                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ReceiveWithReceiveOnlyTransaction(options, connectionFactory);
+                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
             }
 
             return new ReceiveWithNoTransaction(connectionFactory);
@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.SQLServer
         {
             var nonEmptyParts = new[]
             {
-                logicalAddress.EndpointInstance.Endpoint.ToString(),
+                logicalAddress.EndpointInstance.Endpoint,
                 logicalAddress.Qualifier,
                 logicalAddress.EndpointInstance.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));

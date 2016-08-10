@@ -4,8 +4,7 @@ namespace NServiceBus.Transport.SQLServer
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Extensibility;
-    using Transports;
+    using Transport;
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
@@ -31,16 +30,14 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context)
+        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
         {
             if (operations.Count == 0)
             {
                 return;
             }
-            TransportTransaction transportTransaction;
-            var transportTransactionExists = context.TryGet(out transportTransaction);
 
-            if (transportTransactionExists == false || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            if (InReceiveWithNoTransactionMode(transportTransaction) || InReceiveOnlyTransportTransactionMode(transportTransaction))
             {
                 await DispatchOperationsWithNewConnectionAndTransaction(operations).ConfigureAwait(false);
                 return;
@@ -100,10 +97,21 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
+        static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
+        {
+            SqlTransaction nativeTransaction;
+            transportTransaction.TryGet(out nativeTransaction);
+
+            Transaction ambientTransaction;
+            transportTransaction.TryGet(out ambientTransaction);
+
+            return nativeTransaction == null && ambientTransaction == null;
+        }
+
         static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
             bool inReceiveMode;
-            return transportTransaction.TryGet(ReceiveWithReceiveOnlyTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
+            return transportTransaction.TryGet(ReceiveWithNativeTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
     }
 }

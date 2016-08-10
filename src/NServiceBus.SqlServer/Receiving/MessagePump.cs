@@ -6,7 +6,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Transports;
+    using Transport;
 
     class MessagePump : IPushMessages
     {
@@ -21,10 +21,8 @@
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
 
-        public async Task Init(Func<PushContext, Task> pipe, CriticalError criticalError, PushSettings settings)
+        public async Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
-            pipeline = pipe;
-
             receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionMode);
 
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
@@ -32,6 +30,8 @@
 
             inputQueue = queueFactory(addressParser.Parse(settings.InputQueue));
             errorQueue = queueFactory(addressParser.Parse(settings.ErrorQueue));
+
+            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalError);
 
             if (settings.PurgeOnStartup)
             {
@@ -150,7 +150,7 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(inputQueue, errorQueue, loopCancellationTokenSource, pipeline)
+                await receiveStrategy.ReceiveMessage(loopCancellationTokenSource)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();
@@ -186,7 +186,6 @@
 
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
-        Func<PushContext, Task> pipeline;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
         Func<QueueAddress, TableBasedQueue> queueFactory;

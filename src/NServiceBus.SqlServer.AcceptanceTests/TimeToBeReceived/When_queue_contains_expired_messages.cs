@@ -1,11 +1,13 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.TimeToBeReceived
 {
+    using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
 
     public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
@@ -59,7 +61,13 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(c => c.LimitMessageProcessingConcurrencyTo(1));
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    // Make sure the purger is fired often enough to clean expired messages from
+                    // the queue before the test times out.
+                    c.GetSettings().Set("SqlServer.PurgeTaskDelayTimeSpan", TimeSpan.FromSeconds(2));
+                    c.LimitMessageProcessingConcurrencyTo(1);
+                });
             }
 
             class Handler : IHandleMessages<Message>

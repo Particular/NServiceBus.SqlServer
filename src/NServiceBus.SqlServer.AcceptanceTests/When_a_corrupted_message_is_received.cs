@@ -8,6 +8,7 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
+    using Logging;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -57,7 +58,7 @@
                             }
                         });
                     })
-                    .Done(c => c.Logs.Any(l => l.Level == "error"))
+                    .Done(c => c.Logs.Any(l => l.Level == LogLevel.Error))
                     .Run();
 
                 Assert.True(MessageExistsInErrorQueue(), "The message should have been moved to the error queue");
@@ -121,7 +122,7 @@
                             }
                         });
                     })
-                    .Done(c => c.Logs.Any(l => l.Level == "error"))
+                    .Done(c => c.Logs.Any(l => l.Level == LogLevel.Error))
                     .Run();
 
                 Assert.True(MessageExistsInErrorQueue(), "The message should have been moved to the error queue");

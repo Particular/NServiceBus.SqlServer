@@ -4,7 +4,7 @@ namespace NServiceBus
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using Settings;
-    using Transports;
+    using Transport;
     using Transport.SQLServer;
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.Initialize" />
         /// </summary>
-        protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
+        public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var addressParser = CreateAddressParser(settings);
 

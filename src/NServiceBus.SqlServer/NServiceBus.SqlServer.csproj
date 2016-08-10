@@ -56,7 +56,7 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0-beta0003\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.6.0.0-beta0006\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Obsolete, Version=4.1.0.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
@@ -97,7 +97,6 @@
     <Compile Include="Receiving\IsolationLevelMapper.cs" />
     <Compile Include="Receiving\QueuePeeker.cs" />
     <Compile Include="Receiving\QueuePurger.cs" />
-    <Compile Include="Receiving\ReceiveWithSendsAtomicWithReceiveTransaction.cs" />
     <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
     <Compile Include="Queuing\Sql.cs" />
@@ -114,7 +113,7 @@
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
     <Compile Include="Queuing\MessageReadResult.cs" />
-    <Compile Include="Receiving\ReceiveWithReceiveOnlyTransaction.cs" />
+    <Compile Include="Receiving\ReceiveWithNativeTransaction.cs" />
     <Compile Include="Receiving\ReceiveWithNoTransaction.cs" />
     <Compile Include="Receiving\ReceiveStrategy.cs" />
     <Compile Include="Receiving\QueueCreator.cs" />
@@ -123,6 +122,7 @@
     <Compile Include="Queuing\TableBasedQueue.cs" />
     <Compile Include="Sending\UsingV2ConfigurationChecker.cs" />
     <Compile Include="TaskEx.cs" />
+    <Compile Include="Receiving\FailureInfoStorage.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />

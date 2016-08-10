@@ -3,7 +3,7 @@ namespace NServiceBus.Transport.SQLServer
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
-    using Transports;
+    using Transport;
 
     class QueueCreator : ICreateQueues
     {
