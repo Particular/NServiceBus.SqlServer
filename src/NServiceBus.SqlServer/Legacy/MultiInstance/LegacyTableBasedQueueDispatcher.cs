@@ -3,7 +3,6 @@ namespace NServiceBus.Transport.SQLServer
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Extensibility;
 
     class LegacyTableBasedQueueDispatcher : IQueueDispatcher
     {
@@ -12,7 +11,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, ContextBag context)
+        public virtual async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
         {
             //If dispatch is not isolated then either TS has been created by the receive operation or needs to be created here.
             using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))

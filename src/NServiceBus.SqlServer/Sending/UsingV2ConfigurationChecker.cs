@@ -3,7 +3,7 @@
     using System.Configuration;
     using System.Linq;
     using Logging;
-    using Transports;
+    using Transport;
 
     class UsingV2ConfigurationChecker
     {

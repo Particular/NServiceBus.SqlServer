@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.UnitTests", "NServiceBus.SqlServer.UnitTests\NServiceBus.SqlServer.UnitTests.csproj", "{9FD87362-6F80-495C-B5F0-CA84CA40DE02}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.IntegrationTests", "NServiceBus.SqlServer.IntegrationTests\NServiceBus.SqlServer.IntegrationTests.csproj", "{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.TransportTests", "NServiceBus.SqlServer.TransportTests\NServiceBus.SqlServer.TransportTests.csproj", "{165C21AA-A7ED-48F2-A122-C2418B2DEB59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using NServiceBus.Configuration.AdvanceExtensibility;
-using NServiceBus.Transports;
+using NServiceBus.Transport;
 
 public class ConfigureScenariosForSqlServerTransport : IConfigureSupportedScenariosForTestExecution
 {
@@ -35,7 +35,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         {
             conn.Open();
 
-            var qn = queueBindings.ReceivingAddresses.ToList().ToList();
+            var qn = queueBindings.ReceivingAddresses.ToList();
             qn.ForEach(n =>
             {
                 var nameParts = n.Split('@');

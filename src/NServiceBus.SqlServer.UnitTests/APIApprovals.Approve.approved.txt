@@ -4,12 +4,12 @@
 [assembly: System.Runtime.Versioning.TargetFrameworkAttribute(".NETFramework,Version=v4.5.2", FrameworkDisplayName=".NET Framework 4.5.2")]
 namespace NServiceBus
 {
-    public class SqlServerTransport : NServiceBus.Transports.TransportDefinition
+    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
     {
         public SqlServerTransport() { }
         public override string ExampleConnectionStringForErrorMessage { get; }
         public override bool RequiresConnectionString { get; }
-        protected override NServiceBus.Transports.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
+        public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
     }
 }
 namespace NServiceBus.Transport.SQLServer.ConnectionStrings

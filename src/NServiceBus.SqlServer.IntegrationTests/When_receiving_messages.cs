@@ -7,7 +7,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Transports;
+    using Transport;
     using Transport.SQLServer;
 
     public class When_receiving_messages
@@ -31,6 +31,7 @@
 
             await pump.Init(
                 _ => Task.FromResult(0),
+                _ => Task.FromResult(ErrorHandleResult.Handled),
                 new CriticalError(_ => Task.FromResult(0)),
                 new PushSettings("input", "error", false, TransportTransactionMode.None));
 

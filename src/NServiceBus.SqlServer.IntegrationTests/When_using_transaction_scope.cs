@@ -17,7 +17,7 @@
             configuration.PurgeOnStartup(true);
             configuration.LimitMessageProcessingConcurrencyTo(1);
             configuration.EnableInstallers();
-            configuration.ScaleOut().InstanceDiscriminator("1");
+            configuration.MakeInstanceUniquelyAddressable("1");
 
             configuration.UseTransport<SqlServerTransport>()
                 .Transactions(TransportTransactionMode.TransactionScope)
@@ -122,7 +122,6 @@
             {
                 public Registration() : base("BehaviorThatThrowsAfterFirstMessage", typeof(BehaviorThatThrowsAfterFirstMessage), "BehaviorThatThrowsAfterFirstMessage")
                 {
-                    InsertAfter("FirstLevelRetries");
                 }
             }
         }

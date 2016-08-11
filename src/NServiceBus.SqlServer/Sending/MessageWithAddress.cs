@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using Transports;
+    using Transport;
 
     class MessageWithAddress
     {

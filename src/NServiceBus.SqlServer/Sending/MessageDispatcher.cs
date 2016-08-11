@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Extensibility;
-    using Transports;
+    using Transport;
 
     class MessageDispatcher : IDispatchMessages
     {
@@ -15,10 +15,10 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, ContextBag context)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, ContextBag context)
         {
             await Dispatch(operations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-            await Dispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, context), DispatchConsistency.Default).ConfigureAwait(false);
+            await Dispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
         }
 
         Task Dispatch(TransportOperations operations, Func<HashSet<MessageWithAddress>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)

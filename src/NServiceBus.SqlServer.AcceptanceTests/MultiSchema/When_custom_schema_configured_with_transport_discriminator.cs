@@ -2,9 +2,12 @@
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
+    using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
+    using Routing;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schema_configured_with_transport_discriminator : When_custom_schema_configured
@@ -25,11 +28,11 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup<DefaultServer>((c, r) =>
                 {
                     var ReceiverName = $"{EndpointNamingConvention(typeof(Receiver))}";
 
-                    c.UnicastRouting().RouteToEndpoint(typeof(Message), $"{ReceiverName}@{ReceiverSchema}");
+                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteToAddress(typeof(Message), $"{ReceiverName}@{ReceiverSchema}");
                 });
             }
         }
