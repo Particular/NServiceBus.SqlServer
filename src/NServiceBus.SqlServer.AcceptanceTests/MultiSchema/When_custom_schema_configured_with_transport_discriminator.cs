@@ -32,7 +32,7 @@
                 {
                     var ReceiverName = $"{EndpointNamingConvention(typeof(Receiver))}";
 
-                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteToAddress(typeof(Message), $"{ReceiverName}@{ReceiverSchema}");
+                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteTo(typeof(Message), UnicastRoute.CreateFromPhysicalAddress($"{ReceiverName}@{ReceiverSchema}"));
                 });
             }
         }

@@ -30,7 +30,7 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteToAddress(typeof(Message), $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}");
+                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteTo(typeof(Message), UnicastRoute.CreateFromPhysicalAddress($"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}"));
                 });
             }
         }
