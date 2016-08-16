@@ -153,9 +153,14 @@ namespace NServiceBus.Transport.SQLServer
         /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
+            string queueName;
+            if (!logicalAddress.EndpointInstance.Properties.TryGetValue("queue", out queueName))
+            {
+                queueName = logicalAddress.EndpointInstance.Endpoint;
+            }
             var nonEmptyParts = new[]
             {
-                logicalAddress.EndpointInstance.Endpoint,
+                queueName,
                 logicalAddress.Qualifier,
                 logicalAddress.EndpointInstance.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));
