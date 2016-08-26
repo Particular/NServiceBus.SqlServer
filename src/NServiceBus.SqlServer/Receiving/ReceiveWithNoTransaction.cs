@@ -34,18 +34,13 @@ namespace NServiceBus.Transport.SQLServer
 
                 var message = readResult.Message;
 
-                using (var bodyStream = message.BodyStream)
+                try
                 {
-                    try
-                    {
-                        await TryProcessingMessage(message, bodyStream, transportTransaction).ConfigureAwait(false);
-                    }
-                    catch (Exception exception)
-                    {
-                        message.BodyStream.Position = 0;
-
-                        await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
-                    }
+                    await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
                 }
             }
         }
