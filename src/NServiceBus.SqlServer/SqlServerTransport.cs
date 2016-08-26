@@ -3,6 +3,7 @@ namespace NServiceBus
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Routing;
     using Settings;
     using Transport;
     using Transport.SQLServer;
@@ -10,7 +11,7 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServerTransport : TransportDefinition
+    public class SqlServerTransport : TransportDefinition, IMessageDrivenSubscriptionTransport
     {
         /// <summary>
         /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
