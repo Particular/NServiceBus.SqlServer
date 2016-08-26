@@ -4,7 +4,7 @@
 [assembly: System.Runtime.Versioning.TargetFrameworkAttribute(".NETFramework,Version=v4.5.2", FrameworkDisplayName=".NET Framework 4.5.2")]
 namespace NServiceBus
 {
-    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
+    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition, NServiceBus.Routing.IMessageDrivenSubscriptionTransport
     {
         public SqlServerTransport() { }
         public override string ExampleConnectionStringForErrorMessage { get; }
