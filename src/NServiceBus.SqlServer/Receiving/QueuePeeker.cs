@@ -27,6 +27,8 @@
 
                     if (messageCount == 0)
                     {
+                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+
                         await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
                     }
                 }
