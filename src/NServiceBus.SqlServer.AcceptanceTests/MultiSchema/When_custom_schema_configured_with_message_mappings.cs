@@ -1,13 +1,14 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
     using Routing;
+    using Transport.SQLServer;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schema_configured_with_message_mappings : When_custom_schema_configured
@@ -30,7 +31,19 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    c.UseTransport(r.GetTransportType()).GetSettings().GetOrCreate<UnicastRoutingTable>().RouteTo(typeof(Message), UnicastRoute.CreateFromPhysicalAddress($"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}"));
+                    var receiverEndpointName = EndpointNamingConvention(typeof(Receiver));
+
+                    var transportSettings = c.UseTransport<SqlServerTransport>();
+
+                    transportSettings
+                        .GetSettings()
+                        .GetOrCreate<UnicastRoutingTable>()
+                        .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
+                        {
+                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromEndpointName(receiverEndpointName))
+                        });
+
+                    transportSettings.UseSpecificSchema(qn => qn.StartsWith(receiverEndpointName) ? ReceiverSchema : null);
                 });
             }
         }
