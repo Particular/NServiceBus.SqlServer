@@ -64,5 +64,6 @@ namespace NServiceBus.Transports.SQLServer
         [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSpecificConnectionInformation(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, NServiceBus.Transports.SQLServer.ConnectionStrings.ConnectionInfo> connectionInformationProvider) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSpecificSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, string> schemaForQueueName) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
     }
 }
