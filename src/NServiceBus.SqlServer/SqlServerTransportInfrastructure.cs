@@ -155,16 +155,16 @@ namespace NServiceBus.Transport.SQLServer
         {
             var nonEmptyParts = new[]
             {
-                logicalAddress.EndpointInstance.Endpoint,
+                logicalAddress.QueueName,
                 logicalAddress.Qualifier,
-                logicalAddress.EndpointInstance.Discriminator
+                logicalAddress.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));
 
             var tableName = string.Join(".", nonEmptyParts);
 
             string schemaName;
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName);
+            logicalAddress.TryGetProperty(SchemaPropertyKey, out schemaName);
             var queueAddress = new QueueAddress(tableName, schemaName);
 
             return queueAddress.ToString();
