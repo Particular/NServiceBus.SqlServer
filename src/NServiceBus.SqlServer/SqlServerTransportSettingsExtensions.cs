@@ -79,6 +79,18 @@
         }
 
         /// <summary>
+        /// Allows changing the queue peek delay.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="delay">The delay value</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
+        {
+            transportExtensions.GetSettings().Set<QueuePeekerOptions>(new QueuePeekerOptions(delay));
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Enables legacy multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
