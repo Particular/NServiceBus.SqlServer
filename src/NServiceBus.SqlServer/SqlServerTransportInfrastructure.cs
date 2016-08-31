@@ -58,13 +58,19 @@ namespace NServiceBus.Transports.SQLServer
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
 
+            QueuePeekerOptions queuePeekerOptions;
+            if (!settings.TryGet(out queuePeekerOptions))
+            {
+                queuePeekerOptions = new QueuePeekerOptions();
+            }
+
             var connectionFactory = CreateConnectionFactory();
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
                 guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
-            var queuePeeker = new QueuePeeker(connectionFactory);
+            var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
