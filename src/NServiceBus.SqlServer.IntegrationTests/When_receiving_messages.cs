@@ -24,7 +24,7 @@
                 qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
-                new QueuePeeker(sqlConnectionFactory),
+                new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
                 new QueueAddressParser("dbo", null, null),
                 TimeSpan.MaxValue);
 
