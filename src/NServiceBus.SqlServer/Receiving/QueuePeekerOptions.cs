@@ -29,7 +29,7 @@
 
             if (delay > TimeSpan.FromSeconds(10))
             {
-                var message = $"Delay requested of {delay} is not recommended. The recommended value should be between 100 milliseconds to 10 seconds.";
+                var message = $"Delay requested of {delay} is not recommended. The recommended delay value is between 100 milliseconds to 10 seconds.";
                 Logger.Warn(message);
             }
         }

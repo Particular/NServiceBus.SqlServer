@@ -45,8 +45,8 @@
             return messageCount;
         }
 
-        readonly SqlConnectionFactory connectionFactory;
-        readonly QueuePeekerOptions settings;
+        SqlConnectionFactory connectionFactory;
+        QueuePeekerOptions settings;
 
         static ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }
