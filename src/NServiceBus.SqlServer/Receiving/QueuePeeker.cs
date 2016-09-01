@@ -7,9 +7,10 @@
 
     class QueuePeeker : IPeekMessagesInQueue
     {
-        public QueuePeeker(SqlConnectionFactory connectionFactory)
+        public QueuePeeker(SqlConnectionFactory connectionFactory, QueuePeekerOptions settings)
         {
             this.connectionFactory = connectionFactory;
+            this.settings = settings;
         }
 
         public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken)
@@ -26,9 +27,9 @@
 
                     if (messageCount == 0)
                     {
-                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {peekDelay}.");
+                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
 
-                        await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -45,8 +46,8 @@
         }
 
         SqlConnectionFactory connectionFactory;
+        QueuePeekerOptions settings;
 
-        static TimeSpan peekDelay = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }
 }

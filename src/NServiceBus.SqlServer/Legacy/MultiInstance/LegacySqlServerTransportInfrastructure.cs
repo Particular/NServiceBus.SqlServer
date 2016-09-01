@@ -24,10 +24,16 @@
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
+            QueuePeekerOptions peekerOptions;
+            if (!settings.TryGet(out peekerOptions))
+            {
+                peekerOptions = new QueuePeekerOptions();
+            }
+
             var connectionFactory = CreateLegacyConnectionFactory();
 
             var queuePurger = new LegacyQueuePurger(connectionFactory);
-            var queuePeeker = new LegacyQueuePeeker(connectionFactory);
+            var queuePeeker = new LegacyQueuePeeker(connectionFactory, peekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
