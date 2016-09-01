@@ -323,9 +323,8 @@
     <Compile Include="ConfigureEndpointSqlServerTransport.cs" />
     <Compile Include="Configuration\When_using_v2_configuration_app_config_for_schema_override.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_default_override.cs" />
-    <Compile Include="MultiSchema\When_custom_schema_configured_with_message_mappings.cs" />
+    <Compile Include="MultiSchema\When_custom_schema_configured_inside_physical_address.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured.cs" />
-    <Compile Include="MultiSchema\When_custom_schema_configured_with_transport_discriminator.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_with_queue_specific_override.cs" />
     <Compile Include="TimeToBeReceived\When_queue_contains_expired_messages.cs" />
     <Compile Include="TransactionScope\When_customizing_scope_isolation_level.cs" />

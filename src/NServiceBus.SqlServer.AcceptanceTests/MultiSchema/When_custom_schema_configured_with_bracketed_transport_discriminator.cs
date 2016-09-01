@@ -8,7 +8,6 @@
     using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
     using Routing;
-    using Transport.SQLServer;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schema_configured_with_bracketed_transport_discriminator : When_custom_schema_configured
@@ -29,21 +28,17 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>((c,r) =>
+                EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    var receiverEndpointName = $"{EndpointNamingConvention(typeof(Receiver))}";
+                    var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@[{ReceiverSchema}]";
 
-                    var transportSettings = c.UseTransport<SqlServerTransport>();
-
-                    transportSettings
-                       .GetSettings()
-                       .GetOrCreate<UnicastRoutingTable>()
-                       .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
-                       {
-                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromEndpointName(receiverEndpointName))
-                       });
-
-                    transportSettings.UseSpecificSchema(qn => qn.StartsWith(receiverEndpointName) ? ReceiverSchema : null);
+                    c.UseTransport<SqlServerTransport>()
+                        .GetSettings()
+                        .GetOrCreate<UnicastRoutingTable>()
+                        .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
+                        {
+                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
+                        });
                 });
             }
         }

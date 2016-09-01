@@ -25,7 +25,10 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c => { c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema); }).AddMapping<Message>(typeof(Receiver));
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema);
+                }).AddMapping<Message>(typeof(Receiver));
             }
         }
     }

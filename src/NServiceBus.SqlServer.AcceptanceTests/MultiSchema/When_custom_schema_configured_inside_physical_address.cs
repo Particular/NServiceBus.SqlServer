@@ -8,10 +8,11 @@
     using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
     using Routing;
-    using Transport.SQLServer;
     using static AcceptanceTesting.Customization.Conventions;
 
-    public class When_custom_schema_configured_with_message_mappings : When_custom_schema_configured
+    //HINT: Message mappings specifed in app.config added to routing table using UnicastRoute.CreateFromPhysicalAddress.
+    //      As a result this test covers also an app.config message mappings scenario
+    public class When_custom_schema_configured_inside_physical_address : When_custom_schema_configured
     {
         [Test]
         public Task Should_receive_message()
@@ -31,7 +32,7 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    var receiverEndpointName = EndpointNamingConvention(typeof(Receiver));
+                    var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
 
                     var transportSettings = c.UseTransport<SqlServerTransport>();
 
@@ -40,10 +41,8 @@
                         .GetOrCreate<UnicastRoutingTable>()
                         .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
                         {
-                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromEndpointName(receiverEndpointName))
+                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
                         });
-
-                    transportSettings.UseSpecificSchema(qn => qn.StartsWith(receiverEndpointName) ? ReceiverSchema : null);
                 });
             }
         }
