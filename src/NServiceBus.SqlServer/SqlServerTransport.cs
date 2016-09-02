@@ -26,12 +26,11 @@ namespace NServiceBus
         QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
-            Func<string, string> schemaOverrider;
-
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
-            settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            return new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
+            var queueSchemaSettings = settings.GetOrDefault<TableSchemasSettings>();
+
+            return new QueueAddressParser("dbo", defaultSchemaOverride, queueSchemaSettings);
         }
 
         bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)

@@ -3,6 +3,7 @@
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Routing;
     using Settings;
     using Transport;
 
@@ -13,6 +14,8 @@
         {
             this.addressParser = addressParser;
             this.settings = settings;
+
+            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
         }
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()
@@ -79,6 +82,9 @@
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateLegacyConnectionFactory();
+
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
                 () =>
@@ -90,5 +96,6 @@
 
         QueueAddressParser addressParser;
         SettingsHolder settings;
+        EndpointSchemasSettings endpointSchemasSettings;
     }
 }

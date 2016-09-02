@@ -19,6 +19,8 @@ namespace NServiceBus.Transport.SQLServer
             this.settings = settings;
             this.connectionString = connectionString;
 
+            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
         }
@@ -129,6 +131,8 @@ namespace NServiceBus.Transport.SQLServer
         {
             var connectionFactory = CreateConnectionFactory();
 
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
                 () =>
@@ -151,7 +155,15 @@ namespace NServiceBus.Transport.SQLServer
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
-            return instance.SetProperty(SchemaPropertyKey, addressParser.DefaultSchema);
+            var schemaSettings = settings.Get<EndpointSchemasSettings>();
+
+            string schema;
+            if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
+            {
+                schema = addressParser.DefaultSchema;
+            }
+
+            return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
         }
 
         /// <summary>
@@ -170,7 +182,7 @@ namespace NServiceBus.Transport.SQLServer
 
             string schemaName;
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
             var queueAddress = new QueueAddress(tableName, schemaName);
 
             return queueAddress.ToString();
@@ -187,6 +199,6 @@ namespace NServiceBus.Transport.SQLServer
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;
-        const string SchemaPropertyKey = "Schema";
+        EndpointSchemasSettings endpointSchemasSettings;
     }
 }

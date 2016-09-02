@@ -1,16 +1,14 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System;
-
     class QueueAddressParser
     {
-        public QueueAddressParser(string defaultSchema, string defaultSchemaOverride, Func<string, string> schemaOverrider)
+        public QueueAddressParser(string defaultSchema, string defaultSchemaOverride, TableSchemasSettings tableSchemaSettings)
         {
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             this.defaultSchema = defaultSchema;
             this.defaultSchemaOverride = defaultSchemaOverride;
-            this.schemaOverrider = schemaOverrider;
+            this.tableSchemaSettings = tableSchemaSettings ?? new TableSchemasSettings();
         }
 
         public string DefaultSchema => string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -19,14 +17,10 @@
         {
             var sqlAddress = QueueAddress.Parse(address);
 
-            if (schemaOverrider != null)
+            string schema;
+            if (tableSchemaSettings.TryGet(sqlAddress.TableName, out schema))
             {
-                var schemaOverride = schemaOverrider(sqlAddress.TableName);
-
-                if (string.IsNullOrWhiteSpace(schemaOverride) == false)
-                {
-                    return new QueueAddress(sqlAddress.TableName, schemaOverride);
-                }
+                return new QueueAddress(sqlAddress.TableName, schema);
             }
 
             if (string.IsNullOrWhiteSpace(sqlAddress.SchemaName) == false)
@@ -44,6 +38,6 @@
 
         string defaultSchema;
         string defaultSchemaOverride;
-        Func<string, string> schemaOverrider;
+        TableSchemasSettings tableSchemaSettings;
     }
 }

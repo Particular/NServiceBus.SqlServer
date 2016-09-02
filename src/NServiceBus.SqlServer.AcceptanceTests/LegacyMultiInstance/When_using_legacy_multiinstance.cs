@@ -20,7 +20,8 @@
                 {
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
-                        .UseSpecificSchema(queueName => queueName.Contains("Receiver") ? "receiver" : "sender")
+                        .UseSchemaForEndpoint("Receiver", "receiver")
+                        .UseSchemaForEndpoint("Sender", "sender")
                         .EnableLegacyMultiInstanceMode(async address =>
                         {
                             var connectionString = address.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
@@ -55,7 +56,8 @@
                 {
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
-                        .UseSpecificSchema(queueName => queueName.Contains("Sender") ? "sender" : "receiver")
+                        .UseSchemaForEndpoint("Receiver", "receiver")
+                        .UseSchemaForEndpoint("Sender", "sender")
                         .EnableLegacyMultiInstanceMode(async address =>
                         {
                             var connectionString = address.Contains("Sender") ? SenderConnectionString : ReceiverConnectionString;
