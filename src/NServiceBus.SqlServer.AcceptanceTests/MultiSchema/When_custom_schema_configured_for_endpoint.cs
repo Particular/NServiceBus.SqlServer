@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using Transport.SQLServer;
 
-    public class When_custom_schema_configured : NServiceBusAcceptanceTest
+    public class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
     {
         public const string ReceiverSchema = "receiver";
 
@@ -19,7 +19,12 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c => { c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema); });
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    var endpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Receiver));
+
+                    c.UseTransport<SqlServerTransport>().UseSchemaForEndpoint(endpointName,ReceiverSchema);
+                });
             }
 
             class Handler : IHandleMessages<Message>

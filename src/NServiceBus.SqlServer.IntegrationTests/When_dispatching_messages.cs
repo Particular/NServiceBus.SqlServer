@@ -93,7 +93,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         async Task PrepareAsync()
         {
-            var addressParser = new QueueAddressParser("dbo", null, s => null);
+            var addressParser = new QueueAddressParser("dbo", null, null);
 
             await CreateOutputQueueIfNecessary(addressParser);
 

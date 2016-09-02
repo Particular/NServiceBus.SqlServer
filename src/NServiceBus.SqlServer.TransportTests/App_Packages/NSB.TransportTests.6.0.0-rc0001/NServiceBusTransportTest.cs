@@ -72,6 +72,8 @@
             queueBindings.BindSending(ErrorQueueName);
             transportSettings.Set<QueueBindings>(queueBindings);
 
+            transportSettings.Set<EndpointInstances>(new EndpointInstances());
+
             Configurer = CreateConfigurer();
 
             var configuration = Configurer.Configure(transportSettings, transactionMode);

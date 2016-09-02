@@ -1,18 +1,14 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
-    using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
-    using Routing;
+    using Transport.SQLServer;
     using static AcceptanceTesting.Customization.Conventions;
 
-    //HINT: Message mappings specifed in app.config added to routing table using UnicastRoute.CreateFromPhysicalAddress.
-    //      As a result this test covers also an app.config message mappings scenario
-    public class When_custom_schema_configured_inside_physical_address : When_custom_schema_configured
+    public class When_custom_schema_configured_for_endpoint_with_brackets_syntax : When_custom_schema_configured_for_endpoint
     {
         [Test]
         public Task Should_receive_message()
@@ -32,17 +28,12 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
+                    var receiverEndpoint = $"{EndpointNamingConvention(typeof(Receiver))}";
 
-                    var transportSettings = c.UseTransport<SqlServerTransport>();
+                    var settings = c.UseTransport<SqlServerTransport>();
 
-                    transportSettings
-                        .GetSettings()
-                        .GetOrCreate<UnicastRoutingTable>()
-                        .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
-                        {
-                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
-                        });
+                    settings.Routing().RouteToEndpoint(typeof(Message), receiverEndpoint);
+                    settings.UseSchemaForEndpoint(receiverEndpoint, $"[{ReceiverSchema}]");
                 });
             }
         }

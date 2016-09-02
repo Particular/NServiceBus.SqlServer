@@ -7,7 +7,7 @@
     using NUnit.Framework;
     using Transport.SQLServer;
 
-    public class When_custom_schema_configured_with_default_override : When_custom_schema_configured
+    public class When_custom_schema_configured_for_endpoint_with_default_override : When_custom_schema_configured_for_endpoint
     {
         [Test]
         public Task Should_receive_message()
