@@ -8,26 +8,12 @@
     {
         public void AddOrUpdate(string endpointName, string schema)
         {
-            if (schemas.ContainsKey(endpointName) == false)
-            {
-                schemas.Add(endpointName, schema);
-            }
-            else
-            {
-                schemas[endpointName] = schema;
-            }
+            schemas[endpointName] = schema;
         }
 
         public bool TryGet(string endpointName, out string schema)
         {
-            if (schemas.ContainsKey(endpointName))
-            {
-                schema = schemas[endpointName];
-                return true;
-            }
-
-            schema = null;
-            return false;
+            return schemas.TryGetValue(endpointName, out schema);
         }
 
         public List<EndpointInstance> ToEndpointInstances()
