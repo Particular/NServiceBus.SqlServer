@@ -43,7 +43,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = true");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsFalse(result.IsValid);
         }
 
         [Test]
