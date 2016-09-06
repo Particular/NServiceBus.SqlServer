@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Logging;
 
     class LegacySqlConnectionFactory
     {
@@ -17,26 +18,36 @@
         {
             var connection = await openNewConnection(transportAddress).ConfigureAwait(false);
 
-            if (!HasValidatedOnce(transportAddress))
-            {
-                ConnectionPoolValidator.Validate(connection.ConnectionString);
-                SetValidatedOnce(transportAddress);
-            }
+            ValidateConnectionPool(transportAddress, connection.ConnectionString);
 
             return connection;
         }
 
-        void SetValidatedOnce(string transportAddress)
+        void ValidateConnectionPool(string transportAddress, string connectionString)
+        {
+            if (HasValidated(transportAddress)) return;
+            
+            var validationResult = ConnectionPoolValidator.Validate(connectionString);
+            if (!validationResult.IsValid)
+            {
+                Logger.Warn(validationResult.Message);
+            }
+
+            SetValidated(transportAddress);
+        }
+
+        void SetValidated(string transportAddress)
         {
             validatedTransportConnections.Add(transportAddress);
         }
 
-        bool HasValidatedOnce(string transportAddress)
+        bool HasValidated(string transportAddress)
         {
             return validatedTransportConnections.Contains(transportAddress);
         }
 
         Func<string, Task<SqlConnection>> openNewConnection;
         HashSet<string> validatedTransportConnections;
+        static ILog Logger = LogManager.GetLogger<LegacySqlConnectionFactory>();
     }
 }

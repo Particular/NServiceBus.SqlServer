@@ -2,31 +2,26 @@
 {
     using System.Data.Common;
     using System.Data.SqlClient;
-    using Logging;
 
     class ConnectionPoolValidator
     {
-        public static bool Validate(string connectionString)
+        public static ValidationCheckResult Validate(string connectionString)
         {
             var keys = new DbConnectionStringBuilder { ConnectionString = connectionString };
             var parsedConnection = new SqlConnectionStringBuilder(connectionString);
 
             if (keys.ContainsKey("Pooling") && !parsedConnection.Pooling)
             {
-                Logger.Warn(ConnectionPoolingDisabled);
-                return false;
+                return ValidationCheckResult.Invalid(ConnectionPoolingDisabled);
             }
 
             if (!keys.ContainsKey("Max Pool Size") || !keys.ContainsKey("Min Pool Size"))
             {
-                Logger.Warn(ConnectionPoolSizeNotSet);
-                return false;
+                return ValidationCheckResult.Invalid(ConnectionPoolSizeNotSet);
             }
 
-            return true;
+            return ValidationCheckResult.Valid();
         }
-
-        static ILog Logger = LogManager.GetLogger(typeof(ConnectionPoolValidator));
 
         const string ConnectionPoolingDisabled = 
             "Disabling connection pooling is not recommended. Consider " +

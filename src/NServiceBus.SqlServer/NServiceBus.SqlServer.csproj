@@ -81,6 +81,7 @@
     <Compile Include="Configuration\SqlConnectionFactory.cs" />
     <Compile Include="Configuration\ConnectionStringsValidator.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
+    <Compile Include="Configuration\ValidationCheckResult.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />

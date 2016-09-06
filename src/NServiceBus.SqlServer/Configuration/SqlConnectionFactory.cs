@@ -3,6 +3,7 @@
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Logging;
 
     class SqlConnectionFactory
     {
@@ -15,11 +16,7 @@
         {
             var connection = await openNewConnection().ConfigureAwait(false);
 
-            if (!hasValidatedOnce)
-            {
-                ConnectionPoolValidator.Validate(connection.ConnectionString);
-                hasValidatedOnce = true;
-            }
+            ValidateConnectionPool(connection.ConnectionString);
 
             return connection;
         }
@@ -28,6 +25,8 @@
         {
             return new SqlConnectionFactory(async () =>
             {
+                ValidateConnectionPool(connectionString);
+
                 var connection = new SqlConnection(connectionString);
                 try
                 {
@@ -43,7 +42,22 @@
             });
         }
 
+        static void ValidateConnectionPool(string connectionString)
+        {
+            if (hasValidated) return;
+
+            var validationResult = ConnectionPoolValidator.Validate(connectionString);
+            if (!validationResult.IsValid)
+            {
+                Logger.Warn(validationResult.Message);
+            }
+
+            hasValidated = true;
+        }
+
         Func<Task<SqlConnection>> openNewConnection;
-        bool hasValidatedOnce;
+        static bool hasValidated;
+
+        static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();
     }
 }
