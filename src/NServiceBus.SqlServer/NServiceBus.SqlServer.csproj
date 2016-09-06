@@ -77,6 +77,7 @@
     <Compile Include="Addressing\EndpointSchemasSettings.cs" />
     <Compile Include="Addressing\TableSchemasSettings.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Configuration\ConnectionPoolValidator.cs" />
     <Compile Include="Configuration\SqlConnectionFactory.cs" />
     <Compile Include="Configuration\ConnectionStringsValidator.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />

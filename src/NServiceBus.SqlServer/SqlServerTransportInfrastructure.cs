@@ -86,6 +86,8 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory CreateConnectionFactory()
         {
+            ConnectionPoolValidator.Validate(connectionString);
+
             Func<Task<SqlConnection>> factoryOverride;
 
             if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
