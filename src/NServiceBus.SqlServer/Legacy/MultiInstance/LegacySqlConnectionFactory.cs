@@ -1,21 +1,42 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
 
     class LegacySqlConnectionFactory
     {
-        public LegacySqlConnectionFactory(Func<string, Task<SqlConnection>> factory)
+        public LegacySqlConnectionFactory(Func<string, Task<SqlConnection>> openNewConnection)
         {
-            this.factory = factory;
+            this.openNewConnection = openNewConnection;
+            validatedTransportConnections = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
-        public Task<SqlConnection> OpenNewConnection(string transportAddress)
+        public async Task<SqlConnection> OpenNewConnection(string transportAddress)
         {
-            return factory(transportAddress);
+            var connection = await openNewConnection(transportAddress).ConfigureAwait(false);
+
+            if (!HasValidatedOnce(transportAddress))
+            {
+                ConnectionPoolValidator.Validate(connection.ConnectionString);
+                SetValidatedOnce(transportAddress);
+            }
+
+            return connection;
         }
 
-        Func<string, Task<SqlConnection>> factory;
+        void SetValidatedOnce(string transportAddress)
+        {
+            validatedTransportConnections.Add(transportAddress);
+        }
+
+        bool HasValidatedOnce(string transportAddress)
+        {
+            return validatedTransportConnections.Contains(transportAddress);
+        }
+
+        Func<string, Task<SqlConnection>> openNewConnection;
+        HashSet<string> validatedTransportConnections;
     }
 }

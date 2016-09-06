@@ -11,9 +11,17 @@
             openNewConnection = factory;
         }
 
-        public Task<SqlConnection> OpenNewConnection()
+        public async Task<SqlConnection> OpenNewConnection()
         {
-            return openNewConnection();
+            var connection = await openNewConnection().ConfigureAwait(false);
+
+            if (!hasValidatedOnce)
+            {
+                ConnectionPoolValidator.Validate(connection.ConnectionString);
+                hasValidatedOnce = true;
+            }
+
+            return connection;
         }
 
         public static SqlConnectionFactory Default(string connectionString)
@@ -36,5 +44,6 @@
         }
 
         Func<Task<SqlConnection>> openNewConnection;
+        bool hasValidatedOnce;
     }
 }
