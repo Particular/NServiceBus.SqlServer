@@ -11,7 +11,6 @@
         public LegacySqlConnectionFactory(Func<string, Task<SqlConnection>> openNewConnection)
         {
             this.openNewConnection = openNewConnection;
-            validatedTransportConnections = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
         public async Task<SqlConnection> OpenNewConnection(string transportAddress)
@@ -47,7 +46,7 @@
         }
 
         Func<string, Task<SqlConnection>> openNewConnection;
-        HashSet<string> validatedTransportConnections;
+        static HashSet<string> validatedTransportConnections = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
         static ILog Logger = LogManager.GetLogger<LegacySqlConnectionFactory>();
     }
 }
