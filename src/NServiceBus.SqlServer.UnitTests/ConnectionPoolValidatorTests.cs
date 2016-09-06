@@ -39,11 +39,19 @@
         }
 
         [Test]
-        public void Is_not_validated_when_pooling_is_disabled()
+        public void Is_not_validated_when_pooling_is_enabled_and_no_min_and_max_is_set()
         {
-            var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Min Pool Size = 20; Max Pool Size = 200; Pooling = false");
+            var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = true");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.IsTrue(result.IsValid);
+        }
+
+        [Test]
+        public void Is_validated_when_pooling_is_disabled()
+        {
+            var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = false");
+
+            Assert.IsTrue(result.IsValid);
         }
 
         [Test]
@@ -51,7 +59,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = no");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.IsTrue(result.IsValid);
         }
     }
 }

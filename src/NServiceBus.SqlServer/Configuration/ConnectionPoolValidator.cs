@@ -12,7 +12,7 @@
 
             if (keys.ContainsKey("Pooling") && !parsedConnection.Pooling)
             {
-                return ValidationCheckResult.Invalid(ConnectionPoolingDisabled);
+                return ValidationCheckResult.Valid();
             }
 
             if (!keys.ContainsKey("Max Pool Size") || !keys.ContainsKey("Min Pool Size"))
@@ -22,10 +22,6 @@
 
             return ValidationCheckResult.Valid();
         }
-
-        const string ConnectionPoolingDisabled = 
-            "Disabling connection pooling is not recommended. Consider " +
-            "enabling it and specifying Mininum and Maximum pool size.";
 
         const string ConnectionPoolSizeNotSet = 
             "Minimum and Maximum connection pooling values are not " +
