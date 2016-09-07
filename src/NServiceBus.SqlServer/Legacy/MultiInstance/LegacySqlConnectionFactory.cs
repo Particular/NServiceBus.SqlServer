@@ -15,7 +15,9 @@
 
         public async Task<SqlConnection> OpenNewConnection(string transportAddress)
         {
-            var connection = await openNewConnection(transportAddress).ConfigureAwait(false);
+            var queueName = QueueAddress.Parse(transportAddress).TableName;
+
+            var connection = await openNewConnection(queueName).ConfigureAwait(false);
 
             ValidateConnectionPool(transportAddress, connection.ConnectionString);
 
@@ -25,7 +27,7 @@
         void ValidateConnectionPool(string transportAddress, string connectionString)
         {
             if (HasValidated(transportAddress)) return;
-            
+
             var validationResult = ConnectionPoolValidator.Validate(connectionString);
             if (!validationResult.IsValid)
             {

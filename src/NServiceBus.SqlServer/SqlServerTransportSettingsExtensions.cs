@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -62,20 +61,6 @@
             return transportExtensions;
         }
 
-        static Dictionary<string, string> GetOrCreateSchemaSettings(TransportExtensions<SqlServerTransport> transportExtensions, string settingsKey)
-        {
-            var settings = transportExtensions.GetSettings();
-
-            if (settings.HasSetting(settingsKey) == false)
-            {
-                settings.Set(settingsKey, new Dictionary<string, string>());
-            }
-
-            var schemasForEndpoints = settings.Get<Dictionary<string, string>>(settingsKey);
-
-            return schemasForEndpoints;
-        }
-
         /// <summary>
         /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure
         /// in case there are numerous errors
@@ -129,11 +114,11 @@
         }
 
         /// <summary>
-        /// Enables legacy multi-instance mode.
+        /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
+        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode has been deprecated and is no longer a recommended model of deployment. Please refer to documentation for more details.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
             Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
