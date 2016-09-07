@@ -22,9 +22,9 @@
                     c.UseTransport<SqlServerTransport>()
                         .UseSchemaForEndpoint("Receiver", "receiver")
                         .UseSchemaForEndpoint("Sender", "sender")
-                        .EnableLegacyMultiInstanceMode(async address =>
+                        .EnableLegacyMultiInstanceMode(async queueName =>
                         {
-                            var connectionString = address.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
+                            var connectionString = queueName.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
                             var connection = new SqlConnection(connectionString);
 
                             await connection.OpenAsync();
