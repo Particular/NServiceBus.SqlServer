@@ -1,4 +1,4 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@ namespace NServiceBus.Transports.SQLServer
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
-    using Transports;
+    using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
@@ -18,6 +18,8 @@ namespace NServiceBus.Transports.SQLServer
             this.addressParser = addressParser;
             this.settings = settings;
             this.connectionString = connectionString;
+
+            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
 
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
@@ -58,13 +60,19 @@ namespace NServiceBus.Transports.SQLServer
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
 
+            QueuePeekerOptions queuePeekerOptions;
+            if (!settings.TryGet(out queuePeekerOptions))
+            {
+                queuePeekerOptions = new QueuePeekerOptions();
+            }
+
             var connectionFactory = CreateConnectionFactory();
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
                 guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
-            var queuePeeker = new QueuePeeker(connectionFactory);
+            var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
@@ -92,17 +100,17 @@ namespace NServiceBus.Transports.SQLServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ReceiveWithTransactionScope(options, connectionFactory);
+                return new ReceiveWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithSendsAtomicWithReceiveTransaction(options, connectionFactory);
+                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ReceiveWithReceiveOnlyTransaction(options, connectionFactory);
+                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
             }
 
             return new ReceiveWithNoTransaction(connectionFactory);
@@ -122,6 +130,8 @@ namespace NServiceBus.Transports.SQLServer
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
+
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
@@ -145,7 +155,15 @@ namespace NServiceBus.Transports.SQLServer
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
-            return instance.SetProperty(SchemaPropertyKey, addressParser.DefaultSchema);
+            var schemaSettings = settings.Get<EndpointSchemasSettings>();
+
+            string schema;
+            if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
+            {
+                schema = addressParser.DefaultSchema;
+            }
+
+            return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
         }
 
         /// <summary>
@@ -155,7 +173,7 @@ namespace NServiceBus.Transports.SQLServer
         {
             var nonEmptyParts = new[]
             {
-                logicalAddress.EndpointInstance.Endpoint.ToString(),
+                logicalAddress.EndpointInstance.Endpoint,
                 logicalAddress.Qualifier,
                 logicalAddress.EndpointInstance.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));
@@ -164,7 +182,7 @@ namespace NServiceBus.Transports.SQLServer
 
             string schemaName;
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SchemaPropertyKey, out schemaName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
             var queueAddress = new QueueAddress(tableName, schemaName);
 
             return queueAddress.ToString();
@@ -181,6 +199,6 @@ namespace NServiceBus.Transports.SQLServer
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;
-        const string SchemaPropertyKey = "Schema";
+        EndpointSchemasSettings endpointSchemasSettings;
     }
 }

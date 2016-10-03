@@ -1,10 +1,10 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Extensibility;
+    using Transport;
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
@@ -15,28 +15,29 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task DispatchAsIsolated(List<MessageWithAddress> operations)
+        public async Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
         {
+            if (operations.Count == 0)
+            {
+                return;
+            }
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                foreach (var operation in operations)
-                {
-                    var queue = new TableBasedQueue(operation.Address);
-
-                    await queue.Send(operation.Message, connection, null).ConfigureAwait(false);
-                }
+                await Send(operations, connection, null).ConfigureAwait(false);
 
                 scope.Complete();
             }
         }
 
-        public async Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
         {
-            TransportTransaction transportTransaction;
-            var transportTransactionExists = context.TryGet(out transportTransaction);
+            if (operations.Count == 0)
+            {
+                return;
+            }
 
-            if (transportTransactionExists == false || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            if (InReceiveWithNoTransactionMode(transportTransaction) || InReceiveOnlyTransportTransactionMode(transportTransaction))
             {
                 await DispatchOperationsWithNewConnectionAndTransaction(operations).ConfigureAwait(false);
                 return;
@@ -46,42 +47,71 @@ namespace NServiceBus.Transports.SQLServer
         }
 
 
-        async Task DispatchOperationsWithNewConnectionAndTransaction(List<MessageWithAddress> defaultConsistencyOperations)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(HashSet<MessageWithAddress> operations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
             {
-                foreach (var operation in defaultConsistencyOperations)
+                if (operations.Count == 1)
                 {
-                    var queue = new TableBasedQueue(operation.Address);
-
-                    await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                    await Send(operations, connection, null).ConfigureAwait(false);
+                    return;
                 }
 
-                transaction.Commit();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    await Send(operations, connection, transaction).ConfigureAwait(false);
+                    transaction.Commit();
+                }
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<MessageWithAddress> defaultConsistencyOperations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, HashSet<MessageWithAddress> operations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
+            Transaction ambientTransaction;
 
             transportTransaction.TryGet(out sqlTransportConnection);
             transportTransaction.TryGet(out sqlTransportTransaction);
+            transportTransaction.TryGet(out ambientTransaction);
 
-            foreach (var operation in defaultConsistencyOperations)
+            if (ambientTransaction != null)
+            {
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                    await Send(operations, connection, null).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await Send(operations, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+            }
+        }
+
+        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        {
+            foreach (var operation in operations)
             {
                 var queue = new TableBasedQueue(operation.Address);
-
-                await queue.Send(operation.Message, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+                await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
             }
+        }
+
+        static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
+        {
+            SqlTransaction nativeTransaction;
+            transportTransaction.TryGet(out nativeTransaction);
+
+            Transaction ambientTransaction;
+            transportTransaction.TryGet(out ambientTransaction);
+
+            return nativeTransaction == null && ambientTransaction == null;
         }
 
         static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
             bool inReceiveMode;
-            return transportTransaction.TryGet(ReceiveWithReceiveOnlyTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
+            return transportTransaction.TryGet(ReceiveWithNativeTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
     }
 }

@@ -1,8 +1,9 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System.Configuration;
     using System.Linq;
     using Logging;
+    using Transport;
 
     class UsingV2ConfigurationChecker
     {

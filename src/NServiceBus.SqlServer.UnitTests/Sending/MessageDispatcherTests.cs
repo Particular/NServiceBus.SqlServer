@@ -6,8 +6,8 @@
     using Extensibility;
     using NUnit.Framework;
     using Routing;
-    using Transports;
-    using Transports.SQLServer;
+    using Transport;
+    using Transport.SQLServer;
 
     [TestFixture]
     public class MessageDispatcherTests
@@ -17,9 +17,9 @@
         {
             var queueDispatcher = new FakeTableBasedQueueDispatcher();
 
-            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressParser("dbo", null, s => null));
+            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressParser("dbo", null, null));
 
-            await dispatcher.Dispatch(transportOperations, new ContextBag());
+            await dispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 
             Assert.AreEqual(expectedDispatchedMessageCount, queueDispatcher.DispatchedMessageIds.Count);
         }
@@ -70,13 +70,13 @@
         {
             public List<string> DispatchedMessageIds = new List<string>();
 
-            public Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context)
+            public Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
 
-            public Task DispatchAsIsolated(List<MessageWithAddress> operations)
+            public Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);

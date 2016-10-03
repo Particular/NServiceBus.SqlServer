@@ -1,5 +1,6 @@
 ﻿// ReSharper disable RedundantArgumentNameForLiteralExpression
 // ReSharper disable RedundantArgumentName
+
 namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 {
     using System;
@@ -9,18 +10,12 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using Extensibility;
     using NUnit.Framework;
     using Routing;
-    using Transports;
-    using Transports.SQLServer;
+    using Transport;
+    using Transport.SQLServer;
+    using Unicast.Queuing;
 
     public class When_dispatching_messages
     {
-        const string validAddress = "TableBasedQueueDispatcherTests";
-        const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
-
-        QueuePurger purger;
-        MessageDispatcher dispatcher;
-        TableBasedQueue queue;
-
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Isolated)]
@@ -34,7 +29,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                     CreateTransportOperation(id: "2", destination: validAddress, consistency: dispatchConsistency)
                     );
 
-                await dispatcher.Dispatch(operations, contextProvider.Context);
+                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, contextProvider.Context);
 
                 contextProvider.Complete();
 
@@ -53,17 +48,15 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             using (var contextProvider = CreateContext(contextProviderType))
             {
                 var invalidOperations = new TransportOperations(
-                   CreateTransportOperation(id: "3", destination: validAddress, consistency: dispatchConsistency),
-                   CreateTransportOperation(id: "4", destination: invalidAddress, consistency: dispatchConsistency)
-                   );
+                    CreateTransportOperation(id: "3", destination: validAddress, consistency: dispatchConsistency),
+                    CreateTransportOperation(id: "4", destination: invalidAddress, consistency: dispatchConsistency)
+                    );
 
-                TestDelegate dispatch = async () =>
+                Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
-                    await dispatcher.Dispatch(invalidOperations, contextProvider.Context);
+                    await dispatcher.Dispatch(invalidOperations, contextProvider.TransportTransaction, contextProvider.Context);
                     contextProvider.Complete();
-                };
-
-                Assert.That(dispatch, Throws.Exception);
+                });
             }
 
             var messagesSent = await purger.Purge(queue);
@@ -71,7 +64,12 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             Assert.AreEqual(0, messagesSent);
         }
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+        [Test]
+        public void Proper_exception_is_thrown_if_queue_does_not_exist()
+        {
+            var operation = new TransportOperation(new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag("InvalidQueue"));
+            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction(), new ContextBag()), Throws.TypeOf<QueueNotFoundException>());
+        }
 
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)
         {
@@ -95,7 +93,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         async Task PrepareAsync()
         {
-            var addressParser = new QueueAddressParser("dbo", null, s => null);
+            var addressParser = new QueueAddressParser("dbo", null, null);
 
             await CreateOutputQueueIfNecessary(addressParser);
 
@@ -122,9 +120,18 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             return queueCreator.CreateQueueIfNecessary(queueBindings, "");
         }
 
+        QueuePurger purger;
+        MessageDispatcher dispatcher;
+        TableBasedQueue queue;
+        const string validAddress = "TableBasedQueueDispatcherTests";
+        const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
+
+        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+
         interface IContextProvider : IDisposable
         {
             ContextBag Context { get; }
+            TransportTransaction TransportTransaction { get; }
             void Complete();
         }
 
@@ -135,6 +142,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             }
 
             public ContextBag Context { get; } = new ContextBag();
+            public TransportTransaction TransportTransaction { get; } = new TransportTransaction();
 
             public virtual void Complete()
             {
@@ -143,19 +151,15 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            SqlTransaction sqlTransaction;
-            SqlConnection sqlConnection;
-
             public HandlerContextProvider()
             {
-                var transportTransaction = new TransportTransaction();
                 sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
-                transportTransaction.Set(sqlConnection);
-                transportTransaction.Set(sqlTransaction);
+                TransportTransaction.Set(sqlConnection);
+                TransportTransaction.Set(sqlTransaction);
 
-                Context.Set(transportTransaction);
+                Context.Set(TransportTransaction);
             }
 
             public override void Dispose()
@@ -168,6 +172,9 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             {
                 sqlTransaction.Commit();
             }
+
+            SqlTransaction sqlTransaction;
+            SqlConnection sqlConnection;
         }
     }
 }

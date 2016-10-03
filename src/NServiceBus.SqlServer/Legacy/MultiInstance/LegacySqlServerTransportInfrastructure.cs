@@ -1,9 +1,11 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Routing;
     using Settings;
+    using Transport;
 
     class LegacySqlServerTransportInfrastructure : SqlServerTransportInfrastructure
     {
@@ -12,6 +14,8 @@
         {
             this.addressParser = addressParser;
             this.settings = settings;
+
+            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
         }
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()
@@ -23,10 +27,16 @@
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
+            QueuePeekerOptions peekerOptions;
+            if (!settings.TryGet(out peekerOptions))
+            {
+                peekerOptions = new QueuePeekerOptions();
+            }
+
             var connectionFactory = CreateLegacyConnectionFactory();
 
             var queuePurger = new LegacyQueuePurger(connectionFactory);
-            var queuePeeker = new LegacyQueuePeeker(connectionFactory);
+            var queuePeeker = new LegacyQueuePeeker(connectionFactory, peekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
@@ -50,7 +60,7 @@
                         throw new Exception("Legacy multiinstance mode is supported only with TransportTransactionMode=TransactionScope");
                     }
 
-                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory);
+                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
                 };
 
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
@@ -72,6 +82,9 @@
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateLegacyConnectionFactory();
+
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
                 () =>
@@ -83,5 +96,6 @@
 
         QueueAddressParser addressParser;
         SettingsHolder settings;
+        EndpointSchemasSettings endpointSchemasSettings;
     }
 }

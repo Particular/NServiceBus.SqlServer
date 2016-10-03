@@ -1,8 +1,9 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Logging;
 
     class SqlConnectionFactory
     {
@@ -11,15 +12,21 @@
             openNewConnection = factory;
         }
 
-        public Task<SqlConnection> OpenNewConnection()
+        public async Task<SqlConnection> OpenNewConnection()
         {
-            return openNewConnection();
+            var connection = await openNewConnection().ConfigureAwait(false);
+
+            ValidateConnectionPool(connection.ConnectionString);
+
+            return connection;
         }
 
         public static SqlConnectionFactory Default(string connectionString)
         {
             return new SqlConnectionFactory(async () =>
             {
+                ValidateConnectionPool(connectionString);
+
                 var connection = new SqlConnection(connectionString);
                 try
                 {
@@ -35,6 +42,22 @@
             });
         }
 
+        static void ValidateConnectionPool(string connectionString)
+        {
+            if (hasValidated) return;
+
+            var validationResult = ConnectionPoolValidator.Validate(connectionString);
+            if (!validationResult.IsValid)
+            {
+                Logger.Warn(validationResult.Message);
+            }
+
+            hasValidated = true;
+        }
+
         Func<Task<SqlConnection>> openNewConnection;
+        static bool hasValidated;
+
+        static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();
     }
 }

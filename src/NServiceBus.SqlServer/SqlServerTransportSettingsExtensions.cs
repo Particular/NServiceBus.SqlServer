@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data.SqlClient;
@@ -24,16 +24,39 @@
         }
 
         /// <summary>
-        /// Specifies callback which provides custom schema name for given table name. If null value is returned a default schema
-        /// name will be used.
+        /// Specifies custom schema for given endpoint.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="schemaForQueueName">Function which takes table name and returns schema name.</param>
-        public static TransportExtensions<SqlServerTransport> UseSpecificSchema(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> schemaForQueueName)
+        /// <param name="endpointName">Endpoint name.</param>
+        /// <param name="schema">Custom schema value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
         {
-            Guard.AgainstNull("schemaForQueueName", schemaForQueueName);
+            Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
+            Guard.AgainstNullAndEmpty(nameof(schema), schema);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.SchemaOverrideCallbackSettingsKey, schemaForQueueName);
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemasSettings>();
+
+            schemasConfiguration.AddOrUpdate(endpointName, schema);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Overrides schema value for given queue. This setting will take precedence over any other source of schema information.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="schema">Custom schema value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
+        {
+            Guard.AgainstNullAndEmpty(nameof(queueName), queueName);
+            Guard.AgainstNullAndEmpty(nameof(schema), schema);
+
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<TableSchemasSettings>();
+
+            schemasConfiguration.AddOrUpdate(queueName, schema);
 
             return transportExtensions;
         }
@@ -79,11 +102,23 @@
         }
 
         /// <summary>
-        /// Enables legacy multi-instance mode.
+        /// Allows changing the queue peek delay.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination transport address..</param>
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode will be removed in future versions of SqlServer transport.")]
+        /// <param name="delay">The delay value</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
+        {
+            transportExtensions.GetSettings().Set<QueuePeekerOptions>(new QueuePeekerOptions(delay));
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Enables multi-instance mode.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
+        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode has been deprecated and is no longer a recommended model of deployment. Please refer to documentation for more details.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
             Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);

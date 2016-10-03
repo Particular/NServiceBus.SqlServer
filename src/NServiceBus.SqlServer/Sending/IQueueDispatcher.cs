@@ -1,13 +1,12 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Extensibility;
 
     interface IQueueDispatcher
     {
-        Task DispatchAsNonIsolated(List<MessageWithAddress> operations, ContextBag context);
+        Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction);
 
-        Task DispatchAsIsolated(List<MessageWithAddress> operations);
+        Task DispatchAsIsolated(HashSet<MessageWithAddress> operations);
     }
 }

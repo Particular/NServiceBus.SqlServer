@@ -15,10 +15,10 @@
     <releaseNotes></releaseNotes>
     <tags>$tags$</tags>
     <dependencies>
-	  <dependency id="NServiceBus" version="[6.0.0-beta, 7.0.0)" />
+	  <dependency id="NServiceBus" version="[6.0.0-rc0001, 7.0.0)" />
     </dependencies>
   </metadata>
   <files>
-    <file src="..\..\binaries\NServiceBus.Transports.SqlServer.???" target="lib\net452" />
+    <file src="..\..\binaries\NServiceBus.Transport.SqlServer.???" target="lib\net452" />
   </files>
 </package>

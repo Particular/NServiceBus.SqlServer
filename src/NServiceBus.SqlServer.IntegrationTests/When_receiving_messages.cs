@@ -3,12 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Transports;
-    using Transports.SQLServer;
+    using Transport;
+    using Transport.SQLServer;
 
     public class When_receiving_messages
     {
@@ -18,19 +17,20 @@
             var successfulReceives = 46;
             var queueSize = 1000;
 
-            var inputQueue = new FakeTableBasedQueue(QueueAddress.Parse("dbo.input"), queueSize, successfulReceives);
+            var inputQueue = new FakeTableBasedQueue(QueueAddress.Parse("input@dbo"), queueSize, successfulReceives);
 
             var pump = new MessagePump(
                 m => new ReceiveWithNoTransaction(sqlConnectionFactory),
-                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa), 
+                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
-                new QueuePeeker(sqlConnectionFactory),
+                new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
                 new QueueAddressParser("dbo", null, null),
                 TimeSpan.MaxValue);
 
             await pump.Init(
                 _ => Task.FromResult(0),
+                _ => Task.FromResult(ErrorHandleResult.Handled),
                 new CriticalError(_ => Task.FromResult(0)),
                 new PushSettings("input", "error", false, TransportTransactionMode.None));
 
@@ -81,13 +81,13 @@
                 NumberOfReceives ++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new MemoryStream()))
+                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0]))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
             }
 
-            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token)
+            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
             {
                 NumberOfPeeks ++;
 

@@ -3,14 +3,15 @@ namespace NServiceBus
     using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
+    using Routing;
     using Settings;
-    using Transports;
-    using Transports.SQLServer;
+    using Transport;
+    using Transport.SQLServer;
 
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServerTransport : TransportDefinition
+    public class SqlServerTransport : TransportDefinition, IMessageDrivenSubscriptionTransport
     {
         /// <summary>
         /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
@@ -25,12 +26,11 @@ namespace NServiceBus
         QueueAddressParser CreateAddressParser(ReadOnlySettings settings)
         {
             string defaultSchemaOverride;
-            Func<string, string> schemaOverrider;
-
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
-            settings.TryGet(SettingsKeys.SchemaOverrideCallbackSettingsKey, out schemaOverrider);
 
-            return new QueueAddressParser("dbo", defaultSchemaOverride, schemaOverrider);
+            var queueSchemaSettings = settings.GetOrDefault<TableSchemasSettings>();
+
+            return new QueueAddressParser("dbo", defaultSchemaOverride, queueSchemaSettings);
         }
 
         bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
@@ -43,7 +43,7 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.Initialize" />
         /// </summary>
-        protected override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
+        public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var addressParser = CreateAddressParser(settings);
 

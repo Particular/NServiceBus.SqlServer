@@ -1,19 +1,18 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Generic;
-    using System.IO;
 
     class Message
     {
-        public Message(string transportId, Dictionary<string, string> headers, Stream bodyStream)
+        public Message(string transportId, Dictionary<string, string> headers, byte[] body)
         {
             TransportId = transportId;
-            BodyStream = bodyStream;
+            Body = body;
             Headers = headers;
         }
 
         public string TransportId { get; }
-        public Stream BodyStream { get; }
+        public byte[] Body { get; }
         public Dictionary<string, string> Headers { get; private set; }
     }
 }

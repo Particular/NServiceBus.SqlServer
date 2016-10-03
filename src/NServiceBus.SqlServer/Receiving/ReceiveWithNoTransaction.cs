@@ -1,9 +1,8 @@
-namespace NServiceBus.Transports.SQLServer
+namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using Extensibility;
 
     class ReceiveWithNoTransaction : ReceiveStrategy
     {
@@ -12,37 +11,36 @@ namespace NServiceBus.Transports.SQLServer
             this.connectionFactory = connectionFactory;
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
+        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var readResult = await inputQueue.TryReceive(connection, null).ConfigureAwait(false);
+                var readResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
 
                 if (readResult.IsPoison)
                 {
-                    await errorQueue.DeadLetter(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
-
+                    await ErrorQueue.DeadLetter(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
                     return;
                 }
 
-                if (readResult.Successful)
-                {
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
-                    {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(connection);
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                        await onMessage(pushContext).ConfigureAwait(false);
-                    }
-                }
-                else
+                if (!readResult.Successful)
                 {
                     receiveCancellationTokenSource.Cancel();
+                    return;
+                }
+
+                var transportTransaction = new TransportTransaction();
+                transportTransaction.Set(connection);
+
+                var message = readResult.Message;
+
+                try
+                {
+                    await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
                 }
             }
         }

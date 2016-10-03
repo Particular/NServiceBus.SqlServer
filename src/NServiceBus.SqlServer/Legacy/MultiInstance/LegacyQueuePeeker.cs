@@ -1,15 +1,17 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
 
     class LegacyQueuePeeker : IPeekMessagesInQueue
     {
-        public LegacyQueuePeeker(LegacySqlConnectionFactory connectionFactory)
+        public LegacyQueuePeeker(LegacySqlConnectionFactory connectionFactory, QueuePeekerOptions settings)
         {
             this.connectionFactory = connectionFactory;
+            this.settings = settings;
         }
 
         public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken)
@@ -26,12 +28,19 @@
 
                     if (messageCount == 0)
                     {
-                        await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
+                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+
+                        await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
             catch (OperationCanceledException)
             {
+                //Graceful shutdown
+            }
+            catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+            {
+                Logger.Debug("Exception thrown during cancellation", e);
             }
             catch (Exception ex)
             {
@@ -43,8 +52,8 @@
         }
 
         LegacySqlConnectionFactory connectionFactory;
+        QueuePeekerOptions settings;
 
-        static TimeSpan peekDelay = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<LegacyQueuePeeker>();
     }
 }

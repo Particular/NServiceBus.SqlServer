@@ -1,70 +1,112 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Extensibility;
 
     class LegacyReceiveWithTransactionScope : ReceiveStrategy
     {
-        public LegacyReceiveWithTransactionScope(TransactionOptions transactionOptions, LegacySqlConnectionFactory connectionFactory)
+        public LegacyReceiveWithTransactionScope(TransactionOptions transactionOptions, LegacySqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
+            this.failureInfoStorage = failureInfoStorage;
         }
 
-        public async Task ReceiveMessage(TableBasedQueue inputQueue, TableBasedQueue errorQueue, CancellationTokenSource receiveCancellationTokenSource, Func<PushContext, Task> onMessage)
+        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+            Message message = null;
+            try
             {
-                using (var inputConnection = await connectionFactory.OpenNewConnection(inputQueue.TransportAddress).ConfigureAwait(false))
+                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.TransportAddress).ConfigureAwait(false))
                 {
-                    var readResult = await inputQueue.TryReceive(inputConnection, null).ConfigureAwait(false);
+                    message = await TryReceive(inputConnection, receiveCancellationTokenSource).ConfigureAwait(false);
 
-                    if (readResult.IsPoison)
+                    if (message == null)
                     {
-                        using (var errorConnection = await connectionFactory.OpenNewConnection(errorQueue.TransportAddress).ConfigureAwait(false))
-                        {
-                            await errorQueue.DeadLetter(readResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
-
-                            scope.Complete();
-                            return;
-                        }
-                    }
-
-                    if (!readResult.Successful)
-                    {
+                        // The message was received but is not fit for processing (e.g. was DLQd).
+                        // In such a case we still need to commit the transport tx to remove message
+                        // from the queue table.
                         scope.Complete();
-                        receiveCancellationTokenSource.Cancel();
                         return;
                     }
 
-                    var message = readResult.Message;
-
-                    using (var pushCancellationTokenSource = new CancellationTokenSource())
-                    using (var bodyStream = message.BodyStream)
+                    if (await TryProcess(message, PrepareTransportTransaction(inputConnection)).ConfigureAwait(false))
                     {
-                        var transportTransaction = new TransportTransaction();
-                        transportTransaction.Set(inputConnection);
-                        transportTransaction.Set(Transaction.Current);
-
-                        var pushContext = new PushContext(message.TransportId, message.Headers, bodyStream, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
-                        await onMessage(pushContext).ConfigureAwait(false);
-
-                        if (pushCancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            return;
-                        }
+                        scope.Complete();
                     }
-
-                    scope.Complete();
                 }
             }
+            catch (Exception exception)
+            {
+                if (message == null)
+                {
+                    throw;
+                }
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+            }
+        }
+
+        async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
+        {
+            var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
+
+            if (!receiveResult.Successful)
+            {
+                receiveCancellationTokenSource.Cancel();
+                return null;
+            }
+
+            if (receiveResult.IsPoison)
+            {
+                using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
+                {
+                    await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
+                    return null;
+                }
+            }
+
+            return receiveResult.Message;
+        }
+
+        TransportTransaction PrepareTransportTransaction(SqlConnection connection)
+        {
+            var transportTransaction = new TransportTransaction();
+
+            //those resources are meant to be used by anyone except message dispatcher e.g. persister
+            transportTransaction.Set(connection);
+            transportTransaction.Set(Transaction.Current);
+
+            return transportTransaction;
+        }
+
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
+        {
+            FailureInfoStorage.ProcessingFailureInfo failure;
+            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out failure))
+            {
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
+
+                if (errorHandlingResult == ErrorHandleResult.Handled)
+                {
+                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                    return true;
+                }
+            }
+
+            var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+            if (messageProcessed)
+            {
+                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+            }
+            return messageProcessed;
         }
 
         TransactionOptions transactionOptions;
         LegacySqlConnectionFactory connectionFactory;
+        FailureInfoStorage failureInfoStorage;
     }
 }

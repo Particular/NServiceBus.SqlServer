@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transports.SQLServer
+﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
@@ -52,7 +52,7 @@
             AddParameter(command, "Recoverable", SqlDbType.Bit, recoverable);
             AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
             AddParameter(command, "Headers", SqlDbType.VarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes ?? bodyStream.ToArray());
+            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
         }
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
@@ -64,13 +64,12 @@
             row.correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false);
             row.replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false);
             row.recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false);
-            row.timeToBeReceived = await GetNullableValueAsync<int>(dataReader, 4).ConfigureAwait(false);
-            row.headers = await GetHeaders(dataReader, 5).ConfigureAwait(false);
-            row.bodyStream = await GetBody(dataReader, 6).ConfigureAwait(false);
+            row.headers = await GetHeaders(dataReader, 4).ConfigureAwait(false);
+            row.bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false);
 
             return row;
         }
-       
+
         MessageReadResult TryParse()
         {
             try
@@ -84,18 +83,9 @@
                     parsedHeaders[Headers.ReplyToAddress] = replyToAddress;
                 }
 
-                var expired = timeToBeReceived.HasValue && timeToBeReceived.Value < 0;
-
-                if (expired)
-                {
-                    Logger.InfoFormat($"Message with ID={id} has expired. Removing it from queue.");
-
-                    return MessageReadResult.NoMessage;
-                }
-
                 LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
 
-                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyStream));
+                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes));
             }
             catch (Exception ex)
             {
@@ -129,29 +119,18 @@
             }
         }
 
-        static async Task<MemoryStream> GetBody(SqlDataReader dataReader, int bodyIndex)
+        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
         {
-            var memoryStream = new MemoryStream();
             // Null values will be returned as an empty (zero bytes) Stream.
+            using (var outStream = new MemoryStream())
             using (var stream = dataReader.GetStream(bodyIndex))
             {
-                await stream.CopyToAsync(memoryStream).ConfigureAwait(false);
+                await stream.CopyToAsync(outStream).ConfigureAwait(false);
+                return outStream.ToArray();
             }
-            memoryStream.Position = 0;
-            return memoryStream;
         }
 
         static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class
-        {
-            if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
-            {
-                return default(T);
-            }
-
-            return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
-        }
-
-        static async Task<T?> GetNullableValueAsync<T>(SqlDataReader dataReader, int index) where T : struct
         {
             if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
@@ -173,7 +152,6 @@
         int? timeToBeReceived;
         string headers;
         byte[] bodyBytes;
-        MemoryStream bodyStream;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

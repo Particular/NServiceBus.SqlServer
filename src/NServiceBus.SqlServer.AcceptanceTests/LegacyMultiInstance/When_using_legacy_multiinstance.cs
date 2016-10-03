@@ -5,7 +5,7 @@
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     public class When_using_legacy_multiinstance : NServiceBusAcceptanceTest
     {
@@ -20,10 +20,11 @@
                 {
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
-                        .UseSpecificSchema(queueName => queueName.Contains("Receiver") ? "receiver" : "sender")
-                        .EnableLegacyMultiInstanceMode(async address =>
+                        .UseSchemaForEndpoint("Receiver", "receiver")
+                        .UseSchemaForEndpoint("Sender", "sender")
+                        .EnableLegacyMultiInstanceMode(async queueName =>
                         {
-                            var connectionString = address.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
+                            var connectionString = queueName.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
                             var connection = new SqlConnection(connectionString);
 
                             await connection.OpenAsync();
@@ -55,7 +56,8 @@
                 {
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
-                        .UseSpecificSchema(queueName => queueName.Contains("Sender") ? "sender" : "receiver")
+                        .UseSchemaForEndpoint("Receiver", "receiver")
+                        .UseSchemaForEndpoint("Sender", "sender")
                         .EnableLegacyMultiInstanceMode(async address =>
                         {
                             var connectionString = address.Contains("Sender") ? SenderConnectionString : ReceiverConnectionString;

@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.UnitTests
 {
     using NUnit.Framework;
-    using Transports.SQLServer;
+    using Transport.SQLServer;
 
     [TestFixture]
     public class QueueAddressTests
