@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Data.SqlClient;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -92,6 +93,10 @@
                 {
                     // For graceful shutdown purposes
                 }
+                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Debug("Exception thrown during cancellation", e);
+                }
                 catch (Exception ex)
                 {
                     Logger.Error("Sql Message pump failed", ex);
@@ -180,6 +185,10 @@
                 catch (OperationCanceledException)
                 {
                     // Graceful shutdown
+                }
+                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Debug("Exception thown while performing cancellation", e);
                 }
             }
         }

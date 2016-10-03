@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -35,6 +36,11 @@
             }
             catch (OperationCanceledException)
             {
+                //Graceful shutdown
+            }
+            catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+            {
+                Logger.Debug("Exception thrown during cancellation", e);
             }
             catch (Exception ex)
             {
