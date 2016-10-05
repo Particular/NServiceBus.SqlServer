@@ -36,7 +36,7 @@ namespace NServiceBus.Transport.SQLServer
             }
             catch (Exception ex)
             {
-                ThrowFailedToSendException(ex);
+                throw new Exception("Failed to store a delayed message.", ex);
             }
         }
 
@@ -48,11 +48,6 @@ namespace NServiceBus.Transport.SQLServer
             {
                 return command.ExecuteNonQueryAsync();
             }
-        }
-
-        void ThrowFailedToSendException(Exception ex)
-        {
-            throw new Exception($"Failed to store a delayed message.", ex);
         }
 
         public async Task<int> Purge(SqlConnection connection)

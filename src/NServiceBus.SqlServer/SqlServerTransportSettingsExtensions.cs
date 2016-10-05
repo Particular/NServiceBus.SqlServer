@@ -114,6 +114,29 @@
         }
 
         /// <summary>
+        /// Changes the default suffix of delayed message table (Delayed).
+        /// </summary>
+        public static TransportExtensions<SqlServerTransport> DelatedMessageStoreSuffix(this TransportExtensions<SqlServerTransport> transportExtensions, string suffix)
+        {
+            Guard.AgainstNullAndEmpty(nameof(suffix), suffix);
+            transportExtensions.GetSettings().Set(SettingsKeys.DelayedMessageStoreSuffixSettingsKey, suffix);
+            return transportExtensions;
+        }
+        
+        /// <summary>
+        /// Changes the default resolution of processing the delayed messages (every 5 seconds).
+        /// </summary>
+        public static TransportExtensions<SqlServerTransport> MessageDelayResolution(this TransportExtensions<SqlServerTransport> transportExtensions, int resolutionInSeconds)
+        {
+            if (resolutionInSeconds < 1)
+            {
+                throw new ArgumentException("Resolution (in seconds) has to be a positive number.", nameof(resolutionInSeconds));
+            }
+            transportExtensions.GetSettings().Set(SettingsKeys.DelayedDeliveryResolutionSettingsKey, resolutionInSeconds);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>

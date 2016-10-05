@@ -82,7 +82,7 @@ namespace NServiceBus.Transport.SQLServer
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
             var localAddress = addressParser.Parse(settings.LocalAddress());
-            var delayedTableName = localAddress.TableName + ".Delayed";
+            var delayedTableName = localAddress.TableName + "." + DelayedMessageTableSuffix;
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
@@ -138,7 +138,7 @@ namespace NServiceBus.Transport.SQLServer
             var connectionFactory = CreateConnectionFactory();
 
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
-            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), "Delayed", addressParser);
+            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, delayedMessageTable,  addressParser), addressParser),
@@ -151,8 +151,8 @@ namespace NServiceBus.Transport.SQLServer
 
         public override Task Start()
         {
-            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), "Delayed", addressParser);
-            delayedMessageHandler = new MaturedDelayMessageHandler(delayedMessageTable, CreateConnectionFactory(), TimeSpan.FromSeconds(5));
+            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
+            delayedMessageHandler = new MaturedDelayMessageHandler(delayedMessageTable, CreateConnectionFactory(), TimeSpan.FromSeconds(DelayedMessageProcessingResolution));
             delayedMessageHandler.Start();
             return Task.FromResult(0);
         }
@@ -214,6 +214,16 @@ namespace NServiceBus.Transport.SQLServer
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressParser.Parse(transportAddress).ToString();
+        }
+
+        string DelayedMessageTableSuffix => settings.GetOrDefault<string>(SettingsKeys.DelayedMessageStoreSuffixSettingsKey) ?? "Delayed";
+        int DelayedMessageProcessingResolution
+        {
+            get
+            {
+                var settingValue = settings.GetOrDefault<int>(SettingsKeys.DelayedDeliveryResolutionSettingsKey);
+                return settingValue != 0 ? settingValue : 5;
+            }
         }
 
         QueueAddressParser addressParser;
