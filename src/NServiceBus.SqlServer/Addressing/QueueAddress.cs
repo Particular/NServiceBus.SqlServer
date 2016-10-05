@@ -8,8 +8,8 @@
         {
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
 
-            TableName = tableName;
-            SchemaName = UnescapeSchema(schemaName);
+            TableName = UnescapeIdentifier(tableName);
+            SchemaName = UnescapeIdentifier(schemaName);
         }
 
         public string TableName { get; }
@@ -39,16 +39,16 @@
             return TableName;
         }
 
-        static string UnescapeSchema(string schemaName)
+        static string UnescapeIdentifier(string identifier)
         {
-            if (string.IsNullOrWhiteSpace(schemaName))
+            if (string.IsNullOrWhiteSpace(identifier))
             {
-                return schemaName;
+                return identifier;
             }
 
             using (var sanitizer = new SqlCommandBuilder())
             {
-                return sanitizer.UnquoteIdentifier(schemaName);
+                return sanitizer.UnquoteIdentifier(identifier);
             }
         }
     }
