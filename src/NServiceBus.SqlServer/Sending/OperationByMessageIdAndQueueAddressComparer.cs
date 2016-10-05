@@ -2,22 +2,20 @@
 {
     using System.Collections.Generic;
 
-    class OperationByMessageIdAndQueueAddressComparer : IEqualityComparer<MessageWithAddress>
+    class OperationByMessageIdAndQueueAddressComparer : IEqualityComparer<UnicastTransportOperation>
     {
-        public bool Equals(MessageWithAddress x, MessageWithAddress y)
+        public bool Equals(UnicastTransportOperation x, UnicastTransportOperation y)
         {
             return x.Message.MessageId.Equals(y.Message.MessageId)
-                   && x.Address.TableName.Equals(y.Address.TableName)
-                   && x.Address.SchemaName.Equals(y.Address.SchemaName);
+                   && x.Destination.Equals(y.Destination);
         }
 
-        public int GetHashCode(MessageWithAddress obj)
+        public int GetHashCode(UnicastTransportOperation obj)
         {
             unchecked
             {
                 var hashCode = obj.Message.MessageId.GetHashCode();
-                hashCode = (hashCode * 397) ^ obj.Address.TableName.GetHashCode();
-                hashCode = (hashCode * 397) ^ obj.Address.SchemaName.GetHashCode();
+                hashCode = (hashCode * 397) ^ obj.Destination.GetHashCode();
                 return hashCode;
             }
         }

@@ -70,13 +70,13 @@
         {
             public List<string> DispatchedMessageIds = new List<string>();
 
-            public Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
+            public Task DispatchAsNonIsolated(UnicastTransportOperation[] operations, TransportTransaction transportTransaction)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
 
-            public Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
+            public Task DispatchAsIsolated(UnicastTransportOperation[] operations)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);

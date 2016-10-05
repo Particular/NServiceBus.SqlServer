@@ -7,10 +7,11 @@ namespace NServiceBus.Transport.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser, QueueAddress delayedMessageStore)
         {
             this.connectionFactory = connectionFactory;
             this.addressParser = addressParser;
+            this.delayedMessageStore = delayedMessageStore;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -28,6 +29,8 @@ namespace NServiceBus.Transport.SQLServer
                     await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                 }
 
+                await CreateDelayedMessageStore(delayedMessageStore, connection, transaction).ConfigureAwait(false);
+
                 transaction.Commit();
             }
         }
@@ -44,7 +47,20 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
+        async Task CreateDelayedMessageStore(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
+        {
+            var sql = string.Format(Sql.CreateDelayedMessageStoreText, address.SchemaName, address.TableName);
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
+            {
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+        }
+
         SqlConnectionFactory connectionFactory;
         QueueAddressParser addressParser;
+        QueueAddress delayedMessageStore;
     }
 }

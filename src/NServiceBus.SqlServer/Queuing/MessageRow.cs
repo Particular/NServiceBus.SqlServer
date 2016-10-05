@@ -66,6 +66,7 @@
             row.recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false);
             row.headers = await GetHeaders(dataReader, 4).ConfigureAwait(false);
             row.bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false);
+            row.destination = await GetNullableAsync<string>(dataReader, 6).ConfigureAwait(false);
 
             return row;
         }
@@ -85,7 +86,7 @@
 
                 LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
 
-                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes));
+                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes, destination));
             }
             catch (Exception ex)
             {
@@ -152,6 +153,7 @@
         int? timeToBeReceived;
         string headers;
         byte[] bodyBytes;
+        string destination;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

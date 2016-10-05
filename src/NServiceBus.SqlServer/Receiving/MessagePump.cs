@@ -32,7 +32,7 @@
             inputQueue = queueFactory(addressParser.Parse(settings.InputQueue));
             errorQueue = queueFactory(addressParser.Parse(settings.ErrorQueue));
 
-            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalError);
+            receiveStrategy.Init(inputQueue, errorQueue, d => queueFactory(addressParser.Parse(d)), onMessage, onError, criticalError);
 
             if (settings.PurgeOnStartup)
             {

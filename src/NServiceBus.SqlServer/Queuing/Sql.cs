@@ -16,6 +16,18 @@ namespace NServiceBus.Transport.SQLServer
               IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
               IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
+        internal const string StoreDelayedMessageText =
+            @"
+              DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+              IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
+              SET NOCOUNT ON;
+
+              INSERT INTO {0}.{1} ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body],[Due],[Destination])
+              VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,CASE WHEN @TimeToBeReceivedMs IS NOT NULL THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,@Headers,@Body,@Due,@Destination);;
+
+              IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
+              IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
         internal const string ReceiveText = @"
             DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
             IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
@@ -23,9 +35,15 @@ namespace NServiceBus.Transport.SQLServer
 
             WITH message AS (SELECT TOP(1) * FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Expires] IS NULL OR [Expires] > GETUTCDATE() ORDER BY [RowVersion])
             DELETE FROM message
-            OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, deleted.Recoverable, deleted.Headers, deleted.Body;
+            OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, deleted.Recoverable, deleted.Headers, deleted.Body, deleted.Destination;
             IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
             IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
+        internal const string MoveMaturedDelayedMessageText = @"
+            WITH msg AS (SELECT TOP(100) * FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK) WHERE [Due] < GETUTCDATE())
+            DELETE FROM msg
+            OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, deleted.Recoverable, deleted.Expires, deleted.Headers, deleted.Body, deleted.Destination INTO {0}.{2}
+";
 
         internal const string PeekText = "SELECT count(*) Id FROM {0}.{1} WITH (READPAST) WHERE [Expires] IS NULL OR [Expires] > GETUTCDATE();";
 
@@ -43,6 +61,7 @@ namespace NServiceBus.Transport.SQLServer
                             [Expires] [datetime] NULL,
                             [Headers] [varchar](max) NOT NULL,
                             [Body] [varbinary](max) NULL,
+                            [Destination] [varchar](255) NULL,
                             [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
                         ) ON [PRIMARY];
 
@@ -59,6 +78,35 @@ namespace NServiceBus.Transport.SQLServer
                         (
                             [Id],
                             [RowVersion]
+                        )
+                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+                    END
+
+                    EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
+                  END";
+
+        internal const string CreateDelayedMessageStoreText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+                  BEGIN
+                    EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
+
+                    IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+                    BEGIN
+                        CREATE TABLE [{0}].[{1}](
+                            [Id] [uniqueidentifier] NOT NULL,
+                            [CorrelationId] [varchar](255) NULL,
+                            [ReplyToAddress] [varchar](255) NULL,
+                            [Recoverable] [bit] NOT NULL,
+                            [Expires] [datetime] NULL,
+                            [Headers] [varchar](max) NOT NULL,
+                            [Body] [varbinary](max) NULL,
+                            [Due] [datetime] NOT NULL,
+                            [Destination] [varchar](255) NULL,
+                            [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
+                        ) ON [PRIMARY];
+
+                        CREATE NONCLUSTERED INDEX [Index_Due] ON [{0}].[{1}]
+                        (
+                            [Due] ASC
                         )
                         WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
                     END

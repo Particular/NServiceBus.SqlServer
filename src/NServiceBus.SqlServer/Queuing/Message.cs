@@ -4,15 +4,17 @@
 
     class Message
     {
-        public Message(string transportId, Dictionary<string, string> headers, byte[] body)
+        public Message(string transportId, Dictionary<string, string> headers, byte[] body, string destination)
         {
             TransportId = transportId;
             Body = body;
+            Destination = destination;
             Headers = headers;
         }
 
         public string TransportId { get; }
         public byte[] Body { get; }
-        public Dictionary<string, string> Headers { get; private set; }
+        public string Destination { get; }
+        public Dictionary<string, string> Headers { get; }
     }
 }
