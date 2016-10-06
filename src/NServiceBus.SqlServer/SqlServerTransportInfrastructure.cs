@@ -29,12 +29,18 @@ namespace NServiceBus.Transport.SQLServer
         /// <summary>
         /// <see cref="TransportInfrastructure.DeliveryConstraints" />
         /// </summary>
-        public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
+        public override IEnumerable<Type> DeliveryConstraints
         {
-            typeof(DiscardIfNotReceivedBefore),
-            typeof(DoNotDeliverBefore),
-            typeof(DelayDeliveryWith)
-        };
+            get
+            {
+                yield return typeof(DiscardIfNotReceivedBefore);
+                if (settings.HasSetting<DelayedDeliverySettings>())
+                {
+                    yield return typeof(DoNotDeliverBefore);
+                    yield return typeof(DelayDeliveryWith);
+                }
+            }
+        }
 
         /// <summary>
         /// <see cref="TransportInfrastructure.TransactionMode" />

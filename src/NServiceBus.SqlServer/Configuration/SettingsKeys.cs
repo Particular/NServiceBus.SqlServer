@@ -12,8 +12,5 @@
         public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
 
         public const string SchemaPropertyKey = "Schema";
-
-        public const string DelayedMessageStoreSuffixSettingsKey = "SqlServer.DelayedDelivery.TableSuffix";
-        public const string DelayedDeliveryResolutionSettingsKey = "SqlServer.DelayedDelivery.Resolution";
     }
 }
