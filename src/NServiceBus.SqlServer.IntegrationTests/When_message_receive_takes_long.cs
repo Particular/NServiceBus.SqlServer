@@ -71,7 +71,7 @@
 
         static Task CreateQueueIfNotExists(QueueAddressParser addressParser)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser, new QueueAddress(QueueTableName + ".Delayed", "dbo"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(QueueTableName);
 

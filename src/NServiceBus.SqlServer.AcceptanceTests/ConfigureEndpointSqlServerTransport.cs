@@ -13,7 +13,9 @@ public class ConfigureScenariosForSqlServerTransport : IConfigureSupportedScenar
 {
     public IEnumerable<Type> UnsupportedScenarioDescriptorTypes { get; } = new[]
     {
-        typeof(AllTransportsWithCentralizedPubSubSupport)
+        typeof(AllTransportsWithCentralizedPubSubSupport),
+        typeof(AllTransportsWithoutNativeDeferral),
+        typeof(AllTransportsWithoutNativeDeferralAndWithAtomicSendAndReceive)
     };
 }
 

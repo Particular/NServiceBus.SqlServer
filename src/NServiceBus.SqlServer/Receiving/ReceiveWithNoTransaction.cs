@@ -29,10 +29,17 @@ namespace NServiceBus.Transport.SQLServer
                     return;
                 }
 
+                var message = readResult.Message;
+                if (message.Destination != null)
+                {
+                    //Forward the message
+                    var destinationQueue = QueueFactory(message.Destination);
+                    await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), connection, null).ConfigureAwait(false);
+                    return;
+                }
+
                 var transportTransaction = new TransportTransaction();
                 transportTransaction.Set(connection);
-
-                var message = readResult.Message;
 
                 try
                 {

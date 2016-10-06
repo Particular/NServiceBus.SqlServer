@@ -82,6 +82,10 @@
     <Compile Include="Configuration\ConnectionStringsValidator.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Configuration\ValidationCheckResult.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeliverySettings.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageRow.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageTable.cs" />
+    <Compile Include="DelayedDelivery\MaturedDelayMessageHandler.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />

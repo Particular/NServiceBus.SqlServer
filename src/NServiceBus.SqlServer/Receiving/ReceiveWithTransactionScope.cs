@@ -69,7 +69,15 @@
                 return null;
             }
 
-            return receiveResult.Message;
+            var message = receiveResult.Message;
+            if (message.Destination != null)
+            {
+                //Forward the message
+                var destinationQueue = QueueFactory(message.Destination);
+                await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), connection, null).ConfigureAwait(false);
+                return null;
+            }
+            return message;
         }
 
         TransportTransaction PrepareTransportTransaction()

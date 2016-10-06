@@ -9,14 +9,17 @@
     {
         protected TableBasedQueue InputQueue { get; private set; }
         protected TableBasedQueue ErrorQueue { get; private set; }
+        protected Func<string, TableBasedQueue> QueueFactory { get; private set; }
 
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<string, TableBasedQueue> queueFactory, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError)
         {
             InputQueue = inputQueue;
             ErrorQueue = errorQueue;
+            QueueFactory = queueFactory;
+
             this.onMessage = onMessage;
             this.onError = onError;
             this.criticalError = criticalError;

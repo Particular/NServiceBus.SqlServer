@@ -12,7 +12,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transportTransactionMode)
     {
         this.settings = settings;
-
+        settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
         return new TransportConfigurationResult
         {
             TransportInfrastructure = new SqlServerTransport().Initialize(settings, ConnectionString)

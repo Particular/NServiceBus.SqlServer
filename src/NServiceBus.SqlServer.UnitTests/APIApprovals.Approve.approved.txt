@@ -45,6 +45,7 @@ namespace NServiceBus.Transport.SQLServer
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int maxConcurrency) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DelatedMessageStoreSuffix(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string suffix) { }
         [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DisableCallbackReceiver(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
@@ -52,6 +53,7 @@ namespace NServiceBus.Transport.SQLServer
             "eployment. Please refer to documentation for more details. Will be treated as an" +
             " error from version 4.0.0. Will be removed in version 4.0.0.", false)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> EnableLegacyMultiInstanceMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> MessageDelayResolution(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int resolutionInSeconds) { }
         [System.ObsoleteAttribute("That config option is no longer supported. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PauseAfterReceiveFailure(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan delayTime) { }

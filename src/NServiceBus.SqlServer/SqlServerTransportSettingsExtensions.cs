@@ -114,6 +114,16 @@
         }
 
         /// <summary>
+        /// Changes the default suffix of delayed message table (Delayed).
+        /// </summary>
+        public static DelayedDeliverySettings EnableNativeDelayedMessageDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            var settings = new DelayedDeliverySettings(transportExtensions.GetSettings());
+            transportExtensions.GetSettings().Set<DelayedDeliverySettings>(settings);
+            return settings;
+        }
+        
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>

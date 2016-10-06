@@ -1,23 +1,30 @@
 namespace NServiceBus.Transport.SQLServer
 {
-    using System.Collections.Generic;
+    using System;
     using System.Data.SqlClient;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
+    using DelayedDelivery;
+    using DeliveryConstraints;
     using Transport;
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
         SqlConnectionFactory connectionFactory;
+        DelayedMessageTable delayedMessageTable;
+        QueueAddressParser addressParser;
 
-        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory)
+        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory, DelayedMessageTable delayedMessageTable, QueueAddressParser addressParser)
         {
             this.connectionFactory = connectionFactory;
+            this.delayedMessageTable = delayedMessageTable;
+            this.addressParser = addressParser;
         }
 
-        public async Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
+        public async Task DispatchAsIsolated(UnicastTransportOperation[] operations)
         {
-            if (operations.Count == 0)
+            if (operations.Length == 0)
             {
                 return;
             }
@@ -30,9 +37,9 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
+        public async Task DispatchAsNonIsolated(UnicastTransportOperation[] operations, TransportTransaction transportTransaction)
         {
-            if (operations.Count == 0)
+            if (operations.Length == 0)
             {
                 return;
             }
@@ -47,11 +54,11 @@ namespace NServiceBus.Transport.SQLServer
         }
 
 
-        async Task DispatchOperationsWithNewConnectionAndTransaction(HashSet<MessageWithAddress> operations)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(UnicastTransportOperation[] operations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                if (operations.Count == 1)
+                if (operations.Length == 1)
                 {
                     await Send(operations, connection, null).ConfigureAwait(false);
                     return;
@@ -65,7 +72,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, HashSet<MessageWithAddress> operations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, UnicastTransportOperation[] operations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
@@ -88,13 +95,43 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        async Task Send(UnicastTransportOperation[] operations, SqlConnection connection, SqlTransaction transaction)
         {
             foreach (var operation in operations)
             {
-                var queue = new TableBasedQueue(operation.Address);
-                await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                var due = GetDueTime(operation);
+                if (due.HasValue)
+                {
+                    await delayedMessageTable.Store(operation.Message, due.Value, operation.Destination, connection, transaction).ConfigureAwait(false);
+                }
+                else
+                {
+                    var queueAddress = addressParser.Parse(operation.Destination);
+                    var queue = new TableBasedQueue(queueAddress);
+                    await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                }
             }
+        }
+
+        static DateTime? GetDueTime(IOutgoingTransportOperation operation)
+        {
+            DoNotDeliverBefore doNotDeliverBefore;
+            DelayDeliveryWith delayDeliveryWith;
+            if (TryGetConstraint(operation, out doNotDeliverBefore))
+            {
+                return doNotDeliverBefore.At;
+            }
+            if (TryGetConstraint(operation, out delayDeliveryWith))
+            {
+                return DateTime.UtcNow + delayDeliveryWith.Delay;
+            }
+            return null;
+        }
+
+        static bool TryGetConstraint<T>(IOutgoingTransportOperation operation, out T constraint) where T : DeliveryConstraint
+        {
+            constraint = operation.DeliveryConstraints.OfType<T>().FirstOrDefault();
+            return constraint != null;
         }
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)

@@ -6,6 +6,7 @@ namespace NServiceBus.Transport.SQLServer
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
+    using DelayedDelivery;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
@@ -21,17 +22,25 @@ namespace NServiceBus.Transport.SQLServer
 
             this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
 
-            //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
+            //HINT: this flag indicates that user need to explicitly turn outbox in configusration.
             RequireOutboxConsent = true;
         }
 
         /// <summary>
         /// <see cref="TransportInfrastructure.DeliveryConstraints" />
         /// </summary>
-        public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
+        public override IEnumerable<Type> DeliveryConstraints
         {
-            typeof(DiscardIfNotReceivedBefore)
-        };
+            get
+            {
+                yield return typeof(DiscardIfNotReceivedBefore);
+                if (settings.HasSetting<DelayedDeliverySettings>())
+                {
+                    yield return typeof(DoNotDeliverBefore);
+                    yield return typeof(DelayDeliveryWith);
+                }
+            }
+        }
 
         /// <summary>
         /// <see cref="TransportInfrastructure.TransactionMode" />
@@ -78,9 +87,12 @@ namespace NServiceBus.Transport.SQLServer
 
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
+            var localAddress = addressParser.Parse(settings.LocalAddress());
+            var delayedTableName = localAddress.TableName + "." + DelayedMessageTableSuffix;
+
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressParser),
+                () => new QueueCreator(connectionFactory, addressParser, new QueueAddress(delayedTableName, localAddress.SchemaName)),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -132,14 +144,28 @@ namespace NServiceBus.Transport.SQLServer
             var connectionFactory = CreateConnectionFactory();
 
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, delayedMessageTable,  addressParser), addressParser),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });
+        }
+
+        public override Task Start()
+        {
+            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
+            delayedMessageHandler = new MaturedDelayMessageHandler(delayedMessageTable, CreateConnectionFactory(), TimeSpan.FromSeconds(DelayedMessageProcessingResolution));
+            delayedMessageHandler.Start();
+            return Task.FromResult(0);
+        }
+
+        public override Task Stop()
+        {
+            return delayedMessageHandler.Stop();
         }
 
         /// <summary>
@@ -196,9 +222,20 @@ namespace NServiceBus.Transport.SQLServer
             return addressParser.Parse(transportAddress).ToString();
         }
 
+        string DelayedMessageTableSuffix => settings.GetOrDefault<string>(SettingsKeys.DelayedMessageStoreSuffixSettingsKey) ?? "Delayed";
+        int DelayedMessageProcessingResolution
+        {
+            get
+            {
+                var settingValue = settings.GetOrDefault<int>(SettingsKeys.DelayedDeliveryResolutionSettingsKey);
+                return settingValue != 0 ? settingValue : 5;
+            }
+        }
+
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;
         EndpointSchemasSettings endpointSchemasSettings;
+        MaturedDelayMessageHandler delayedMessageHandler;
     }
 }
