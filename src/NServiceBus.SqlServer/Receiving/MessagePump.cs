@@ -7,7 +7,6 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Transport;
 
     class MessagePump : IPushMessages
     {
@@ -36,9 +35,16 @@
 
             if (settings.PurgeOnStartup)
             {
-                var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
+                try
+                {
+                    var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                Logger.InfoFormat("{0:N} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
+                    Logger.InfoFormat("{0:N} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to purge input queue on startup.", ex);
+                }
             }
 
             await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
@@ -160,9 +166,15 @@
 
                 receiveCircuitBreaker.Success();
             }
+            catch (SqlException e) when (e.Number == 1205)
+            {
+                //Receive has been victim of a lock resolution
+                Logger.Warn("Sql receive operation failed.", e);
+            }
             catch (Exception ex)
             {
                 Logger.Warn("Sql receive operation failed", ex);
+
                 await receiveCircuitBreaker.Failure(ex).ConfigureAwait(false);
             }
             finally
@@ -186,9 +198,18 @@
                 {
                     // Graceful shutdown
                 }
+                catch (SqlException e) when (e.Number == 1205)
+                {
+                    //Purge has been victim of a lock resolution
+                    Logger.Warn("Purger has been selected as a lock victim.", e);
+                }
                 catch (SqlException e) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thown while performing cancellation", e);
+                }
+                catch (Exception e)
+                {
+                    Logger.WarnFormat("Purging expired messages from table {0} failed with exception: {1}.", inputQueue, e);
                 }
             }
         }
