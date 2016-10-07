@@ -4,6 +4,7 @@
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Transactions;
     using Logging;
 
     class QueuePeeker : IPeekMessagesInQueue
@@ -20,6 +21,7 @@
 
             try
             {
+                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions {IsolationLevel = IsolationLevel.ReadCommitted}, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
                     messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
@@ -32,6 +34,8 @@
 
                         await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
                     }
+
+                    scope.Complete();
                 }
             }
             catch (OperationCanceledException)
