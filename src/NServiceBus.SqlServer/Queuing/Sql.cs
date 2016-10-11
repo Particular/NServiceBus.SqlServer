@@ -66,7 +66,7 @@ namespace NServiceBus.Transport.SQLServer
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 
-        internal const string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE [RowVersion] IN (SELECT TOP ({0}) [Id] FROM {1}.{2} WITH (NOLOCK) WHERE [Expires] < GETUTCDATE())";
+        internal const string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE [RowVersion] IN (SELECT TOP ({0}) [RowVersion] FROM {1}.{2} WITH (NOLOCK) WHERE [Expires] < GETUTCDATE())";
 
         internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
