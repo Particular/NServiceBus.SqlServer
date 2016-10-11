@@ -54,7 +54,7 @@
 
                 public Task Handle(MyMessage message, IMessageHandlerContext context)
                 {
-                    Context.TimeoutManagerHeaderDetected = context.MessageHeaders.ContainsKey("NServiceBus.RelatedToTimeoutId");
+                    Context.TimeoutManagerHeaderDetected = context.MessageHeaders.ContainsKey("NServiceBus.Timeout.Expire");
                     Context.WasCalled = true;
                     return Task.FromResult(0);
                 }
