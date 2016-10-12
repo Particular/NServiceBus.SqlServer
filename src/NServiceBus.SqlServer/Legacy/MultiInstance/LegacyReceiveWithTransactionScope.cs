@@ -74,8 +74,11 @@
             {
                 //Forward the message
                 var destinationQueue = QueueFactory(message.Destination);
-                await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), connection, null).ConfigureAwait(false);
-                return null;
+                using (var forwardConnection = await connectionFactory.OpenNewConnection(message.Destination).ConfigureAwait(false))
+                {
+                    await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), forwardConnection, null).ConfigureAwait(false);
+                    return null;
+                }
             }
 
             return message;
