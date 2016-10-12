@@ -50,39 +50,21 @@
             }
         }
 
-        //async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
-        //{
-        //    var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
+        protected override async Task ForwardDelayed(OutgoingMessage outgoingMessage, string destination, TableBasedQueue destinationQueue, SqlConnection connection, SqlTransaction transaction)
+        {
+            using (var forwardConnection = await connectionFactory.OpenNewConnection(destination).ConfigureAwait(false))
+            {
+                await destinationQueue.Send(outgoingMessage, forwardConnection, null).ConfigureAwait(false);
+            }
+        }
 
-        //    if (!receiveResult.Successful)
-        //    {
-        //        receiveCancellationTokenSource.Cancel();
-        //        return null;
-        //    }
-
-        //    if (receiveResult.IsPoison)
-        //    {
-        //        using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
-        //        {
-        //            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
-        //            return null;
-        //        }
-        //    }
-
-        //    var message = receiveResult.Message;
-        //    if (message.Destination != null)
-        //    {
-        //        //Forward the message
-        //        var destinationQueue = QueueFactory(message.Destination);
-        //        using (var forwardConnection = await connectionFactory.OpenNewConnection(message.Destination).ConfigureAwait(false))
-        //        {
-        //            await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), forwardConnection, null).ConfigureAwait(false);
-        //            return null;
-        //        }
-        //    }
-
-        //    return message;
-        //}
+        protected override async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
+        {
+            using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
+            {
+                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
+            }
+        }
 
         TransportTransaction PrepareTransportTransaction(SqlConnection connection)
         {

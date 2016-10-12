@@ -34,7 +34,7 @@
 
             if (receiveResult.IsPoison)
             {
-                await DeadLetter(connection, transaction, receiveResult).ConfigureAwait(false);
+                await DeadLetter(receiveResult, connection, transaction).ConfigureAwait(false);
                 return null;
             }
 
@@ -50,18 +50,18 @@
                 //Forward the message
                 var destinationQueue = QueueFactory(message.Destination);
                 var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
-                await ForwardDelayed(connection, transaction, destinationQueue, outgoingMessage).ConfigureAwait(false);
+                await ForwardDelayed(outgoingMessage, message.Destination, destinationQueue, connection, transaction).ConfigureAwait(false);
                 return null;
             }
             return message;
         }
 
-        protected virtual async  Task ForwardDelayed(SqlConnection connection, SqlTransaction transaction, TableBasedQueue destinationQueue, OutgoingMessage outgoingMessage)
+        protected virtual async Task ForwardDelayed(OutgoingMessage outgoingMessage, string destination, TableBasedQueue destinationQueue, SqlConnection connection, SqlTransaction transaction)
         {
             await destinationQueue.Send(outgoingMessage, connection, transaction).ConfigureAwait(false);
         }
 
-        protected virtual async Task DeadLetter(SqlConnection connection, SqlTransaction transaction, MessageReadResult receiveResult)
+        protected virtual async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
             await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
         }
