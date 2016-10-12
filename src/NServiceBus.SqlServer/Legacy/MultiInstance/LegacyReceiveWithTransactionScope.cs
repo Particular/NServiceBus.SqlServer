@@ -23,7 +23,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.TransportAddress).ConfigureAwait(false))
                 {
-                    message = await TryReceive(inputConnection, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(inputConnection, null, receiveCancellationTokenSource).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -50,39 +50,39 @@
             }
         }
 
-        async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
-        {
-            var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
+        //async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
+        //{
+        //    var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
 
-            if (!receiveResult.Successful)
-            {
-                receiveCancellationTokenSource.Cancel();
-                return null;
-            }
+        //    if (!receiveResult.Successful)
+        //    {
+        //        receiveCancellationTokenSource.Cancel();
+        //        return null;
+        //    }
 
-            if (receiveResult.IsPoison)
-            {
-                using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
-                {
-                    await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
-                    return null;
-                }
-            }
+        //    if (receiveResult.IsPoison)
+        //    {
+        //        using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
+        //        {
+        //            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
+        //            return null;
+        //        }
+        //    }
 
-            var message = receiveResult.Message;
-            if (message.Destination != null)
-            {
-                //Forward the message
-                var destinationQueue = QueueFactory(message.Destination);
-                using (var forwardConnection = await connectionFactory.OpenNewConnection(message.Destination).ConfigureAwait(false))
-                {
-                    await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), forwardConnection, null).ConfigureAwait(false);
-                    return null;
-                }
-            }
+        //    var message = receiveResult.Message;
+        //    if (message.Destination != null)
+        //    {
+        //        //Forward the message
+        //        var destinationQueue = QueueFactory(message.Destination);
+        //        using (var forwardConnection = await connectionFactory.OpenNewConnection(message.Destination).ConfigureAwait(false))
+        //        {
+        //            await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), forwardConnection, null).ConfigureAwait(false);
+        //            return null;
+        //        }
+        //    }
 
-            return message;
-        }
+        //    return message;
+        //}
 
         TransportTransaction PrepareTransportTransaction(SqlConnection connection)
         {

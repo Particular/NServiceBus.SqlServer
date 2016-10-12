@@ -15,26 +15,9 @@ namespace NServiceBus.Transport.SQLServer
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var readResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-                if (readResult.IsPoison)
+                var message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                if (message == null)
                 {
-                    await ErrorQueue.DeadLetter(readResult.PoisonMessage, connection, null).ConfigureAwait(false);
-                    return;
-                }
-
-                if (!readResult.Successful)
-                {
-                    receiveCancellationTokenSource.Cancel();
-                    return;
-                }
-
-                var message = readResult.Message;
-                if (message.Destination != null)
-                {
-                    //Forward the message
-                    var destinationQueue = QueueFactory(message.Destination);
-                    await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), connection, null).ConfigureAwait(false);
                     return;
                 }
 

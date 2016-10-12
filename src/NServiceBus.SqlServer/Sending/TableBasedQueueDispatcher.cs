@@ -99,16 +99,16 @@ namespace NServiceBus.Transport.SQLServer
         {
             foreach (var operation in operations)
             {
-                var due = GetDueTime(operation);
-                if (due.HasValue)
-                {
-                    await delayedMessageTable.Store(operation.Message, due.Value, operation.Destination, connection, transaction).ConfigureAwait(false);
-                }
-                else
+                DateTime? due;
+                if (delayedMessageTable == null || !(due = GetDueTime(operation)).HasValue)
                 {
                     var queueAddress = addressParser.Parse(operation.Destination);
                     var queue = new TableBasedQueue(queueAddress);
                     await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                }
+                else
+                {
+                    await delayedMessageTable.Store(operation.Message, due.Value, operation.Destination, connection, transaction).ConfigureAwait(false);
                 }
             }
         }

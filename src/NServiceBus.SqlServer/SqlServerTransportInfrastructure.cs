@@ -87,12 +87,22 @@ namespace NServiceBus.Transport.SQLServer
 
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
-            var localAddress = addressParser.Parse(settings.LocalAddress());
-            var delayedTableName = localAddress.TableName + "." + DelayedMessageTableSuffix;
+            QueueAddress delayedMessageStore;
+            var nativeDelayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+            if (nativeDelayedDeliverySettings != null)
+            {
+                var localAddress = addressParser.Parse(settings.LocalAddress());
+                var delayedTableName = localAddress.TableName + "." + nativeDelayedDeliverySettings.TableSuffix;
+                delayedMessageStore = new QueueAddress(delayedTableName, localAddress.SchemaName);
+            }
+            else
+            {
+                delayedMessageStore = null;
+            }
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressParser, new QueueAddress(delayedTableName, localAddress.SchemaName)),
+                () => new QueueCreator(connectionFactory, addressParser, delayedMessageStore),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -144,8 +154,12 @@ namespace NServiceBus.Transport.SQLServer
             var connectionFactory = CreateConnectionFactory();
 
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
-            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
-
+            var nativeDelayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+            DelayedMessageTable delayedMessageTable = null;
+            if (nativeDelayedDeliverySettings != null)
+            {
+                delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), nativeDelayedDeliverySettings.TableSuffix, addressParser);
+            }
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, delayedMessageTable,  addressParser), addressParser),
                 () =>
@@ -157,15 +171,23 @@ namespace NServiceBus.Transport.SQLServer
 
         public override Task Start()
         {
-            var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), DelayedMessageTableSuffix, addressParser);
-            delayedMessageHandler = new MaturedDelayMessageHandler(delayedMessageTable, CreateConnectionFactory(), TimeSpan.FromSeconds(DelayedMessageProcessingResolution));
-            delayedMessageHandler.Start();
+            var nativeDelayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+            if (nativeDelayedDeliverySettings != null)
+            {
+                var delayedMessageTable = new DelayedMessageTable(settings.LocalAddress(), nativeDelayedDeliverySettings.TableSuffix, addressParser);
+                delayedMessageHandler = new MaturedDelayMessageHandler(delayedMessageTable, CreateConnectionFactory(), TimeSpan.FromSeconds(nativeDelayedDeliverySettings.ProcessingResolution));
+                delayedMessageHandler.Start();
+            }
             return Task.FromResult(0);
         }
 
         public override Task Stop()
         {
-            return delayedMessageHandler.Stop();
+            if (delayedMessageHandler != null)
+            {
+                return delayedMessageHandler.Stop();
+            }
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -221,17 +243,7 @@ namespace NServiceBus.Transport.SQLServer
         {
             return addressParser.Parse(transportAddress).ToString();
         }
-
-        string DelayedMessageTableSuffix => settings.GetOrDefault<string>(SettingsKeys.DelayedMessageStoreSuffixSettingsKey) ?? "Delayed";
-        int DelayedMessageProcessingResolution
-        {
-            get
-            {
-                var settingValue = settings.GetOrDefault<int>(SettingsKeys.DelayedDeliveryResolutionSettingsKey);
-                return settingValue != 0 ? settingValue : 5;
-            }
-        }
-
+        
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;

@@ -23,7 +23,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -50,34 +50,6 @@
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
             }
-        }
-
-        async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
-        {
-            var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-            if (receiveResult.IsPoison)
-            {
-                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null).ConfigureAwait(false);
-                return null;
-            }
-
-            if (!receiveResult.Successful)
-            {
-                // No result or message expired.
-                receiveCancellationTokenSource.Cancel();
-                return null;
-            }
-
-            var message = receiveResult.Message;
-            if (message.Destination != null)
-            {
-                //Forward the message
-                var destinationQueue = QueueFactory(message.Destination);
-                await destinationQueue.Send(new OutgoingMessage(message.TransportId, message.Headers, message.Body), connection, null).ConfigureAwait(false);
-                return null;
-            }
-            return message;
         }
 
         TransportTransaction PrepareTransportTransaction()

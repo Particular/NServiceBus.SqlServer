@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -26,6 +27,44 @@
         }
 
         public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
+
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
+        {
+            var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+
+            if (receiveResult.IsPoison)
+            {
+                await DeadLetter(connection, transaction, receiveResult).ConfigureAwait(false);
+                return null;
+            }
+
+            if (!receiveResult.Successful)
+            {
+                receiveCancellationTokenSource.Cancel();
+                return null;
+            }
+
+            var message = receiveResult.Message;
+            if (message.Destination != null)
+            {
+                //Forward the message
+                var destinationQueue = QueueFactory(message.Destination);
+                var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
+                await ForwardDelayed(connection, transaction, destinationQueue, outgoingMessage).ConfigureAwait(false);
+                return null;
+            }
+            return message;
+        }
+
+        protected virtual async  Task ForwardDelayed(SqlConnection connection, SqlTransaction transaction, TableBasedQueue destinationQueue, OutgoingMessage outgoingMessage)
+        {
+            await destinationQueue.Send(outgoingMessage, connection, transaction).ConfigureAwait(false);
+        }
+
+        protected virtual async Task DeadLetter(SqlConnection connection, SqlTransaction transaction, MessageReadResult receiveResult)
+        {
+            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+        }
 
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {
