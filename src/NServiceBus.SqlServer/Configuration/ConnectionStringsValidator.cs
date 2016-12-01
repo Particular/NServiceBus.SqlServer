@@ -61,8 +61,8 @@
         const string SchemaOverridePart = "Queue Schema";
 
         const string MultiDatabaseNotSupported =
-            "Multidatabase setup is not supported in this version of sql transport. " +
-            "Please see documentation for setting up non default schema per each endpoint";
+            "Multi-instance option has been deprecated in this version of the SQL Server transport. " +
+            "Please refer to SQL Server upgrade guide for more details";
 
         const string SchemaOverrideNotSupported =
             "Schema override in connection string is not supported anymore. " +
