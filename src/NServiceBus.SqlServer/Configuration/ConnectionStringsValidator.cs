@@ -62,7 +62,7 @@
 
         const string MultiDatabaseNotSupported =
             "Multi-instance option has been deprecated in this version of the SQL Server transport. " +
-            "Please refer to SQL Server upgrade guide for more details";
+            "Please refer to the SQL Server transport upgrade guide for more details";
 
         const string SchemaOverrideNotSupported =
             "Schema override in connection string is not supported anymore. " +
