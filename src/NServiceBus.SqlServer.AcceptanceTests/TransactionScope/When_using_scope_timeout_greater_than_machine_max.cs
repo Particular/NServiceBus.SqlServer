@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransactionScope
 {
     using System;
+    using System.Configuration;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -12,14 +13,14 @@
         [Test]
         public void Should_throw()
         {
-            var exception = Assert.ThrowsAsync<AggregateException>(async () =>
+            var exception = Assert.ThrowsAsync<ConfigurationErrorsException>(async () =>
             {
                 await Scenario.Define<Context>()
                     .WithEndpoint<Endpoint>()
                     .Run();
             });
 
-            Assert.That(exception.InnerException.InnerException.Message.Contains("Timeout requested is longer than the maximum value for this machine"));
+            Assert.That(exception.Message.Contains("Timeout requested is longer than the maximum value for this machine"));
         }
 
         class Context : ScenarioContext
