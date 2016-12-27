@@ -71,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SqlServerTransportTests.cs" />
     <Compile Include="When_dispatching_messages.cs" />
     <Compile Include="When_message_receive_takes_long.cs" />
     <Compile Include="When_receiving_messages.cs" />

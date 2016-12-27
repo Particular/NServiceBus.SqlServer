@@ -94,10 +94,11 @@
     <Compile Include="DictionarySerializerTests.cs" />
     <Compile Include="ConfigurationValidatorTests.cs" />
     <Compile Include="ConnectionPoolValidatorTests.cs" />
+    <Compile Include="QueueAddressParserTests.cs" />
     <Compile Include="Receiving\FailureInfoStorageTests.cs" />
     <Compile Include="Sending\MessageDispatcherTests.cs" />
     <Compile Include="QueueAddressTests.cs" />
-    <Compile Include="TableBasedQueueTests.cs" />
+    <Compile Include="SqlServerTransportTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

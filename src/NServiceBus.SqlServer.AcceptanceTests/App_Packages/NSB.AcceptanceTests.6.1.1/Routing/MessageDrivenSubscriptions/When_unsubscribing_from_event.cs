@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.AcceptanceTests.Routing.MessageDrivenSubscriptions
 {
+    using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
@@ -17,14 +18,14 @@
                 .WithEndpoint<Publisher>(c => c
                     .When(
                         ctx => ctx.Subscriber1Subscribed && ctx.Subscriber2Subscribed,
-                        s => s.Publish(new Event()))
+                        s => s.Publish(new Event {Id = "a"}))
                     .When(
                         ctx => ctx.Subscriber2Unsubscribed,
                         async s =>
                         {
-                            await s.Publish(new Event());
-                            await s.Publish(new Event());
-                            await s.Publish(new Event());
+                            await s.Publish(new Event {Id = "b"});
+                            await s.Publish(new Event { Id = "c" });
+                            await s.Publish(new Event { Id = "d" });
                         }))
                 .WithEndpoint<Subscriber1>(c => c
                     .When(s => s.Subscribe<Event>()))
@@ -86,7 +87,11 @@
         {
             public Subscriber1()
             {
-                EndpointSetup<DefaultServer>(c => c.DisableFeature<AutoSubscribe>(),
+                EndpointSetup<DefaultServer>(c =>
+                    {
+                        c.DisableFeature<AutoSubscribe>();
+                        c.LimitMessageProcessingConcurrencyTo(1);
+                    },
                     metadata => metadata.RegisterPublisherFor<Event>(typeof(Publisher)));
             }
 
@@ -100,6 +105,7 @@
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
                     testContext.Subscriber1ReceivedMessages++;
+
                     return Task.FromResult(0);
                 }
 
@@ -134,6 +140,7 @@
 
         public class Event : IEvent
         {
+            public string Id { get; set; }
         }
     }
 }

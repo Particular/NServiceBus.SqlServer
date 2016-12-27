@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Collections.Generic;
+    using System.Collections.Concurrent;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using Logging;
@@ -13,42 +13,42 @@
             this.openNewConnection = openNewConnection;
         }
 
-        public async Task<SqlConnection> OpenNewConnection(string transportAddress)
+        public async Task<SqlConnection> OpenNewConnection(string queueName)
         {
-            var queueName = QueueAddress.Parse(transportAddress).TableName;
-
             var connection = await openNewConnection(queueName).ConfigureAwait(false);
 
-            ValidateConnectionPool(transportAddress, connection.ConnectionString);
+            ValidateConnectionPool(queueName, connection.ConnectionString);
 
             return connection;
         }
 
         void ValidateConnectionPool(string transportAddress, string connectionString)
         {
-            if (HasValidated(transportAddress)) return;
-
+            if (HasValidated(transportAddress))
+            {
+                return;
+            }
             var validationResult = ConnectionPoolValidator.Validate(connectionString);
             if (!validationResult.IsValid)
             {
                 Logger.Warn(validationResult.Message);
             }
-
             SetValidated(transportAddress);
         }
 
         void SetValidated(string transportAddress)
         {
-            validatedTransportConnections.Add(transportAddress);
+            validatedTransportConnections.AddOrUpdate(transportAddress, true, (key, value) => value);
         }
 
         bool HasValidated(string transportAddress)
         {
-            return validatedTransportConnections.Contains(transportAddress);
+            bool _;
+            return validatedTransportConnections.TryGetValue(transportAddress, out _);
         }
 
         Func<string, Task<SqlConnection>> openNewConnection;
-        static HashSet<string> validatedTransportConnections = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+        ConcurrentDictionary<string, bool> validatedTransportConnections = new ConcurrentDictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
         static ILog Logger = LogManager.GetLogger<LegacySqlConnectionFactory>();
     }
 }

@@ -21,11 +21,11 @@
         [SetUp]
         public async Task SetUp()
         {
-            var addressParser = new QueueAddressParser("dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
             await CreateQueueIfNotExists(addressParser);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName));
+            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName);
         }
 
         [Test]
@@ -46,7 +46,7 @@
             {
                 var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-                await tableBasedQueue.Send(message, c, null);
+                await tableBasedQueue.Send(message.Headers, message.Body, c, null);
             });
         }
 
@@ -69,9 +69,9 @@
         static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
 
 
-        static Task CreateQueueIfNotExists(QueueAddressParser addressParser)
+        static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(QueueTableName);
 

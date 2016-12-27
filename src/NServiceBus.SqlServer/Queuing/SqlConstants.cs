@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.SQLServer
     [Obsolete("Not for public use.")]
     public static class SqlConstants
     {
-        public static readonly string PurgeText = "DELETE FROM {0}.{1}";
+        public static readonly string PurgeText = "DELETE FROM {0}";
 
         public static readonly string SendText =
             @"
@@ -17,7 +17,7 @@ DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
 SET NOCOUNT ON;
 
-INSERT INTO {0}.{1} (
+INSERT INTO {0} (
     Id,
     CorrelationId,
     ReplyToAddress,
@@ -45,7 +45,7 @@ SET NOCOUNT ON;
 
 WITH message AS (
     SELECT TOP(1) *
-    FROM {0}.{1} WITH (UPDLOCK, READPAST, ROWLOCK)
+    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
     WHERE Expires IS NULL OR Expires > GETUTCDATE()
     ORDER BY RowVersion)
 DELETE FROM message
@@ -61,31 +61,31 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string PeekText = @"
 SELECT count(*) Id
-FROM {0}.{1} WITH (READPAST)
+FROM {0} WITH (READPAST)
 WHERE Expires IS NULL
     OR Expires > GETUTCDATE();";
 
         public static readonly string CreateQueueText = @"
 IF EXISTS (
     SELECT * 
-    FROM sys.objects 
-    WHERE object_id = OBJECT_ID(N'{0}.{1}') 
+    FROM {1}.sys.objects 
+    WHERE object_id = OBJECT_ID(N'{0}') 
         AND type in (N'U'))
 RETURN
 
-EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
     SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'{0}.{1}')
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 BEGIN
-    EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
     RETURN
 END
 
-CREATE TABLE {0}.{1}(
+CREATE TABLE {0} (
     Id uniqueidentifier NOT NULL,
     CorrelationId varchar(255),
     ReplyToAddress varchar(255),
@@ -96,12 +96,12 @@ CREATE TABLE {0}.{1}(
     RowVersion bigint IDENTITY(1,1) NOT NULL
 ) ON [PRIMARY];
 
-CREATE CLUSTERED INDEX Index_RowVersion ON {0}.{1}
+CREATE CLUSTERED INDEX Index_RowVersion ON {0}
 (
     RowVersion ASC
 ) ON [PRIMARY]
 
-CREATE NONCLUSTERED INDEX Index_Expires ON {0}.{1}
+CREATE NONCLUSTERED INDEX Index_Expires ON {0}
 (
     Expires ASC
 )
@@ -113,17 +113,17 @@ INCLUDE
 ";
 
         public static readonly string PurgeBatchOfExpiredMessagesText = @"
-DELETE FROM {0}.{1}
+DELETE FROM {0}
 WHERE RowVersion
     IN (SELECT TOP (@BatchSize) RowVersion
-        FROM {0}.{1} WITH (NOLOCK)
+        FROM {0} WITH (NOLOCK)
         WHERE Expires < GETUTCDATE())";
 
         public static readonly string CheckIfExpiresIndexIsPresent = @"
 SELECT COUNT(*)
 FROM sys.indexes
 WHERE name = 'Index_Expires'
-    AND object_id = OBJECT_ID('{0}.{1}')";
+    AND object_id = OBJECT_ID('{0}')";
 
     }
 }
