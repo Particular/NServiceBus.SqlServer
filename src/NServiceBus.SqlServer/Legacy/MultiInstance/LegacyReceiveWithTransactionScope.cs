@@ -21,7 +21,7 @@
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.TransportAddress).ConfigureAwait(false))
+                using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.LegacyTransportAddress).ConfigureAwait(false))
                 {
                     message = await TryReceive(inputConnection, receiveCancellationTokenSource).ConfigureAwait(false);
 
@@ -62,7 +62,7 @@
 
             if (receiveResult.IsPoison)
             {
-                using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
+                using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.LegacyTransportAddress).ConfigureAwait(false))
                 {
                     await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
                     return null;

@@ -76,7 +76,7 @@
             var purgeTaskDelay = settings.HasSetting(SettingsKeys.PurgeTaskDelayTimeSpanKey) ? settings.Get<TimeSpan?>(SettingsKeys.PurgeTaskDelayTimeSpanKey) : null;
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
 
-            return new ExpiredMessagesPurger(queue => connectionFactory.OpenNewConnection(queue.TransportAddress), purgeTaskDelay, purgeBatchSize);
+            return new ExpiredMessagesPurger(queue => connectionFactory.OpenNewConnection(queue.LegacyTransportAddress), purgeTaskDelay, purgeBatchSize);
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()

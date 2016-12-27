@@ -20,20 +20,12 @@
             string schema;
             if (tableSchemaSettings.TryGet(sqlAddress.TableName, out schema))
             {
-                return new QueueAddress(sqlAddress.TableName, schema);
+                return sqlAddress.OverrideSchema(schema);
             }
 
-            if (string.IsNullOrWhiteSpace(sqlAddress.SchemaName) == false)
-            {
-                return sqlAddress;
-            }
-
-            if (string.IsNullOrWhiteSpace(defaultSchemaOverride) == false)
-            {
-                return new QueueAddress(sqlAddress.TableName, defaultSchemaOverride);
-            }
-
-            return new QueueAddress(sqlAddress.TableName, defaultSchema);
+            return sqlAddress.HasDefinedSchema 
+                ? sqlAddress 
+                : sqlAddress.OverrideSchema(DefaultSchema);
         }
 
         string defaultSchema;

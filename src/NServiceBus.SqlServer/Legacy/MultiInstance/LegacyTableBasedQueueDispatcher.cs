@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.SQLServer
                 foreach (var operation in operations)
                 {
                     var queue = new TableBasedQueue(operation.Address);
-                    using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(queue.LegacyTransportAddress).ConfigureAwait(false))
                     {
                         await queue.Send(operation.Message, connection, null).ConfigureAwait(false);
                     }
@@ -35,7 +35,7 @@ namespace NServiceBus.Transport.SQLServer
                 foreach (var operation in operations)
                 {
                     var queue = new TableBasedQueue(operation.Address);
-                    using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(queue.LegacyTransportAddress).ConfigureAwait(false))
                     {
                         await queue.Send(operation.Message, connection, null).ConfigureAwait(false);
                     }

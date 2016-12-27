@@ -12,22 +12,19 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueue
     {
+        QueueAddress address;
+
         public TableBasedQueue(QueueAddress address)
         {
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                tableName = sanitizer.QuoteIdentifier(address.TableName);
-                schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
-            }
-
-            TransportAddress = address.ToString();
+            this.address = address;
+            LegacyTransportAddress = address.ToString();
         }
 
-        public string TransportAddress { get; }
+        public string LegacyTransportAddress { get; }
 
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
         {
-            var commandText = Format(Sql.PeekText, schemaName, tableName);
+            var commandText = Format(Sql.PeekText, address.Quoted);
 
             using (var command = new SqlCommand(commandText, connection)
             {
@@ -42,7 +39,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(Sql.ReceiveText, schemaName, tableName);
+            var commandText = Format(Sql.ReceiveText, address.Quoted);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -80,7 +77,7 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(Sql.SendText, schemaName, tableName);
+            var commandText = Format(Sql.SendText, address.Quoted);
 
             try
             {
@@ -108,29 +105,17 @@ namespace NServiceBus.Transport.SQLServer
 
         void ThrowQueueNotFoundException(SqlException ex)
         {
-            var queue = tableName == null
-                ? null
-                : ToString();
-
-            var msg = tableName == null
-                ? "Failed to send message. Target address is null."
-                : $"Failed to send message to {queue}";
-
-            throw new QueueNotFoundException(queue, msg, ex);
+            throw new QueueNotFoundException(address.TableName, $"Failed to send message to {address.Unquoted}", ex);
         }
 
         void ThrowFailedToSendException(Exception ex)
         {
-            if (tableName == null)
-            {
-                throw new Exception("Failed to send message.", ex);
-            }
-            throw new Exception($"Failed to send message to {ToString()}", ex);
+            throw new Exception($"Failed to send message to {address.Unquoted}", ex);
         }
 
         public async Task<int> Purge(SqlConnection connection)
         {
-            var commandText = Format(Sql.PurgeText, schemaName, tableName);
+            var commandText = Format(Sql.PurgeText, address.Quoted);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -140,7 +125,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, schemaName, tableName);
+            var commandText = Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, address.Quoted);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -150,7 +135,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            var commandText = Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, schemaName, tableName);
+            var commandText = Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, address.Quoted);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -158,18 +143,15 @@ namespace NServiceBus.Transport.SQLServer
 
                 if (rowsCount == 0)
                 {
-                    Logger.WarnFormat(@"Table {0}.{1} does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", schemaName, tableName, Sql.ExpiresIndexName);
+                    Logger.Warn(Format(@"Table {0} does not contain index '{1}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", address.Unquoted, Sql.ExpiresIndexName));
                 }
             }
         }
 
         public override string ToString()
         {
-            return $"{schemaName}.{tableName}";
+            return address.Unquoted;
         }
-
-        string tableName;
-        string schemaName;
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
     }
