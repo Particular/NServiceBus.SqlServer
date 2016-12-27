@@ -3,6 +3,7 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
@@ -28,6 +29,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
+                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
                     c.UseTransport<SqlServerTransport>()
                         .ConnectionString("this-will-not-work")
                         .UseCustomSqlConnectionFactory(async () =>

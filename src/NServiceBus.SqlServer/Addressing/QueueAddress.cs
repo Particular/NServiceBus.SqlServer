@@ -2,47 +2,78 @@
 {
     using System;
     using System.Data.SqlClient;
+    using System.Text;
 
     class QueueAddress
     {
-        public QueueAddress(string tableName, string schemaName)
+        public QueueAddress(string table, string schemaName, string catalogName)
         {
-            Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
-
-            TableName = tableName;
-            SchemaName = UnescapeIdentifier(schemaName);
+            Guard.AgainstNullAndEmpty(nameof(table), table);
+            Table = table;
+            Catalog = SafeUnquote(catalogName);
+            Schema = SafeUnquote(schemaName);
+            Value = GetStringForm();
         }
 
-        public string TableName { get; }
-        public string SchemaName { get; }
+        public string Catalog { get; }
+        public string Table { get; }
+        public string Schema { get; }
+        public string Value { get; }
 
-        //HINT: Algorithm for parsing transport addresses runs with few assumptions:
-        //      1. Addresses are provided in <table_id>@<schema_id> format
+        //HINT: Algorithm for paring transport addresses runs on few assumptions:
+        //      1. Addresses are provided in <table_id>@<schema_id>@<catalog_id> format
         //      2. To preserve compatibility with v2 <table_id> is either:
-        //          a. The whole address if no `@` exists in the body of the address
-        //          b. Prefix of the address until first occurrence of `@`
-        //      3. `@` can be used inside <schema_id> only when bracket delimited
-        //      4. If the first character of <schema_id> equals left bracket (`[`)
-        //         algorithm assumes that schema part is in brackets delimited format
-        //      5. Parsing does not assume the address needs to end with schema part.
-        //         It will stop at first `@` that defines correct <schema_id> part.
+        //          a. The whole address if no `@` exists in the body of address
+        //          b. Prefix of the address up until first `@` from the beginning of the address
+        //      3. `@` can be used inside <schema_id> or <catalog_id> only when bracket delimited
+        //      4. If the first character of either <schema_id> or <catalog_id> equals to `[`
+        //         algorithm assumes that those parts are specified in brackets delimited format
+        //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id>
+        //         or <catalog_id> parts.
         public static QueueAddress Parse(string address)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
 
             if (firstAtIndex == -1)
             {
-                return new QueueAddress(address, null);
+                return new QueueAddress(address, null, null);
             }
 
             var tableName = address.Substring(0, firstAtIndex);
             address = firstAtIndex + 1 < address.Length ? address.Substring(firstAtIndex + 1) : string.Empty;
 
-            var schemaName = ExtractSchema(address);
-            return new QueueAddress(tableName, schemaName);
+            string schemaName;
+            address = ExtractNextPart(address, out schemaName);
+
+            string catalogName = null;
+
+            if (address != string.Empty)
+            {
+                ExtractNextPart(address, out catalogName);
+            }
+            return new QueueAddress(tableName, schemaName, catalogName);
         }
 
-        static string ExtractSchema(string address)
+        string GetStringForm()
+        {
+            var result = new StringBuilder();
+            var optionalParts = new[] { Catalog, Schema };
+            foreach (var part in optionalParts)
+            {
+                if (part != null)
+                {
+                    result.Insert(0, $"@{Quote(part)}");
+                }
+                else if (result.Length > 0)
+                {
+                    result.Insert(0, "@[]");
+                }
+            }
+            result.Insert(0, Table);
+            return result.ToString();
+        }
+
+        static string ExtractNextPart(string address, out string part)
         {
             var noRightBrackets = 0;
             var index = 1;
@@ -51,63 +82,45 @@
             {
                 if (index >= address.Length)
                 {
-                    return address;
+                    part = address;
+                    return string.Empty;
                 }
 
                 if (address[index] == '@' && (address[0] != '[' || noRightBrackets % 2 == 1))
                 {
-                    return address.Substring(0, index);
+                    part = address.Substring(0, index);
+                    return index + 1 < address.Length ? address.Substring(index + 1) : string.Empty;
                 }
 
                 if (address[index] == ']')
                 {
                     noRightBrackets++;
                 }
+
                 index++;
             }
         }
 
-        public override string ToString()
+        static string Quote(string name)
         {
-            if (!string.IsNullOrWhiteSpace(SchemaName))
-            {
-                return $"{TableName}@[{SchemaName}]";
-            }
-
-            return TableName;
-        }
-
-        static string UnescapeIdentifier(string identifier)
-        {
-            if (string.IsNullOrWhiteSpace(identifier))
-            {
-                return identifier;
-            }
-
             using (var sanitizer = new SqlCommandBuilder())
             {
-                return sanitizer.UnquoteIdentifier(identifier);
+                return sanitizer.QuoteIdentifier(name);
             }
         }
 
-        bool Equals(QueueAddress other)
+        static string SafeUnquote(string name)
         {
-            return string.Equals(TableName, other.TableName) && string.Equals(SchemaName, other.SchemaName);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((QueueAddress) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
+            if (name == null)
             {
-                return ((TableName != null ? TableName.GetHashCode() : 0)*397) ^ (SchemaName != null ? SchemaName.GetHashCode() : 0);
+                return null;
+            }
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                var result = sanitizer.UnquoteIdentifier(name);
+                return string.IsNullOrWhiteSpace(result)
+                    ? null
+                    : result;
             }
         }
     }

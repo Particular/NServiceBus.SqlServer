@@ -5,12 +5,11 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Extensibility;
-    using Performance.TimeToBeReceived;
     using Transport;
 
-    class MessageDispatcher : IDispatchMessages
+    class LegacyMessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator)
+        public LegacyMessageDispatcher(IQueueDispatcher dispatcher, LegacyQueueAddressTranslator addressTranslator)
         {
             this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
@@ -35,7 +34,7 @@
         }
 
         IQueueDispatcher dispatcher;
-        QueueAddressTranslator addressTranslator;
+        LegacyQueueAddressTranslator addressTranslator;
 
         class DeduplicationKey
         {

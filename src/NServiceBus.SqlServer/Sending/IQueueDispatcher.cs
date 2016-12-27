@@ -5,8 +5,8 @@ namespace NServiceBus.Transport.SQLServer
 
     interface IQueueDispatcher
     {
-        Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction);
+        Task DispatchAsNonIsolated(List<UnicastTransportOperation> operations, TransportTransaction transportTransaction);
 
-        Task DispatchAsIsolated(HashSet<MessageWithAddress> operations);
+        Task DispatchAsIsolated(List<UnicastTransportOperation> operations);
     }
 }

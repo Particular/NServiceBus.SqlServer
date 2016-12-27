@@ -8,10 +8,10 @@ namespace NServiceBus.Transport.SQLServer
 
     class LegacyQueueCreator : ICreateQueues
     {
-        public LegacyQueueCreator(LegacySqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
+        public LegacyQueueCreator(LegacySqlConnectionFactory connectionFactory, LegacyQueueAddressTranslator addressTranslator)
         {
             this.connectionFactory = connectionFactory;
-            this.addressParser = addressParser;
+            this.addressTranslator = addressTranslator;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -21,7 +21,7 @@ namespace NServiceBus.Transport.SQLServer
                 using (var connection = await connectionFactory.OpenNewConnection(receivingAddress).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction())
                 {
-                    await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(receivingAddress).QualifiedTableName, connection, transaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
             }
@@ -31,23 +31,15 @@ namespace NServiceBus.Transport.SQLServer
                 using (var connection = await connectionFactory.OpenNewConnection(sendingAddress).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction())
                 {
-                    await CreateQueue(addressParser.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(sendingAddress).QualifiedTableName, connection, transaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
             }
         }
 
-        async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateQueue(string qualifiedTableName, SqlConnection connection, SqlTransaction transaction)
         {
-            string tableName;
-            string schemaName;
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                tableName = sanitizer.QuoteIdentifier(address.TableName);
-                schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
-            }
-
-            var sql = string.Format(SqlConstants.CreateQueueText, schemaName, tableName);
+            var sql = string.Format(LegacySql.CreateQueueText, qualifiedTableName);
 
             using (var command = new SqlCommand(sql, connection, transaction)
             {
@@ -60,6 +52,6 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         LegacySqlConnectionFactory connectionFactory;
-        QueueAddressParser addressParser;
+        LegacyQueueAddressTranslator addressTranslator;
     }
 }
