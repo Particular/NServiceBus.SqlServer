@@ -74,8 +74,9 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Addressing\EndpointSchemasSettings.cs" />
-    <Compile Include="Addressing\TableSchemasSettings.cs" />
+    <Compile Include="Addressing\EndpointSchemaAndCatalogSettings.cs" />
+    <Compile Include="Addressing\QueueAddress.cs" />
+    <Compile Include="Addressing\TableSchemaAndCatalogSettings.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Configuration\ConnectionPoolValidator.cs" />
     <Compile Include="Configuration\SqlConnectionFactory.cs" />
@@ -85,6 +86,10 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyMessageDispatcher.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyQueueAddressTranslator.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacySql.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyCanonicalQueueAddress.cs" />
     <Compile Include="Receiving\QueuePeekerOptions.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
@@ -107,13 +112,11 @@
     <Compile Include="Queuing\Sql.cs" />
     <Compile Include="Queuing\Message.cs" />
     <Compile Include="Queuing\MessageRow.cs" />
-    <Compile Include="Addressing\QueueAddress.cs" />
-    <Compile Include="Addressing\QueueAddressParser.cs" />
+    <Compile Include="Addressing\CanonicalQueueAddress.cs" />
+    <Compile Include="Addressing\QueueAddressTranslator.cs" />
     <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Configuration\SqlScopeOptions.cs" />
-    <Compile Include="Sending\MessageWithAddress.cs" />
-    <Compile Include="Sending\OperationByMessageIdAndQueueAddressComparer.cs" />
     <Compile Include="Sending\TableBasedQueueDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />

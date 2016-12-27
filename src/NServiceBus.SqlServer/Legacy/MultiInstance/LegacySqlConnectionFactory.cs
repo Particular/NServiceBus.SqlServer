@@ -13,13 +13,11 @@
             this.openNewConnection = openNewConnection;
         }
 
-        public async Task<SqlConnection> OpenNewConnection(string transportAddress)
+        public async Task<SqlConnection> OpenNewConnection(string queueName)
         {
-            var queueName = QueueAddress.Parse(transportAddress).TableName;
-
             var connection = await openNewConnection(queueName).ConfigureAwait(false);
 
-            ValidateConnectionPool(transportAddress, connection.ConnectionString);
+            ValidateConnectionPool(queueName, connection.ConnectionString);
 
             return connection;
         }
@@ -34,7 +32,8 @@
                 Logger.Warn(validationResult.Message);
             }
 
-            SetValidated(transportAddress);
+            //TODO: is this correct?
+            //SetValidated(transportAddress);
         }
 
         void SetValidated(string transportAddress)

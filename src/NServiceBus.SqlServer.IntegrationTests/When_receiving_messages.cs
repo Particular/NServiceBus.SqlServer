@@ -17,15 +17,16 @@
             var successfulReceives = 46;
             var queueSize = 1000;
 
-            var inputQueue = new FakeTableBasedQueue(QueueAddress.Parse("input@dbo"), queueSize, successfulReceives);
+            var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+
+            var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
 
             var pump = new MessagePump(
                 m => new ReceiveWithNoTransaction(sqlConnectionFactory),
-                qa => qa.TableName == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(qa),
+                qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
-                new QueueAddressParser("dbo", null, null),
                 TimeSpan.MaxValue);
 
             await pump.Init(
@@ -70,7 +71,7 @@
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(QueueAddress address, int queueSize, int successfulReceives) : base(address)
+            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "")
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;

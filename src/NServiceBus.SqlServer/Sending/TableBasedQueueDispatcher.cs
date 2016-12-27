@@ -8,14 +8,13 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
-        SqlConnectionFactory connectionFactory;
-
-        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory)
+        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator)
         {
             this.connectionFactory = connectionFactory;
+            this.addressTranslator = addressTranslator;
         }
 
-        public async Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
+        public async Task DispatchAsIsolated(List<UnicastTransportOperation> operations)
         {
             if (operations.Count == 0)
             {
@@ -30,7 +29,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
+        public async Task DispatchAsNonIsolated(List<UnicastTransportOperation> operations, TransportTransaction transportTransaction)
         {
             if (operations.Count == 0)
             {
@@ -47,7 +46,7 @@ namespace NServiceBus.Transport.SQLServer
         }
 
 
-        async Task DispatchOperationsWithNewConnectionAndTransaction(HashSet<MessageWithAddress> operations)
+        async Task DispatchOperationsWithNewConnectionAndTransaction(List<UnicastTransportOperation> operations)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -65,7 +64,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, HashSet<MessageWithAddress> operations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<UnicastTransportOperation> operations)
         {
             SqlConnection sqlTransportConnection;
             SqlTransaction sqlTransportTransaction;
@@ -88,12 +87,13 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        async Task Send(List<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction)
         {
             foreach (var operation in operations)
             {
-                var queue = new TableBasedQueue(operation.Address);
-                await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                var address = addressTranslator.Parse(operation.Destination);
+                var queue = new TableBasedQueue(address.QualifiedTableName, address.Address);
+                await queue.Send(operation.Message.Headers, operation.Message.Body, connection, transaction).ConfigureAwait(false);
             }
         }
 
@@ -113,5 +113,8 @@ namespace NServiceBus.Transport.SQLServer
             bool inReceiveMode;
             return transportTransaction.TryGet(ReceiveWithNativeTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
+
+        SqlConnectionFactory connectionFactory;
+        QueueAddressTranslator addressTranslator;
     }
 }

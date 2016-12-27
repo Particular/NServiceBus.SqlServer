@@ -72,6 +72,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="When_using_special_characters_in_endpoint_name.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\ApiExtension\When_extending_sendoptions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\ApiExtension\When_extending_the_publish_api.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\Audit\When_auditing.cs" />
@@ -317,9 +318,13 @@
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\Tx\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\UnicastRoutingExtensions.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\Versioning\When_multiple_versions_of_a_message_is_published.cs" />
+    <Compile Include="LegacyMultiInstance\When_doing_request_reply_between_modes.cs" />
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance.cs" />
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_mode_with_custom_schema.cs" />
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_with_transaction_mode_different_from_distributed.cs" />
+    <Compile Include="MultiCatalog\When_configured_error_queue_includes_catalog.cs" />
+    <Compile Include="MultiCatalog\When_custom_catalog_configured_for_error_queue.cs" />
+    <Compile Include="MultiCatalog\When_custom_catalog_configured_for_endpoint.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_endpoint_with_brackets_syntax.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_error_queue.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_publisher.cs" />

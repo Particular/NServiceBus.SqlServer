@@ -21,7 +21,7 @@
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.TransportAddress).ConfigureAwait(false))
+                using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.Name).ConfigureAwait(false))
                 {
                     message = await TryReceive(inputConnection, null, receiveCancellationTokenSource).ConfigureAwait(false);
 
@@ -52,7 +52,7 @@
         
         protected override async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
-            using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
+            using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.Name).ConfigureAwait(false))
             {
                 await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
             }

@@ -1,16 +1,13 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests
 {
-    using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
-    using Transport.SQLServer;
 
-    public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
+    public class When_using_special_characters_in_endpoint_name : NServiceBusAcceptanceTest
     {
         [Test]
         public Task Should_use_provided_ready_to_use_connection()
@@ -29,18 +26,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString("this-will-not-work")
-                        .UseCustomSqlConnectionFactory(async () =>
-                        {
-                            var connection = new SqlConnection(@"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;");
-
-                            await connection.OpenAsync();
-
-                            return connection;
-                        });
-                });
+                }).CustomEndpointName("Speci[a]lCharacters");
             }
 
             class Handler : IHandleMessages<Message>

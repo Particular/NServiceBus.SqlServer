@@ -53,14 +53,13 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             qn.ForEach(n =>
             {
                 var nameParts = n.Split('@');
-                if (nameParts.Length == 2)
+                if (nameParts.Length > 1)
                 {
                     using (var sanitizer = new SqlCommandBuilder())
                     {
-                        var sanitizedSchemaName = SanitizeIdentifier(nameParts[1], sanitizer);
-                        var sanitizedTableName = SanitizeIdentifier(nameParts[0], sanitizer);
-
-                        queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
+                        var sanitizedParts = nameParts.Reverse().Select(x => SanitizeIdentifier(x, sanitizer));
+                        var queueName = string.Join(".", sanitizedParts);
+                        queueNames.Add(queueName);
                     }
                 }
                 else

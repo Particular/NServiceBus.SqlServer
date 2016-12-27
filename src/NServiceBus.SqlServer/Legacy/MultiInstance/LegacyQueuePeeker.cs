@@ -22,7 +22,7 @@
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions {IsolationLevel = IsolationLevel.ReadCommitted}, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(inputQueue.TransportAddress).ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(inputQueue.Name).ConfigureAwait(false))
                 {
                     messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
 
