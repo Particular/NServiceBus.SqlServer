@@ -12,5 +12,6 @@
         public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
 
         public const string SchemaPropertyKey = "Schema";
+        public const string CatalogPropertyKey = "Catalog";
     }
 }

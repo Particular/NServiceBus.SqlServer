@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.SQLServer
             this.settings = settings;
             this.connectionString = connectionString;
 
-            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+            this.schemaAndCatalogSettings = settings.GetOrCreate<SchemaAndCatalogSettings>();
 
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
@@ -131,7 +131,7 @@ namespace NServiceBus.Transport.SQLServer
         {
             var connectionFactory = CreateConnectionFactory();
 
-            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.SQLServer
         /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
-            var schemaSettings = settings.Get<EndpointSchemasSettings>();
+            var schemaSettings = settings.Get<SchemaAndCatalogSettings>();
 
             string schema;
             if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
@@ -180,10 +180,11 @@ namespace NServiceBus.Transport.SQLServer
 
             var tableName = string.Join(".", nonEmptyParts);
 
-            string schemaName;
+            string schemaName, catalogName;
 
             logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-            var queueAddress = new QueueAddress(tableName, schemaName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
+            var queueAddress = new QueueAddress(catalogName, schemaName ?? "", tableName);
 
             return queueAddress.ToString();
         }
@@ -199,6 +200,6 @@ namespace NServiceBus.Transport.SQLServer
         QueueAddressParser addressParser;
         string connectionString;
         SettingsHolder settings;
-        EndpointSchemasSettings endpointSchemasSettings;
+        SchemaAndCatalogSettings schemaAndCatalogSettings;
     }
 }

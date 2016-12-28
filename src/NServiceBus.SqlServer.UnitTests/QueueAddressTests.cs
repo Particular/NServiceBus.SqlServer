@@ -15,7 +15,7 @@
         [TestCase("my.table", "[my.schema]", "my.table@[my.schema]")]
         public void Should_include_brackets_around_schema_name(string tableName, string schemaName, string expectedAddress)
         {
-            var address = new QueueAddress(tableName, schemaName);
+            var address = new QueueAddress(null, schemaName, tableName);
 
             Assert.AreEqual(expectedAddress, address.ToString());
         }

@@ -1,16 +1,30 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiCatalog
 {
-    using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NUnit.Framework;
     using Transport.SQLServer;
 
-    public abstract class When_using_legacy_multiinstance : NServiceBusAcceptanceTest
+    public class When_using_multicatalog : NServiceBusAcceptanceTest
     {
-        protected static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
+        static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
         static string ReceiverConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
+        static string ReceiverEndpoint => Conventions.EndpointNamingConvention(typeof(Receiver));
+        static string SenderEndpoint => Conventions.EndpointNamingConvention(typeof(Sender));
+
+
+        [Test]
+        public Task Should_be_able_to_send_message_to_input_queue_in_different_catalog()
+        {
+            return Scenario.Define<Context>()
+                .WithEndpoint<Sender>(c => c.When(s => s.Send(new Message())))
+                .WithEndpoint<Receiver>()
+                .Done(c => c.ReplyReceived)
+                .Run();
+        }
 
         public class Sender : EndpointConfigurationBuilder
         {
@@ -18,22 +32,16 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-#pragma warning disable 0618
-                    c.UseTransport<SqlServerTransport>()
-                        .UseSchemaForEndpoint("Receiver", "receiver")
-                        .UseSchemaForEndpoint("Sender", "sender")
-                        .EnableLegacyMultiInstanceMode(async queueName =>
-                        {
-                            var connectionString = queueName.Contains("Receiver") ? ReceiverConnectionString : SenderConnectionString;
-                            var connection = new SqlConnection(connectionString);
+                    var routing = c.UseTransport<SqlServerTransport>()
+                        .ConnectionString(SenderConnectionString)
+                        .UseSchemaForEndpoint(ReceiverEndpoint, "receiver")
+                        .UseCatalogForEndpoint(ReceiverEndpoint, "nservicebus2")
+                        .Routing();
 
-                            await connection.OpenAsync();
-
-                            return connection;
-                        });
-#pragma warning restore 0618
-                }).AddMapping<Message>(typeof(Receiver));
+                    routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                });
             }
+
 
             class Handler : IHandleMessages<Reply>
             {
@@ -54,20 +62,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-#pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
-                        .UseSchemaForEndpoint("Receiver", "receiver")
-                        .UseSchemaForEndpoint("Sender", "sender")
-                        .EnableLegacyMultiInstanceMode(async address =>
-                        {
-                            var connectionString = address.Contains("Sender") ? SenderConnectionString : ReceiverConnectionString;
-                            var connection = new SqlConnection(connectionString);
-
-                            await connection.OpenAsync();
-
-                            return connection;
-                        });
-#pragma warning restore 0618
+                        .ConnectionString(ReceiverConnectionString)
+                        .UseSchemaForEndpoint(ReceiverEndpoint, "receiver")
+                        .UseCatalogForEndpoint(SenderEndpoint, "nservicebus1");
                 });
             }
 

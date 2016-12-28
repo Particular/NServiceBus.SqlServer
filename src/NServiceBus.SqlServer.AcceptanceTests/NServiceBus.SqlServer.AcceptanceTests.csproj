@@ -320,6 +320,7 @@
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance.cs" />
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_mode_with_custom_schema.cs" />
     <Compile Include="LegacyMultiInstance\When_using_legacy_multiinstance_with_transaction_mode_different_from_distributed.cs" />
+    <Compile Include="MultiCatalog\When_using_multicatalog.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_endpoint_with_brackets_syntax.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_error_queue.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_publisher.cs" />

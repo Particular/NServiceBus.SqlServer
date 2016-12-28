@@ -7,11 +7,6 @@
 
     class QueueAddress
     {
-        public QueueAddress(string tableName, string schemaName)
-            : this(null, schemaName, tableName)
-        {
-        }
-
         public QueueAddress(string catalog, string schemaName, string tableName)
         {
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
@@ -19,17 +14,13 @@
             {
                 throw new ArgumentException("Catalog name cannot be empty.", nameof(catalog));
             }
-            if (schemaName == "")
-            {
-                throw new ArgumentException("Schema name cannot be empty.", nameof(schemaName));
-            }
             if (catalog != null && schemaName == null)
             {
                 throw new Exception("If catalog is specified, schema name has to be specified too.");
             }
-            Catalog = Unquaote(catalog);
+            Catalog = Unquote(catalog);
             TableName = tableName;
-            SchemaName = Unquaote(schemaName);
+            SchemaName = Unquote(schemaName);
             Quoted = string.Join(".", GetAllParts().Select(QuoteIdentifier));
             Unquoted = string.Join(".", GetAllParts());
         }
@@ -121,7 +112,7 @@
             return $"{TableName}@{location}";
         }
 
-        static string Unquaote(string name)
+        static string Unquote(string name)
         {
             return name == null
                 ? null

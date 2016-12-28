@@ -35,9 +35,9 @@
             Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
             Guard.AgainstNullAndEmpty(nameof(schema), schema);
 
-            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemasSettings>();
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<SchemaAndCatalogSettings>();
 
-            schemasConfiguration.AddOrUpdate(endpointName, schema);
+            schemasConfiguration.SpecifySchema(endpointName, schema);
 
             return transportExtensions;
         }
@@ -57,6 +57,25 @@
             var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<TableSchemasSettings>();
 
             schemasConfiguration.AddOrUpdate(queueName, schema);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies custom schema for given endpoint.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="endpointName">Endpoint name.</param>
+        /// <param name="catalog">Custom catalog value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
+        {
+            Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
+            Guard.AgainstNullAndEmpty(nameof(catalog), catalog);
+
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<SchemaAndCatalogSettings>();
+
+            schemasConfiguration.SpecifyCatalog(endpointName, catalog);
 
             return transportExtensions;
         }

@@ -15,7 +15,7 @@
             this.addressParser = addressParser;
             this.settings = settings;
 
-            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+            this.schemaAndCatalogSettings = settings.GetOrCreate<SchemaAndCatalogSettings>();
         }
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()
@@ -83,7 +83,7 @@
         {
             var connectionFactory = CreateLegacyConnectionFactory();
 
-            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
@@ -96,6 +96,6 @@
 
         QueueAddressParser addressParser;
         SettingsHolder settings;
-        EndpointSchemasSettings endpointSchemasSettings;
+        SchemaAndCatalogSettings schemaAndCatalogSettings;
     }
 }
