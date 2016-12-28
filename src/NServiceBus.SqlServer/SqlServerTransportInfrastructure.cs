@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.Common;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
@@ -163,7 +164,18 @@ namespace NServiceBus.Transport.SQLServer
                 schema = addressParser.DefaultSchema;
             }
 
-            return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+            var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+
+            var parser = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionString
+            };
+            object catalog;
+            if (parser.TryGetValue("Initial Catalog", out catalog))
+            {
+                result = result.SetProperty(SettingsKeys.CatalogPropertyKey, (string)catalog);
+            }
+            return result;
         }
 
         /// <summary>
