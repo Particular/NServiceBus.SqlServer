@@ -81,6 +81,24 @@
         }
 
         /// <summary>
+        /// Specifies custom schema for given endpoint.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="catalog">Catalog name</param>
+        /// <param name="outgoingQueueName">Optional name of the outgoing queue. Defaults to [Outgoing].[dbo].[Outgoing].</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseOutgoingQueueForCatalog(this TransportExtensions<SqlServerTransport> transportExtensions, string catalog, string outgoingQueueName = null)
+        {
+            Guard.AgainstNullAndEmpty(nameof(catalog), catalog);
+
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<SchemaAndCatalogSettings>();
+
+            schemasConfiguration.SpecifyRemoteCatalog(catalog, QueueAddress.Parse(outgoingQueueName ?? "Outgoing@dbo@Outgoing"));
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure
         /// in case there are numerous errors
         /// while trying to receive messages.

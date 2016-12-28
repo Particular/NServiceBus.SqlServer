@@ -17,7 +17,7 @@
         {
             var queueDispatcher = new FakeTableBasedQueueDispatcher();
 
-            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressParser("dbo", null, null));
+            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressParser("dbo", null, null), new SchemaAndCatalogSettings());
 
             await dispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 

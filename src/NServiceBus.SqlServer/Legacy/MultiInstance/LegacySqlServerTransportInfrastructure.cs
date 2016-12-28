@@ -86,7 +86,7 @@
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser, schemaAndCatalogSettings),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
