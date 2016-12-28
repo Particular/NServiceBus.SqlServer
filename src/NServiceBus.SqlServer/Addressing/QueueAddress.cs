@@ -53,63 +53,54 @@
 
         public static QueueAddress Parse(string address)
         {
-            if (address.Contains("@"))
+            var location = address;
+
+            var rightBrackets = 0;
+            var leftBrackets = 0;
+            var startIndex = 0;
+            var locationParts = new List<string>();
+            for (var i = 0; i < location.Length; i++)
             {
-                var parts = address.Split('@');
-                var tableName = parts[0];
-                var location = parts[1];
+                if (location[i] == ']')
+                {
+                    rightBrackets++;
+                }
+                else if (location[i] == '[')
+                {
+                    leftBrackets++;
+                }
+                else if (location[i] == '@' && (rightBrackets % 2 != 0 || (rightBrackets == 0 && leftBrackets == 0)))
+                {
+                    var part = location.Substring(startIndex, i - startIndex);
+                    locationParts.Add(part);
+                    startIndex = i + 1;
+                    rightBrackets = 0;
+                    leftBrackets = 0;
+                }
+            }
+            locationParts.Add(location.Substring(startIndex));
 
-                var rightBrackets = 0;
-                var leftBrackets = 0;
-                var startIndex = 0;
-                var locationParts = new List<string>();
-                for (var i = 0; i < location.Length; i++)
-                {
-                    if (location[i] == ']')
-                    {
-                        rightBrackets++;
-                    }
-                    else if (location[i] == '[')
-                    {
-                        leftBrackets++;
-                    }
-                    else if (location[i] == '.' && (rightBrackets % 2 != 0 || (rightBrackets == 0 && leftBrackets == 0)))
-                    {
-                        var part = location.Substring(startIndex, i - startIndex);
-                        locationParts.Add(part);
-                        startIndex = i + 1;
-                        rightBrackets = 0;
-                        leftBrackets = 0;
-                    }
-                }
-                locationParts.Add(location.Substring(startIndex));
-
-                if (locationParts.Count == 1)
-                {
-                    return new QueueAddress(null, locationParts[0], tableName);
-                }
-                if (locationParts.Count == 2)
-                {
-                    return new QueueAddress(locationParts[0], locationParts[1], tableName);
-                }
-                throw new Exception("Invalid address. Expect address in format Table@[Catalog].[Schema]");
+            if (locationParts.Count > 3)
+            {
+                throw new Exception("Invalid address. Expect address in format Table@[Schema]@[Catalog]");
             }
 
-            return new QueueAddress(null, null, address);
+            var tableName = locationParts[0];
+            var schemaName = locationParts.Count > 1 ? locationParts[1] : null;
+            var catalogName = locationParts.Count > 2 ? locationParts[2] : null;
+
+            return new QueueAddress(catalogName, schemaName, tableName);
         }
 
         public override string ToString()
         {
-            if (SchemaName == null)
+            var result = string.Join("@", new[]
             {
-                return TableName;
-            }
-            var location = string.Join(".", new[]
-            {
-                Catalog,
-                SchemaName
-            }.Where(x => x != null).Select(QuoteIdentifier));
-            return $"{TableName}@{location}";
+                TableName,
+                Quote(SchemaName),
+                Quote(Catalog)
+            }.Where(x => x != null));
+            return result;
         }
 
         static string Unquote(string name)
@@ -117,6 +108,13 @@
             return name == null
                 ? null
                 : UnquoteIdentifier(name);
+        }
+
+        static string Quote(string name)
+        {
+            return name == null
+                ? null
+                : QuoteIdentifier(name);
         }
 
         static string UnquoteIdentifier(string name)
