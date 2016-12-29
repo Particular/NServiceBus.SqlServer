@@ -150,7 +150,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override string ToString()
         {
-            return address.Unquoted;
+            return address.Quoted;
         }
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
