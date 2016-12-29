@@ -3,6 +3,7 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using Transport.SQLServer;
@@ -18,8 +19,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
+                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Sender))}@@nservicebus1");
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
+                        .ConnectionString("should-not-be-used")
                         .UseSchemaForEndpoint("Receiver", "receiver")
                         .UseSchemaForEndpoint("Sender", "sender")
                         .EnableLegacyMultiInstanceMode(async queueName =>
@@ -54,8 +57,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
+                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Receiver))}@@nservicebus2");
 #pragma warning disable 0618
                     c.UseTransport<SqlServerTransport>()
+                        .ConnectionString("should-not-be-used")
                         .UseSchemaForEndpoint("Receiver", "receiver")
                         .UseSchemaForEndpoint("Sender", "sender")
                         .EnableLegacyMultiInstanceMode(async address =>

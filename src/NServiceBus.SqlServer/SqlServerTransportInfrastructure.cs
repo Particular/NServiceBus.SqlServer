@@ -166,7 +166,7 @@ namespace NServiceBus.Transport.SQLServer
 
             var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
 
-            if (!settings.HasSetting(SettingsKeys.ConnectionFactoryOverride))
+            if (!settings.HasSetting(SettingsKeys.ConnectionFactoryOverride) && !settings.HasSetting(SettingsKeys.LegacyMultiInstanceConnectionFactory))
             {
                 var parser = new DbConnectionStringBuilder
                 {
@@ -185,7 +185,7 @@ namespace NServiceBus.Transport.SQLServer
             }
             else if (!settings.HasSetting("PublicReturnAddress"))
             {
-                throw new Exception("When using a custom connection factory it is required to also provide a custom return address using EndpointConfiguration.OverridePublicReturnAddress.");
+                throw new Exception("When using a custom connection factory or legacy multi-instance mode it is required to also provide a custom return address using EndpointConfiguration.OverridePublicReturnAddress.");
             }
             return result;
         }
