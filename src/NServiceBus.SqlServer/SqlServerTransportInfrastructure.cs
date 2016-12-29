@@ -166,14 +166,26 @@ namespace NServiceBus.Transport.SQLServer
 
             var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
 
-            var parser = new DbConnectionStringBuilder
+            if (!settings.HasSetting(SettingsKeys.ConnectionFactoryOverride))
             {
-                ConnectionString = connectionString
-            };
-            object catalog;
-            if (parser.TryGetValue("Initial Catalog", out catalog))
+                var parser = new DbConnectionStringBuilder
+                {
+                    ConnectionString = connectionString
+                };
+
+                object catalog;
+                if (parser.TryGetValue("Initial Catalog", out catalog))
+                {
+                    result = result.SetProperty(SettingsKeys.CatalogPropertyKey, (string) catalog);
+                }
+                else
+                {
+                    throw new Exception("Initial Catalog property is mandatory in the connection string.");
+                }
+            }
+            else if (!settings.HasSetting("PublicReturnAddress"))
             {
-                result = result.SetProperty(SettingsKeys.CatalogPropertyKey, (string)catalog);
+                throw new Exception("When using a custom connection factory it is required to also provide a custom return address using EndpointConfiguration.OverridePublicReturnAddress.");
             }
             return result;
         }
