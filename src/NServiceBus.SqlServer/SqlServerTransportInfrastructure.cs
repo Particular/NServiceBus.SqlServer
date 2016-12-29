@@ -174,7 +174,7 @@ namespace NServiceBus.Transport.SQLServer
                 };
 
                 object catalog;
-                if (parser.TryGetValue("Initial Catalog", out catalog))
+                if (parser.TryGetValue("Initial Catalog", out catalog) || parser.TryGetValue("Database", out catalog))
                 {
                     result = result.SetProperty(SettingsKeys.CatalogPropertyKey, (string) catalog);
                 }
