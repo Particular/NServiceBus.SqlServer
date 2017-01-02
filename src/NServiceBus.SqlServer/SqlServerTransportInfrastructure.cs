@@ -85,6 +85,21 @@ namespace NServiceBus.Transport.SQLServer
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
+        public override Task Start()
+        {
+            locationDetector = AutoDetectQueueLocation.TryConfigure(settings, CreateConnectionFactory());
+            return locationDetector != null 
+                ? locationDetector.Start() 
+                : Task.FromResult(0);
+        }
+
+        public override Task Stop()
+        {
+            return locationDetector != null ? 
+                locationDetector.Stop() 
+                : Task.FromResult(0);
+        }
+
         SqlConnectionFactory CreateConnectionFactory()
         {
             Func<Task<SqlConnection>> factoryOverride;
@@ -225,5 +240,6 @@ namespace NServiceBus.Transport.SQLServer
         string connectionString;
         SettingsHolder settings;
         SchemaAndCatalogSettings schemaAndCatalogSettings;
+        AutoDetectQueueLocation locationDetector;
     }
 }

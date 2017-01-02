@@ -41,6 +41,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     public class static SqlServerTransportSettingsExtensions
     {
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> AutoDetectQueueLocations(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string[] scannedSchemas, string[] scannedCatalogs) { }
         [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int maxConcurrency) { }

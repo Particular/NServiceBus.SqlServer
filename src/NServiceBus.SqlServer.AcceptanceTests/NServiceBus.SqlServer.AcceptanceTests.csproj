@@ -324,6 +324,7 @@
     <Compile Include="MultiSchema\When_custom_schema_configured_for_endpoint_with_brackets_syntax.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_error_queue.cs" />
     <Compile Include="MultiSchema\When_custom_schema_configured_for_publisher.cs" />
+    <Compile Include="QueueLocationDetection\When_using_automatic_queue_location_detection.cs" />
     <Compile Include="When_ReplyTo_address_does_not_exist.cs" />
     <Compile Include="When_the_message_contains_a_legacy_callback_header.cs" />
     <Compile Include="Configuration\AppConfig.cs" />

@@ -81,6 +81,21 @@
         }
 
         /// <summary>
+        /// Enables automatic detection of queue location (schema and catalog) based on the database metadata. Queue tables are detected based on column name and type match.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="scannedSchemas">List of schemas to scan for queue tables. If null, scan all schemas.</param>
+        /// <param name="scannedCatalogs">List of catalogs to scan for queue tables. If null, scan all catalogs in the current instance.</param>
+        public static TransportExtensions<SqlServerTransport> AutoDetectQueueLocations(this TransportExtensions<SqlServerTransport> transportExtensions, string[] scannedSchemas, string[] scannedCatalogs)
+        {
+            var settings = transportExtensions.GetSettings();
+            settings.Set(AutoDetectQueueLocation.EnableKey, true);
+            settings.Set(AutoDetectQueueLocation.CatalogFilterKey, scannedCatalogs);
+            settings.Set(AutoDetectQueueLocation.SchemaFilterKey, scannedSchemas);
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure
         /// in case there are numerous errors
         /// while trying to receive messages.
