@@ -84,15 +84,11 @@
         /// Enables automatic detection of queue location (schema and catalog) based on the database metadata. Queue tables are detected based on column name and type match.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="scannedSchemas">List of schemas to scan for queue tables. If null, scan all schemas.</param>
-        /// <param name="scannedCatalogs">List of catalogs to scan for queue tables. If null, scan all catalogs in the current instance.</param>
-        public static TransportExtensions<SqlServerTransport> AutoDetectQueueLocations(this TransportExtensions<SqlServerTransport> transportExtensions, string[] scannedSchemas, string[] scannedCatalogs)
+        public static AutoDetectQueueLocationSettings AutoDetectQueueLocations(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
             var settings = transportExtensions.GetSettings();
             settings.Set(AutoDetectQueueLocation.EnableKey, true);
-            settings.Set(AutoDetectQueueLocation.CatalogFilterKey, scannedCatalogs);
-            settings.Set(AutoDetectQueueLocation.SchemaFilterKey, scannedSchemas);
-            return transportExtensions;
+            return new AutoDetectQueueLocationSettings(settings);
         }
 
         /// <summary>

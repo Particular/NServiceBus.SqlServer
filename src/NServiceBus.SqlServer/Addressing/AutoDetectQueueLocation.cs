@@ -14,11 +14,13 @@
         public const string EnableKey = "NServiceBus.SqlServer.AutoDetectQueueLocation";
         public const string SchemaFilterKey = "NServiceBus.SqlServer.AutoDetectQueueLocation.Schemas";
         public const string CatalogFilterKey = "NServiceBus.SqlServer.AutoDetectQueueLocation.Catalogs";
+        public const string IgnoredQueuesKey = "NServiceBus.SqlServer.AutoDetectQueueLocation.IgnoredQueues";
 
         static ILog log = LogManager.GetLogger<AutoDetectQueueLocation>();
 
         string[] catalogs;
         string[] schemas;
+        string[] ignoredQueues;
         SqlConnectionFactory connectionFactory;
         EndpointInstances endpointInstances;
         TimeSpan updateInterval;
@@ -32,15 +34,16 @@
             }
             var schemas = settings.GetOrDefault<string[]>(SchemaFilterKey);
             var catalogs = settings.GetOrDefault<string[]>(CatalogFilterKey);
-
-            var detector = new AutoDetectQueueLocation(catalogs, schemas, connectionFactory, settings.Get<EndpointInstances>(), TimeSpan.FromMinutes(1));
+            var ignoredQueues = settings.GetOrDefault<string[]>(IgnoredQueuesKey) ?? new string[0];
+            var detector = new AutoDetectQueueLocation(catalogs, schemas, ignoredQueues, connectionFactory, settings.Get<EndpointInstances>(), TimeSpan.FromMinutes(1));
             return detector;
         }
 
-        public AutoDetectQueueLocation(string[] catalogs, string[] schemas, SqlConnectionFactory connectionFactory, EndpointInstances endpointInstances, TimeSpan updateInterval)
+        public AutoDetectQueueLocation(string[] catalogs, string[] schemas, string[] ignoredQueues, SqlConnectionFactory connectionFactory, EndpointInstances endpointInstances, TimeSpan updateInterval)
         {
             this.catalogs = catalogs;
             this.schemas = schemas;
+            this.ignoredQueues = ignoredQueues;
             this.connectionFactory = connectionFactory;
             this.endpointInstances = endpointInstances;
             this.updateInterval = updateInterval;
@@ -135,6 +138,10 @@ WHERE t.TABLE_TYPE = 'BASE TABLE'", connection))
                     {
                         var schema = reader.GetString(0);
                         var table = reader.GetString(1);
+                        if (ignoredQueues.Any(x => string.Equals(x, table, StringComparison.InvariantCultureIgnoreCase)))
+                        {
+                            continue;
+                        }
                         if (schemas != null && schemas.All(x => !string.Equals(x, schema, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             continue;

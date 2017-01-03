@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="Addressing\AsyncTimer.cs" />
     <Compile Include="Addressing\AutoDetectQueueLocation.cs" />
+    <Compile Include="Addressing\AutoDetectQueueLocationSettings.cs" />
     <Compile Include="Addressing\EndpointSchemasSettings.cs" />
     <Compile Include="Addressing\TableSchemasSettings.cs" />
     <Compile Include="AssemblyInfo.cs" />

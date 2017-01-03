@@ -30,17 +30,13 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var routing = c.UseTransport<SqlServerTransport>()
+                    var transport = c.UseTransport<SqlServerTransport>()
                         .ConnectionString(SenderConnectionString)
-                        .DefaultSchema("sender")
-                        .AutoDetectQueueLocations(null, new[]
-                        {
-                            "nservicebus1",
-                            "nservicebus2"
-                        })
-                        .Routing();
+                        .DefaultSchema("sender");
 
-                    routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                    transport.AutoDetectQueueLocations().InCatalogs("nservicebus1", "nservicebus2").IgnoreQueues("error");
+
+                    transport.Routing().RouteToEndpoint(typeof(Message), ReceiverEndpoint);
                 });
             }
 
@@ -67,11 +63,7 @@
                     c.UseTransport<SqlServerTransport>()
                         .ConnectionString(ReceiverConnectionString)
                         .DefaultSchema("receiver")
-                        .AutoDetectQueueLocations(null, new[]
-                        {
-                            "nservicebus1",
-                            "nservicebus2"
-                        });
+                        .AutoDetectQueueLocations().InCatalogs("nservicebus1", "nservicebus2").IgnoreQueues("error");
                 });
             }
 

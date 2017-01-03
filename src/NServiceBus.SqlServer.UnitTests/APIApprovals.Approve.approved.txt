@@ -12,36 +12,18 @@ namespace NServiceBus
         public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
     }
 }
-namespace NServiceBus.Transport.SQLServer.ConnectionStrings
-{
-    public class ConnectionInfo
-    {
-        public ConnectionInfo() { }
-        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
-        public static NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo Create() { }
-        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
-        public NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo UseConnectionString(string connectionString) { }
-        [System.ObsoleteAttribute("Multi-instance setup is supported for backwards compatibility and won\'t be suppor" +
-            "ted from Version 4.0. To specify schema use `UseSpecificSchema()`. The member cu" +
-            "rrently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
-        public NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo UseSchema(string schemaName) { }
-    }
-    public class EndpointConnectionInfo
-    {
-        public EndpointConnectionInfo() { }
-        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
-        public static NServiceBus.Transport.SQLServer.ConnectionStrings.EndpointConnectionInfo For(string endpoint) { }
-        [System.ObsoleteAttribute("Multi-instance setup is supported for backwards compatibility and won\'t be suppor" +
-            "ted from Version 4.0. To specify schema use `UseSpecificSchema()`. The member cu" +
-            "rrently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
-        public NServiceBus.Transport.SQLServer.ConnectionStrings.EndpointConnectionInfo UseSchema(string schemaName) { }
-    }
-}
 namespace NServiceBus.Transport.SQLServer
 {
+    public class AutoDetectQueueLocationSettings : NServiceBus.Configuration.AdvanceExtensibility.ExposeSettings
+    {
+        public AutoDetectQueueLocationSettings(NServiceBus.Settings.SettingsHolder settings) { }
+        public NServiceBus.Transport.SQLServer.AutoDetectQueueLocationSettings IgnoreQueues(params string[] ignoredQueues) { }
+        public NServiceBus.Transport.SQLServer.AutoDetectQueueLocationSettings InCatalogs(params string[] allowedCatalogs) { }
+        public NServiceBus.Transport.SQLServer.AutoDetectQueueLocationSettings InSchemas(params string[] allowedSchemas) { }
+    }
     public class static SqlServerTransportSettingsExtensions
     {
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> AutoDetectQueueLocations(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string[] scannedSchemas, string[] scannedCatalogs) { }
+        public static NServiceBus.Transport.SQLServer.AutoDetectQueueLocationSettings AutoDetectQueueLocations(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +
             "mentedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CallbackReceiverMaxConcurrency(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int maxConcurrency) { }
@@ -69,5 +51,30 @@ namespace NServiceBus.Transport.SQLServer
         [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSpecificConnectionInformation(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo> connectionInformationProvider) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
+    }
+}
+namespace NServiceBus.Transport.SQLServer.ConnectionStrings
+{
+    public class ConnectionInfo
+    {
+        public ConnectionInfo() { }
+        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
+        public static NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo Create() { }
+        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
+        public NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo UseConnectionString(string connectionString) { }
+        [System.ObsoleteAttribute("Multi-instance setup is supported for backwards compatibility and won\'t be suppor" +
+            "ted from Version 4.0. To specify schema use `UseSpecificSchema()`. The member cu" +
+            "rrently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
+        public NServiceBus.Transport.SQLServer.ConnectionStrings.ConnectionInfo UseSchema(string schemaName) { }
+    }
+    public class EndpointConnectionInfo
+    {
+        public EndpointConnectionInfo() { }
+        [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
+        public static NServiceBus.Transport.SQLServer.ConnectionStrings.EndpointConnectionInfo For(string endpoint) { }
+        [System.ObsoleteAttribute("Multi-instance setup is supported for backwards compatibility and won\'t be suppor" +
+            "ted from Version 4.0. To specify schema use `UseSpecificSchema()`. The member cu" +
+            "rrently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]
+        public NServiceBus.Transport.SQLServer.ConnectionStrings.EndpointConnectionInfo UseSchema(string schemaName) { }
     }
 }

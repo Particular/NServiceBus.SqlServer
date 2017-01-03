@@ -34,7 +34,9 @@
             await EnsureSchemaCreated(connection, "s1");
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus"}, new[] {"s1"}, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus"}, new[] {"s1"}, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             var detected = result[0];
@@ -52,7 +54,9 @@
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
             await EnsureViewCreated(connection, "[s1].[Valid]", "[s1].[ValidView]");
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "s1" }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "s1" }, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             Assert.IsFalse(result.Any(i => string.Equals(i.Endpoint, "ValidView", StringComparison.InvariantCultureIgnoreCase)));
@@ -67,7 +71,9 @@
             await EnsureSchemaCreated(connection, "s2");
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "s2" }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "s2" }, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             Assert.IsFalse(result.Any(i => string.Equals(i.Endpoint, "Valid", StringComparison.InvariantCultureIgnoreCase)));
@@ -82,7 +88,9 @@
             await EnsureSchemaCreated(connection, "s2");
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus1" }, null, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus1" }, null, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             Assert.IsFalse(result.Any(i => string.Equals(i.Endpoint, "Valid", StringComparison.InvariantCultureIgnoreCase)));
@@ -97,7 +105,9 @@
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
             await EnsureTableCreated(connection, "[s2].[Valid2]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, null, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, null, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             Assert.IsTrue(result.Any(i => string.Equals(i.Endpoint, "Valid", StringComparison.InvariantCultureIgnoreCase)));
@@ -115,7 +125,9 @@
             await EnsureTableCreated(connection, "[s1].[Valid]", correctColumns.Values);
             await EnsureTableCreated(connection1, "[s1].[Valid2]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(null, null, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(null, null, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
             Assert.IsTrue(result.Any(i => string.Equals(i.Endpoint, "Valid", StringComparison.InvariantCultureIgnoreCase)));
@@ -142,7 +154,9 @@
             await EnsureTableCreated(connection, "[d1].[Duplicate]", correctColumns.Values);
             await EnsureTableCreated(connection, "[d2].[Duplicate]", correctColumns.Values);
 
-            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "d1", "d2" }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
+            var detector = new AutoDetectQueueLocation(new[] { "nservicebus" }, new[] { "d1", "d2" }, new string[]
+            {
+            }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
 
             Assert.That(() => detector.UpdateInstanceTable(true).GetAwaiter().GetResult(), Throws.Exception.Message.Contains("Duplicate location detected for Duplicate"));
         }
@@ -160,6 +174,8 @@
             }, new[]
             {
                 "s1"
+            }, new string[]
+            {
             }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
@@ -179,6 +195,8 @@
             }, new[]
             {
                 "s1"
+            }, new string[]
+            {
             }, sqlConnectionFactory, new EndpointInstances(), TimeSpan.Zero);
             var result = await detector.Detect();
 
