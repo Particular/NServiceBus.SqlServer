@@ -10,9 +10,9 @@
         public QueueAddress(string catalog, string schemaName, string tableName)
         {
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
-            if (catalog == "")
+            if (catalog != null && IsEmptyOrWhiteSpace(catalog))
             {
-                throw new ArgumentException("Catalog name cannot be empty.", nameof(catalog));
+                throw new ArgumentException("Catalog name cannot be empty or whitespace.", nameof(catalog));
             }
             if (catalog != null && schemaName == null)
             {
@@ -23,6 +23,18 @@
             SchemaName = Unquote(schemaName);
             Quoted = string.Join(".", GetAllParts().Select(QuoteIdentifier));
             Unquoted = string.Join(".", GetAllParts());
+        }
+
+        static bool IsEmptyOrWhiteSpace(string value)
+        {
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         IEnumerable<string> GetAllParts()
