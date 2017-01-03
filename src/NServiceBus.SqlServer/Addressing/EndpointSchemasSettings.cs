@@ -16,6 +16,11 @@
             catalogs[endpointName] = catalog;
         }
 
+        public void SpecifyRemoteCatalog(string catalog, QueueAddress outgoingQueue)
+        {
+            remoteCatalogs[catalog] = outgoingQueue;
+        }
+
         public bool TryGet(string endpointName, out string schema)
         {
             return schemas.TryGetValue(endpointName, out schema);
@@ -26,6 +31,17 @@
             return schemas.Keys.Concat(catalogs.Keys).Distinct()
                 .Select(endpoint => new EndpointInstance(endpoint, null, GetProperties(endpoint)))
                 .ToList();
+        }
+
+        public QueueAddress GetImmediateAddress(QueueAddress ultimateAddress, Dictionary<string, string> headers)
+        {
+            QueueAddress remoteCatalogOutgoingQueue;
+            if (ultimateAddress.Catalog != null && remoteCatalogs.TryGetValue(ultimateAddress.Catalog, out remoteCatalogOutgoingQueue))
+            {
+                headers["NServiceBus.SqlServer.Destination"] = ultimateAddress.ToString();
+                return remoteCatalogOutgoingQueue;
+            }
+            return ultimateAddress;
         }
 
         Dictionary<string, string> GetProperties(string endpoint)
@@ -45,5 +61,6 @@
 
         Dictionary<string, string> schemas = new Dictionary<string, string>();
         Dictionary<string, string> catalogs = new Dictionary<string, string>();
+        Dictionary<string, QueueAddress> remoteCatalogs = new Dictionary<string, QueueAddress>();
     }
 }

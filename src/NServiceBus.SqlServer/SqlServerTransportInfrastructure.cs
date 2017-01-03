@@ -135,7 +135,7 @@ namespace NServiceBus.Transport.SQLServer
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser, schemaAndCatalogSettings),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();

@@ -8,10 +8,11 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressParser addressParser)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressParser addressParser, SchemaAndCatalogSettings locationSettings)
         {
             this.dispatcher = dispatcher;
             this.addressParser = addressParser;
+            this.locationSettings = locationSettings;
         }
 
         // We need to check if we can support cancellation in here as well?
@@ -23,12 +24,14 @@
 
         Task Dispatch(TransportOperations operations, Func<HashSet<MessageWithAddress>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
         {
-            var deduplicatedOperations = new HashSet<MessageWithAddress>(OperationByMessageIdAndQueueAddressComparer);
+            var deduplicatedOperations = new HashSet<MessageWithAddress>();
             foreach (var operation in operations.UnicastTransportOperations)
             {
                 if (operation.RequiredDispatchConsistency == dispatchConsistency)
                 {
-                    deduplicatedOperations.Add(new MessageWithAddress(operation.Message, addressParser.Parse(operation.Destination)));
+                    var ultimateAddress = addressParser.Parse(operation.Destination);
+                    var immediateAddress = locationSettings.GetImmediateAddress(ultimateAddress, operation.Message.Headers);
+                    deduplicatedOperations.Add(new MessageWithAddress(operation.Message, ultimateAddress, immediateAddress));
                 }
             }
             return dispatchMethod(deduplicatedOperations);
@@ -36,6 +39,6 @@
 
         IQueueDispatcher dispatcher;
         QueueAddressParser addressParser;
-        static OperationByMessageIdAndQueueAddressComparer OperationByMessageIdAndQueueAddressComparer = new OperationByMessageIdAndQueueAddressComparer();
+        SchemaAndCatalogSettings locationSettings;
     }
 }
