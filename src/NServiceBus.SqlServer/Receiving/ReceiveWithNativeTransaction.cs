@@ -57,25 +57,6 @@
             }
         }
 
-        async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
-        {
-            var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
-
-            if (receiveResult.IsPoison)
-            {
-                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
-                return null;
-            }
-
-            if (!receiveResult.Successful)
-            {
-                receiveCancellationTokenSource.Cancel();
-                return null;
-            }
-
-            return receiveResult.Message;
-        }
-
         TransportTransaction PrepareTransportTransaction(SqlConnection connection, SqlTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();

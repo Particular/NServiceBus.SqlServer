@@ -23,7 +23,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var inputConnection = await connectionFactory.OpenNewConnection(InputQueue.TransportAddress).ConfigureAwait(false))
                 {
-                    message = await TryReceive(inputConnection, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(inputConnection, null, receiveCancellationTokenSource).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -49,27 +49,13 @@
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
             }
         }
-
-        async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
+        
+        protected override async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
-            var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-            if (!receiveResult.Successful)
+            using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
             {
-                receiveCancellationTokenSource.Cancel();
-                return null;
+                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
             }
-
-            if (receiveResult.IsPoison)
-            {
-                using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.TransportAddress).ConfigureAwait(false))
-                {
-                    await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, errorConnection, null).ConfigureAwait(false);
-                    return null;
-                }
-            }
-
-            return receiveResult.Message;
         }
 
         TransportTransaction PrepareTransportTransaction(SqlConnection connection)

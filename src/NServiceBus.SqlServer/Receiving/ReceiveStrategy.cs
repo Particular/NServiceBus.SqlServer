@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -17,12 +18,37 @@
         {
             InputQueue = inputQueue;
             ErrorQueue = errorQueue;
+
             this.onMessage = onMessage;
             this.onError = onError;
             this.criticalError = criticalError;
         }
 
         public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
+
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
+        {
+            var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+
+            if (receiveResult.IsPoison)
+            {
+                await DeadLetter(receiveResult, connection, transaction).ConfigureAwait(false);
+                return null;
+            }
+
+            if (!receiveResult.Successful)
+            {
+                receiveCancellationTokenSource.Cancel();
+                return null;
+            }
+
+            return receiveResult.Message;
+        }
+
+        protected virtual async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
+        {
+            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+        }
 
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {

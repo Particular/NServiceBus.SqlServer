@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -23,7 +22,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -50,26 +49,6 @@
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
             }
-        }
-
-        async Task<Message> TryReceive(SqlConnection connection, CancellationTokenSource receiveCancellationTokenSource)
-        {
-            var receiveResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
-
-            if (receiveResult.IsPoison)
-            {
-                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null).ConfigureAwait(false);
-                return null;
-            }
-
-            if (!receiveResult.Successful)
-            {
-                // No result or message expired.
-                receiveCancellationTokenSource.Cancel();
-                return null;
-            }
-
-            return receiveResult.Message;
         }
 
         TransportTransaction PrepareTransportTransaction()
