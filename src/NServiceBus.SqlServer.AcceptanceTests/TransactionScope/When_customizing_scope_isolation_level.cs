@@ -22,7 +22,7 @@
             Assert.AreEqual(IsolationLevel.RepeatableRead, context.IsolationLevel, "Ambient transaction should have configured isolation level");
         }
 
-        class MyMessage : IMessage
+        public class MyMessage : IMessage
         {
         }
 

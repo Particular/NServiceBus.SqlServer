@@ -29,31 +29,14 @@
 
             using (AppConfig.Change(appConfigPath))
             {
-                var configurationExceptionThrown = false;
-
-                Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
+                var exception = Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
-                    try
-                    {
-                        await Scenario.Define<Context>()
-                            .WithEndpoint<Endpoint>()
-                            .Run();
-                    }
-                    catch (AggregateException exception)
-                    {
-                        exception.Handle(ie =>
-                        {
-                            if (ie.InnerException != null && ie.InnerException.Message.Contains(expectedErrorMessage))
-                            {
-                                configurationExceptionThrown = true;
-                            }
-
-                            return false;
-                        });
-                    }
+                    await Scenario.Define<Context>()
+                        .WithEndpoint<Endpoint>()
+                        .Run();
                 }, "Endpoint startup should throw and exception");
 
-                Assert.IsTrue(configurationExceptionThrown, "Endpoint should fail on startup due to unsupported v2 configuration.");
+                Assert.That(exception.Message, Contains.Substring(expectedErrorMessage),  "Endpoint should fail on startup due to unsupported v2 configuration.");
 
                 return Task.FromResult(0);
             }
