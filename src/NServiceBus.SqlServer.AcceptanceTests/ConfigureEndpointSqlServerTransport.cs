@@ -19,7 +19,7 @@ public class ConfigureScenariosForSqlServerTransport : IConfigureSupportedScenar
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
-    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings)
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
         connectionString = settings.Get<string>("Transport.ConnectionString");

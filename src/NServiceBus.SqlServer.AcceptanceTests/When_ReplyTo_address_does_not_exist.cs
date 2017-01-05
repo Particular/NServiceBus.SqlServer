@@ -14,13 +14,12 @@
         [Test]
         public void Should_throw()
         {
-            var exception = Assert.ThrowsAsync<AggregateException>(async () =>
+            var exception = Assert.ThrowsAsync<MessagesFailedException>(async () =>
                 await Scenario.Define<Context>()
                     .WithEndpoint<Attacker>(b => b.When(session => session.SendLocal(new StartCommand())))
                     .WithEndpoint<Victim>()
                     .Done(c => c.FailedMessages.Any())
-                    .Run())
-                .ExpectFailedMessages();
+                    .Run());
 
             Assert.That(exception.FailedMessages, Has.Count.EqualTo(1));
 
