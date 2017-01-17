@@ -76,6 +76,8 @@
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0\When_user_aborts_processing.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.0.0\When_using_non_durable_delivery.cs" />
     <Compile Include="ConfigureSqlServerTransportInfrastructure.cs" />
+    <Compile Include="When_scope_complete_throws.cs" />
+    <Compile Include="When_scope_throws_after_successful_message_processing.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
