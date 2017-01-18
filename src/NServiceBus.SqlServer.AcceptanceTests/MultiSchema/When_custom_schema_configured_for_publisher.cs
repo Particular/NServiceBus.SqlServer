@@ -70,7 +70,7 @@
             }
         }
 
-        class Event : IEvent
+        public class Event : IEvent
         {
         }
     }
