@@ -75,12 +75,20 @@
                 }
             }
 
-            var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-            if (messageProcessed)
+            try
             {
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                if (messageProcessed)
+                {
+                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                }
+                return messageProcessed;
             }
-            return messageProcessed;
+            catch (Exception exception)
+            {
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                return false;
+            }
         }
 
         TransactionOptions transactionOptions;
