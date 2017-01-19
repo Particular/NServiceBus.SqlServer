@@ -29,11 +29,11 @@
             Assert.IsTrue(context.RepliedToCorrectQueue);
         }
 
-        class Request : IMessage
+        public class Request : IMessage
         {
         }
 
-        class Reply : IMessage
+        public class Reply : IMessage
         {
         }
 
