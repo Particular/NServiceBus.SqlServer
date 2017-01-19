@@ -36,11 +36,15 @@
 
                     connection.Close();
 
-                    if (await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
                     {
-                        scope.Complete();
+                        return;
                     }
+
+                    scope.Complete();
                 }
+
+                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
             catch (Exception exception)
             {
@@ -91,17 +95,20 @@
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
-                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
                     return true;
                 }
             }
 
-            var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-            if (messageProcessed)
+            try
             {
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                return messageProcessed;
             }
-            return messageProcessed;
+            catch (Exception exception)
+            {
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                return false;
+            }
         }
 
         TransactionOptions transactionOptions;
