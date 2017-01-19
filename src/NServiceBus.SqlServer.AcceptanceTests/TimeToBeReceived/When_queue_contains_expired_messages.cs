@@ -83,11 +83,11 @@
         }
 
         [TimeToBeReceived("00:00:00.001")]
-        class ExpiredMessage : IMessage
+        public class ExpiredMessage : IMessage
         {
         }
 
-        class Message : IMessage
+        public class Message : IMessage
         {
         }
     }

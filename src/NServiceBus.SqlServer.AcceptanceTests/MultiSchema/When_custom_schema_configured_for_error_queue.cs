@@ -81,7 +81,7 @@
             }
         }
 
-        class Message : ICommand { }
+        public class Message : ICommand { }
 
         const string ErrorSpySchema = "receiver";
     }

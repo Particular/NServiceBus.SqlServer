@@ -82,11 +82,11 @@
             }
         }
 
-        protected class Message : ICommand
+        public class Message : ICommand
         {
         }
 
-        protected class Reply : IMessage
+        public class Reply : IMessage
         {
         }
 
