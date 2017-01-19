@@ -37,15 +37,16 @@
                         return;
                     }
 
-                    if (await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
-                    {
-                        transaction.Commit();
-                    }
-                    else
+                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
                     {
                         transaction.Rollback();
+                        return;
                     }
+
+                    transaction.Commit();
                 }
+
+                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
             catch (Exception exception)
             {
@@ -83,17 +84,20 @@
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
-                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
                     return true;
                 }
             }
 
-            var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-            if (messageProcessed)
+            try
             {
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                return messageProcessed;
             }
-            return messageProcessed;
+            catch (Exception exception)
+            {
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                return false;
+            }
         }
 
         IsolationLevel isolationLevel;
