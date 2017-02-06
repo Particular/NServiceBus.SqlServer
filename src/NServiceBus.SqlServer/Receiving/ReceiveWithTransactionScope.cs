@@ -11,7 +11,7 @@
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
+            this.failureInfoStorage = new SqlFailureStorage();
         }
 
         public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
@@ -43,7 +43,7 @@
                     scope.Complete();
                 }
 
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                failureInfoStorage.ClearFailureInfoForMessage(connectionFactory, message.TransportId);
             }
             catch (Exception exception)
             {
@@ -51,7 +51,7 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                await failureInfoStorage.RecordFailureInfoForMessage(connectionFactory, message.TransportId, exception).ConfigureAwait(false);
             }
         }
 
@@ -67,8 +67,9 @@
 
         async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
         {
-            FailureInfoStorage.ProcessingFailureInfo failure;
-            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out failure))
+            var failure = await failureInfoStorage.TryGetFailureInfoForMessage(connectionFactory, message.TransportId).ConfigureAwait(false);
+
+            if (failure != null)
             {
                 var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
 
@@ -85,13 +86,13 @@
             }
             catch (Exception exception)
             {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                await failureInfoStorage.RecordFailureInfoForMessage(connectionFactory, message.TransportId, exception).ConfigureAwait(false);
                 return false;
             }
         }
 
         TransactionOptions transactionOptions;
         SqlConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
+        SqlFailureStorage failureInfoStorage;
     }
 }
