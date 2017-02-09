@@ -29,7 +29,7 @@
                 destination = DetermineDestination(sendOptions);
             
                 var connectionInfo = connectionStringProvider.GetForDestination(sendOptions.Destination);
-                var queue = new TableBasedQueue(destination, connectionInfo.Schema);
+                var queue = new TableBasedQueue(destination, OverrideSchema(destination, connectionInfo.Schema));
                 if (sendOptions.EnlistInReceiveTransaction)
                 {
                     SqlTransaction currentTransaction;
@@ -79,6 +79,18 @@
             catch (Exception ex)
             {
                 ThrowFailedToSendException(destination, ex);
+            }
+        }
+
+        static string OverrideSchema(Address address, string defaultSchema)
+        {
+            if (string.IsNullOrEmpty(address.Machine))
+            {
+                return defaultSchema;
+            }
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                return sanitizer.UnquoteIdentifier(address.Machine);
             }
         }
 
