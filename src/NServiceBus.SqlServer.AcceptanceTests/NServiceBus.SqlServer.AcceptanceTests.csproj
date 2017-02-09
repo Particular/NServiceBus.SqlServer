@@ -208,6 +208,7 @@
     <Compile Include="When_in_native_transaction_mode.cs" />
     <Compile Include="When_processing_messages.cs" />
     <Compile Include="When_ReplyTo_address_does_not_exist.cs" />
+    <Compile Include="When_sending_raw_transport_messages.cs" />
     <Compile Include="When_using_non_standard_schema.cs" />
     <Compile Include="When_callback_receiver_is_disabled.cs" />
     <Compile Include="When_using_different_connection_strings_for_each_endpoint.cs" />

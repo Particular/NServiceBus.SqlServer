@@ -14,6 +14,7 @@ namespace NServiceBus.SqlServer.UnitTests
         List<Tuple<long, int, string>> result = new List<Tuple<long, int, string>>();
         List<Action> currentQueue = new List<Action>();
         int threadCounter;
+        // ReSharper disable once NotAccessedField.Local
         int processedMessages;
         private readonly List<Message> queue = new List<Message>();
 
