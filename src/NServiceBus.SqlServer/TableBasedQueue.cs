@@ -62,13 +62,14 @@ namespace NServiceBus.Transports.SQLServer
 
             data[IdColumn] = Guid.Parse(message.Id);
             data[CorrelationIdColumn] = GetValue(message.CorrelationId);
+            string replyToAddress;
             if (sendOptions.ReplyToAddress != null)
             {
                 data[ReplyToAddressColumn] = sendOptions.ReplyToAddress.ToString();
             }
-            else if (message.ReplyToAddress != null)
+            else if (message.Headers.TryGetValue(Headers.ReplyToAddress, out replyToAddress))
             {
-                data[ReplyToAddressColumn] = message.ReplyToAddress.ToString();
+                data[ReplyToAddressColumn] = replyToAddress;
             }
             else
             {
