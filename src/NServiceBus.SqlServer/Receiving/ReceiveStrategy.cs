@@ -45,9 +45,9 @@
             return receiveResult.Message;
         }
 
-        protected virtual async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
+        protected virtual Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
-            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+            return ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction);
         }
 
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
