@@ -34,9 +34,7 @@ namespace NServiceBus.Transport.SQLServer
                 CommandTimeout = timeoutInSeconds
             })
             {
-                var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
-
-                return numberOfMessages;
+                return (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
             }
         }
 
@@ -72,9 +70,7 @@ namespace NServiceBus.Transport.SQLServer
                     return MessageReadResult.NoMessage;
                 }
 
-                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
-
-                return readResult;
+                return await MessageRow.Read(dataReader).ConfigureAwait(false);
             }
         }
 
