@@ -88,12 +88,17 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        static Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        {
+            return Task.WhenAll(QueueSends(operations, connection, transaction));
+        }
+
+        static IEnumerable<Task> QueueSends(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
         {
             foreach (var operation in operations)
             {
                 var queue = new TableBasedQueue(operation.Address);
-                await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                yield return queue.Send(operation.Message, connection, transaction);
             }
         }
 
