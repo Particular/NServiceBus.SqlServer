@@ -37,7 +37,7 @@
                         var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, PurgeBatchSize).ConfigureAwait(false);
 
                         totalPurgedRowsCount += purgedRowsCount;
-                        continuePurging = (purgedRowsCount == PurgeBatchSize);
+                        continuePurging = purgedRowsCount == PurgeBatchSize;
                     }
                 }
 
