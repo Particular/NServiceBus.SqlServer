@@ -10,13 +10,12 @@
     {
         Result Validate(params ConnectionStringSettings[] settings)
         {
-            var result = new Result();
             string message;
-
-            result.Success = new ConnectionStringsValidator().TryValidate(settings.ToList(), out message);
-            result.Message = message;
-
-            return result;
+            return new Result
+                {
+                    Success = new ConnectionStringsValidator().TryValidate(settings.ToList(), out message),
+                    Message = message
+                };
         }
 
         [Test]
@@ -71,7 +70,7 @@
         [Test]
         public void Validation_passes_when_there_is_no_transport_connection_string()
         {
-            var result = Validate(new ConnectionStringSettings("NoTransport", "Soruce = xxx;"));
+            var result = Validate(new ConnectionStringSettings("NoTransport", "Source = xxx;"));
 
             Assert.IsTrue(result.Success);
             Assert.IsTrue(string.IsNullOrEmpty(result.Message));
