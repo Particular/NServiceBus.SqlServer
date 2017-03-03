@@ -5,7 +5,7 @@
 
     public interface IEndpointFacade : IDisposable
     {
-        void Bootstrap(EndpointDefinition endpointDefinition);
+        IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition);
 
         void SendCommand(Guid messageId);
         void SendRequest(Guid requestId);

@@ -1,16 +1,16 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using CompatibilityTests.Common;
 
-public class AppConfigGenerator
+class AppConfigGenerator
+{
+    public FileInfo Generate(string connectionString, List<CustomConnectionString> connectionStrings)
     {
-        public FileInfo Generate(string connectionString, string defaultSchema, MessageMapping[] messageMappings)
-        {
-            var nodes = CreateConnectionStringNode(null, connectionString, defaultSchema);
+        var nodes = CreateConnectionStringNode(null, connectionString);
 
-            nodes = messageMappings.Aggregate(nodes, (current, m) => current + CreateConnectionStringNode(m.TransportAddress, connectionString, m.Schema));
+        nodes = connectionStrings.Aggregate(nodes, (current, m) => current + CreateConnectionStringNode(m.Address, m.ConnectionString));
 
-            var content = $@"<?xml version='1.0' encoding='utf-8'?>
+        var content = $@"<?xml version='1.0' encoding='utf-8'?>
                             <configuration>
                                 <connectionStrings>
                                   <clear />
@@ -18,17 +18,17 @@ public class AppConfigGenerator
                                 </connectionStrings>
                             </configuration>";
 
-            File.WriteAllText("custom-app.config", content);
+        File.WriteAllText("custom-app.config", content);
 
-            return new FileInfo("custom-app.config");
-        }
-
-
-        public string CreateConnectionStringNode(string name, string connectionString, string schemaName)
-        {
-            var connectionStringAttribute = connectionString + (schemaName != null ? "Queue Schema=" + schemaName : string.Empty);
-            var nameAttribute = name != null ? $"NServiceBus/Transport/{name}" : "NServiceBus/Transport";
-
-            return $@"<add name=""{nameAttribute}"" connectionString=""{connectionStringAttribute}"" />";
-        }
+        return new FileInfo("custom-app.config");
     }
+
+
+    public string CreateConnectionStringNode(string name, string connectionString)
+    {
+        var connectionStringAttribute = connectionString;
+        var nameAttribute = name != null ? $"NServiceBus/Transport/{name}" : "NServiceBus/Transport";
+
+        return $@"<add name=""{nameAttribute}"" connectionString=""{connectionStringAttribute}"" />";
+    }
+}

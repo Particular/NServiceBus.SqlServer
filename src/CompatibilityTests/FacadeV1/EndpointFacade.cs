@@ -1,51 +1,74 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CompatibilityTests.Common;
 using CompatibilityTests.Common.Messages;
 using NServiceBus;
+using NServiceBus.Config;
 using NServiceBus.Features;
 using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
-class EndpointFacade : MarshalByRefObject, IEndpointFacade
+class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV1
 {
     IBus bus;
     IStartableBus startableBus;
     MessageStore messageStore;
     CallbackResultStore callbackResultStore;
     SubscriptionStore subscriptionStore;
+    Configure configure;
+    List<CustomConnectionString> customConnectionStrings = new List<CustomConnectionString>();
+    CustomConfiguration customConfiguration;
+    string customConnectionString;
 
     public void Dispose()
     {
         startableBus.Dispose();
     }
 
-    public void Bootstrap(EndpointDefinition endpointDefinition)
+    public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
+    {
+        configure = Configure.With();
+        configure.DefaultBuilder();
+
+        configure.DefineEndpointName(endpointDefinition.Name);
+        Address.InitializeLocalAddress(endpointDefinition.Name);
+
+        configure.DefiningMessagesAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages") && t != typeof(TestEvent));
+        configure.DefiningEventsAs(t => t == typeof(TestEvent));
+
+        configure.UseInMemoryTimeoutPersister();
+        configure.InMemorySubscriptionStorage();
+
+        customConfiguration = new CustomConfiguration();
+        configure.CustomConfigurationSource(customConfiguration);
+
+        Feature.Enable<MessageDrivenSubscriptions>();
+
+        configure.Configurer.ConfigureComponent<MessageStore>(DependencyLifecycle.SingleInstance);
+
+        return this;
+    }
+
+    public void UseConnectionString(string connectionString)
+    {
+        customConnectionString = connectionString;
+    }
+
+    public void MapMessageToEndpoint(Type messageType, string destination)
+    {
+        customConfiguration.AddMapping(new MessageEndpointMapping
+        {Endpoint = destination, Messages = messageType.AssemblyQualifiedName});
+    }
+
+    public void Start()
     {
         var customConfigFile = new AppConfigGenerator()
-            .Generate(SqlServerConnectionStringBuilder.Build(), endpointDefinition.As<SqlServerEndpointDefinition>().Schema, endpointDefinition.As<SqlServerEndpointDefinition>().Mappings);
+            .Generate(customConnectionString ?? SqlServerConnectionStringBuilder.Build(), customConnectionStrings);
 
         //HINT: we need to generate custom app.config because v1 sqltransports does a direct read from ConfigurationManager
         using (AppConfig.Change(customConfigFile.FullName))
         {
-            var configure = Configure.With();
-            configure.DefaultBuilder();
-
-            configure.DefineEndpointName(endpointDefinition.Name);
-            Address.InitializeLocalAddress(endpointDefinition.Name);
-
-            configure.DefiningMessagesAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages") && t != typeof(TestEvent));
-            configure.DefiningEventsAs(t => t == typeof(TestEvent));
-
-            configure.UseInMemoryTimeoutPersister();
-            configure.InMemorySubscriptionStorage();
             configure.UseTransport<SqlServer>();
-
-            var customConfiguration = new CustomConfiguration(endpointDefinition.As<SqlServerEndpointDefinition>().Mappings);
-            configure.CustomConfigurationSource(customConfiguration);
-
-            Feature.Enable<MessageDrivenSubscriptions>();
-
-            configure.Configurer.ConfigureComponent<MessageStore>(DependencyLifecycle.SingleInstance);
 
             startableBus = configure.UnicastBus().CreateBus();
             bus = startableBus.Start(() => configure.ForInstallationOn<NServiceBus.Installation.Environments.Windows>().Install());
@@ -56,6 +79,15 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade
 
             configure.Builder.Build<MessageDrivenSubscriptionManager>().ClientSubscribed += (sender, args) => { subscriptionStore.Increment(); };
         }
+    }
+
+    public void UseConnectionStringForEndpoint(string endpoint, string connectionString)
+    {
+        customConnectionStrings.Add(new CustomConnectionString
+        {
+            Address = endpoint,
+            ConnectionString = connectionString
+        });
     }
 
     public void SendCommand(Guid messageId)

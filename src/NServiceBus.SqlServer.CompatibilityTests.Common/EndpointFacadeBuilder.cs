@@ -7,8 +7,8 @@
 
     public class EndpointFacadeBuilder
     {
-        public static IEndpointFacade CreateAndConfigure<TEndpointDefinition>(TEndpointDefinition endpointDefinition, string version)
-           where TEndpointDefinition : EndpointDefinition
+        public static IEndpointFacade CreateAndConfigure<T>(SqlServerEndpointDefinition endpointDefinition, string version, Action<T> config)
+            where T : IEndpointConfiguration
         {
             var startupDirectory = new DirectoryInfo(Conventions.AssemblyDirectoryResolver(version));
 
@@ -25,7 +25,11 @@
             var typeName = Conventions.EndpointFacadeConfiguratorTypeNameResolver(version);
 
             var facade = (IEndpointFacade)appDomain.CreateInstanceFromAndUnwrap(assemblyPath, typeName);
-            facade.Bootstrap(endpointDefinition);
+            var configurator = (T) facade.Bootstrap(endpointDefinition);
+
+            config(configurator);
+
+            configurator.Start();
 
             return new MyWrapper(facade, appDomain);
         }
@@ -56,9 +60,9 @@
             }
         }
 
-        public void Bootstrap(EndpointDefinition endpointDefinition)
+        public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
         {
-            facade.Bootstrap(endpointDefinition);
+            throw new NotSupportedException("Bootstrapping is not supported at this stage.");
         }
 
         public void SendCommand(Guid messageId)

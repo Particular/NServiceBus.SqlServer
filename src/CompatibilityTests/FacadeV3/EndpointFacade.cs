@@ -3,45 +3,33 @@ using System.Threading.Tasks;
 using CompatibilityTests.Common;
 using CompatibilityTests.Common.Messages;
 using NServiceBus;
+using NServiceBus.Config;
 using NServiceBus.Pipeline;
 using NServiceBus.Transport.SQLServer;
 
-public class EndpointFacade : MarshalByRefObject, IEndpointFacade
+public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV3
 {
     IEndpointInstance endpointInstance;
     MessageStore messageStore;
     CallbackResultStore callbackResultStore;
     SubscriptionStore subscriptionStore;
+    EndpointConfiguration endpointConfiguration;
+    string customConnectionString;
+    CustomConfiguration customConfiguration;
+    bool enableCallbacks;
 
-    async Task InitializeEndpoint(SqlServerEndpointDefinition endpointDefinition)
+    public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
-        var endpointConfiguration = new EndpointConfiguration(endpointDefinition.Name);
+        endpointConfiguration = new EndpointConfiguration(endpointDefinition.Name);
 
         endpointConfiguration.Conventions().DefiningMessagesAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages") && t != typeof(TestEvent));
         endpointConfiguration.Conventions().DefiningEventsAs(t => t == typeof(TestEvent));
 
         endpointConfiguration.EnableInstallers();
         endpointConfiguration.UsePersistence<InMemoryPersistence>();
-        endpointConfiguration.UseTransport<SqlServerTransport>()
-            .ConnectionString(SqlServerConnectionStringBuilder.Build());
 
-        if (!string.IsNullOrWhiteSpace(endpointDefinition.Schema))
-        {
-            endpointConfiguration
-                .UseTransport<SqlServerTransport>()
-                .DefaultSchema(endpointDefinition.Schema);
-        }
-
-        foreach (var mm in endpointDefinition.Mappings)
-        {
-            if (string.IsNullOrEmpty(mm.Schema) == false)
-            {
-                endpointConfiguration.UseTransport<SqlServerTransport>().UseSchemaForQueue(mm.TransportAddress, mm.Schema);
-            }
-        }
-
-        endpointConfiguration.CustomConfigurationSource(new CustomConfiguration(endpointDefinition.Mappings));
-        endpointConfiguration.MakeInstanceUniquelyAddressable("A");
+        customConfiguration = new CustomConfiguration();
+        endpointConfiguration.CustomConfigurationSource(customConfiguration);
 
         messageStore = new MessageStore();
         callbackResultStore = new CallbackResultStore();
@@ -52,14 +40,65 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
 
         endpointConfiguration.Pipeline.Register<SubscriptionMonitoringBehavior.Registration>();
 
+        return this;
+    }
+
+    public void UseConnectionString(string connectionString)
+    {
+        customConnectionString = connectionString;
+    }
+
+    public void MapMessageToEndpoint(Type messageType, string destination)
+    {
+        customConfiguration.AddMapping(new MessageEndpointMapping
+        {
+            Endpoint = destination,
+            Messages = messageType.AssemblyQualifiedName
+        });
+        endpointConfiguration.UseTransport<SqlServerTransport>().Routing().RouteToEndpoint(messageType, destination);
+    }
+
+    public void Start()
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>()
+            .ConnectionString(customConnectionString ?? SqlServerConnectionStringBuilder.Build());
+
+        if (!enableCallbacks)
+        {
+            var callbackFeature = typeof(RequestResponseExtensions).Assembly.GetType("NServiceBus.Features.CallbackSupport", true);
+            endpointConfiguration.DisableFeature(callbackFeature);
+        }
+        else
+        {
+            endpointConfiguration.MakeInstanceUniquelyAddressable("A");
+        }
+
+        StartAsync().GetAwaiter().GetResult();
+    }
+
+    async Task StartAsync()
+    {
         endpointInstance = await Endpoint.Start(endpointConfiguration);
     }
 
-    public void Bootstrap(EndpointDefinition endpointDefinition)
+    public void EnableCallbacks()
     {
-        InitializeEndpoint(endpointDefinition.As<SqlServerEndpointDefinition>())
-            .GetAwaiter()
-            .GetResult();
+        enableCallbacks = true;
+    }
+
+    public void DefaultSchema(string schema)
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>().DefaultSchema(schema);
+    }
+
+    public void UseSchemaForQueue(string queue, string schema)
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>().UseSchemaForQueue(queue, schema);
+    }
+
+    public void RouteToEndpoint(Type messageType, string endpoint)
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>().Routing().RouteToEndpoint(messageType, endpoint);
     }
 
     public void SendCommand(Guid messageId)
@@ -138,4 +177,5 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
             }
         }
     }
+
 }

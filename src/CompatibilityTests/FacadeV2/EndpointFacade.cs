@@ -1,24 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using CompatibilityTests.Common;
 using CompatibilityTests.Common.Messages;
 using NServiceBus;
+using NServiceBus.Config;
 using NServiceBus.Pipeline;
 using NServiceBus.Pipeline.Contexts;
 using NServiceBus.Transports.SQLServer;
 
-public class EndpointFacade : MarshalByRefObject, IEndpointFacade
+public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV2
 {
     IBus bus;
     MessageStore messageStore;
     CallbackResultStore callbackResultStore;
     SubscriptionStore subscriptionStore;
+    BusConfiguration busConfiguration;
+    CustomConfiguration customConfiguration;
+    string customConnectionString;
 
-    public void Bootstrap(EndpointDefinition endpointDefinition)
+    public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
-        var busConfiguration = new BusConfiguration();
+        busConfiguration = new BusConfiguration();
 
         busConfiguration.Conventions()
             .DefiningMessagesAs(
@@ -29,34 +31,8 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
         busConfiguration.UsePersistence<InMemoryPersistence>();
         busConfiguration.EnableInstallers();
         var transport = busConfiguration.UseTransport<SqlServerTransport>();
-        transport.ConnectionString(SqlServerConnectionStringBuilder.Build());
-
-        if (!String.IsNullOrWhiteSpace(endpointDefinition.As<SqlServerEndpointDefinition>().Schema))
-        {
-            transport
-                .DefaultSchema(endpointDefinition.As<SqlServerEndpointDefinition>().Schema);
-        }
-
-        foreach (var mapping in endpointDefinition.As<SqlServerEndpointDefinition>().Mappings)
-        {
-            var endpointConnections = new List<EndpointConnectionInfo>();
-
-            if (mapping.Schema != null)
-            {
-                var endpointConnectionInfo = EndpointConnectionInfo
-                    .For(mapping.TransportAddress)
-                    .UseSchema(mapping.Schema);
-                endpointConnections.Add(endpointConnectionInfo);
-            }
-
-            if (endpointConnections.Any())
-            {
-                transport
-                    .UseSpecificConnectionInformation(endpointConnections);
-            }
-        }
-
-        var customConfiguration = new CustomConfiguration(endpointDefinition.As<SqlServerEndpointDefinition>().Mappings);
+        
+        customConfiguration = new CustomConfiguration();
         busConfiguration.CustomConfigurationSource(customConfiguration);
 
         messageStore = new MessageStore();
@@ -68,8 +44,34 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
 
         busConfiguration.Pipeline.Register<SubscriptionBehavior.Registration>();
 
-        var startableBus = Bus.Create(busConfiguration);
+        return this;
+    }
 
+    public void DefaultSchema(string schema)
+    {
+        busConfiguration.UseTransport<SqlServerTransport>().DefaultSchema(schema);
+    }
+
+    public void UseSchemaForTransportAddress(string transportAddress, string schema)
+    {
+        busConfiguration.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(EndpointConnectionInfo.For(transportAddress).UseSchema(schema));
+    }
+
+    public void UseConnectionString(string connectionString)
+    {
+        customConnectionString = connectionString;
+    }
+
+    public void MapMessageToEndpoint(Type messageType, string destination)
+    {
+        customConfiguration.AddMapping(new MessageEndpointMapping() {Endpoint = destination, Messages = messageType.AssemblyQualifiedName});
+    }
+
+    public void Start()
+    {
+        busConfiguration.UseTransport<SqlServerTransport>().ConnectionString(customConnectionString ?? SqlServerConnectionStringBuilder.Build());
+
+        var startableBus = Bus.Create(busConfiguration);
         bus = startableBus.Start();
     }
 

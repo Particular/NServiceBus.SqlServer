@@ -27,6 +27,7 @@
                 {
                     return;
                 }
+                Thread.Sleep(1000);
             }
             throw new AssertionException($"Condition has not been met for {timeout.Value.TotalSeconds} seconds.");
         }

@@ -1,16 +1,15 @@
+using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using CompatibilityTests.Common;
 using NServiceBus.Config;
 using NServiceBus.Config.ConfigurationSource;
 
 class CustomConfiguration : IConfigurationSource
 {
-    MessageMapping[] messageMappings;
+    List<MessageEndpointMapping> messageMappings = new List<MessageEndpointMapping>();
 
-    public CustomConfiguration(MessageMapping[] messageMappings)
+    public void AddMapping(MessageEndpointMapping mapping)
     {
-        this.messageMappings = messageMappings;
+        messageMappings.Add(mapping);
     }
 
     public T GetConfiguration<T>() where T : class, new()
@@ -27,11 +26,10 @@ class CustomConfiguration : IConfigurationSource
         {
             var endpointMappingsCollection = new MessageEndpointMappingCollection();
 
-            messageMappings
-                .Select(mm => new MessageEndpointMapping { Messages = mm.MessageType.AssemblyQualifiedName, Endpoint = mm.TransportAddress })
-                .ToList()
-                .ForEach(em => endpointMappingsCollection.Add(em));
-
+            foreach (var em in messageMappings)
+            {
+                endpointMappingsCollection.Add(em);
+            }
             return new UnicastBusConfig
             {
                 MessageEndpointMappings = endpointMappingsCollection

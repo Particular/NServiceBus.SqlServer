@@ -51,6 +51,7 @@
     <Compile Include="EndpointDefinition.cs" />
     <Compile Include="EndpointFacadeBuilder.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="IEndpointConfiguration.cs" />
     <Compile Include="IEndpointFacade.cs" />
     <Compile Include="MessageStore.cs" />
     <Compile Include="Messages\TestEnumCallback.cs" />
