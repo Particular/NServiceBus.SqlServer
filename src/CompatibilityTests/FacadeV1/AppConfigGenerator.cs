@@ -1,11 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
+using CompatibilityTests.Common;
 
-namespace SqlServerV1
-{
-    using TransportCompatibilityTests.Common.SqlServer;
-
-    public class AppConfigGenerator
+public class AppConfigGenerator
     {
         public FileInfo Generate(string connectionString, string defaultSchema, MessageMapping[] messageMappings)
         {
@@ -35,4 +32,3 @@ namespace SqlServerV1
             return $@"<add name=""{nameAttribute}"" connectionString=""{connectionStringAttribute}"" />";
         }
     }
-}

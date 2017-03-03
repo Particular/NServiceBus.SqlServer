@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using CompatibilityTests.Common;
+using CompatibilityTests.Common.Messages;
 using NServiceBus;
 using NServiceBus.Pipeline;
-
-using NServiceBus.SqlServer.CompatibilityTests.Common;
-using NServiceBus.SqlServer.CompatibilityTests.Common.Messages;
 using NServiceBus.Transport.SQLServer;
 
 public class EndpointFacade : MarshalByRefObject, IEndpointFacade

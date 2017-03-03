@@ -4,10 +4,10 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 {
     using System;
     using System.Linq;
-    using Common;
-    using Common.Messages;
+    using global::CompatibilityTests.Common;
+    using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
-    using MessageMapping = Common.MessageMapping;
+    using MessageMapping = global::CompatibilityTests.Common.MessageMapping;
 
     [TestFixture]
     public class MessageExchangePatterns : SqlServerContext
@@ -126,19 +126,19 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             destinationEndpointDefinition.Schema = DestinationSchema;
 
             //TODO: this is a hack, passing mappings should be separate from passing schemas
-            if (sourceVersion.StartsWith("2") && destinationVersion.StartsWith("3"))
-            {
-                destinationEndpointDefinition.Mappings = new[]
-                {
-                    new MessageMapping
-                    {
-                        MessageType = typeof(TestResponse),
-                        TransportAddress = sourceEndpointDefinition.TransportAddressForVersion(sourceVersion) + "." + Environment.MachineName,
-                        Schema = SourceSchema
-                    }
-                };
-            }
-            else
+            //if (sourceVersion.StartsWith("2") && destinationVersion.StartsWith("3"))
+            //{
+            //    destinationEndpointDefinition.Mappings = new[]
+            //    {
+            //        new MessageMapping
+            //        {
+            //            MessageType = typeof(TestResponse),
+            //            TransportAddress = sourceEndpointDefinition.TransportAddressForVersion(sourceVersion) + "." + Environment.MachineName,
+            //            Schema = SourceSchema
+            //        }
+            //    };
+            //}
+            //else
             {
                 destinationEndpointDefinition.Mappings = new[]
                 {
@@ -169,7 +169,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             var sqlTransportVersions = new[]
             {
-                //"1,
+                "1.2",
                 "2.2",
                 "3.0"
             };

@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CompatibilityTests.Common;
+using CompatibilityTests.Common.Messages;
 using NServiceBus;
 using NServiceBus.Pipeline;
 using NServiceBus.Pipeline.Contexts;
-using NServiceBus.SqlServer.CompatibilityTests.Common;
-using NServiceBus.SqlServer.CompatibilityTests.Common.Messages;
 using NServiceBus.Transports.SQLServer;
 
 public class EndpointFacade : MarshalByRefObject, IEndpointFacade
@@ -28,12 +28,12 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
         busConfiguration.EndpointName(endpointDefinition.Name);
         busConfiguration.UsePersistence<InMemoryPersistence>();
         busConfiguration.EnableInstallers();
-        busConfiguration.UseTransport<SqlServerTransport>().ConnectionString(SqlServerConnectionStringBuilder.Build());
+        var transport = busConfiguration.UseTransport<SqlServerTransport>();
+        transport.ConnectionString(SqlServerConnectionStringBuilder.Build());
 
         if (!String.IsNullOrWhiteSpace(endpointDefinition.As<SqlServerEndpointDefinition>().Schema))
         {
-            busConfiguration
-                .UseTransport<SqlServerTransport>()
+            transport
                 .DefaultSchema(endpointDefinition.As<SqlServerEndpointDefinition>().Schema);
         }
 
@@ -51,8 +51,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade
 
             if (endpointConnections.Any())
             {
-                busConfiguration
-                    .UseTransport<SqlServerTransport>()
+                transport
                     .UseSpecificConnectionInformation(endpointConnections);
             }
         }

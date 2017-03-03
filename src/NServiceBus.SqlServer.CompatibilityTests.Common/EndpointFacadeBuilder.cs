@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.CompatibilityTests.Common
+﻿namespace CompatibilityTests.Common
 {
     using System;
     using System.Diagnostics;

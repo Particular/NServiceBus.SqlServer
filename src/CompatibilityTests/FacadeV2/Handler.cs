@@ -1,6 +1,6 @@
-﻿using NServiceBus;
-using NServiceBus.SqlServer.CompatibilityTests.Common;
-using NServiceBus.SqlServer.CompatibilityTests.Common.Messages;
+﻿using CompatibilityTests.Common;
+using CompatibilityTests.Common.Messages;
+using NServiceBus;
 
 public class Handler : IHandleMessages<TestCommand>, IHandleMessages<TestRequest>, IHandleMessages<TestResponse>, IHandleMessages<TestEvent>, IHandleMessages<TestIntCallback>, IHandleMessages<TestEnumCallback>
 {

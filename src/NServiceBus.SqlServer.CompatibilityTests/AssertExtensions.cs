@@ -19,12 +19,18 @@
                 timeout = TimeSpan.FromSeconds(90);
             }
 
-            if (!SpinWait.SpinUntil(predicate, timeout.Value))
+            var waitUntil = DateTime.Now + timeout.Value;
+
+            while (DateTime.Now < waitUntil)
             {
-                throw new AssertionException($"Condition has not been met for {timeout.Value.TotalSeconds} seconds.");
+                if (predicate())
+                {
+                    return;
+                }
             }
+            throw new AssertionException($"Condition has not been met for {timeout.Value.TotalSeconds} seconds.");
         }
-        
+
         /// <summary>
         ///     Executes a task returns when done oe timed out.
         /// </summary>

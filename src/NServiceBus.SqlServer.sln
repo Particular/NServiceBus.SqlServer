@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EndpointV2.2", "Compatibili
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.CompatibilityTests", "NServiceBus.SqlServer.CompatibilityTests\NServiceBus.SqlServer.CompatibilityTests.csproj", "{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacadeV1", "CompatibilityTests\FacadeV1\FacadeV1.csproj", "{B5D74165-91F9-46CF-8523-1775598F5EE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EndpointV1.2", "CompatibilityTests\EndpointV1.2\EndpointV1.2.csproj", "{DC1498E6-DF54-4F51-8C7B-5179684D9A54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +87,14 @@ Global
 		{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5D74165-91F9-46CF-8523-1775598F5EE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5D74165-91F9-46CF-8523-1775598F5EE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5D74165-91F9-46CF-8523-1775598F5EE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5D74165-91F9-46CF-8523-1775598F5EE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC1498E6-DF54-4F51-8C7B-5179684D9A54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC1498E6-DF54-4F51-8C7B-5179684D9A54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC1498E6-DF54-4F51-8C7B-5179684D9A54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC1498E6-DF54-4F51-8C7B-5179684D9A54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +104,7 @@ Global
 		{0E7AB4D0-7FA1-476A-A9F6-B3750568FF4D} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{EEAE4525-249C-4AEE-BE10-BD338D537594} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{EB61C061-99B1-4656-92A5-4E813E602830} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
+		{B5D74165-91F9-46CF-8523-1775598F5EE6} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
+		{DC1498E6-DF54-4F51-8C7B-5179684D9A54} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 	EndGlobalSection
 EndGlobal

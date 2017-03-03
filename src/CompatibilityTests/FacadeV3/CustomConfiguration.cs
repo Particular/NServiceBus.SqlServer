@@ -1,8 +1,8 @@
 using System.Configuration;
 using System.Linq;
+using CompatibilityTests.Common;
 using NServiceBus.Config;
 using NServiceBus.Config.ConfigurationSource;
-using NServiceBus.SqlServer.CompatibilityTests.Common;
 
 class CustomConfiguration : IConfigurationSource
 {

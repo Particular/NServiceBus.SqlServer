@@ -1,10 +1,8 @@
-namespace SqlServerV1
-{
     using System.Configuration;
     using System.Linq;
+    using CompatibilityTests.Common;
     using NServiceBus.Config;
     using NServiceBus.Config.ConfigurationSource;
-    using TransportCompatibilityTests.Common.SqlServer;
 
     class CustomConfiguration : IConfigurationSource
     {
@@ -50,4 +48,3 @@ namespace SqlServerV1
             return ConfigurationManager.GetSection(typeof(T).Name) as T;
         }
     }
-}

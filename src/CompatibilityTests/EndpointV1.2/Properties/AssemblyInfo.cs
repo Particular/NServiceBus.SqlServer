@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NServiceBus.SqlServer.CompatibilityTests")]
+[assembly: AssemblyTitle("EndpointV1.2")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("NServiceBus.SqlServer.CompatibilityTests")]
+[assembly: AssemblyProduct("EndpointV1.2")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("937a1bf0-12f4-442a-b2f0-acf57df73c23")]
+[assembly: Guid("dc1498e6-df54-4f51-8c7b-5179684d9a54")]
 
 // Version information for an assembly consists of the following four values:
 //

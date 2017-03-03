@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.CompatibilityTests.Common
+﻿namespace CompatibilityTests.Common
 {
     using System;
 
@@ -9,7 +9,7 @@
         public static string Build()
         {
             var value = Environment.GetEnvironmentVariable(EnvironmentVariable, EnvironmentVariableTarget.User);
-            return value ?? Environment.GetEnvironmentVariable(EnvironmentVariable) ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus-compat;Integrated Security=True";
+            return value ?? Environment.GetEnvironmentVariable(EnvironmentVariable) ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus-compat;Integrated Security=True;";
         }
     }
 }

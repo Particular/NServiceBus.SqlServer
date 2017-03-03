@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.SqlServer.CompatibilityTests
 {
     using System.Linq;
-    using Common;
-    using Common.Messages;
+    using global::CompatibilityTests.Common;
+    using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
 
     [TestFixture]

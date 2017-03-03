@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.CompatibilityTests.Common.Messages
+﻿namespace CompatibilityTests.Common.Messages
 {
     using System;
 
