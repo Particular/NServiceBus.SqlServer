@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.SQLServer
             this.settings = settings;
             this.connectionString = connectionString;
 
-            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+            endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
 
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;

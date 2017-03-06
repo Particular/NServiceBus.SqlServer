@@ -15,7 +15,7 @@
             this.addressParser = addressParser;
             this.settings = settings;
 
-            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+            endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
         }
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()

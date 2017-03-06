@@ -80,8 +80,7 @@
 
             try
             {
-                var messageProcessed = await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-                return messageProcessed;
+                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
             }
             catch (Exception exception)
             {

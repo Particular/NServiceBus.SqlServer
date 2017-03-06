@@ -16,31 +16,27 @@
         public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
         {
             var row = await ReadRow(dataReader).ConfigureAwait(false);
-
-            var result = row.TryParse();
-
-            return result;
+            return row.TryParse();
         }
 
         public static MessageRow From(Dictionary<string, string> headers, byte[] body)
         {
-            var row = new MessageRow();
-
-            row.id = Guid.NewGuid();
-            row.correlationId = TryGetHeaderValue(headers, Headers.CorrelationId, s => s);
-            row.replyToAddress = TryGetHeaderValue(headers, Headers.ReplyToAddress, s => s);
-            row.recoverable = true;
-            row.timeToBeReceived = TryGetHeaderValue(headers, Headers.TimeToBeReceived, s =>
+            return new MessageRow
             {
-                TimeSpan timeToBeReceived;
-                return TimeSpan.TryParse(s, out timeToBeReceived)
-                    ? (int?)timeToBeReceived.TotalMilliseconds
-                    : null;
-            });
-            row.headers = DictionarySerializer.Serialize(headers);
-            row.bodyBytes = body;
-
-            return row;
+                id = Guid.NewGuid(),
+                correlationId = TryGetHeaderValue(headers, Headers.CorrelationId, s => s),
+                replyToAddress = TryGetHeaderValue(headers, Headers.ReplyToAddress, s => s),
+                recoverable = true,
+                timeToBeReceived = TryGetHeaderValue(headers, Headers.TimeToBeReceived, s =>
+                {
+                    TimeSpan timeToBeReceived;
+                    return TimeSpan.TryParse(s, out timeToBeReceived)
+                        ? (int?) timeToBeReceived.TotalMilliseconds
+                        : null;
+                }),
+                headers = DictionarySerializer.Serialize(headers),
+                bodyBytes = body
+            };
         }
 
 
@@ -57,17 +53,16 @@
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
         {
-            var row = new MessageRow();
-
             //HINT: we are assuming that dataReader is sequential. Order or reads is important !
-            row.id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false);
-            row.correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false);
-            row.replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false);
-            row.recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false);
-            row.headers = await GetHeaders(dataReader, 4).ConfigureAwait(false);
-            row.bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false);
-
-            return row;
+            return new MessageRow
+            {
+                id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false),
+                correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false),
+                replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
+                recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false),
+                headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
+                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false)
+            };
         }
 
         MessageReadResult TryParse()
@@ -101,8 +96,7 @@
             {
                 return default(T);
             }
-            var value = conversion(text);
-            return value;
+            return conversion(text);
         }
 
         static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex)
@@ -114,8 +108,7 @@
 
             using (var textReader = dataReader.GetTextReader(headersIndex))
             {
-                var headersAsString = await textReader.ReadToEndAsync().ConfigureAwait(false);
-                return headersAsString;
+                return await textReader.ReadToEndAsync().ConfigureAwait(false);
             }
         }
 

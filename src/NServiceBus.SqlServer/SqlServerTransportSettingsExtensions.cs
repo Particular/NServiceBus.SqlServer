@@ -16,7 +16,7 @@
         /// </summary>
         public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
-            Guard.AgainstNullAndEmpty("schemaName", schemaName);
+            Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
 
             transportExtensions.GetSettings().Set(SettingsKeys.DefaultSchemaSettingsKey, schemaName);
 
@@ -81,7 +81,7 @@
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
         {
-            Guard.AgainstNull("sqlConnectionFactory", sqlConnectionFactory);
+            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
 
             transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
 
