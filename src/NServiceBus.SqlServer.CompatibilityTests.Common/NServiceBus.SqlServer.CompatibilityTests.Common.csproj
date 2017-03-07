@@ -48,7 +48,6 @@
   <ItemGroup>
     <Compile Include="CallbackResultStore.cs" />
     <Compile Include="Conventions.cs" />
-    <Compile Include="EndpointDefinition.cs" />
     <Compile Include="EndpointFacadeBuilder.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="IEndpointConfiguration.cs" />
@@ -60,7 +59,6 @@
     <Compile Include="Messages\TestIntCallback.cs" />
     <Compile Include="Messages\TestRequest.cs" />
     <Compile Include="Messages\TestResponse.cs" />
-    <Compile Include="MessageMapping.cs" />
     <Compile Include="SqlConnectionStringBuilder.cs" />
     <Compile Include="SqlServerEndpointDefinition.cs" />
     <Compile Include="SubscriptionStore.cs" />

@@ -33,7 +33,32 @@ class CustomConfiguration : IConfigurationSource
 
             return new UnicastBusConfig
             {
-                MessageEndpointMappings = endpointMappingsCollection
+                MessageEndpointMappings = endpointMappingsCollection,
+            } as T;
+        }
+
+        if (typeof(T) == typeof(TransportConfig))
+        {
+            return new TransportConfig
+            {
+                MaxRetries = 0,
+            } as T;
+        }
+
+        if (typeof(T) == typeof(AuditConfig))
+        {
+            return new AuditConfig
+            {
+                QueueName = "audit"
+            }
+            as T;
+        }
+
+        if (typeof(T) == typeof(SecondLevelRetriesConfig))
+        {
+            return new SecondLevelRetriesConfig
+            {
+                NumberOfRetries = 0
             } as T;
         }
 

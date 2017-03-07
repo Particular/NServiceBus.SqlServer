@@ -16,7 +16,7 @@
         {
             if (timeout.HasValue == false)
             {
-                timeout = TimeSpan.FromSeconds(90);
+                timeout = TimeSpan.FromSeconds(30);
             }
 
             var waitUntil = DateTime.Now + timeout.Value;

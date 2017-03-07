@@ -3,7 +3,17 @@
     using System;
 
     [Serializable]
-    public class SqlServerEndpointDefinition : EndpointDefinition
+    public class EndpointDefinition
     {
+        public string Name { get; set; }
+        public string MachineName { get; set; }
+        public EndpointDefinition()
+        {
+        }
+
+        public EndpointDefinition(string name)
+        {
+            Name = name;
+        }
     }
 }

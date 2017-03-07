@@ -6,6 +6,7 @@ using CompatibilityTests.Common.Messages;
 using NServiceBus;
 using NServiceBus.Config;
 using NServiceBus.Features;
+using NServiceBus.Support;
 using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
 class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV1
@@ -27,6 +28,11 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
 
     public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
+        if (endpointDefinition.MachineName != null)
+        {
+            RuntimeEnvironment.MachineNameAction = () => endpointDefinition.MachineName;
+        }
+
         configure = Configure.With();
         configure.DefaultBuilder();
 
@@ -48,7 +54,7 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
 
         return this;
     }
-
+    
     public void UseConnectionString(string connectionString)
     {
         customConnectionString = connectionString;
@@ -81,7 +87,7 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
         }
     }
 
-    public void UseConnectionStringForEndpoint(string endpoint, string connectionString)
+    public void ConfigureNamedConnectionStringForAddress(string endpoint, string connectionString)
     {
         customConnectionStrings.Add(new CustomConnectionString
         {

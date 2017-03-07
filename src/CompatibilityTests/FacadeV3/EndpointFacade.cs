@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 using CompatibilityTests.Common;
 using CompatibilityTests.Common.Messages;
 using NServiceBus;
 using NServiceBus.Config;
 using NServiceBus.Pipeline;
+using NServiceBus.Support;
 using NServiceBus.Transport.SQLServer;
 
 public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV3
@@ -17,9 +21,15 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     string customConnectionString;
     CustomConfiguration customConfiguration;
     bool enableCallbacks;
+    string instanceId;
 
     public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
+        if (endpointDefinition.MachineName != null)
+        {
+            RuntimeEnvironment.MachineNameAction = () => endpointDefinition.MachineName;
+        }
+
         endpointConfiguration = new EndpointConfiguration(endpointDefinition.Name);
 
         endpointConfiguration.Conventions().DefiningMessagesAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages") && t != typeof(TestEvent));
@@ -30,6 +40,11 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
         customConfiguration = new CustomConfiguration();
         endpointConfiguration.CustomConfigurationSource(customConfiguration);
+
+        endpointConfiguration.Recoverability().Immediate(i => i.NumberOfRetries(0));
+        endpointConfiguration.Recoverability().Delayed(d => d.NumberOfRetries(0));
+
+        endpointConfiguration.AuditProcessedMessagesTo("audit");
 
         messageStore = new MessageStore();
         callbackResultStore = new CallbackResultStore();
@@ -70,7 +85,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         }
         else
         {
-            endpointConfiguration.MakeInstanceUniquelyAddressable("A");
+            endpointConfiguration.MakeInstanceUniquelyAddressable(instanceId);
         }
 
         StartAsync().GetAwaiter().GetResult();
@@ -81,9 +96,10 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         endpointInstance = await Endpoint.Start(endpointConfiguration);
     }
 
-    public void EnableCallbacks()
+    public void EnableCallbacks(string instanceId)
     {
         enableCallbacks = true;
+        this.instanceId = instanceId;
     }
 
     public void DefaultSchema(string schema)
@@ -94,6 +110,24 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     public void UseSchemaForQueue(string queue, string schema)
     {
         endpointConfiguration.UseTransport<SqlServerTransport>().UseSchemaForQueue(queue, schema);
+    }
+
+    public void UseLagacyMultiInstanceMode(Dictionary<string, string> connectionStringMap)
+    {
+#pragma warning disable 0618
+        endpointConfiguration.UseTransport<SqlServerTransport>().EnableLegacyMultiInstanceMode(async address =>
+        {
+            var connectionString = connectionStringMap.FirstOrDefault(x => address.StartsWith(x.Key));
+            var connection = new SqlConnection(connectionString.Value);
+            await connection.OpenAsync().ConfigureAwait(false);
+            return connection;
+        });
+#pragma warning restore 0618
+    }
+
+    public void UseSchemaForEndpoint(string endpoint, string schema)
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>().UseSchemaForEndpoint(endpoint, schema);
     }
 
     public void RouteToEndpoint(Type messageType, string endpoint)
@@ -177,5 +211,4 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
             }
         }
     }
-
 }

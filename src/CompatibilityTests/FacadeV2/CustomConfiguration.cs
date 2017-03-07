@@ -36,6 +36,31 @@ class CustomConfiguration : IConfigurationSource
             } as T;
         }
 
+        if (typeof(T) == typeof(TransportConfig))
+        {
+            return new TransportConfig
+            {
+                MaxRetries = 0,
+            } as T;
+        }
+
+        if (typeof(T) == typeof(AuditConfig))
+        {
+            return new AuditConfig
+            {
+                QueueName = "audit"
+            }
+            as T;
+        }
+
+        if (typeof(T) == typeof(SecondLevelRetriesConfig))
+        {
+            return new SecondLevelRetriesConfig
+            {
+                NumberOfRetries = 0
+            } as T;
+        }
+
         // leaving the rest of the configuration as is:
         return ConfigurationManager.GetSection(typeof(T).Name) as T;
     }

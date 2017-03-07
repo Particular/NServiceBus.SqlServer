@@ -7,7 +7,7 @@
 
     public class EndpointFacadeBuilder
     {
-        public static IEndpointFacade CreateAndConfigure<T>(SqlServerEndpointDefinition endpointDefinition, string version, Action<T> config)
+        public static IEndpointFacade CreateAndConfigure<T>(EndpointDefinition endpointDefinition, string version, Action<T> config)
             where T : IEndpointConfiguration
         {
             var startupDirectory = new DirectoryInfo(Conventions.AssemblyDirectoryResolver(version));
@@ -48,8 +48,14 @@
 
         public void Dispose()
         {
-            facade.Dispose();
-
+            try
+            {
+                facade.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError($"Could not dispose facade: {ex}");
+            }
             try
             {
                 AppDomain.Unload(domain);

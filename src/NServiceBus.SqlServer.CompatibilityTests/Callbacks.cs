@@ -1,84 +1,135 @@
-﻿//namespace NServiceBus.SqlServer.CompatibilityTests
-//{
-//    using System.Linq;
-//    using global::CompatibilityTests.Common;
-//    using global::CompatibilityTests.Common.Messages;
-//    using NUnit.Framework;
+﻿// ReSharper disable InconsistentNaming
 
-//    [TestFixture]
-//    public class Callbacks: SqlServerContext
-//    {
-//        SqlServerEndpointDefinition sourceEndpointDefinition;
-//        SqlServerEndpointDefinition destinationEndpointDefinition;
+namespace NServiceBus.SqlServer.CompatibilityTests
+{
+    using System;
+    using System.Linq;
+    using global::CompatibilityTests.Common;
+    using global::CompatibilityTests.Common.Messages;
+    using NUnit.Framework;
 
-//        [SetUp]
-//        public void SetUp()
-//        {
-//            sourceEndpointDefinition = new SqlServerEndpointDefinition { Name = "Source" };
-//            destinationEndpointDefinition = new SqlServerEndpointDefinition { Name = "Destination" };
-//        }
+    [TestFixture]
+    public class Callbacks : SqlServerContext
+    {
+        EndpointDefinition sourceEndpointDefinition;
+        EndpointDefinition competingEndpointDefinition;
+        EndpointDefinition destinationEndpointDefinition;
 
-//        [Test, TestCaseSource(nameof(GenerateVersionsPairs))]
-//        // ReSharper disable once InconsistentNaming
-//        public void Int_callbacks_work(string sourceVersion, string destinationVersion)
-//        {
-//            sourceEndpointDefinition.Mappings = new[]
-//            {
-//                new MessageMapping
-//                {
-//                    MessageType = typeof(TestIntCallback),
-//                    TransportAddress = destinationEndpointDefinition.TransportAddressForVersion(destinationVersion)
-//                }
-//            };
+        [SetUp]
+        public void SetUp()
+        {
+            sourceEndpointDefinition = new EndpointDefinition("Source") {MachineName = Environment.MachineName + "_A"};
+            competingEndpointDefinition = new EndpointDefinition("Source") {MachineName = Environment.MachineName + "_B"};
+            destinationEndpointDefinition = new EndpointDefinition("Destination");
+        }
 
-//            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, sourceVersion))
-//            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, destinationVersion))
-//            {
-//                var value = 42;
+        [Test]
+        public void Roundtrip_1_2_to_2_2()
+        {
+            Action<IEndpointConfigurationV1> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+            Action<IEndpointConfigurationV2> destinationConfig = c => { };
 
-//                source.SendAndCallbackForInt(value);
+            VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "2.2", destinationConfig);
+        }
 
-//                // ReSharper disable once AccessToDisposedClosure
-//                AssertEx.WaitUntilIsTrue(() => source.ReceivedIntCallbacks.Contains(value));
-//            }
-//        }
+        [Test]
+        public void Roundtrip_1_2_to_3_0()
+        {
+            Action<IEndpointConfigurationV1> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+            Action<IEndpointConfigurationV3> destinationConfig = c => { };
 
-//        [Category("SqlServer")]
-//        [Test, TestCaseSource(nameof(GenerateVersionsPairs))]
-//        // ReSharper disable once InconsistentNaming
-//        public void Enum_callbacks_work(string sourceVersion, string destinationVersion)
-//        {
-//            sourceEndpointDefinition.Mappings = new[]
-//            {
-//                new MessageMapping
-//                {
-//                    MessageType = typeof(TestEnumCallback),
-//                    TransportAddress = destinationEndpointDefinition.TransportAddressForVersion(destinationVersion)
-//                }
-//            };
+            VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
+        }
 
-//            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, sourceVersion))
-//            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, destinationVersion))
-//            {
-//                var value = CallbackEnum.Three;
+        [Test]
+        [Ignore("Callbacks does not work between 2.X and 1.X because 2.X uses a custom header")]
+        public void Roundtrip_2_2_to_1_2()
+        {
+            Action<IEndpointConfigurationV2> sourceConfig = c =>
+            {
+                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.EnableCallbacks();
+            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { };
 
-//                source.SendAndCallbackForEnum(value);
+            VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "1.2", destinationConfig);
+        }
 
-//                // ReSharper disable once AccessToDisposedClosure
-//                AssertEx.WaitUntilIsTrue(() => source.ReceivedEnumCallbacks.Contains(value));
-//            }
-//        }
+        [Test]
+        public void Roundtrip_2_2_to_3_0()
+        {
+            Action<IEndpointConfigurationV2> sourceConfig = c =>
+            {
+                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.EnableCallbacks();
+            };
+            Action<IEndpointConfigurationV3> destinationConfig = c => { };
 
-//        static object[][] GenerateVersionsPairs()
-//        {
-//            var sqlTransportVersions = new[] { 1, 2, 3 };
+            VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
+        }
 
-//            var pairs = from l in sqlTransportVersions
-//                        from r in sqlTransportVersions
-//                        where l != r
-//                        select new object[] { l, r };
+        [Test]
+        public void Roundtrip_3_0_to_1_2()
+        {
+            Action<IEndpointConfigurationV3> sourceConfig = c =>
+            {
+                c.EnableCallbacks("1");
+                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+            };
 
-//            return pairs.ToArray();
-//        }
-//    }
-//}
+            Action<IEndpointConfigurationV3> competingConfig = c =>
+            {
+                c.EnableCallbacks("2");
+                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { };
+
+            VerifyRoundtrip("3.0", sourceConfig, competingConfig, "1.2", destinationConfig);
+        }
+
+        [Test]
+        public void Roundtrip_3_0_to_2_2()
+        {
+            Action<IEndpointConfigurationV3> sourceConfig = c =>
+            {
+                c.EnableCallbacks("1");
+                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+            };
+
+            Action<IEndpointConfigurationV3> competingConfig = c =>
+            {
+                c.EnableCallbacks("2");
+                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+            };
+            Action<IEndpointConfigurationV2> destinationConfig = c => { };
+
+            VerifyRoundtrip("3.0", sourceConfig, competingConfig, "2.2", destinationConfig);
+        }
+
+        void VerifyRoundtrip<S, D>(string initiatorVersion, Action<S> initiatorConfig, Action<S> cometingConfig, string replierVersion, Action<D> replierConfig)
+            where S : IEndpointConfiguration
+            where D : IEndpointConfiguration
+        {
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
+            {
+                using (var competing = EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
+                {
+                    using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
+                    {
+                        var requestIds = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToArray();
+                        foreach (var requestId in requestIds)
+                        {
+                            source.SendRequest(requestId);
+                        }
+
+                        //Wait till all five responses arrive at the initiator.
+
+                        // ReSharper disable once AccessToDisposedClosure
+                        AssertEx.WaitUntilIsTrue(() => requestIds.All(id => source.ReceivedResponseIds.Contains(id)));
+                        Console.WriteLine("Done");
+                    }
+                }
+            }
+        }
+    }
+}

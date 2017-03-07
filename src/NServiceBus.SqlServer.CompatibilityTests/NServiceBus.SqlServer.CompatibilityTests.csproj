@@ -49,7 +49,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssertExtensions.cs" />
+    <Compile Include="Callbacks_old.cs" />
     <Compile Include="Callbacks.cs" />
+    <Compile Include="MessageExchangePatterns_RoundtripMultiInstance.cs" />
+    <Compile Include="MessageExchangePatterns_RoundtripCustomSchema.cs" />
+    <Compile Include="MessageExchangePatterns_Roundtrip.cs" />
+    <Compile Include="MessageExchangePatterns_Send.cs" />
     <Compile Include="MessageExchangePatterns.cs" />
     <Compile Include="SqlServerContext.cs" />
   </ItemGroup>

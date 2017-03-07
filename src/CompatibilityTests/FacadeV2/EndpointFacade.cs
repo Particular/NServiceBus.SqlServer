@@ -6,6 +6,7 @@ using NServiceBus;
 using NServiceBus.Config;
 using NServiceBus.Pipeline;
 using NServiceBus.Pipeline.Contexts;
+using NServiceBus.Support;
 using NServiceBus.Transports.SQLServer;
 
 public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurationV2
@@ -17,9 +18,15 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     BusConfiguration busConfiguration;
     CustomConfiguration customConfiguration;
     string customConnectionString;
+    bool enableCallbacks;
 
     public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
+        if (endpointDefinition.MachineName != null)
+        {
+            RuntimeEnvironment.MachineNameAction = () => endpointDefinition.MachineName;
+        }
+
         busConfiguration = new BusConfiguration();
 
         busConfiguration.Conventions()
@@ -30,7 +37,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         busConfiguration.EndpointName(endpointDefinition.Name);
         busConfiguration.UsePersistence<InMemoryPersistence>();
         busConfiguration.EnableInstallers();
-        var transport = busConfiguration.UseTransport<SqlServerTransport>();
+        busConfiguration.UseTransport<SqlServerTransport>();
         
         customConfiguration = new CustomConfiguration();
         busConfiguration.CustomConfigurationSource(customConfiguration);
@@ -57,6 +64,16 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         busConfiguration.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(EndpointConnectionInfo.For(transportAddress).UseSchema(schema));
     }
 
+    public void UseConnectionStringForAddress(string transportAddress, string connectionString)
+    {
+        busConfiguration.UseTransport<SqlServerTransport>().UseSpecificConnectionInformation(EndpointConnectionInfo.For(transportAddress).UseConnectionString(connectionString));
+    }
+
+    public void EnableCallbacks()
+    {
+        enableCallbacks = true;
+    }
+
     public void UseConnectionString(string connectionString)
     {
         customConnectionString = connectionString;
@@ -69,7 +86,12 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
     public void Start()
     {
-        busConfiguration.UseTransport<SqlServerTransport>().ConnectionString(customConnectionString ?? SqlServerConnectionStringBuilder.Build());
+        var transport = busConfiguration.UseTransport<SqlServerTransport>();
+        transport.ConnectionString(customConnectionString ?? SqlServerConnectionStringBuilder.Build());
+        if (!enableCallbacks)
+        {
+            transport.DisableCallbackReceiver();
+        }
 
         var startableBus = Bus.Create(busConfiguration);
         bus = startableBus.Start();
