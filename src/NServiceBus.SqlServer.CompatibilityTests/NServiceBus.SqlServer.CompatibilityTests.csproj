@@ -49,7 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssertExtensions.cs" />
-    <Compile Include="Callbacks_old.cs" />
     <Compile Include="Callbacks.cs" />
     <Compile Include="MessageExchangePatterns_RoundtripMultiInstance.cs" />
     <Compile Include="MessageExchangePatterns_RoundtripCustomSchema.cs" />
