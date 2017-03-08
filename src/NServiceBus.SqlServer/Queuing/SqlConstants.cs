@@ -1,10 +1,17 @@
+#pragma warning disable 1591
 namespace NServiceBus.Transport.SQLServer
 {
-    class Sql
-    {
-        internal const string PurgeText = "DELETE FROM {0}.{1}";
+    using System;
 
-        internal const string SendText =
+    /// <summary>
+    /// Not for public use.
+    /// </summary>
+    [Obsolete("Not for public use.")]
+    public static class SqlConstants
+    {
+        public static readonly string PurgeText = "DELETE FROM {0}.{1}";
+
+        public static readonly string SendText =
             @"
               DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
               IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
@@ -16,7 +23,7 @@ namespace NServiceBus.Transport.SQLServer
               IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
               IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string ReceiveText = @"
+        public static readonly string ReceiveText = @"
             DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
             IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
             SET NOCOUNT ON;
@@ -27,9 +34,9 @@ namespace NServiceBus.Transport.SQLServer
             IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
             IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string PeekText = "SELECT count(*) Id FROM {0}.{1} WITH (READPAST) WHERE [Expires] IS NULL OR [Expires] > GETUTCDATE();";
+        public static readonly string PeekText = "SELECT count(*) Id FROM {0}.{1} WITH (READPAST) WHERE [Expires] IS NULL OR [Expires] > GETUTCDATE();";
 
-        internal const string CreateQueueText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+        public static readonly string CreateQueueText = @"IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
                   BEGIN
                     EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
 
@@ -66,10 +73,9 @@ namespace NServiceBus.Transport.SQLServer
                     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
                   END";
 
-        internal const string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE [RowVersion] IN (SELECT TOP ({0}) [RowVersion] FROM {1}.{2} WITH (NOLOCK) WHERE [Expires] < GETUTCDATE())";
+        public static readonly string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE [RowVersion] IN (SELECT TOP ({0}) [RowVersion] FROM {1}.{2} WITH (NOLOCK) WHERE [Expires] < GETUTCDATE())";
 
-        internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
-
-        internal const string ExpiresIndexName = "Index_Expires";
+        public static readonly string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = 'Index_Expires' AND [object_id] = OBJECT_ID('{0}.{1}')";
+        
     }
 }

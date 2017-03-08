@@ -104,7 +104,7 @@
     <Compile Include="Receiving\QueuePurger.cs" />
     <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
     <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
-    <Compile Include="Queuing\Sql.cs" />
+    <Compile Include="Queuing\SqlConstants.cs" />
     <Compile Include="Queuing\Message.cs" />
     <Compile Include="Queuing\MessageRow.cs" />
     <Compile Include="Addressing\QueueAddress.cs" />
