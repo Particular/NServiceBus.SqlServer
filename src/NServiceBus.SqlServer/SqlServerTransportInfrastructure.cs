@@ -25,27 +25,15 @@ namespace NServiceBus.Transport.SQLServer
             RequireOutboxConsent = true;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.DeliveryConstraints" />
-        /// </summary>
         public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
         {
             typeof(DiscardIfNotReceivedBefore)
         };
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.TransactionMode" />
-        /// </summary>
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
-        /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
-        /// </summary>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
             SqlScopeOptions scopeOptions;
@@ -124,9 +112,6 @@ namespace NServiceBus.Transport.SQLServer
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeTaskDelay, purgeBatchSize);
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
-        /// </summary>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
@@ -142,17 +127,11 @@ namespace NServiceBus.Transport.SQLServer
                 });
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.BindToLocalEndpoint" />
-        /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
             var schemaSettings = settings.Get<EndpointSchemasSettings>();
@@ -166,9 +145,6 @@ namespace NServiceBus.Transport.SQLServer
             return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ToTransportAddress" />
-        /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             var nonEmptyParts = new[]
@@ -188,9 +164,6 @@ namespace NServiceBus.Transport.SQLServer
             return queueAddress.ToString();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.MakeCanonicalForm" />
-        /// </summary>
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressParser.Parse(transportAddress).ToString();
