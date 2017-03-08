@@ -34,10 +34,13 @@ OUTPUT deleted.Id, deleted.CorrelationId, deleted.ReplyToAddress, deleted.Recove
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        public static readonly string PeekText = "SELECT count(*) Id FROM {0}.{1} WITH (READPAST) WHERE Expires IS NULL OR Expires > GETUTCDATE();";
+        public static readonly string PeekText = @"
+SELECT count(*) Id
+FROM {0}.{1} WITH (READPAST)
+WHERE Expires IS NULL OR Expires > GETUTCDATE();";
 
         public static readonly string CreateQueueText = @"
-IF NOT  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') AND type in (N'U'))
 BEGIN
     EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
 
@@ -45,12 +48,12 @@ BEGIN
     BEGIN
         CREATE TABLE [{0}].[{1}](
             Id uniqueidentifier NOT NULL,
-            CorrelationId varchar(255) NULL,
-            ReplyToAddress varchar(255) NULL,
+            CorrelationId varchar(255),
+            ReplyToAddress varchar(255),
             Recoverable bit NOT NULL,
-            Expires datetime NULL,
+            Expires datetime,
             Headers varchar(max) NOT NULL,
-            Body varbinary(max) NULL,
+            Body varbinary(max),
             RowVersion bigint IDENTITY(1,1) NOT NULL
         ) ON [PRIMARY];
 
@@ -73,9 +76,16 @@ BEGIN
     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
 END";
 
-        public static readonly string PurgeBatchOfExpiredMessagesText = "DELETE FROM {1}.{2} WHERE RowVersion IN (SELECT TOP ({0}) RowVersion FROM {1}.{2} WITH (NOLOCK) WHERE Expires < GETUTCDATE())";
+        public static readonly string PurgeBatchOfExpiredMessagesText = @"
+DELETE FROM {1}.{2}
+WHERE RowVersion
+    IN (SELECT TOP ({0}) RowVersion FROM {1}.{2} WITH (NOLOCK) WHERE Expires < GETUTCDATE())";
 
-        public static readonly string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM sys.indexes WHERE name = 'Index_Expires' AND object_id = OBJECT_ID('{0}.{1}')";
-        
+        public static readonly string CheckIfExpiresIndexIsPresent = @"
+SELECT COUNT(*)
+FROM sys.indexes
+WHERE name = 'Index_Expires'
+    AND object_id = OBJECT_ID('{0}.{1}')";
+
     }
 }
