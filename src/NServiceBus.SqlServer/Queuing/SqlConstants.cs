@@ -52,12 +52,12 @@ BEGIN
             Headers varchar(max) NOT NULL,
             Body varbinary(max) NULL,
             RowVersion bigint IDENTITY(1,1) NOT NULL
-        ) ON PRIMARY;
+        ) ON [PRIMARY];
 
         CREATE CLUSTERED INDEX Index_RowVersion ON [{0}].[{1}]
         (
             RowVersion ASC
-        ) ON PRIMARY
+        ) ON [PRIMARY]
 
         CREATE NONCLUSTERED INDEX Index_Expires ON [{0}].[{1}]
         (
