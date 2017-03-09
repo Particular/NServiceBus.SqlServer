@@ -70,6 +70,18 @@ namespace NServiceBus.Transport.SQLServer
 
         internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
+        internal const string UpdateFailureStorage =
+                  @"MERGE [dbo].[MessageFailures] AS failures
+                    USING (
+                        VALUES (@Id, 1)
+                    ) AS data (Id, Counter)
+                    ON failures.MessageId = data.Id
+                    WHEN MATCHED THEN
+                       UPDATE SET failures.Counter = failures.Counter + 1
+                    WHEN NOT MATCHED THEN
+                       INSERT (MessageId, Counter) VALUES (@Id, 1);";
+
         internal const string ExpiresIndexName = "Index_Expires";
+        internal static string GetFailuresForMessage = "Select Counter from[dbo].[MessageFailures] where MessageId = @Id";
     }
 }

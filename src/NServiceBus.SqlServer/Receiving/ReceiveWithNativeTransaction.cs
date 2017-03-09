@@ -12,7 +12,7 @@
         public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, bool transactionForReceiveOnly = false)
         {
             this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
+            this.failureInfoStorage = new SqlFailureStorage();
             this.transactionForReceiveOnly = transactionForReceiveOnly;
 
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
@@ -46,7 +46,7 @@
                     transaction.Commit();
                 }
 
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                failureInfoStorage.ClearFailureInfoForMessage(connectionFactory, message.TransportId);
             }
             catch (Exception exception)
             {
@@ -54,7 +54,7 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                await failureInfoStorage.RecordFailureInfoForMessage(connectionFactory, message.TransportId, exception).ConfigureAwait(false);
             }
         }
 
@@ -77,8 +77,8 @@
 
         async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
         {
-            FailureInfoStorage.ProcessingFailureInfo failure;
-            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out failure))
+            var failure = await failureInfoStorage.TryGetFailureInfoForMessage(connectionFactory, message.TransportId).ConfigureAwait(false);
+            if (failure != null)
             {
                 var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
 
@@ -94,14 +94,14 @@
             }
             catch (Exception exception)
             {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                await failureInfoStorage.RecordFailureInfoForMessage(connectionFactory, message.TransportId, exception).ConfigureAwait(false);
                 return false;
             }
         }
 
         IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
+        SqlFailureStorage failureInfoStorage;
         bool transactionForReceiveOnly;
         internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
