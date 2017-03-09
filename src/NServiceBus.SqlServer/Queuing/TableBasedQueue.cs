@@ -1,4 +1,5 @@
 #pragma warning disable 618
+
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
@@ -13,6 +14,12 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueue
     {
+        string peekCommand;
+        string receiveCommand;
+        string sendCommand;
+        string purgeCommand;
+        string checkIfIndexExistsCommand;
+
         public TableBasedQueue(QueueAddress address)
         {
             using (var sanitizer = new SqlCommandBuilder())
@@ -21,6 +28,11 @@ namespace NServiceBus.Transport.SQLServer
                 schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
             }
 
+            peekCommand = Format(SqlConstants.PeekText, schemaName, tableName);
+            receiveCommand = Format(SqlConstants.ReceiveText, schemaName, tableName);
+            sendCommand = Format(SqlConstants.SendText, schemaName, tableName);
+            purgeCommand = Format(SqlConstants.PurgeText, schemaName, tableName);
+            checkIfIndexExistsCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, schemaName, tableName);
             TransportAddress = address.ToString();
         }
 
@@ -28,9 +40,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
         {
-            var commandText = Format(SqlConstants.PeekText, schemaName, tableName);
-
-            using (var command = new SqlCommand(commandText, connection)
+            using (var command = new SqlCommand(peekCommand, connection)
             {
                 CommandTimeout = timeoutInSeconds
             })
@@ -41,9 +51,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(SqlConstants.ReceiveText, schemaName, tableName);
-
-            using (var command = new SqlCommand(commandText, connection, transaction))
+            using (var command = new SqlCommand(receiveCommand, connection, transaction))
             {
                 return await ReadMessage(command).ConfigureAwait(false);
             }
@@ -77,11 +85,9 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(SqlConstants.SendText, schemaName, tableName);
-
             try
             {
-                using (var command = new SqlCommand(commandText, connection, transaction))
+                using (var command = new SqlCommand(sendCommand, connection, transaction))
                 {
                     message.PrepareSendCommand(command);
 
@@ -127,9 +133,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> Purge(SqlConnection connection)
         {
-            var commandText = Format(SqlConstants.PurgeText, schemaName, tableName);
-
-            using (var command = new SqlCommand(commandText, connection))
+            using (var command = new SqlCommand(purgeCommand, connection))
             {
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
@@ -147,9 +151,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            var commandText = Format(SqlConstants.CheckIfExpiresIndexIsPresent, schemaName, tableName);
-
-            using (var command = new SqlCommand(commandText, connection))
+            using (var command = new SqlCommand(checkIfIndexExistsCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
 
