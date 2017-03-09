@@ -33,6 +33,7 @@
             {
                 Assert.AreEqual(beforeitem.Value, after[beforeitem.Key]);
             }
+            Assert.AreEqual(before.Count, after.Count);
         }
     }
 }
