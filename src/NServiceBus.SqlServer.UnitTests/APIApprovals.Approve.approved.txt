@@ -39,6 +39,17 @@ namespace NServiceBus.Transport.SQLServer.ConnectionStrings
 }
 namespace NServiceBus.Transport.SQLServer
 {
+    [System.ObsoleteAttribute("Not for public use.")]
+    public class static SqlConstants
+    {
+        public static readonly string CheckIfExpiresIndexIsPresent;
+        public static readonly string CreateQueueText;
+        public static readonly string PeekText;
+        public static readonly string PurgeBatchOfExpiredMessagesText;
+        public static readonly string PurgeText;
+        public static readonly string ReceiveText;
+        public static readonly string SendText;
+    }
     public class static SqlServerTransportSettingsExtensions
     {
         [System.ObsoleteAttribute("Replaced by NServiceBus.Callbacks package. The member currently throws a NotImple" +

@@ -1,3 +1,4 @@
+#pragma warning disable 618
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
@@ -27,7 +28,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
         {
-            var commandText = Format(Sql.PeekText, schemaName, tableName);
+            var commandText = Format(SqlConstants.PeekText, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection)
             {
@@ -40,7 +41,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(Sql.ReceiveText, schemaName, tableName);
+            var commandText = Format(SqlConstants.ReceiveText, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection, transaction))
             {
@@ -76,7 +77,7 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
         {
-            var commandText = Format(Sql.SendText, schemaName, tableName);
+            var commandText = Format(SqlConstants.SendText, schemaName, tableName);
 
             try
             {
@@ -126,7 +127,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> Purge(SqlConnection connection)
         {
-            var commandText = Format(Sql.PurgeText, schemaName, tableName);
+            var commandText = Format(SqlConstants.PurgeText, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -136,7 +137,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = Format(Sql.PurgeBatchOfExpiredMessagesText, purgeBatchSize, schemaName, tableName);
+            var commandText = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, purgeBatchSize, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -146,7 +147,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            var commandText = Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, schemaName, tableName);
+            var commandText = Format(SqlConstants.CheckIfExpiresIndexIsPresent, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
@@ -154,7 +155,7 @@ namespace NServiceBus.Transport.SQLServer
 
                 if (rowsCount == 0)
                 {
-                    Logger.WarnFormat(@"Table {0}.{1} does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", schemaName, tableName, Sql.ExpiresIndexName);
+                    Logger.Warn($@"Table {schemaName}.{tableName} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
                 }
             }
         }

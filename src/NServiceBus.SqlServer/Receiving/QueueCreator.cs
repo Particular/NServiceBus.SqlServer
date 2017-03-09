@@ -1,3 +1,4 @@
+#pragma warning disable 618
 namespace NServiceBus.Transport.SQLServer
 {
     using System.Data;
@@ -34,7 +35,7 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
         {
-            var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
+            var sql = string.Format(SqlConstants.CreateQueueText, address.SchemaName, address.TableName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
