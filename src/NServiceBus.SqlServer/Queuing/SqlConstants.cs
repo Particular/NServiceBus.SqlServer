@@ -69,7 +69,7 @@ WHERE Expires IS NULL
 IF EXISTS (
     SELECT * 
     FROM sys.objects 
-    WHERE object_id = OBJECT_ID(N'[{0}].[{1}]') 
+    WHERE object_id = OBJECT_ID(N'{0}.{1}') 
         AND type in (N'U'))
 RETURN
 
@@ -78,14 +78,14 @@ EXEC sp_getapplock @Resource = '{0}_{1}_lock', @LockMode = 'Exclusive'
 IF EXISTS (
     SELECT *
     FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[{0}].[{1}]')
+    WHERE object_id = OBJECT_ID(N'{0}.{1}')
         AND type in (N'U'))
 BEGIN
     EXEC sp_releaseapplock @Resource = '{0}_{1}_lock'
     RETURN
 END
 
-CREATE TABLE [{0}].[{1}](
+CREATE TABLE {0}.{1}(
     Id uniqueidentifier NOT NULL,
     CorrelationId varchar(255),
     ReplyToAddress varchar(255),
@@ -96,12 +96,12 @@ CREATE TABLE [{0}].[{1}](
     RowVersion bigint IDENTITY(1,1) NOT NULL
 ) ON [PRIMARY];
 
-CREATE CLUSTERED INDEX Index_RowVersion ON [{0}].[{1}]
+CREATE CLUSTERED INDEX Index_RowVersion ON {0}.{1}
 (
     RowVersion ASC
 ) ON [PRIMARY]
 
-CREATE NONCLUSTERED INDEX Index_Expires ON [{0}].[{1}]
+CREATE NONCLUSTERED INDEX Index_Expires ON {0}.{1}
 (
     Expires ASC
 )

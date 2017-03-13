@@ -33,9 +33,16 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
         {
-            var sql = string.Format(SqlConstants.CreateQueueText, address.SchemaName, address.TableName);
+            string tableName;
+            string schemaName;
+            using (var sanitizer = new SqlCommandBuilder())
+            {
+                tableName = sanitizer.QuoteIdentifier(address.TableName);
+                schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
+            }
+            var sql = string.Format(SqlConstants.CreateQueueText, schemaName, tableName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
