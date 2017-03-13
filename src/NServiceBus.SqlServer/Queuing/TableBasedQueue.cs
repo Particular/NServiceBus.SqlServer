@@ -14,11 +14,6 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueue
     {
-        string peekCommand;
-        string receiveCommand;
-        string sendCommand;
-        string purgeCommand;
-        string checkIfIndexExistsCommand;
 
         public TableBasedQueue(QueueAddress address)
         {
@@ -33,6 +28,7 @@ namespace NServiceBus.Transport.SQLServer
             sendCommand = Format(SqlConstants.SendText, schemaName, tableName);
             purgeCommand = Format(SqlConstants.PurgeText, schemaName, tableName);
             checkIfIndexExistsCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, schemaName, tableName);
+            purgeBatchOfExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, schemaName, tableName);
             TransportAddress = address.ToString();
         }
 
@@ -141,10 +137,12 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            var commandText = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, purgeBatchSize, schemaName, tableName);
-
-            using (var command = new SqlCommand(commandText, connection))
+            using (var command = new SqlCommand(purgeBatchOfExpiredCommand, connection))
             {
+                var batchSizeParameter = command.CreateParameter();
+                batchSizeParameter.ParameterName = "BatchSize";
+                batchSizeParameter.Value = purgeBatchSize;
+                command.Parameters.Add(batchSizeParameter);
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
@@ -171,5 +169,11 @@ namespace NServiceBus.Transport.SQLServer
         string schemaName;
 
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
+        string purgeBatchOfExpiredCommand;
+        string peekCommand;
+        string receiveCommand;
+        string sendCommand;
+        string purgeCommand;
+        string checkIfIndexExistsCommand;
     }
 }
