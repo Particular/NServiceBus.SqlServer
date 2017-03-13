@@ -8,7 +8,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(tableName), tableName);
 
-            TableName = UnescapeIdentifier(tableName);
+            TableName = tableName;
             SchemaName = UnescapeIdentifier(schemaName);
         }
 
