@@ -16,30 +16,15 @@
         public string TableName { get; }
         public string SchemaName { get; }
 
-        //public static QueueAddress Parse(string address)
-        //{
-        //    if (address.Contains("@"))
-        //    {
-        //        var parts = address.Split('@');
-        //        var tableName = parts[0];
-        //        var schemaName = parts[1];
-
-        //        return new QueueAddress(tableName, schemaName);
-        //    }
-
-        //    return new QueueAddress(address, null);
-        //}
-
         //HINT: Algorithm for paring transport addresses runs on few assumptions:
-        //      1. Addresses are provided in <table_id>@<schema_id>@<catalog_id> format
+        //      1. Addresses are provided in <table_id>@<schema_id> format
         //      2. To preserve compatibility with v2 <table_id> is either:
         //          a. The whole address if no `@` exists in the body of address
         //          b. Prefix of the address up until first `@` from the beginning of the address
-        //      3. `@` can be used inside <schema_id> or <catalog_id> only when bracket delimited
-        //      4. If the first character of either <schema_id> or <catalog_id> equals to `[`
+        //      3. `@` can be used inside <schema_id> only when bracket delimited
+        //      4. If the first character of <schema_id> equals to `[`
         //         algorithm assumes that those parts are specified in brackets delimited format
-        //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id>
-        //         or <catalog_id> parts.
+        //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id> part.
         public static QueueAddress Parse(string address)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);

@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MultiSchema\When_custom_schema_contains_at.cs" />
+    <Compile Include="QueueAddress.cs" />
     <Compile Include="When_using_brackets_around_endpoint_names.cs" />
     <Compile Include="When_using_special_characters_in_endpoint_name.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\ApiExtension\When_extending_sendoptions.cs" />
