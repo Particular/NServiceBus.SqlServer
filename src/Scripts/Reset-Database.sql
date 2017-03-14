@@ -6,7 +6,7 @@ SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] = 'P' AND categ
 
 WHILE @name is not null
 BEGIN
-    SELECT @SQL = 'DROP PROCEDURE [dbo].[' + RTRIM(@name) +']'
+    SELECT @SQL = 'DROP PROCEDURE [dbo].' + QUOTENAME(RTRIM(@name))
     EXEC (@SQL)
     PRINT 'Dropped Procedure: ' + @name
     SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] = 'P' AND category = 0 AND [name] > @name ORDER BY [name])
@@ -23,7 +23,7 @@ SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objec
 
 WHILE @name IS NOT NULL
 BEGIN
-    SELECT @SQL = 'DROP VIEW [' + @schema + '].[' + RTRIM(@name) +']'
+    SELECT @SQL = 'DROP VIEW ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name))
     EXEC (@SQL)
     PRINT 'Dropped View: ' + @schema + '.' + @name
 	SELECT  @name = NULL
@@ -39,7 +39,7 @@ SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] IN (N'FN', N'IF
 
 WHILE @name IS NOT NULL
 BEGIN
-    SELECT @SQL = 'DROP FUNCTION [dbo].[' + RTRIM(@name) +']'
+    SELECT @SQL = 'DROP FUNCTION [dbo].' + QUOTENAME(RTRIM(@name))
     EXEC (@SQL)
     PRINT 'Dropped Function: ' + @name
     SELECT @name = (SELECT TOP 1 [name] FROM sysobjects WHERE [type] IN (N'FN', N'IF', N'TF', N'FS', N'FT') AND category = 0 AND [name] > @name ORDER BY [name])
@@ -56,7 +56,7 @@ SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONS
 
 WHILE @name is not null
 BEGIN    
-    SELECT @SQL = 'ALTER TABLE [' + @schema + '].[' + RTRIM(@name) +'] DROP CONSTRAINT [' + RTRIM(@constraint) +']'
+    SELECT @SQL = 'ALTER TABLE ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name)) +' DROP CONSTRAINT ' + QUOTENAME(RTRIM(@constraint))
     EXEC (@SQL)
     PRINT 'Dropped FK Constraint: ' + @constraint + ' on ' + @schema + '.' + @name
 	SELECT  @name = NULL
@@ -74,7 +74,7 @@ SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONS
 
 WHILE @name IS NOT NULL
 BEGIN    
-    SELECT @SQL = 'ALTER TABLE [' + @schema + '].[' + RTRIM(@name) +'] DROP CONSTRAINT [' + RTRIM(@constraint)+']'
+    SELECT @SQL = 'ALTER TABLE ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name)) +' DROP CONSTRAINT ' + QUOTENAME(RTRIM(@constraint))
     EXEC (@SQL)
     PRINT 'Dropped PK Constraint: ' + @constraint + ' on ' + @schema + '.' + @name
     SELECT  @name = NULL
@@ -91,7 +91,7 @@ SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objec
 
 WHILE @name IS NOT NULL
 BEGIN
-    SELECT @SQL = 'DROP TABLE [' + @schema + '].[' + RTRIM(@name) +']'
+    SELECT @SQL = 'DROP TABLE ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name))
     EXEC (@SQL)
     PRINT 'Dropped Table: ' + @schema + '.' + @name
 	SELECT  @name = NULL
