@@ -51,5 +51,26 @@
                 return sanitizer.UnquoteIdentifier(identifier);
             }
         }
+
+        bool Equals(QueueAddress other)
+        {
+            return string.Equals(TableName, other.TableName) && string.Equals(SchemaName, other.SchemaName);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((QueueAddress) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((TableName != null ? TableName.GetHashCode() : 0)*397) ^ (SchemaName != null ? SchemaName.GetHashCode() : 0);
+            }
+        }
     }
 }
