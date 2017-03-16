@@ -117,3 +117,9 @@ BEGIN
 	EXEC('CREATE SCHEMA receiver')
 END
 GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'db@')
+BEGIN
+	EXEC('CREATE SCHEMA db@')
+END
+GO
