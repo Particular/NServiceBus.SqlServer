@@ -90,7 +90,7 @@ namespace NServiceBus.Transport.SQLServer
         {
             foreach (var operation in operations)
             {
-                var queue = queueCollection.GetQueue(operation.Address);
+                var queue = queueFactory.Get(operation.Address);
                 await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
             }
         }
@@ -113,6 +113,6 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         SqlConnectionFactory connectionFactory;
-        TableBasedQueueCollection queueCollection = new TableBasedQueueCollection();
+        TableBasedQueueFactory queueFactory = new TableBasedQueueFactory();
     }
 }

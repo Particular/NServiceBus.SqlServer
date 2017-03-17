@@ -2,9 +2,9 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Concurrent;
 
-    class TableBasedQueueCollection
+    class TableBasedQueueFactory
     {
-        public TableBasedQueue GetQueue(QueueAddress address)
+        public TableBasedQueue Get(QueueAddress address)
         {
             return cache.GetOrAdd(address, a => new TableBasedQueue(a));
         } 
