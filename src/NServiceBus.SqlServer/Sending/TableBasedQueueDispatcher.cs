@@ -8,8 +8,6 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
-        SqlConnectionFactory connectionFactory;
-
         public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
@@ -88,11 +86,11 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
+        async Task Send(HashSet<MessageWithAddress> operations, SqlConnection connection, SqlTransaction transaction)
         {
             foreach (var operation in operations)
             {
-                var queue = new TableBasedQueue(operation.Address);
+                var queue = queueFactory.Get(operation.Address);
                 await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
             }
         }
@@ -113,5 +111,8 @@ namespace NServiceBus.Transport.SQLServer
             bool inReceiveMode;
             return transportTransaction.TryGet(ReceiveWithNativeTransaction.ReceiveOnlyTransactionMode, out inReceiveMode);
         }
+
+        SqlConnectionFactory connectionFactory;
+        TableBasedQueueFactory queueFactory = new TableBasedQueueFactory();
     }
 }

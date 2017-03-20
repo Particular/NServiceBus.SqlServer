@@ -113,10 +113,10 @@ INCLUDE
 ";
 
         public static readonly string PurgeBatchOfExpiredMessagesText = @"
-DELETE FROM {1}.{2}
+DELETE FROM {0}.{1}
 WHERE RowVersion
-    IN (SELECT TOP ({0}) RowVersion
-        FROM {1}.{2} WITH (NOLOCK)
+    IN (SELECT TOP (@BatchSize) RowVersion
+        FROM {0}.{1} WITH (NOLOCK)
         WHERE Expires < GETUTCDATE())";
 
         public static readonly string CheckIfExpiresIndexIsPresent = @"

@@ -85,6 +85,7 @@
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />
+    <Compile Include="Queuing\TableBasedQueueCollection.cs" />
     <Compile Include="Receiving\QueuePeekerOptions.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
