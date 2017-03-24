@@ -7,7 +7,6 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Transport;
     using Unicast.Queuing;
     using static System.String;
 
