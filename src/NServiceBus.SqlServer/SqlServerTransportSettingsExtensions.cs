@@ -100,6 +100,73 @@
         }
 
         /// <summary>
+        /// Specifies instance name for given endpoint.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="endpointName">Endpoint name.</param>
+        /// <param name="instance">Custom instance value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseInstanceForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string instance)
+        {
+            Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
+            Guard.AgainstNullAndEmpty(nameof(instance), instance);
+
+            var configuration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
+
+            configuration.SpecifyInstance(endpointName, instance);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies instance name for given queue.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="instance">Custom instance value.</param>
+        public static TransportExtensions<SqlServerTransport> UseInstanceForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string instance)
+        {
+            Guard.AgainstNullAndEmpty(nameof(queueName), queueName);
+            Guard.AgainstNullAndEmpty(nameof(instance), instance);
+
+            var configuration = transportExtensions.GetSettings().GetOrCreate<QueueSchemaAndCatalogSettings>();
+
+            configuration.SpecifyInstance(queueName, instance);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies the function for getting the forward address for a given instance.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="forwardingFunction">Function mapping instance name to forward queue address.</param>
+        public static TransportExtensions<SqlServerTransport> ForwardMessagesToOtherInstancesVia(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, string> forwardingFunction)
+        {
+            Guard.AgainstNull(nameof(forwardingFunction), forwardingFunction);
+
+            var config = transportExtensions.GetSettings().GetOrCreate<ForwardingConfiguration>();
+            config.SetForwardingConfiguration(forwardingFunction);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies the function for getting the forward address for a given instance.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="forwardAddress">Address to use when forwarding messages to other instances.</param>
+        public static TransportExtensions<SqlServerTransport> ForwardMessagesToOtherInstancesVia(this TransportExtensions<SqlServerTransport> transportExtensions, string forwardAddress)
+        {
+            Guard.AgainstNullAndEmpty(nameof(forwardAddress), forwardAddress);
+
+            var config = transportExtensions.GetSettings().GetOrCreate<ForwardingConfiguration>();
+            config.SetForwardingConfiguration(_ => forwardAddress);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Overrides the default time to wait before triggering a circuit breaker that initiates the endpoint shutdown procedure
         /// in case there are numerous errors
         /// while trying to receive messages.

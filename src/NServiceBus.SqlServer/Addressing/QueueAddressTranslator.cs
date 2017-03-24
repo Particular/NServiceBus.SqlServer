@@ -32,18 +32,24 @@
         {
             var transportAddress = QueueAddress.Parse(address);
 
-            string specifiedSchema, specifiedCatalog;
-            queueSettings.TryGet(transportAddress.Table, out specifiedSchema, out specifiedCatalog);
+            string specifiedSchema, specifiedCatalog, specifiedInstance;
+            queueSettings.TryGet(transportAddress.Table, out specifiedSchema, out specifiedCatalog, out specifiedInstance);
 
-            var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
-            var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
+            var instance = specifiedInstance ?? transportAddress.Instance;
 
-            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
+            var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema, instance == null);
+            var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog, instance == null);
+
+            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog, instance);
         }
 
-        static string Override(string configuredValue, string addressValue, string defaultValue)
+        static string Override(string configuredValue, string addressValue, string defaultValue, bool isLocal)
         {
-            return configuredValue ?? addressValue ?? defaultValue;
+            if (isLocal)
+            {
+                return configuredValue ?? addressValue ?? defaultValue;
+            }
+            return configuredValue ?? addressValue;
         }
 
         static QueueAddress TranslateLogicalAddress(LogicalAddress logicalAddress)
@@ -57,14 +63,15 @@
 
             var tableName = string.Join(".", nonEmptyParts);
 
-            string schemaName, catalogName;
+            string schemaName, catalogName, instanceName;
 
             logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
             logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.InstancePropertyKey, out instanceName);
 
-            return new QueueAddress(tableName, schemaName, catalogName);
+            return new QueueAddress(tableName, schemaName, catalogName, instanceName);
         }
-
+        
         QueueSchemaAndCatalogSettings queueSettings;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<LogicalAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<LogicalAddress, QueueAddress>();

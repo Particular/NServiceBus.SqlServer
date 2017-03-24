@@ -19,6 +19,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionString = connectionString;
 
             this.schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
+            settings.GetOrCreate<ForwardingConfiguration>();
 
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
@@ -129,10 +130,11 @@ namespace NServiceBus.Transport.SQLServer
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
+            var forwardingSettings = settings.GetOrCreate<ForwardingConfiguration>();
             settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, addressTranslator), addressTranslator),
+                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, addressTranslator, forwardingSettings), addressTranslator),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();

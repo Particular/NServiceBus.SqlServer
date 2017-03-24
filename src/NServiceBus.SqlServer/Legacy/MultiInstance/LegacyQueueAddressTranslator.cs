@@ -30,7 +30,7 @@
             var sqlAddress = QueueAddress.Parse(physicalAddress);
 
             string specifiedSchema, _;
-            queueSettings.TryGet(sqlAddress.Table, out specifiedSchema, out _); //we ignore catalog
+            queueSettings.TryGet(sqlAddress.Table, out specifiedSchema, out _, out _); //we ignore catalog and instance
 
             var schema = specifiedSchema ?? sqlAddress.Schema ?? DefaultSchema;
 
@@ -51,7 +51,7 @@
             string schemaName;
 
             logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-            var queueAddress = new QueueAddress(tableName, schemaName, null);
+            var queueAddress = new QueueAddress(tableName, schemaName, null, null);
             return queueAddress;
         }
         

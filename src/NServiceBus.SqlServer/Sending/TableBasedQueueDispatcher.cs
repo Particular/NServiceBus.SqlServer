@@ -8,10 +8,11 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueueDispatcher : IQueueDispatcher
     {
-        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator)
+        public TableBasedQueueDispatcher(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, ForwardingConfiguration forwardingConfiguration)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
+            this.forwardingConfiguration = forwardingConfiguration;
         }
 
         public async Task DispatchAsIsolated(List<UnicastTransportOperation> operations)
@@ -92,8 +93,24 @@ namespace NServiceBus.Transport.SQLServer
             foreach (var operation in operations)
             {
                 var address = addressTranslator.Parse(operation.Destination);
-                var queue = new TableBasedQueue(address.QualifiedTableName, address.Address);
-                await queue.Send(operation.Message.Headers, operation.Message.Body, connection, transaction).ConfigureAwait(false);
+
+                if (address.Instance != null)
+                {
+                    var forwardAddress = addressTranslator.Parse(forwardingConfiguration.GetForwardAddress(address.Instance));
+                    var queue = new TableBasedQueue(forwardAddress.QualifiedTableName, forwardAddress.Address);
+
+                    var newHeaders = new Dictionary<string, string>(operation.Message.Headers)
+                    {
+                        ["NServiceBus.SqlServer.ForwardTo"] = address.Address
+                    };
+
+                    await queue.Send(newHeaders, operation.Message.Body, connection, transaction).ConfigureAwait(false);
+                }
+                else
+                {
+                    var queue = new TableBasedQueue(address.QualifiedTableName, address.Address);
+                    await queue.Send(operation.Message.Headers, operation.Message.Body, connection, transaction).ConfigureAwait(false);
+                }
             }
         }
 
@@ -116,5 +133,6 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
+        ForwardingConfiguration forwardingConfiguration;
     }
 }

@@ -20,9 +20,9 @@
         [TestCase("my.table", null, "[my.catalog]", "my.table@[]@[my.catalog]")]
         public void Should_generate_address(string tableName, string schemaName, string catalogName, string expectedAddress)
         {
-            var address = new QueueAddress(tableName, schemaName, catalogName);
+            var address = new CanonicalQueueAddress(tableName, schemaName, catalogName, null);
 
-            Assert.AreEqual(expectedAddress, address.Value);
+            Assert.AreEqual(expectedAddress, address.Address);
         }
 
 

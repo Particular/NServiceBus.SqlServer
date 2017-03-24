@@ -12,7 +12,7 @@
             var parser = new QueueAddressTranslator(null, "dbo", null, new QueueSchemaAndCatalogSettings());
 
             var address = "my.tb[e@[my.[sch@ma]@[my.c@ta]]og]";
-            var canonicalAddress = parser.Parse(address).Address;
+            var canonicalAddress = parser.Parse(address).ToString();
 
             Assert.AreEqual(address, canonicalAddress);
         }

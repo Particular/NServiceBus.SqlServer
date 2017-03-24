@@ -75,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Addressing\EndpointSchemaAndCatalogSettings.cs" />
+    <Compile Include="Addressing\ForwardingConfiguration.cs" />
     <Compile Include="Addressing\QueueAddress.cs" />
     <Compile Include="Addressing\TableSchemaAndCatalogSettings.cs" />
     <Compile Include="AssemblyInfo.cs" />

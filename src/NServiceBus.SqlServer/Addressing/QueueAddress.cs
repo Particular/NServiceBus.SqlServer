@@ -6,18 +6,20 @@
 
     class QueueAddress
     {
-        public QueueAddress(string table, string schemaName, string catalogName)
+        public QueueAddress(string table, string schemaName, string catalogName, string instanceName)
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
             Table = table;
             Catalog = SafeUnquote(catalogName);
             Schema = SafeUnquote(schemaName);
+            Instance = SafeUnquote(instanceName);
             Value = GetStringForm();
         }
 
         public string Catalog { get; }
         public string Table { get; }
         public string Schema { get; }
+        public string Instance { get; }
         public string Value { get; }
 
         //HINT: Algorithm for paring transport addresses runs on few assumptions:
@@ -36,7 +38,7 @@
 
             if (firstAtIndex == -1)
             {
-                return new QueueAddress(address, null, null);
+                return new QueueAddress(address, null, null, null);
             }
 
             var tableName = address.Substring(0, firstAtIndex);
@@ -49,15 +51,22 @@
 
             if (address != string.Empty)
             {
-                ExtractNextPart(address, out catalogName);
+                address = ExtractNextPart(address, out catalogName);
             }
-            return new QueueAddress(tableName, schemaName, catalogName);
+
+            string instanceName = null;
+
+            if (address != string.Empty)
+            {
+                ExtractNextPart(address, out instanceName);
+            }
+            return new QueueAddress(tableName, schemaName, catalogName, instanceName);
         }
 
         string GetStringForm()
         {
             var result = new StringBuilder();
-            var optionalParts = new[] { Catalog, Schema };
+            var optionalParts = new[] { Instance, Catalog, Schema };
             foreach (var part in optionalParts)
             {
                 if (part != null)
