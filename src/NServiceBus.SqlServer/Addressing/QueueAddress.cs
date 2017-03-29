@@ -16,15 +16,16 @@
         public string TableName { get; }
         public string SchemaName { get; }
 
-        //HINT: Algorithm for paring transport addresses runs on few assumptions:
+        //HINT: Algorithm for parsing transport addresses runs with few assumptions:
         //      1. Addresses are provided in <table_id>@<schema_id> format
         //      2. To preserve compatibility with v2 <table_id> is either:
-        //          a. The whole address if no `@` exists in the body of address
-        //          b. Prefix of the address up until first `@` from the beginning of the address
+        //          a. The whole address if no `@` exists in the body of the address
+        //          b. Prefix of the address until first occurrence of `@`
         //      3. `@` can be used inside <schema_id> only when bracket delimited
-        //      4. If the first character of <schema_id> equals to `[`
-        //         algorithm assumes that those parts are specified in brackets delimited format
-        //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id> part.
+        //      4. If the first character of <schema_id> equals left bracket (`[`)
+        //         algorithm assumes that schema part is in brackets delimited format
+        //      5. Parsing does not assume the address needs to end with schema part.
+        //         It will stop at first `@` that defines correct <schema_id> part.
         public static QueueAddress Parse(string address)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
@@ -52,6 +53,7 @@
                 {
                     return address;
                 }
+
                 if (address[index] == '@' && (address[0] != '[' || noRightBrackets % 2 == 1))
                 {
                     return address.Substring(0, index);

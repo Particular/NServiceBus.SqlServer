@@ -25,7 +25,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         connectionString = settings.Get<string>("Transport.ConnectionString");
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
-        
+
         transportConfig.ConnectionString(connectionString);
 
         var routingConfig = transportConfig.Routing();
@@ -59,12 +59,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
 
         return Task.FromResult(0);
-    }
-
-    static string SanitizeIdentifier(string identifier, SqlCommandBuilder sanitizer)
-    {
-        // Identifier may initially quoted or unquoted.
-        return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
     }
 
     string connectionString;
