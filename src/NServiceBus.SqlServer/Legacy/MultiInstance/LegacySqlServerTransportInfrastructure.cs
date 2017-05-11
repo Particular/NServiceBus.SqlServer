@@ -83,7 +83,7 @@
         {
             var connectionFactory = CreateLegacyConnectionFactory();
 
-            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+            settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
                 () => new MessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory), addressParser),
