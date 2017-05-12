@@ -17,7 +17,6 @@
             }
 
             var builder = new SqlConnectionStringBuilder(SqlServerConnectionStringBuilder.Build());
-            var initialCatalog = builder.InitialCatalog;
             builder.InitialCatalog = "master";
 
             //using (var connection = new SqlConnection(builder.ConnectionString))

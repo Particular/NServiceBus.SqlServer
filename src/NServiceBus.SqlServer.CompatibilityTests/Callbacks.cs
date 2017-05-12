@@ -112,7 +112,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
             {
-                using (var competing = EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
+                using (EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
                 {
                     using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
                     {

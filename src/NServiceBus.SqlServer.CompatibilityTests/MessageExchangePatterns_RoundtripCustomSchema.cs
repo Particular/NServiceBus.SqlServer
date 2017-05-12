@@ -3,7 +3,6 @@
 namespace NServiceBus.SqlServer.CompatibilityTests
 {
     using System;
-    using System.Linq;
     using global::CompatibilityTests.Common;
     using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
