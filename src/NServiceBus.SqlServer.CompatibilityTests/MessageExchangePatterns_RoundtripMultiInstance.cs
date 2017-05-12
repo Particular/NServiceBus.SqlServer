@@ -39,7 +39,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
-                c.UseLagacyMultiInstanceMode(new Dictionary<string, string>
+                c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
                     ["Source"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;",
                     [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;", //All other addresses match here
@@ -77,7 +77,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
-                c.UseLagacyMultiInstanceMode(new Dictionary<string, string>
+                c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
                     ["Source"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;",
                     [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;", //All other addresses match here
@@ -93,7 +93,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseLagacyMultiInstanceMode(new Dictionary<string, string>
+                c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
                     [$"Destination.{Environment.MachineName}"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;",
                     [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;", //All other addresses match here
@@ -114,7 +114,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseLagacyMultiInstanceMode(new Dictionary<string, string>
+                c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
                     ["Destination"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;",
                     [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;", //All other addresses match here

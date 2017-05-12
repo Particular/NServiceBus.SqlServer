@@ -30,6 +30,6 @@
         void UseSchemaForQueue(string queue, string schema);
         void UseSchemaForEndpoint(string endpoint, string schema);
         void RouteToEndpoint(Type messageType, string endpoint);
-        void UseLagacyMultiInstanceMode(Dictionary<string, string> connectionStringMap);
+        void UseLegacyMultiInstanceMode(Dictionary<string, string> connectionStringMap);
     }
 }

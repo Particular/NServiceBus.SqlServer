@@ -112,7 +112,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         endpointConfiguration.UseTransport<SqlServerTransport>().UseSchemaForQueue(queue, schema);
     }
 
-    public void UseLagacyMultiInstanceMode(Dictionary<string, string> connectionStringMap)
+    public void UseLegacyMultiInstanceMode(Dictionary<string, string> connectionStringMap)
     {
 #pragma warning disable 0618
         endpointConfiguration.UseTransport<SqlServerTransport>().EnableLegacyMultiInstanceMode(async address =>
