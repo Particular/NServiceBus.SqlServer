@@ -7,7 +7,7 @@
     public class Conventions
     {
         public static Func<string, string> AssemblyNameResolver =
-            version => $"EndpointV{version}";
+            version => $"Facade_{version}";
 
         public static Func<string, string> AssemblyDirectoryResolver =
             version =>

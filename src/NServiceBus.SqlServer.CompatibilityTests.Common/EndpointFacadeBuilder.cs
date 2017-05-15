@@ -18,7 +18,7 @@
                 new AppDomainSetup
                 {
                     ApplicationBase = startupDirectory.FullName,
-                    ConfigurationFile = Path.Combine(startupDirectory.FullName, $"EndpointV{version}.dll.config")
+                    ConfigurationFile = Path.Combine(startupDirectory.FullName, $"Facade_{version}.dll.config")
                 });
 
             var assemblyPath = Conventions.AssemblyPathResolver(version);

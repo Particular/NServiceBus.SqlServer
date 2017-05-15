@@ -74,7 +74,7 @@
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
       <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
       <Name>NServiceBus.SqlServer</Name>
-      <Private>False</Private>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
