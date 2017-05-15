@@ -126,25 +126,5 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
             VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
         }
-
-        //TODO: we do not need backwards compat test for the same version
-        [Test]
-        public void Roundtrip_3_0_to_3_0_with_custom_schemas()
-        {
-            Action<IEndpointConfigurationV3> sourceConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseSchemaForEndpoint("Destination", "dest");
-            };
-            Action<IEndpointConfigurationV3> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-            };
-
-            VerifyRoundtrip("3.0", sourceConfig, "3.0", destinationConfig);
-        }
     }
 }

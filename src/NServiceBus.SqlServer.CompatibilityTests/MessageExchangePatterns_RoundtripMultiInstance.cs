@@ -134,25 +134,5 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
             VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
         }
-
-        //TODO: Do we need ver x <-> ver x test? Should be covered by integration tests
-        [Test]
-        public void Roundtrip_3_0_to_3_0_on_different_instances()
-        {
-            Action<IEndpointConfigurationV3> sourceConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseSchemaForEndpoint("Destination", "dest");
-            };
-            Action<IEndpointConfigurationV3> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-            };
-
-            VerifyRoundtrip("3.0", sourceConfig, "3.0", destinationConfig);
-        }
     }
 }
