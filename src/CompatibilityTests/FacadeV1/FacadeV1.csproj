@@ -62,7 +62,7 @@
     <Compile Include="CustomConfiguration.cs" />
     <Compile Include="AppConfig.cs" />
     <Compile Include="AppConfigGenerator.cs" />
-    <Compile Include="CustomConnectionString.cs" />
+    <Compile Include="ConnectionStringOverrides.cs" />
     <Compile Include="EndpointFacade.cs" />
     <Compile Include="Handler.cs" />
   </ItemGroup>

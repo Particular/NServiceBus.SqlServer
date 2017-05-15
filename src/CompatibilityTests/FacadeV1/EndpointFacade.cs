@@ -17,9 +17,9 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
     CallbackResultStore callbackResultStore;
     SubscriptionStore subscriptionStore;
     Configure configure;
-    List<CustomConnectionString> customConnectionStrings = new List<CustomConnectionString>();
+    List<ConnectionStringOverrides> connectionStringsOverrides = new List<ConnectionStringOverrides>();
     CustomConfiguration customConfiguration;
-    string customConnectionString;
+    string connectionString;
 
     public void Dispose()
     {
@@ -54,10 +54,10 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
 
         return this;
     }
-    
+
     public void UseConnectionString(string connectionString)
     {
-        customConnectionString = connectionString;
+        this.connectionString = connectionString;
     }
 
     public void MapMessageToEndpoint(Type messageType, string destination)
@@ -68,11 +68,10 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
 
     public void Start()
     {
-        var customConfigFile = new AppConfigGenerator()
-            .Generate(customConnectionString ?? SqlServerConnectionStringBuilder.Build(), customConnectionStrings);
+        var configFile = AppConfigGenerator.Generate(connectionString, connectionStringsOverrides);
 
         //HINT: we need to generate custom app.config because v1 sqltransports does a direct read from ConfigurationManager
-        using (AppConfig.Change(customConfigFile.FullName))
+        using (AppConfig.Change(configFile.FullName))
         {
             configure.UseTransport<SqlServer>();
 
@@ -89,7 +88,7 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
 
     public void ConfigureNamedConnectionStringForAddress(string endpoint, string connectionString)
     {
-        customConnectionStrings.Add(new CustomConnectionString
+        connectionStringsOverrides.Add(new ConnectionStringOverrides
         {
             Address = endpoint,
             ConnectionString = connectionString

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.CompatibilityTests
 {
     using System;
-    using System.Data.SqlClient;
     using global::CompatibilityTests.Common;
     using NUnit.Framework;
 
@@ -11,13 +10,13 @@
         [SetUp]
         public void CommonSetup()
         {
-            if (string.IsNullOrWhiteSpace(SqlServerConnectionStringBuilder.Build()))
-            {
-                throw new Exception($"Environment variables `{SqlServerConnectionStringBuilder.EnvironmentVariable}` are required to connect to Sql Server.");
-            }
+            //if (string.IsNullOrWhiteSpace(SqlServerConnectionStringBuilder.Build()))
+            //{
+            //    throw new Exception($"Environment variables `{SqlServerConnectionStringBuilder.EnvironmentVariable}` are required to connect to Sql Server.");
+            //}
 
-            var builder = new SqlConnectionStringBuilder(SqlServerConnectionStringBuilder.Build());
-            builder.InitialCatalog = "master";
+            //var builder = new SqlConnectionStringBuilder(SqlServerConnectionStringBuilder.Build());
+            //builder.InitialCatalog = "master";
 
             //using (var connection = new SqlConnection(builder.ConnectionString))
             //using (var command = connection.CreateCommand())

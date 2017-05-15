@@ -4,7 +4,7 @@ using System.Linq;
 
 class AppConfigGenerator
 {
-    public FileInfo Generate(string connectionString, List<CustomConnectionString> connectionStrings)
+    public static FileInfo Generate(string connectionString, List<ConnectionStringOverrides> connectionStrings)
     {
         var nodes = CreateConnectionStringNode(null, connectionString);
 
@@ -24,7 +24,7 @@ class AppConfigGenerator
     }
 
 
-    public string CreateConnectionStringNode(string name, string connectionString)
+    static string CreateConnectionStringNode(string name, string connectionString)
     {
         var connectionStringAttribute = connectionString;
         var nameAttribute = name != null ? $"NServiceBus/Transport/{name}" : "NServiceBus/Transport";

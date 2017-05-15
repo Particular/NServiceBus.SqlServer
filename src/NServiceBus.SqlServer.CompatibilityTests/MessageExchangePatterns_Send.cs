@@ -14,8 +14,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         [Test]
         public void Send_1_2_to_2_2()
         {
-            Action<IEndpointConfigurationV1> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
-            Action<IEndpointConfigurationV2> destinationConfig = c => { };
+            Action<IEndpointConfigurationV1> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+            };
+            Action<IEndpointConfigurationV2> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifySend("1.2", sourceConfig, "2.2", destinationConfig);
         }
@@ -23,8 +30,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         [Test]
         public void Send_1_2_to_3_0()
         {
-            Action<IEndpointConfigurationV1> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
-            Action<IEndpointConfigurationV3> destinationConfig = c => { };
+            Action<IEndpointConfigurationV1> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+            };
+            Action<IEndpointConfigurationV3> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifySend("1.2", sourceConfig, "3.0", destinationConfig);
         }
@@ -32,39 +46,67 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         [Test]
         public void Send_2_2_to_1_2()
         {
-            Action<IEndpointConfigurationV2> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
-            Action<IEndpointConfigurationV1> destinationConfig = c => { };
-            
+            Action<IEndpointConfigurationV2> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.MapMessageToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
+            };
+            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
+
             VerifySend("2.2", sourceConfig, "1.2", destinationConfig);
         }
 
         [Test]
         public void Send_2_2_to_3_0()
         {
-            Action<IEndpointConfigurationV2> sourceConfig = c => c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
-            Action<IEndpointConfigurationV3> destinationConfig = c => { };
-            
+            Action<IEndpointConfigurationV2> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+            };
+            Action<IEndpointConfigurationV3> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
+
             VerifySend("2.2", sourceConfig, "3.0", destinationConfig);
         }
 
         [Test]
         public void Send_3_0_to_1_2()
         {
-            Action<IEndpointConfigurationV3> sourceConfig = c => c.RouteToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
-            Action<IEndpointConfigurationV1> destinationConfig = c => { };
-            
+            Action<IEndpointConfigurationV3> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.RouteToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
+            };
+            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
+
             VerifySend("3.0", sourceConfig, "1.2", destinationConfig);
         }
 
         [Test]
         public void Send_3_0_to_2_2()
         {
-            Action<IEndpointConfigurationV3> sourceConfig = c => c.RouteToEndpoint(typeof(TestCommand), "Destination");
-            Action<IEndpointConfigurationV2> destinationConfig = c => { };
-            
+            Action<IEndpointConfigurationV3> sourceConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+                c.RouteToEndpoint(typeof(TestCommand), "Destination");
+            };
+            Action<IEndpointConfigurationV2> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
+
             VerifySend("3.0", sourceConfig, "2.2", destinationConfig);
         }
-        
+
         void VerifySend<S, D>(string sourceVersion, Action<S> sourceConfig, string destinationVersion, Action<D> destinationConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration

@@ -16,13 +16,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.ConfigureNamedConnectionStringForAddress("Destination", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
-                c.UseConnectionStringForAddress($"Source.{Environment.MachineName}", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance2);
+                c.UseConnectionStringForAddress($"Source.{Environment.MachineName}", ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip("1.2", sourceConfig, "2.2", destinationConfig);
@@ -33,16 +34,17 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.ConfigureNamedConnectionStringForAddress("Destination", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Source"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;",
-                    [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;", //All other addresses match here
+                    ["Source"] = ConnectionStrings.Instance1,
+                    [""]       = ConnectionStrings.Instance2 //All other addresses match here
                 });
             };
 
@@ -54,13 +56,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseConnectionStringForAddress($"Destination.{Environment.MachineName}", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.UseConnectionStringForAddress($"Destination.{Environment.MachineName}", ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True");
-                c.ConfigureNamedConnectionStringForAddress("Source", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance2);
+                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip("2.2", sourceConfig, "1.2", destinationConfig);
@@ -71,16 +74,17 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionStringForAddress("Destination", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.UseConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance2);
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Source"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;",
-                    [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;", //All other addresses match here
+                    ["Source"] = ConnectionStrings.Instance1,
+                    [""] = ConnectionStrings.Instance2, //All other addresses match here
                 });
             };
 
@@ -92,17 +96,18 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    [$"Destination.{Environment.MachineName}"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;",
-                    [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;", //All other addresses match here
+                    [$"Destination.{Environment.MachineName}"] = ConnectionStrings.Instance2,
+                    [""] = ConnectionStrings.Instance1, //All other addresses match here
                 });
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True");
-                c.ConfigureNamedConnectionStringForAddress("Source", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance2);
+                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip("3.0", sourceConfig, "1.2", destinationConfig);
@@ -113,33 +118,37 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Destination"] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;",
-                    [""] = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;", //All other addresses match here
+                    ["Destination"] = ConnectionStrings.Instance2,
+                    [""] = ConnectionStrings.Instance1, //All other addresses match here
                 });
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True;");
-                c.UseConnectionStringForAddress("Source", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;");
+                c.UseConnectionString(ConnectionStrings.Instance2);
+                c.UseConnectionStringForAddress("Source", ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
         }
 
+        //TODO: Do we need ver x <-> ver x test? Should be covered by integration tests
         [Test]
         public void Roundtrip_3_0_to_3_0_on_different_instances()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("src");
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
                 c.UseSchemaForEndpoint("Destination", "dest");
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
             };
 

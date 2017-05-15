@@ -7,6 +7,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
 
+    //TODO: add catalog and schema creation scripts to auto-run on setup
     [TestFixture]
     public partial class MessageExchangePatterns
     {
@@ -16,12 +17,13 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=src");
-                c.ConfigureNamedConnectionStringForAddress("Destination", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=dest");
+                c.UseConnectionString(ConnectionStrings.Instance1_Src);
+                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance1_Dest);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.DefaultSchema("dest");
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.UseSchemaForTransportAddress($"Source.{Environment.MachineName}", "src");
             };
 
@@ -34,11 +36,12 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=src");
-                c.ConfigureNamedConnectionStringForAddress("Destination", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=dest");
+                c.UseConnectionString(ConnectionStrings.Instance1_Src);
+                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance1_Dest);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
                 c.UseSchemaForQueue($"Source.{Environment.MachineName}", "src");
             };
@@ -51,14 +54,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
                 c.DefaultSchema("src");
                 c.UseSchemaForTransportAddress($"Destination.{Environment.MachineName}", "dest");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=dest");
-                c.ConfigureNamedConnectionStringForAddress("Source", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=src");
+                c.UseConnectionString(ConnectionStrings.Instance1_Dest);
+                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
             };
 
             VerifyRoundtrip("2.2", sourceConfig, "1.2", destinationConfig);
@@ -69,12 +73,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
                 c.DefaultSchema("src");
                 c.UseSchemaForTransportAddress("Destination", "dest");
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
                 c.UseSchemaForQueue($"Source.{Environment.MachineName}", "src");
             };
@@ -87,14 +93,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("src");
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
                 c.UseSchemaForEndpoint($"Destination.{Environment.MachineName}", "dest");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
-                c.UseConnectionString(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=dest");
-                c.ConfigureNamedConnectionStringForAddress("Source", @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=src");
+                c.UseConnectionString(ConnectionStrings.Instance1_Dest);
+                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
             };
 
             VerifyRoundtrip("3.0", sourceConfig, "1.2", destinationConfig);
@@ -105,12 +112,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("src");
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
                 c.UseSchemaForEndpoint("Destination", "dest");
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
                 c.UseSchemaForTransportAddress("Source", "src");
             };
@@ -118,17 +127,20 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
         }
 
+        //TODO: we do not need backwards compat test for the same version
         [Test]
         public void Roundtrip_3_0_to_3_0_with_custom_schemas()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("src");
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
                 c.UseSchemaForEndpoint("Destination", "dest");
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
+                c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
             };
 

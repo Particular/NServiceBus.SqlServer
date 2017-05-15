@@ -18,7 +18,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     CallbackResultStore callbackResultStore;
     SubscriptionStore subscriptionStore;
     EndpointConfiguration endpointConfiguration;
-    string customConnectionString;
+    string connectionString;
     CustomConfiguration customConfiguration;
     bool enableCallbacks;
     string instanceId;
@@ -60,7 +60,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
     public void UseConnectionString(string connectionString)
     {
-        customConnectionString = connectionString;
+        this.connectionString = connectionString;
     }
 
     public void MapMessageToEndpoint(Type messageType, string destination)
@@ -75,8 +75,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
     public void Start()
     {
-        endpointConfiguration.UseTransport<SqlServerTransport>()
-            .ConnectionString(customConnectionString ?? SqlServerConnectionStringBuilder.Build());
+        endpointConfiguration.UseTransport<SqlServerTransport>().ConnectionString(connectionString);
 
         if (!enableCallbacks)
         {
