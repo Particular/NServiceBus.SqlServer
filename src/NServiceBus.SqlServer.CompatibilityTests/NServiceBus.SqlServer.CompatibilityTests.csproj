@@ -56,7 +56,6 @@
     <Compile Include="MessageExchangePatterns_Roundtrip.cs" />
     <Compile Include="MessageExchangePatterns_Send.cs" />
     <Compile Include="MessageExchangePatterns.cs" />
-    <Compile Include="SqlServerContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj">

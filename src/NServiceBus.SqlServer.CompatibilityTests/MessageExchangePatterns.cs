@@ -6,8 +6,11 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     using NUnit.Framework;
 
     [TestFixture]
-    public partial class MessageExchangePatterns : SqlServerContext
+    public partial class MessageExchangePatterns
     {
+        static string SourceSchema = "src";
+        static string DestinationSchema = "dest";
+
         EndpointDefinition sourceEndpointDefinition;
         EndpointDefinition destinationEndpointDefinition;
 

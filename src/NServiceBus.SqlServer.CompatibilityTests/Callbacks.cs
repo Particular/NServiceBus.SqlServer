@@ -10,7 +10,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
     //TODO: MSDTC is not available on this Computer - we should have a better handling for message processing exceptions.
     [TestFixture]
-    public class Callbacks : SqlServerContext
+    public class Callbacks
     {
         static string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
