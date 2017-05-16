@@ -134,6 +134,11 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         endpointConfiguration.UseTransport<SqlServerTransport>().Routing().RouteToEndpoint(messageType, endpoint);
     }
 
+    public void RegisterPublisher(Type eventType, string publisher)
+    {
+        endpointConfiguration.UseTransport<SqlServerTransport>().Routing().RegisterPublisher(eventType, publisher);
+    }
+
     public void SendCommand(Guid messageId)
     {
         endpointInstance.Send(new TestCommand { Id = messageId }).GetAwaiter().GetResult();

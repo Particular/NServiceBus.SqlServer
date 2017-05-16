@@ -8,9 +8,6 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     [TestFixture]
     public partial class MessageExchangePatterns
     {
-        static string SourceSchema = "src";
-        static string DestinationSchema = "dest";
-
         EndpointDefinition sourceEndpointDefinition;
         EndpointDefinition destinationEndpointDefinition;
 

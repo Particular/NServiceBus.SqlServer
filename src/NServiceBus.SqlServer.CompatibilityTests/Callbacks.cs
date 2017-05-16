@@ -12,8 +12,6 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     [TestFixture]
     public class Callbacks
     {
-        static string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-
         EndpointDefinition sourceEndpointDefinition;
         EndpointDefinition competingEndpointDefinition;
         EndpointDefinition destinationEndpointDefinition;
@@ -32,9 +30,12 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV2> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "2.2", destinationConfig);
         }
@@ -45,9 +46,12 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV3> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
         }
@@ -60,9 +64,12 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
                 c.EnableCallbacks();
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "1.2", destinationConfig);
         }
@@ -74,9 +81,12 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             {
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
                 c.EnableCallbacks();
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV3> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
         }
@@ -88,16 +98,19 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             {
                 c.EnableCallbacks("1");
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
 
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("3.0", sourceConfig, competingConfig, "1.2", destinationConfig);
         }
@@ -109,16 +122,18 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             {
                 c.EnableCallbacks("1");
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionString(ConnectionString);
+                c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionString); };
+            Action<IEndpointConfigurationV2> destinationConfig = c =>
+            {
+                c.UseConnectionString(ConnectionStrings.Default);
+            };
 
             VerifyRoundtrip("3.0", sourceConfig, competingConfig, "2.2", destinationConfig);
         }

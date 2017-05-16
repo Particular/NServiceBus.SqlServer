@@ -51,6 +51,7 @@
     <Compile Include="AssertExtensions.cs" />
     <Compile Include="Callbacks.cs" />
     <Compile Include="ConnectionStrings.cs" />
+    <Compile Include="MessageExchangePatterns_Publish.cs" />
     <Compile Include="MessageExchangePatterns_RoundtripMultiInstance.cs" />
     <Compile Include="MessageExchangePatterns_RoundtripCustomSchema.cs" />
     <Compile Include="MessageExchangePatterns_Roundtrip.cs" />
