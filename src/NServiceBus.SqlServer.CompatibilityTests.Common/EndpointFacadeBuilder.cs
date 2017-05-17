@@ -31,16 +31,16 @@
 
             configurator.Start();
 
-            return new MyWrapper(facade, appDomain);
+            return new DisposingEndpointFacade(facade, appDomain);
         }
     }
 
-    class MyWrapper : IEndpointFacade
+    class DisposingEndpointFacade : IEndpointFacade
     {
         IEndpointFacade facade;
         AppDomain domain;
 
-        public MyWrapper(IEndpointFacade facade, AppDomain domain)
+        public DisposingEndpointFacade(IEndpointFacade facade, AppDomain domain)
         {
             this.facade = facade;
             this.domain = domain;

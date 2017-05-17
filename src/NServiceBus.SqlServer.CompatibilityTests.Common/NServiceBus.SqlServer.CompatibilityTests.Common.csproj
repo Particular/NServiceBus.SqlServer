@@ -59,7 +59,6 @@
     <Compile Include="Messages\TestIntCallback.cs" />
     <Compile Include="Messages\TestRequest.cs" />
     <Compile Include="Messages\TestResponse.cs" />
-    <Compile Include="SqlConnectionStringBuilder.cs" />
     <Compile Include="SqlServerEndpointDefinition.cs" />
     <Compile Include="SubscriptionStore.cs" />
   </ItemGroup>
