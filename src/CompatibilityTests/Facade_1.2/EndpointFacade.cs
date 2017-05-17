@@ -114,7 +114,9 @@ class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConfigurati
     {
         Task.Run(async () =>
         {
-            var res = await bus.Send(new TestIntCallback { Response = value }).Register();
+            var callback = bus.Send(new TestIntCallback { Response = value });
+
+            var res = await callback.Register();
 
             callbackResultStore.Add(res);
         });

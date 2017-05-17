@@ -29,7 +29,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
@@ -45,12 +45,13 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
+                c.EnableCallbacks("1");
             };
 
             VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
@@ -62,7 +63,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
                 c.EnableCallbacks();
                 c.UseConnectionString(ConnectionStrings.Default);
             };
@@ -79,13 +80,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), destinationEndpointDefinition.Name);
                 c.EnableCallbacks();
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
+                c.EnableCallbacks("1");
             };
 
             VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
@@ -97,14 +99,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.EnableCallbacks("1");
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
@@ -115,19 +117,21 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             VerifyRoundtrip("3.0", sourceConfig, competingConfig, "1.2", destinationConfig);
         }
 
+        //TODO: fix all the callback test to actually use callbacks. Update to the newest Callbacks package in v6
         [Test]
         public void Roundtrip_3_0_to_2_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.EnableCallbacks("1");
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+                c.RouteToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+                //HINT: this is not really needed
+                c.RouteToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
@@ -144,23 +148,27 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
             {
-                using (EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
-                {
+               using (EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
+               {
                     using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
                     {
-                        var requestIds = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).ToArray();
-                        foreach (var requestId in requestIds)
+                        var firstValue = new Random().Next(1000);
+                        var values = Enumerable.Range(0, 50).Select(i => firstValue + i).ToArray();
+
+                        foreach (var value in values)
                         {
-                            source.SendRequest(requestId);
+                            source.SendAndCallbackForInt(value);
                         }
 
                         //Wait till all five responses arrive at the initiator.
 
                         // ReSharper disable once AccessToDisposedClosure
-                        AssertEx.WaitUntilIsTrue(() => requestIds.All(id => source.ReceivedResponseIds.Contains(id)));
+                        AssertEx.WaitUntilIsTrue(
+                            () => values.All(value => source.ReceivedIntCallbacks.Contains(value)),
+                            TimeSpan.FromSeconds(60));
                         Console.WriteLine("Done");
                     }
-                }
+               }
             }
         }
     }
