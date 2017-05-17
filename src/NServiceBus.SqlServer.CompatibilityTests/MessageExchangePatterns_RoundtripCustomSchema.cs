@@ -82,7 +82,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
                 c.DefaultSchema("dest");
-                c.UseSchemaForQueue($"Source.{Environment.MachineName}", "src");
+                c.UseSchemaForQueue("Source", "src");
             };
 
             VerifyRoundtrip("2.2", sourceConfig, "3.0", destinationConfig);
