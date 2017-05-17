@@ -22,6 +22,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     CustomConfiguration customConfiguration;
     bool enableCallbacks;
     string instanceId;
+    bool makesCallbackReqeusts;
 
     public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
@@ -77,14 +78,14 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     {
         endpointConfiguration.UseTransport<SqlServerTransport>().ConnectionString(connectionString);
 
-        if (!enableCallbacks)
+        if (enableCallbacks)
         {
-            var callbackFeature = typeof(RequestResponseExtensions).Assembly.GetType("NServiceBus.Features.CallbackSupport", true);
-            endpointConfiguration.DisableFeature(callbackFeature);
-        }
-        else
-        {
-            endpointConfiguration.MakeInstanceUniquelyAddressable(instanceId);
+            endpointConfiguration.EnableCallbacks(makesCallbackReqeusts);
+
+            if (makesCallbackReqeusts)
+            {
+                endpointConfiguration.MakeInstanceUniquelyAddressable(instanceId);
+            }
         }
 
         StartAsync().GetAwaiter().GetResult();
@@ -95,10 +96,11 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         endpointInstance = await Endpoint.Start(endpointConfiguration);
     }
 
-    public void EnableCallbacks(string instanceId)
+    public void EnableCallbacks(string instanceId, bool makesRequests)
     {
         enableCallbacks = true;
         this.instanceId = instanceId;
+        this.makesCallbackReqeusts = makesRequests;
     }
 
     public void DefaultSchema(string schema)

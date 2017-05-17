@@ -25,7 +25,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         }
 
         [Test]
-        public void Roundtrip_1_2_to_2_2()
+        public void Callback_1_2_to_2_2()
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
@@ -41,7 +41,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         }
 
         [Test]
-        public void Roundtrip_1_2_to_3_0()
+        public void Callback_1_2_to_3_0()
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
@@ -51,7 +51,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.EnableCallbacks("1");
+                c.EnableCallbacks(string.Empty, false);
             };
 
             VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
@@ -59,7 +59,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
         [Test]
         [Ignore("Callbacks does not work between 2.X and 1.X because 2.X uses a custom header")]
-        public void Roundtrip_2_2_to_1_2()
+        public void Callback_2_2_to_1_2()
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
@@ -76,7 +76,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         }
 
         [Test]
-        public void Roundtrip_2_2_to_3_0()
+        public void Callback_2_2_to_3_0()
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
@@ -87,14 +87,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.EnableCallbacks("1");
+                c.EnableCallbacks(string.Empty, false);
             };
 
             VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_3_0_to_1_2()
+        public void Callback_3_0_to_1_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
@@ -119,7 +119,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
         //TODO: fix all the callback test to actually use callbacks. Update to the newest Callbacks package in v6
         [Test]
-        public void Roundtrip_3_0_to_2_2()
+        public void Callback_3_0_to_2_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
@@ -153,7 +153,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                     using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
                     {
                         var firstValue = new Random().Next(1000);
-                        var values = Enumerable.Range(0, 50).Select(i => firstValue + i).ToArray();
+                        var values = Enumerable.Range(0, 5).Select(i => firstValue + i).ToArray();
 
                         foreach (var value in values)
                         {
@@ -163,9 +163,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                         //Wait till all five responses arrive at the initiator.
 
                         // ReSharper disable once AccessToDisposedClosure
-                        AssertEx.WaitUntilIsTrue(
-                            () => values.All(value => source.ReceivedIntCallbacks.Contains(value)),
-                            TimeSpan.FromSeconds(60));
+                        AssertEx.WaitUntilIsTrue(() => values.All(value => source.ReceivedIntCallbacks.Contains(value)));
                         Console.WriteLine("Done");
                     }
                }

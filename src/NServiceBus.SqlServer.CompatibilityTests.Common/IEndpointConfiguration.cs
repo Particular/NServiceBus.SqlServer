@@ -26,7 +26,7 @@
 
     public interface IEndpointConfigurationV3 : IEndpointConfiguration
     {
-        void EnableCallbacks(string instanceId);
+        void EnableCallbacks(string instanceId, bool makesRequests = true);
         void DefaultSchema(string schema);
         void UseSchemaForQueue(string queue, string schema);
         void UseSchemaForEndpoint(string endpoint, string schema);
