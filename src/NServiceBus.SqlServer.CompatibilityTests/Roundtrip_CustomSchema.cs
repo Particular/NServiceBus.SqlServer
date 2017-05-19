@@ -9,7 +9,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
     //TODO: add catalog and schema creation scripts to auto-run on setup
     [TestFixture]
-    public partial class MessageExchangePatterns
+    public partial class Roundtrip
     {
         [Test]
         public void Roundtrip_1_2_to_2_2_with_custom_schemas()

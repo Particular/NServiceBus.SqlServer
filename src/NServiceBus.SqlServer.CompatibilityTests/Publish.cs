@@ -6,7 +6,7 @@
     using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
 
-    public partial class MessageExchangePatterns_Publish
+    public partial class Publish
     {
         [SetUp]
         public void SetUp()

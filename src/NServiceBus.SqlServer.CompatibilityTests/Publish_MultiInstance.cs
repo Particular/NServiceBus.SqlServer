@@ -6,7 +6,7 @@
     using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
 
-    public partial class MessageExchangePatterns_Publish
+    public partial class Publish
     {
         [Test]
         public void Publish_1_2_to_2_2_on_different_instances()

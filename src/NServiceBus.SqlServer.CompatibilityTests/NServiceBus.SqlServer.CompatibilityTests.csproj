@@ -49,16 +49,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssertExtensions.cs" />
-    <Compile Include="Callbacks.cs" />
+    <Compile Include="Callback.cs" />
     <Compile Include="ConnectionStrings.cs" />
-    <Compile Include="MessageExchangePatterns_Publish.cs" />
-    <Compile Include="MessageExchangePatterns_PublishCustomSchema.cs" />
-    <Compile Include="MessageExchangePatterns_PublishMultiInstance.cs" />
-    <Compile Include="MessageExchangePatterns_RoundtripMultiInstance.cs" />
-    <Compile Include="MessageExchangePatterns_RoundtripCustomSchema.cs" />
-    <Compile Include="MessageExchangePatterns_Roundtrip.cs" />
-    <Compile Include="MessageExchangePatterns_Send.cs" />
-    <Compile Include="MessageExchangePatterns.cs" />
+    <Compile Include="Publish.cs" />
+    <Compile Include="Publish_CustomSchema.cs" />
+    <Compile Include="Publish_MultiInstance.cs" />
+    <Compile Include="Roundtrip_MultiInstance.cs" />
+    <Compile Include="Roundtrip_CustomSchema.cs" />
+    <Compile Include="Roundtrip.cs" />
+    <Compile Include="Send.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj">

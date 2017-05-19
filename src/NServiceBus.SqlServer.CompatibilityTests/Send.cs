@@ -9,119 +9,128 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     using NUnit.Framework;
 
     [TestFixture]
-    public partial class MessageExchangePatterns
+    public class Send
     {
+        EndpointDefinition sourceEndpointDefinition;
+        EndpointDefinition destinationEndpointDefinition;
+
+        [SetUp]
+        public void SetUp()
+        {
+            sourceEndpointDefinition = new EndpointDefinition("Source");
+            destinationEndpointDefinition = new EndpointDefinition("Destination");
+        }
+
         [Test]
-        public void Roundtrip_1_2_to_2_2()
+        public void Send_1_2_to_2_2()
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("1.2", sourceConfig, "2.2", destinationConfig);
+            VerifySend("1.2", sourceConfig, "2.2", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_1_2_to_3_0()
+        public void Send_1_2_to_3_0()
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("1.2", sourceConfig, "3.0", destinationConfig);
+            VerifySend("1.2", sourceConfig, "3.0", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_2_2_to_1_2()
+        public void Send_2_2_to_1_2()
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.MapMessageToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("2.2", sourceConfig, "1.2", destinationConfig);
+            VerifySend("2.2", sourceConfig, "1.2", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_2_2_to_3_0()
+        public void Send_2_2_to_3_0()
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
+                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("2.2", sourceConfig, "3.0", destinationConfig);
+            VerifySend("2.2", sourceConfig, "3.0", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_3_0_to_1_2()
+        public void Send_3_0_to_1_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("3.0", sourceConfig, "1.2", destinationConfig);
+            VerifySend("3.0", sourceConfig, "1.2", destinationConfig);
         }
 
         [Test]
-        public void Roundtrip_3_0_to_2_2()
+        public void Send_3_0_to_2_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+                c.RouteToEndpoint(typeof(TestCommand), "Destination");
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
+            VerifySend("3.0", sourceConfig, "2.2", destinationConfig);
         }
 
-        void VerifyRoundtrip<S, D>(string initiatorVersion, Action<S> initiatorConfig, string replierVersion, Action<D> replierConfig)
+        void VerifySend<S, D>(string sourceVersion, Action<S> sourceConfig, string destinationVersion, Action<D> destinationConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-
-            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, sourceVersion, sourceConfig))
             {
-                using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
+                using (var destination = EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, destinationVersion, destinationConfig))
                 {
-                    var requestId = Guid.NewGuid();
+                    var messageId = Guid.NewGuid();
 
-                    source.SendRequest(requestId);
+                    source.SendCommand(messageId);
 
                     // ReSharper disable once AccessToDisposedClosure
-                    AssertEx.WaitUntilIsTrue(() => source.ReceivedResponseIds.Any(responseId => responseId == requestId));
+                    AssertEx.WaitUntilIsTrue(() => destination.ReceivedMessageIds.Any(mi => mi == messageId));
                 }
             }
         }

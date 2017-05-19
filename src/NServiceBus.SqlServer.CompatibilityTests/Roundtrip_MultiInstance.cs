@@ -9,7 +9,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     using NUnit.Framework;
 
     [TestFixture]
-    public partial class MessageExchangePatterns
+    public partial class Roundtrip
     {
         [Test]
         public void Roundtrip_1_2_to_2_2_on_different_instances()
