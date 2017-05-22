@@ -19,9 +19,9 @@
             {
                 var publisherAddress = $"{publisher.Name}.{Environment.MachineName}";
 
-                c.DefaultSchema("dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.UseSchemaForTransportAddress(publisherAddress, "src");
+                c.UseSchemaForTransportAddress(publisherAddress, ConnectionStrings.Schema_Src);
                 c.MapMessageToEndpoint(typeof(TestEvent), publisherAddress);
             };
 
@@ -41,8 +41,8 @@
                 var publisherAddress = $"{publisher.Name}.{Environment.MachineName}";
 
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-                c.UseSchemaForQueue(publisherAddress, "src");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
+                c.UseSchemaForQueue(publisherAddress, ConnectionStrings.Schema_Src);
                 c.RegisterPublisher(typeof(TestEvent), publisherAddress);
             };
 
@@ -55,8 +55,8 @@
             Action<IEndpointConfigurationV2> publisherConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.UseSchemaForTransportAddress($"{subscriber.Name}.{Environment.MachineName}", "dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.UseSchemaForTransportAddress($"{subscriber.Name}.{Environment.MachineName}", ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV1> subscriberConfig = c =>
             {
@@ -74,15 +74,15 @@
             Action<IEndpointConfigurationV2> publisherConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.UseSchemaForTransportAddress(subscriber.Name, "dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.UseSchemaForTransportAddress(subscriber.Name, ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV3> subscriberConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
                 c.RegisterPublisher(typeof(TestEvent), publisher.Name);
-                c.UseSchemaForQueue(publisher.Name, "src");
+                c.UseSchemaForQueue(publisher.Name, ConnectionStrings.Schema_Src);
             };
 
             VerifyPublish(publisherConfig, subscriberConfig);
@@ -96,9 +96,9 @@
                 var subscriberAddress = $"{subscriber.Name}.{Environment.MachineName}";
 
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
                 c.RouteToEndpoint(typeof(TestRequest), subscriberAddress);
-                c.UseSchemaForQueue(subscriberAddress, "dest");
+                c.UseSchemaForQueue(subscriberAddress, ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV1> subscriberConfig = c =>
             {
@@ -116,14 +116,14 @@
             Action<IEndpointConfigurationV3> publisherConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.UseSchemaForQueue(subscriber.Name, "dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.UseSchemaForQueue(subscriber.Name, ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV2> subscriberConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-                c.UseSchemaForTransportAddress(publisher.Name, "src");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
+                c.UseSchemaForTransportAddress(publisher.Name, ConnectionStrings.Schema_Src);
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 

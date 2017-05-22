@@ -16,15 +16,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Instance1_Src);
-                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance1_Dest);
+                c.ConfigureNamedConnectionStringForAddress(destinationEndpoint.Name, ConnectionStrings.Instance1_Dest);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
-                c.DefaultSchema("dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.UseSchemaForTransportAddress($"Source.{Environment.MachineName}", "src");
+                c.UseSchemaForTransportAddress($"{sourceEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Schema_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -35,15 +35,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Instance1_Src);
-                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance1_Dest);
+                c.ConfigureNamedConnectionStringForAddress(destinationEndpoint.Name, ConnectionStrings.Instance1_Dest);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-                c.UseSchemaForQueue($"Source.{Environment.MachineName}", "src");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
+                c.UseSchemaForQueue($"{sourceEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Schema_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -55,14 +55,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.DefaultSchema("src");
-                c.UseSchemaForTransportAddress($"Destination.{Environment.MachineName}", "dest");
+                c.MapMessageToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.UseSchemaForTransportAddress($"{destinationEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1_Dest);
-                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
+                c.ConfigureNamedConnectionStringForAddress(sourceEndpoint.Name, ConnectionStrings.Instance1_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -74,15 +74,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.DefaultSchema("src");
-                c.UseSchemaForTransportAddress("Destination", "dest");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.UseSchemaForTransportAddress(destinationEndpoint.Name, ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-                c.UseSchemaForQueue("Source", "src");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
+                c.UseSchemaForQueue(sourceEndpoint.Name, ConnectionStrings.Schema_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -94,14 +94,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseSchemaForEndpoint($"Destination.{Environment.MachineName}", "dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.RouteToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
+                c.UseSchemaForEndpoint($"{destinationEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1_Dest);
-                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
+                c.ConfigureNamedConnectionStringForAddress(sourceEndpoint.Name, ConnectionStrings.Instance1_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -113,15 +113,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("src");
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
-                c.UseSchemaForEndpoint("Destination", "dest");
+                c.DefaultSchema(ConnectionStrings.Schema_Src);
+                c.RouteToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
+                c.UseSchemaForEndpoint(destinationEndpoint.Name, ConnectionStrings.Schema_Dest);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.DefaultSchema("dest");
-                c.UseSchemaForTransportAddress("Source", "src");
+                c.DefaultSchema(ConnectionStrings.Schema_Dest);
+                c.UseSchemaForTransportAddress(sourceEndpoint.Name, ConnectionStrings.Schema_Src);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);

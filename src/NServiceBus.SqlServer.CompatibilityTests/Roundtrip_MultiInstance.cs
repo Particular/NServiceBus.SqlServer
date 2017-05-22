@@ -17,13 +17,13 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
+                c.ConfigureNamedConnectionStringForAddress(destinationEndpoint.Name, ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
-                c.UseConnectionStringForAddress($"Source.{Environment.MachineName}", ConnectionStrings.Instance1);
+                c.UseConnectionStringForAddress($"{sourceEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -35,15 +35,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.ConfigureNamedConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
+                c.ConfigureNamedConnectionStringForAddress(destinationEndpoint.Name, ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Source"] = ConnectionStrings.Instance1,
+                    [sourceEndpoint.Name] = ConnectionStrings.Instance1,
                     [""]       = ConnectionStrings.Instance2 //All other addresses match here
                 });
             };
@@ -57,13 +57,13 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
-                c.UseConnectionStringForAddress($"Destination.{Environment.MachineName}", ConnectionStrings.Instance2);
+                c.MapMessageToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
+                c.UseConnectionStringForAddress($"{destinationEndpoint.Name}.{Environment.MachineName}", ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
-                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1);
+                c.ConfigureNamedConnectionStringForAddress(sourceEndpoint.Name, ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -75,15 +75,15 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
-                c.UseConnectionStringForAddress("Destination", ConnectionStrings.Instance2);
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
+                c.UseConnectionStringForAddress(destinationEndpoint.Name, ConnectionStrings.Instance2);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Source"] = ConnectionStrings.Instance1,
+                    [sourceEndpoint.Name] = ConnectionStrings.Instance1,
                     [""] = ConnectionStrings.Instance2, //All other addresses match here
                 });
             };
@@ -97,17 +97,17 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    [$"Destination.{Environment.MachineName}"] = ConnectionStrings.Instance2,
+                    [$"{destinationEndpoint.Name}.{Environment.MachineName}"] = ConnectionStrings.Instance2,
                     [""] = ConnectionStrings.Instance1, //All other addresses match here
                 });
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
-                c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1);
+                c.ConfigureNamedConnectionStringForAddress(sourceEndpoint.Name, ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
@@ -119,17 +119,17 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1);
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+                c.RouteToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
                 c.UseLegacyMultiInstanceMode(new Dictionary<string, string>
                 {
-                    ["Destination"] = ConnectionStrings.Instance2,
+                    [destinationEndpoint.Name] = ConnectionStrings.Instance2,
                     [""] = ConnectionStrings.Instance1, //All other addresses match here
                 });
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
-                c.UseConnectionStringForAddress("Source", ConnectionStrings.Instance1);
+                c.UseConnectionStringForAddress(sourceEndpoint.Name, ConnectionStrings.Instance1);
             };
 
             VerifyRoundtrip(sourceConfig, destinationConfig);

@@ -8,5 +8,8 @@
 
         public static string Instance1_Src = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=src";
         public static string Instance1_Dest = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True;Queue Schema=dest";
+
+        public static string Schema_Src = "src";
+        public static string Schema_Dest = "dest";
     }
 }

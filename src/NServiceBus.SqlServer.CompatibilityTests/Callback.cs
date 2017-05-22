@@ -16,7 +16,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestIntCallback), "Destination");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
@@ -29,7 +29,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestIntCallback), "Destination");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
@@ -47,7 +47,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
+                c.MapMessageToEndpoint(typeof(TestIntCallback), $"{destinationEndpoint.Name}.{Environment.MachineName}");
                 c.EnableCallbacks();
                 c.UseConnectionString(ConnectionStrings.Default);
             };
@@ -80,14 +80,14 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.EnableCallbacks("1");
-                c.RouteToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestIntCallback), $"{destinationEndpoint.Name}.{Environment.MachineName}");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
-                c.RouteToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestIntCallback), $"{destinationEndpoint}.{Environment.MachineName}");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
@@ -95,21 +95,20 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             VerifyRoundtrip(sourceConfig, competingConfig, destinationConfig);
         }
 
-        //TODO: fix all the callback test to actually use callbacks. Update to the newest Callbacks package in v6
         [Test]
         public void Callback_3_0_to_2_2()
         {
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.EnableCallbacks("1");
-                c.RouteToEndpoint(typeof(TestIntCallback), "Destination");
+                c.RouteToEndpoint(typeof(TestIntCallback), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> competingConfig = c =>
             {
                 c.EnableCallbacks("2");
                 //HINT: this is not really needed
-                c.RouteToEndpoint(typeof(TestIntCallback), "Destination");
+                c.RouteToEndpoint(typeof(TestIntCallback), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };

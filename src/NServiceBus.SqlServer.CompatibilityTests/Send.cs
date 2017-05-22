@@ -17,7 +17,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+                c.MapMessageToEndpoint(typeof(TestCommand), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {
@@ -33,7 +33,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+                c.MapMessageToEndpoint(typeof(TestCommand), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
@@ -49,7 +49,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
+                c.MapMessageToEndpoint(typeof(TestCommand), $"{destinationEndpoint.Name}.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
@@ -65,7 +65,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestCommand), "Destination");
+                c.MapMessageToEndpoint(typeof(TestCommand), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c =>
             {
@@ -81,7 +81,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestCommand), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestCommand), $"{destinationEndpoint.Name}.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c =>
             {
@@ -97,7 +97,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestCommand), "Destination");
+                c.RouteToEndpoint(typeof(TestCommand), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c =>
             {

@@ -17,7 +17,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
@@ -30,7 +30,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV1> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
@@ -43,7 +43,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.MapMessageToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
@@ -55,7 +55,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
+                c.MapMessageToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
                 c.UseConnectionString(ConnectionStrings.Default);
             };
             Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
@@ -69,7 +69,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
+                c.RouteToEndpoint(typeof(TestRequest), $"{destinationEndpoint.Name}.{Environment.MachineName}");
             };
             Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
@@ -82,7 +82,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             Action<IEndpointConfigurationV3> sourceConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Default);
-                c.RouteToEndpoint(typeof(TestRequest), "Destination");
+                c.RouteToEndpoint(typeof(TestRequest), destinationEndpoint.Name);
             };
             Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
@@ -92,16 +92,16 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         [SetUp]
         public void SetUp()
         {
-            sourceEndpointDefinition = new EndpointDefinition("Source");
-            destinationEndpointDefinition = new EndpointDefinition("Destination");
+            sourceEndpoint = new EndpointDefinition("Source");
+            destinationEndpoint = new EndpointDefinition("Destination");
         }
 
         void VerifyRoundtrip<S, D>(Action<S> initiatorConfig, Action<D> replierConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorConfig))
-            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierConfig))
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpoint, initiatorConfig))
+            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpoint, replierConfig))
             {
                 var requestId = Guid.NewGuid();
 
@@ -112,7 +112,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
             }
         }
 
-        EndpointDefinition sourceEndpointDefinition;
-        EndpointDefinition destinationEndpointDefinition;
+        EndpointDefinition sourceEndpoint;
+        EndpointDefinition destinationEndpoint;
     }
 }
