@@ -27,7 +27,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseSchemaForTransportAddress($"Source.{Environment.MachineName}", "src");
             };
 
-            VerifyRoundtrip("1.2", sourceConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -46,7 +46,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseSchemaForQueue($"Source.{Environment.MachineName}", "src");
             };
 
-            VerifyRoundtrip("1.2", sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
             };
 
-            VerifyRoundtrip("2.2", sourceConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseSchemaForQueue("Source", "src");
             };
 
-            VerifyRoundtrip("2.2", sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.ConfigureNamedConnectionStringForAddress("Source", ConnectionStrings.Instance1_Src);
             };
 
-            VerifyRoundtrip("3.0", sourceConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -124,7 +124,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseSchemaForTransportAddress("Source", "src");
             };
 
-            VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
     }
 }

@@ -11,16 +11,6 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     [TestFixture]
     public partial class Roundtrip
     {
-        EndpointDefinition sourceEndpointDefinition;
-        EndpointDefinition destinationEndpointDefinition;
-
-        [SetUp]
-        public void SetUp()
-        {
-            sourceEndpointDefinition = new EndpointDefinition("Source");
-            destinationEndpointDefinition = new EndpointDefinition("Destination");
-        }
-
         [Test]
         public void Roundtrip_1_2_to_2_2()
         {
@@ -29,12 +19,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("1.2", sourceConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -45,12 +32,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
             };
-            Action<IEndpointConfigurationV3> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("1.2", sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -61,12 +45,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
                 c.MapMessageToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("2.2", sourceConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -77,12 +58,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.MapMessageToEndpoint(typeof(TestRequest), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV3> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV3> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("2.2", sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -93,12 +71,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
                 c.RouteToEndpoint(typeof(TestRequest), $"Destination.{Environment.MachineName}");
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("3.0", sourceConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -109,31 +84,35 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
                 c.RouteToEndpoint(typeof(TestRequest), "Destination");
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("3.0", sourceConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, destinationConfig);
         }
 
-        void VerifyRoundtrip<S, D>(string initiatorVersion, Action<S> initiatorConfig, string replierVersion, Action<D> replierConfig)
+        [SetUp]
+        public void SetUp()
+        {
+            sourceEndpointDefinition = new EndpointDefinition("Source");
+            destinationEndpointDefinition = new EndpointDefinition("Destination");
+        }
+
+        void VerifyRoundtrip<S, D>(Action<S> initiatorConfig, Action<D> replierConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-
-            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorConfig))
+            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierConfig))
             {
-                using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
-                {
-                    var requestId = Guid.NewGuid();
+                var requestId = Guid.NewGuid();
 
-                    source.SendRequest(requestId);
+                source.SendRequest(requestId);
 
-                    // ReSharper disable once AccessToDisposedClosure
-                    AssertEx.WaitUntilIsTrue(() => source.ReceivedResponseIds.Any(responseId => responseId == requestId));
-                }
+                // ReSharper disable once AccessToDisposedClosure
+                AssertEx.WaitUntilIsTrue(() => source.ReceivedResponseIds.Any(responseId => responseId == requestId));
             }
         }
+
+        EndpointDefinition sourceEndpointDefinition;
+        EndpointDefinition destinationEndpointDefinition;
     }
 }

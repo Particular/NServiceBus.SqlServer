@@ -8,22 +8,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     using global::CompatibilityTests.Common.Messages;
     using NUnit.Framework;
 
-    //TODO: MSDTC is not available on this Computer - we should have a better handling for message processing exceptions.
     [TestFixture]
     public class Callback
     {
-        EndpointDefinition sourceEndpointDefinition;
-        EndpointDefinition competingEndpointDefinition;
-        EndpointDefinition destinationEndpointDefinition;
-
-        [SetUp]
-        public void SetUp()
-        {
-            sourceEndpointDefinition = new EndpointDefinition("Source") {MachineName = Environment.MachineName + "_A"};
-            competingEndpointDefinition = new EndpointDefinition("Source") {MachineName = Environment.MachineName + "_B"};
-            destinationEndpointDefinition = new EndpointDefinition("Destination");
-        }
-
         [Test]
         public void Callback_1_2_to_2_2()
         {
@@ -32,12 +19,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.MapMessageToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -54,7 +38,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.EnableCallbacks(string.Empty, false);
             };
 
-            VerifyRoundtrip("1.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -67,12 +51,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.EnableCallbacks();
                 c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -80,7 +61,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
         {
             Action<IEndpointConfigurationV2> sourceConfig = c =>
             {
-                c.MapMessageToEndpoint(typeof(TestIntCallback), destinationEndpointDefinition.Name);
+                c.MapMessageToEndpoint(typeof(TestIntCallback), destinationEndpoint.Name);
                 c.EnableCallbacks();
                 c.UseConnectionString(ConnectionStrings.Default);
             };
@@ -90,7 +71,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.EnableCallbacks(string.Empty, false);
             };
 
-            VerifyRoundtrip("2.2", sourceConfig, sourceConfig, "3.0", destinationConfig);
+            VerifyRoundtrip(sourceConfig, sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -109,12 +90,9 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.RouteToEndpoint(typeof(TestIntCallback), $"Destination.{Environment.MachineName}");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV1> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("3.0", sourceConfig, competingConfig, "1.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, competingConfig, destinationConfig);
         }
 
         //TODO: fix all the callback test to actually use callbacks. Update to the newest Callbacks package in v6
@@ -134,40 +112,51 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.RouteToEndpoint(typeof(TestIntCallback), "Destination");
                 c.UseConnectionString(ConnectionStrings.Default);
             };
-            Action<IEndpointConfigurationV2> destinationConfig = c =>
-            {
-                c.UseConnectionString(ConnectionStrings.Default);
-            };
+            Action<IEndpointConfigurationV2> destinationConfig = c => { c.UseConnectionString(ConnectionStrings.Default); };
 
-            VerifyRoundtrip("3.0", sourceConfig, competingConfig, "2.2", destinationConfig);
+            VerifyRoundtrip(sourceConfig, competingConfig, destinationConfig);
         }
 
-        void VerifyRoundtrip<S, D>(string initiatorVersion, Action<S> initiatorConfig, Action<S> cometingConfig, string replierVersion, Action<D> replierConfig)
+        [SetUp]
+        public void SetUp()
+        {
+            sourceEndpoint = new EndpointDefinition("Source")
+            {
+                MachineName = Environment.MachineName + "_A"
+            };
+            competingEndpoint = new EndpointDefinition("Source")
+            {
+                MachineName = Environment.MachineName + "_B"
+            };
+            destinationEndpoint = new EndpointDefinition("Destination");
+        }
+
+        void VerifyRoundtrip<S, D>(Action<S> sourceConfig, Action<S> competingSourceConfig, Action<D> destinationConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, initiatorVersion, initiatorConfig))
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpoint, sourceConfig))
+            using (EndpointFacadeBuilder.CreateAndConfigure(competingEndpoint, competingSourceConfig))
+            using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpoint, destinationConfig))
             {
-               using (EndpointFacadeBuilder.CreateAndConfigure(competingEndpointDefinition, initiatorVersion, cometingConfig))
-               {
-                    using (EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, replierVersion, replierConfig))
-                    {
-                        var firstValue = new Random().Next(1000);
-                        var values = Enumerable.Range(0, 5).Select(i => firstValue + i).ToArray();
+                var firstValue = new Random().Next(1000);
+                var values = Enumerable.Range(0, 5).Select(i => firstValue + i).ToArray();
 
-                        foreach (var value in values)
-                        {
-                            source.SendAndCallbackForInt(value);
-                        }
+                foreach (var value in values)
+                {
+                    source.SendAndCallbackForInt(value);
+                }
 
-                        //Wait till all five responses arrive at the initiator.
+                //Wait till all five responses arrive at the initiator.
 
-                        // ReSharper disable once AccessToDisposedClosure
-                        AssertEx.WaitUntilIsTrue(() => values.All(value => source.ReceivedIntCallbacks.Contains(value)));
-                        Console.WriteLine("Done");
-                    }
-               }
+                // ReSharper disable once AccessToDisposedClosure
+                AssertEx.WaitUntilIsTrue(() => values.All(value => source.ReceivedIntCallbacks.Contains(value)));
+                Console.WriteLine("Done");
             }
         }
+
+        EndpointDefinition sourceEndpoint;
+        EndpointDefinition competingEndpoint;
+        EndpointDefinition destinationEndpoint;
     }
 }

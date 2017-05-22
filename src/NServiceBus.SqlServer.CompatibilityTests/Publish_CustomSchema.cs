@@ -10,12 +10,12 @@
         [Test]
         public void Publish_1_2_to_2_2_with_custom_schemas()
         {
-            Action<IEndpointConfigurationV1> publishConfig = c =>
+            Action<IEndpointConfigurationV1> publisherConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1_Src);
                 c.ConfigureNamedConnectionStringForAddress(subscriber.Name, ConnectionStrings.Instance1_Dest);
             };
-            Action<IEndpointConfigurationV2> subscribeConfig = c =>
+            Action<IEndpointConfigurationV2> subscriberConfig = c =>
             {
                 var publisherAddress = $"{publisher.Name}.{Environment.MachineName}";
 
@@ -25,7 +25,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisherAddress);
             };
 
-            VerifyPublish("1.2", publishConfig, "2.2", subscribeConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -36,7 +36,7 @@
                 c.UseConnectionString(ConnectionStrings.Instance1_Src);
                 c.ConfigureNamedConnectionStringForAddress(subscriber.Name, ConnectionStrings.Instance1_Dest);
             };
-            Action<IEndpointConfigurationV3> destinationConfig = c =>
+            Action<IEndpointConfigurationV3> subscriberConfig = c =>
             {
                 var publisherAddress = $"{publisher.Name}.{Environment.MachineName}";
 
@@ -46,7 +46,7 @@
                 c.RegisterPublisher(typeof(TestEvent), publisherAddress);
             };
 
-            VerifyPublish("1.2", publisherConfig, "3.0", destinationConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -58,14 +58,14 @@
                 c.DefaultSchema("src");
                 c.UseSchemaForTransportAddress($"{subscriber.Name}.{Environment.MachineName}", "dest");
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            Action<IEndpointConfigurationV1> subscriberConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance1_Dest);
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
                 c.ConfigureNamedConnectionStringForAddress(publisher.Name, ConnectionStrings.Instance1_Src);
             };
 
-            VerifyPublish("2.2", publisherConfig, "1.2", destinationConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -85,7 +85,7 @@
                 c.UseSchemaForQueue(publisher.Name, "src");
             };
 
-            VerifyPublish("2.2", publisherConfig, "3.0", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -107,7 +107,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publisherConfig, "1.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -127,7 +127,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publisherConfig, "2.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
     }
 }

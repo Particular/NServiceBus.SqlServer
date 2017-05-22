@@ -8,13 +8,6 @@
 
     public partial class Publish
     {
-        [SetUp]
-        public void SetUp()
-        {
-            publisher = new EndpointDefinition("Publisher");
-            subscriber = new EndpointDefinition("Subscriber");
-        }
-
         [Test]
         public void Publish_1_2_to_2_2()
         {
@@ -28,7 +21,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), $"{publisher.Name}.{Environment.MachineName}");
             };
 
-            VerifyPublish("1.2", publisherConfig, "2.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -44,7 +37,7 @@
                 c.RegisterPublisher(typeof(TestEvent), $"{publisher.Name}.{Environment.MachineName}");
             };
 
-            VerifyPublish("1.2", publisherConfig, "3.0", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -60,7 +53,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), $"{publisher.Name}");
             };
 
-            VerifyPublish("2.2", publisherConfig, "1.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -76,7 +69,7 @@
                 c.RegisterPublisher(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("2.2", publishConfig, "3.0", subscriberConfig);
+            VerifyPublish(publishConfig, subscriberConfig);
         }
 
         [Test]
@@ -92,7 +85,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publishConfig, "1.2", subscribeConfig);
+            VerifyPublish(publishConfig, subscribeConfig);
         }
 
         [Test]
@@ -106,15 +99,22 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publisherConfig, "2.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
-        void VerifyPublish<S, D>(string publisherVersion, Action<S> publisherConfig, string subscriberVersion, Action<D> subscriberConfig)
+        [SetUp]
+        public void SetUp()
+        {
+            publisher = new EndpointDefinition("Publisher");
+            subscriber = new EndpointDefinition("Subscriber");
+        }
+
+        void VerifyPublish<S, D>(Action<S> publisherConfig, Action<D> subscriberConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-            using (var publisherFacade = EndpointFacadeBuilder.CreateAndConfigure(publisher, publisherVersion, publisherConfig))
-            using (var subscriberFacade = EndpointFacadeBuilder.CreateAndConfigure(subscriber, subscriberVersion, subscriberConfig))
+            using (var publisherFacade = EndpointFacadeBuilder.CreateAndConfigure(publisher, publisherConfig))
+            using (var subscriberFacade = EndpointFacadeBuilder.CreateAndConfigure(subscriber, subscriberConfig))
             {
                 // ReSharper disable once AccessToDisposedClosure
                 AssertEx.WaitUntilIsTrue(() => publisherFacade.NumberOfSubscriptions > 0);

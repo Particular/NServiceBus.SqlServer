@@ -25,7 +25,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisherAddress);
             };
 
-            VerifyPublish("1.2", publisherConfig, "2.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -49,7 +49,7 @@
                 c.RegisterPublisher(typeof(TestEvent), publisherAddress);
             };
 
-            VerifyPublish("1.2", publisherConfig, "3.0", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -67,7 +67,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("2.2", publisherConfig, "1.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -89,7 +89,7 @@
                 c.RegisterPublisher(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("2.2", publisherConfig, "3.0", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -104,14 +104,14 @@
                     [""] = ConnectionStrings.Instance1, //All other addresses match here
                 });
             };
-            Action<IEndpointConfigurationV1> destinationConfig = c =>
+            Action<IEndpointConfigurationV1> subscriberConfig = c =>
             {
                 c.UseConnectionString(ConnectionStrings.Instance2);
                 c.ConfigureNamedConnectionStringForAddress(publisher.Name, ConnectionStrings.Instance1);
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publisherConfig, "1.2", destinationConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
 
         [Test]
@@ -133,7 +133,7 @@
                 c.MapMessageToEndpoint(typeof(TestEvent), publisher.Name);
             };
 
-            VerifyPublish("3.0", publisherConfig, "2.2", subscriberConfig);
+            VerifyPublish(publisherConfig, subscriberConfig);
         }
     }
 }

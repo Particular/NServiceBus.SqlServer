@@ -7,9 +7,11 @@
 
     public class EndpointFacadeBuilder
     {
-        public static IEndpointFacade CreateAndConfigure<T>(EndpointDefinition endpointDefinition, string version, Action<T> config)
+        public static IEndpointFacade CreateAndConfigure<T>(EndpointDefinition endpointDefinition, Action<T> config)
             where T : IEndpointConfiguration
         {
+            var version = GetEndpointVersion<T>();
+
             var startupDirectory = new DirectoryInfo(Conventions.AssemblyDirectoryResolver(version));
 
             var appDomain = AppDomain.CreateDomain(
@@ -32,6 +34,28 @@
             configurator.Start();
 
             return new DisposingEndpointFacade(facade, appDomain);
+        }
+
+        public static string GetEndpointVersion<T>()
+        {
+            var type = typeof(T);
+
+            if (type == typeof(IEndpointConfigurationV1))
+            {
+                return "1.2";
+            }
+
+            if (type == typeof(IEndpointConfigurationV2))
+            {
+                return "2.2";
+            }
+
+            if (type == typeof(IEndpointConfigurationV3))
+            {
+                return "3.0";
+            }
+
+            throw new Exception("Unknow endpoint version.");
         }
     }
 

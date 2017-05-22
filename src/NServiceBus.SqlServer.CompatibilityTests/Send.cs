@@ -11,16 +11,6 @@ namespace NServiceBus.SqlServer.CompatibilityTests
     [TestFixture]
     public class Send
     {
-        EndpointDefinition sourceEndpointDefinition;
-        EndpointDefinition destinationEndpointDefinition;
-
-        [SetUp]
-        public void SetUp()
-        {
-            sourceEndpointDefinition = new EndpointDefinition("Source");
-            destinationEndpointDefinition = new EndpointDefinition("Destination");
-        }
-
         [Test]
         public void Send_1_2_to_2_2()
         {
@@ -34,7 +24,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("1.2", sourceConfig, "2.2", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -50,7 +40,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("1.2", sourceConfig, "3.0", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -66,7 +56,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("2.2", sourceConfig, "1.2", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -82,7 +72,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("2.2", sourceConfig, "3.0", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -98,7 +88,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("3.0", sourceConfig, "1.2", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
         [Test]
@@ -114,25 +104,33 @@ namespace NServiceBus.SqlServer.CompatibilityTests
                 c.UseConnectionString(ConnectionStrings.Default);
             };
 
-            VerifySend("3.0", sourceConfig, "2.2", destinationConfig);
+            VerifySend(sourceConfig, destinationConfig);
         }
 
-        void VerifySend<S, D>(string sourceVersion, Action<S> sourceConfig, string destinationVersion, Action<D> destinationConfig)
+        [SetUp]
+        public void SetUp()
+        {
+            sourceEndpoint = new EndpointDefinition("Source");
+            destinationEndpoint = new EndpointDefinition("Destination");
+        }
+
+        void VerifySend<S, D>(Action<S> sourceConfig, Action<D> destinationConfig)
             where S : IEndpointConfiguration
             where D : IEndpointConfiguration
         {
-            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpointDefinition, sourceVersion, sourceConfig))
+            using (var source = EndpointFacadeBuilder.CreateAndConfigure(sourceEndpoint, sourceConfig))
+            using (var destination = EndpointFacadeBuilder.CreateAndConfigure(destinationEndpoint, destinationConfig))
             {
-                using (var destination = EndpointFacadeBuilder.CreateAndConfigure(destinationEndpointDefinition, destinationVersion, destinationConfig))
-                {
-                    var messageId = Guid.NewGuid();
+                var messageId = Guid.NewGuid();
 
-                    source.SendCommand(messageId);
+                source.SendCommand(messageId);
 
-                    // ReSharper disable once AccessToDisposedClosure
-                    AssertEx.WaitUntilIsTrue(() => destination.ReceivedMessageIds.Any(mi => mi == messageId));
-                }
+                // ReSharper disable once AccessToDisposedClosure
+                AssertEx.WaitUntilIsTrue(() => destination.ReceivedMessageIds.Any(mi => mi == messageId));
             }
         }
+
+        EndpointDefinition sourceEndpoint;
+        EndpointDefinition destinationEndpoint;
     }
 }
