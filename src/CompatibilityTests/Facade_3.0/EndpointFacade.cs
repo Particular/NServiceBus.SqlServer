@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using CompatibilityTests.Common;
 using CompatibilityTests.Common.Messages;
 using NServiceBus;
-using NServiceBus.Config;
 using NServiceBus.Pipeline;
 using NServiceBus.Support;
 using NServiceBus.Transport.SQLServer;
@@ -19,10 +18,9 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     SubscriptionStore subscriptionStore;
     EndpointConfiguration endpointConfiguration;
     string connectionString;
-    CustomConfiguration customConfiguration;
     bool enableCallbacks;
     string instanceId;
-    bool makesCallbackReqeusts;
+    bool makesCallbackRequests;
 
     public IEndpointConfiguration Bootstrap(EndpointDefinition endpointDefinition)
     {
@@ -38,9 +36,6 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
         endpointConfiguration.EnableInstallers();
         endpointConfiguration.UsePersistence<InMemoryPersistence>();
-
-        customConfiguration = new CustomConfiguration();
-        endpointConfiguration.CustomConfigurationSource(customConfiguration);
 
         endpointConfiguration.Recoverability().Immediate(i => i.NumberOfRetries(0));
         endpointConfiguration.Recoverability().Delayed(d => d.NumberOfRetries(0));
@@ -64,25 +59,15 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         this.connectionString = connectionString;
     }
 
-    public void MapMessageToEndpoint(Type messageType, string destination)
-    {
-        customConfiguration.AddMapping(new MessageEndpointMapping
-        {
-            Endpoint = destination,
-            Messages = messageType.AssemblyQualifiedName
-        });
-        endpointConfiguration.UseTransport<SqlServerTransport>().Routing().RouteToEndpoint(messageType, destination);
-    }
-
     public void Start()
     {
         endpointConfiguration.UseTransport<SqlServerTransport>().ConnectionString(connectionString);
 
         if (enableCallbacks)
         {
-            endpointConfiguration.EnableCallbacks(makesCallbackReqeusts);
+            endpointConfiguration.EnableCallbacks(makesCallbackRequests);
 
-            if (makesCallbackReqeusts)
+            if (makesCallbackRequests)
             {
                 endpointConfiguration.MakeInstanceUniquelyAddressable(instanceId);
             }
@@ -100,7 +85,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
     {
         enableCallbacks = true;
         this.instanceId = instanceId;
-        this.makesCallbackReqeusts = makesRequests;
+        this.makesCallbackRequests = makesRequests;
     }
 
     public void DefaultSchema(string schema)
