@@ -36,7 +36,7 @@
             return new DisposingEndpointFacade(facade, appDomain);
         }
 
-        public static string GetEndpointVersion<T>()
+        static string GetEndpointVersion<T>()
         {
             var type = typeof(T);
 
