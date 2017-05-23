@@ -6,7 +6,14 @@
 
     public class Conventions
     {
-        public static Func<string, string> AssemblyNameResolver =
+        static bool RunningOnTeamCity()
+        {
+            var teamcityVersion = Environment.GetEnvironmentVariable("TEAMCITY_VERSION");
+
+            return !string.IsNullOrEmpty(teamcityVersion);
+        }
+
+        static readonly Func<string, string> AssemblyNameResolver =
             version => $"Facade_{version}";
 
         public static Func<string, string> AssemblyDirectoryResolver =
@@ -16,12 +23,14 @@
                 var configuration = "Release";
 
                 #if DEBUG
-                    configuration = "Debug";
+                configuration = "Debug";
                 #endif
 
                 var assemblyName = AssemblyNameResolver(version);
-                var combine = Path.Combine(TestContext.CurrentContext.TestDirectory, $"..\\..\\..\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}");
-                return combine;
+
+                return RunningOnTeamCity()
+                    ? Path.Combine(TestContext.CurrentContext.WorkDirectory, $"{assemblyName}\\bin\\{configuration}")
+                    : Path.Combine(TestContext.CurrentContext.TestDirectory, $"..\\..\\..\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}");
             };
 
         public static Func<string, string> AssemblyPathResolver =
