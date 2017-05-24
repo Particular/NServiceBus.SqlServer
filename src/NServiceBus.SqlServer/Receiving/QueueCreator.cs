@@ -28,11 +28,11 @@ namespace NServiceBus.Transport.SQLServer
                 {
                     await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
                 }
-
                 transaction.Commit();
             }
         }
-        async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
+
+        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
         {
             var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.Catalog);
             using (var command = new SqlCommand(sql, connection, transaction)
@@ -48,3 +48,4 @@ namespace NServiceBus.Transport.SQLServer
         QueueAddressTranslator addressTranslator;
     }
 }
+#pragma warning restore 618

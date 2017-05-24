@@ -46,7 +46,7 @@
             {
                 var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
-                await tableBasedQueue.Send(message.Headers, message.Body, c, null);
+                await tableBasedQueue.Send(message, TimeSpan.MaxValue, c, null);
             });
         }
 

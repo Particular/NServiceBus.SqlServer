@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading;
@@ -53,9 +52,9 @@ namespace NServiceBus.Transport.SQLServer
             return SendRawMessage(poisonMessage, connection, transaction);
         }
 
-        public Task Send(Dictionary<string, string> headers, byte[] body, SqlConnection connection, SqlTransaction transaction)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageRow = MessageRow.From(headers, body);
+            var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction);
         }

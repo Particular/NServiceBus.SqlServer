@@ -13,6 +13,6 @@
 
         public string TransportId { get; }
         public byte[] Body { get; }
-        public Dictionary<string, string> Headers { get; private set; }
+        public Dictionary<string, string> Headers { get; }
     }
 }

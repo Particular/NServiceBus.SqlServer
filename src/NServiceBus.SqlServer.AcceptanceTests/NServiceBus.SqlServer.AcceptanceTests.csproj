@@ -73,6 +73,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MultiSchema\When_custom_schema_contains_at.cs" />
+    <Compile Include="NativeTimeouts\When_deferring_a_message_in_native_mode.cs" />
+    <Compile Include="NativeTimeouts\When_deferring_a_message_to_the_past_in_native_mode.cs" />
+    <Compile Include="NativeTimeouts\When_using_TTBR_for_deferred_message_in_native_mode.cs" />
+    <Compile Include="NativeTimeouts\When_deferring_a_message_in_timeout_manager_compatibility_mode.cs" />
     <Compile Include="When_using_brackets_around_endpoint_names.cs" />
     <Compile Include="When_using_special_characters_in_endpoint_name.cs" />
     <Compile Include="App_Packages\NSB.AcceptanceTests.6.1.1\ApiExtension\When_extending_sendoptions.cs" />

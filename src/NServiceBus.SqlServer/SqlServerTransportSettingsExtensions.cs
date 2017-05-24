@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Configuration.AdvanceExtensibility;
+    using Features;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -170,6 +171,22 @@
             return transportExtensions;
         }
 
+        /// <summary>
+        /// Enables native delayed delivery.
+        /// </summary>
+        public static DelayedDeliverySettings UseNativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            var sendOnlyEndpoint = transportExtensions.GetSettings().GetOrDefault<bool>("Endpoint.SendOnly");
+            if (sendOnlyEndpoint)
+            {
+                throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+            }
+            var settings = new DelayedDeliverySettings();
+            transportExtensions.GetSettings().Set<DelayedDeliverySettings>(settings);
+            transportExtensions.GetSettings().EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
+            return settings;
+        }
+        
         /// <summary>
         /// Enables multi-instance mode.
         /// </summary>

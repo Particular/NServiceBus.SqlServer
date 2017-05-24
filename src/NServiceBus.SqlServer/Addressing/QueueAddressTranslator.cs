@@ -32,6 +32,11 @@
         {
             var transportAddress = QueueAddress.Parse(address);
 
+            return GetCanonicalForm(transportAddress);
+        }
+
+        public CanonicalQueueAddress GetCanonicalForm(QueueAddress transportAddress)
+        {
             string specifiedSchema, specifiedCatalog;
             queueSettings.TryGet(transportAddress.Table, out specifiedSchema, out specifiedCatalog);
 

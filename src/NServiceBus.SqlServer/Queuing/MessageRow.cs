@@ -19,7 +19,7 @@
             return row.TryParse();
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan? timeToBeReceived)
+        public static MessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan toBeReceived)
         {
             return new MessageRow
             {
@@ -27,9 +27,7 @@
                 correlationId = TryGetHeaderValue(headers, Headers.CorrelationId, s => s),
                 replyToAddress = TryGetHeaderValue(headers, Headers.ReplyToAddress, s => s),
                 recoverable = true,
-                timeToBeReceived = timeToBeReceived.HasValue
-                    ? (int?) timeToBeReceived.Value.TotalMilliseconds
-                    : null,
+                timeToBeReceived = toBeReceived == TimeSpan.MaxValue ? null : (int?)toBeReceived.TotalMilliseconds,
                 headers = DictionarySerializer.Serialize(headers),
                 bodyBytes = body
             };
@@ -75,7 +73,6 @@
                 }
 
                 LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
-
                 return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes));
             }
             catch (Exception ex)

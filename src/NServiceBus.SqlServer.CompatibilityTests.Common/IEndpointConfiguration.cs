@@ -34,4 +34,10 @@
         void UseLegacyMultiInstanceMode(Dictionary<string, string> connectionStringMap);
         void RegisterPublisher(Type eventType, string publisher);
     }
+
+    public interface IEndpointConfigurationV3_1 : IEndpointConfigurationV3
+    {
+        void UseCatalogForQueue(string queue, string catalog);
+        void UseCatalogForEndpoint(string endpoint, string catalog);
+    }
 }

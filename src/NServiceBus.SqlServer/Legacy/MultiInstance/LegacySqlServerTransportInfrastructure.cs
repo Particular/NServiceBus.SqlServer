@@ -102,9 +102,8 @@
             var connectionFactory = CreateLegacyConnectionFactory();
 
             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
-            var queueFactory = new TableBasedQueueFactory();
             return new TransportSendInfrastructure(
-                () => new LegacyMessageDispatcher(new LegacyTableBasedQueueDispatcher(connectionFactory, addressTranslator, queueFactory), addressTranslator), 
+                () => new LegacyMessageDispatcher(addressTranslator, connectionFactory), 
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
