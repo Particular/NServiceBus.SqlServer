@@ -123,3 +123,15 @@ BEGIN
 	EXEC('CREATE SCHEMA db@')
 END
 GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'src')
+BEGIN
+	EXEC('CREATE SCHEMA src')
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'dest')
+BEGIN
+	EXEC('CREATE SCHEMA dest')
+END
+GO
