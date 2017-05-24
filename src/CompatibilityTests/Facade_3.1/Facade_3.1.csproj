@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}</ProjectGuid>
+    <ProjectGuid>{66D10F43-3859-4F55-B8A8-60E32AD6B813}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NServiceBus.SqlServer.CompatibilityTests</RootNamespace>
-    <AssemblyName>NServiceBus.SqlServer.CompatibilityTests</AssemblyName>
+    <RootNamespace>Facade</RootNamespace>
+    <AssemblyName>Facade</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,12 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0\lib\net452\NServiceBus.Core.dll</HintPath>
+    <Reference Include="NServiceBus.Callbacks, Version=2.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NServiceBus.Callbacks.2.0.0\lib\net452\NServiceBus.Callbacks.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NServiceBus.6.3.1\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -48,33 +48,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssertExtensions.cs" />
-    <Compile Include="Callback.cs" />
-    <Compile Include="ConnectionStrings.cs" />
-    <Compile Include="Publish.cs" />
-    <Compile Include="Publish_CustomSchema.cs" />
-    <Compile Include="Publish_MultiInstance.cs" />
-    <Compile Include="Roundtrip_MultiCatalog.cs" />
-    <Compile Include="Roundtrip_MultiInstance.cs" />
-    <Compile Include="Roundtrip_CustomSchema.cs" />
-    <Compile Include="Roundtrip.cs" />
-    <Compile Include="Send.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj">
-      <Project>{531ab217-effe-428c-8ca0-a8a70c907992}</Project>
-      <Name>NServiceBus.SqlServer.CompatibilityTests.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
-      <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
-      <Name>NServiceBus.SqlServer</Name>
-    </ProjectReference>
+    <Compile Include="EndpointFacade.cs" />
+    <Compile Include="Handler.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <ProjectReference Include="..\..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj">
+      <Project>{531ab217-effe-428c-8ca0-a8a70c907992}</Project>
+      <Name>NServiceBus.SqlServer.CompatibilityTests.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
+      <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
+      <Name>NServiceBus.SqlServer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
