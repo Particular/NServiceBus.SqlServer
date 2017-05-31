@@ -1,38 +1,32 @@
-#pragma warning disable 618
-
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Transport;
     using Unicast.Queuing;
     using static System.String;
 
     class TableBasedQueue
     {
+        public string Name { get; }
 
-        public TableBasedQueue(QueueAddress address)
+        public TableBasedQueue(string qualifiedTableName, string queueName)
         {
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                tableName = sanitizer.QuoteIdentifier(address.TableName);
-                schemaName = sanitizer.QuoteIdentifier(address.SchemaName);
-            }
-
-            peekCommand = Format(SqlConstants.PeekText, schemaName, tableName);
-            receiveCommand = Format(SqlConstants.ReceiveText, schemaName, tableName);
-            sendCommand = Format(SqlConstants.SendText, schemaName, tableName);
-            purgeCommand = Format(SqlConstants.PurgeText, schemaName, tableName);
-            checkIfIndexExistsCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, schemaName, tableName);
-            purgeBatchOfExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, schemaName, tableName);
-            TransportAddress = address.ToString();
+#pragma warning disable 618
+            this.qualifiedTableName = qualifiedTableName;
+            Name = queueName;
+            peekCommand = Format(SqlConstants.PeekText, this.qualifiedTableName);
+            receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
+            sendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
+            purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
+            purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
+            checkIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+#pragma warning restore 618
         }
-
-        public string TransportAddress { get; }
 
         public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
         {
@@ -41,7 +35,8 @@ namespace NServiceBus.Transport.SQLServer
                 CommandTimeout = timeoutInSeconds
             })
             {
-                return (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                return numberOfMessages;
             }
         }
 
@@ -58,9 +53,9 @@ namespace NServiceBus.Transport.SQLServer
             return SendRawMessage(poisonMessage, connection, transaction);
         }
 
-        public Task Send(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
+        public Task Send(Dictionary<string, string> headers, byte[] body, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageRow = MessageRow.From(message.Headers, message.Body);
+            var messageRow = MessageRow.From(headers, body);
 
             return SendRawMessage(messageRow, connection, transaction);
         }
@@ -75,7 +70,9 @@ namespace NServiceBus.Transport.SQLServer
                     return MessageReadResult.NoMessage;
                 }
 
-                return await MessageRow.Read(dataReader).ConfigureAwait(false);
+                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
+
+                return readResult;
             }
         }
 
@@ -107,24 +104,12 @@ namespace NServiceBus.Transport.SQLServer
 
         void ThrowQueueNotFoundException(SqlException ex)
         {
-            var queue = tableName == null
-                ? null
-                : ToString();
-
-            var msg = tableName == null
-                ? "Failed to send message. Target address is null."
-                : $"Failed to send message to {queue}";
-
-            throw new QueueNotFoundException(queue, msg, ex);
+            throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
         }
 
         void ThrowFailedToSendException(Exception ex)
         {
-            if (tableName == null)
-            {
-                throw new Exception("Failed to send message.", ex);
-            }
-            throw new Exception($"Failed to send message to {ToString()}", ex);
+            throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
 
         public async Task<int> Purge(SqlConnection connection)
@@ -137,43 +122,38 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
         {
-            using (var command = new SqlCommand(purgeBatchOfExpiredCommand, connection))
+            using (var command = new SqlCommand(purgeExpiredCommand, connection))
             {
-                var batchSizeParameter = command.CreateParameter();
-                batchSizeParameter.ParameterName = "BatchSize";
-                batchSizeParameter.Value = purgeBatchSize;
-                command.Parameters.Add(batchSizeParameter);
+                command.Parameters.AddWithValue("@BatchSize", purgeBatchSize);
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
         public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
         {
-            using (var command = new SqlCommand(checkIfIndexExistsCommand, connection))
+            using (var command = new SqlCommand(checkIndexCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
 
                 if (rowsCount == 0)
                 {
-                    Logger.Warn($@"Table {schemaName}.{tableName} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
+                    Logger.Warn($@"Table {qualifiedTableName} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
                 }
             }
         }
 
         public override string ToString()
         {
-            return $"{schemaName}.{tableName}";
+            return qualifiedTableName;
         }
 
-        string tableName;
-        string schemaName;
-
         static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
-        string purgeBatchOfExpiredCommand;
+        string qualifiedTableName;
         string peekCommand;
         string receiveCommand;
         string sendCommand;
         string purgeCommand;
-        string checkIfIndexExistsCommand;
+        string purgeExpiredCommand;
+        string checkIndexCommand;
     }
 }

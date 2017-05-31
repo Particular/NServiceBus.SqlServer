@@ -54,6 +54,7 @@
     <Compile Include="Publish.cs" />
     <Compile Include="Publish_CustomSchema.cs" />
     <Compile Include="Publish_MultiInstance.cs" />
+    <Compile Include="Roundtrip_MultiCatalog.cs" />
     <Compile Include="Roundtrip_MultiInstance.cs" />
     <Compile Include="Roundtrip_CustomSchema.cs" />
     <Compile Include="Roundtrip.cs" />

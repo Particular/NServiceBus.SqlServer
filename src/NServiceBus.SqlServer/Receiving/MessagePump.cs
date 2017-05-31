@@ -10,14 +10,13 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<QueueAddress, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueueAddressParser addressParser, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
             this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
-            this.addressParser = addressParser;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
 
@@ -28,8 +27,8 @@
             peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
             receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
 
-            inputQueue = queueFactory(addressParser.Parse(settings.InputQueue));
-            errorQueue = queueFactory(addressParser.Parse(settings.ErrorQueue));
+            inputQueue = queueFactory(settings.InputQueue);
+            errorQueue = queueFactory(settings.ErrorQueue);
 
             receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalError);
 
@@ -218,10 +217,9 @@
         TableBasedQueue errorQueue;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
-        Func<QueueAddress, TableBasedQueue> queueFactory;
+        Func<string, TableBasedQueue> queueFactory;
         ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
-        QueueAddressParser addressParser;
         TimeSpan waitTimeCircuitBreaker;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;

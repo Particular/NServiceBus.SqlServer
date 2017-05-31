@@ -3,7 +3,6 @@ namespace NServiceBus.Transport.SQLServer
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
     using Performance.TimeToBeReceived;
@@ -13,13 +12,13 @@ namespace NServiceBus.Transport.SQLServer
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString)
+        internal SqlServerTransportInfrastructure(QueueAddressTranslator addressTranslator, SettingsHolder settings, string connectionString)
         {
-            this.addressParser = addressParser;
+            this.addressTranslator = addressTranslator;
             this.settings = settings;
             this.connectionString = connectionString;
 
-            endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
+            this.schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
@@ -64,11 +63,11 @@ namespace NServiceBus.Transport.SQLServer
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
-            Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
+            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressParser),
+                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, waitTimeCircuitBreaker),
+                () => new QueueCreator(connectionFactory, addressTranslator),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -84,7 +83,7 @@ namespace NServiceBus.Transport.SQLServer
             return SqlConnectionFactory.Default(connectionString);
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        static ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
@@ -115,11 +114,10 @@ namespace NServiceBus.Transport.SQLServer
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
-
-            settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
-
+            settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
+            var queueFactory = new TableBasedQueueFactory();
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
+                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, addressTranslator, queueFactory), addressTranslator),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
@@ -134,44 +132,34 @@ namespace NServiceBus.Transport.SQLServer
 
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
-            var schemaSettings = settings.Get<EndpointSchemasSettings>();
+            var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
 
             string schema;
             if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
             {
-                schema = addressParser.DefaultSchema;
+                schema = addressTranslator.DefaultSchema;
             }
-
-            return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+            var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+            if (addressTranslator.DefaultCatalog != null)
+            {
+                result = result.SetProperty(SettingsKeys.CatalogPropertyKey, addressTranslator.DefaultCatalog);
+            }
+            return result;
         }
 
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            var nonEmptyParts = new[]
-            {
-                logicalAddress.EndpointInstance.Endpoint,
-                logicalAddress.Qualifier,
-                logicalAddress.EndpointInstance.Discriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var tableName = string.Join(".", nonEmptyParts);
-
-            string schemaName;
-
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-            var queueAddress = new QueueAddress(tableName, schemaName);
-
-            return queueAddress.ToString();
+            return addressTranslator.Generate(logicalAddress).Value;
         }
 
         public override string MakeCanonicalForm(string transportAddress)
         {
-            return addressParser.Parse(transportAddress).ToString();
+            return addressTranslator.Parse(transportAddress).Address;
         }
 
-        QueueAddressParser addressParser;
+        QueueAddressTranslator addressTranslator;
         string connectionString;
         SettingsHolder settings;
-        EndpointSchemasSettings endpointSchemasSettings;
+        EndpointSchemaAndCatalogSettings schemaAndCatalogSettings;
     }
 }

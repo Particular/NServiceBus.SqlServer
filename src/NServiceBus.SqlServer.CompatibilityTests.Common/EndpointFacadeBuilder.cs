@@ -55,6 +55,11 @@
                 return "3.0";
             }
 
+            if (type == typeof(IEndpointConfigurationV3_1))
+            {
+                return "3.1";
+            }
+
             throw new Exception("Unknow endpoint version.");
         }
     }

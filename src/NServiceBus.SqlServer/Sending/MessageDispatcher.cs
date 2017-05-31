@@ -2,40 +2,71 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using Extensibility;
     using Transport;
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressParser addressParser)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator)
         {
             this.dispatcher = dispatcher;
-            this.addressParser = addressParser;
+            this.addressTranslator = addressTranslator;
         }
 
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, ContextBag context)
         {
-            await Dispatch(operations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-            await Dispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
+            await DeduplicateAndDispatch(operations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
+            await DeduplicateAndDispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
         }
 
-        Task Dispatch(TransportOperations operations, Func<HashSet<MessageWithAddress>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
+        Task DeduplicateAndDispatch(TransportOperations operations, Func<List<UnicastTransportOperation>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
         {
-            var deduplicatedOperations = new HashSet<MessageWithAddress>(OperationByMessageIdAndQueueAddressComparer);
-            foreach (var operation in operations.UnicastTransportOperations)
-            {
-                if (operation.RequiredDispatchConsistency == dispatchConsistency)
-                {
-                    deduplicatedOperations.Add(new MessageWithAddress(operation.Message, addressParser.Parse(operation.Destination)));
-                }
-            }
-            return dispatchMethod(deduplicatedOperations);
+            var operationsToDispatch = operations.UnicastTransportOperations
+                .Where(o => o.RequiredDispatchConsistency == dispatchConsistency)
+                .GroupBy(o => new DeduplicationKey(o.Message.MessageId, addressTranslator.Parse(o.Destination).Address))
+                .Select(g => g.First())
+                .ToList();
+
+            return dispatchMethod(operationsToDispatch);
         }
 
         IQueueDispatcher dispatcher;
-        QueueAddressParser addressParser;
-        static OperationByMessageIdAndQueueAddressComparer OperationByMessageIdAndQueueAddressComparer = new OperationByMessageIdAndQueueAddressComparer();
+        QueueAddressTranslator addressTranslator;
+
+        class DeduplicationKey
+        {
+            string messageId;
+            string destination;
+
+            public DeduplicationKey(string messageId, string destination)
+            {
+                this.messageId = messageId;
+                this.destination = destination;
+            }
+
+            bool Equals(DeduplicationKey other)
+            {
+                return string.Equals(messageId, other.messageId) && string.Equals(destination, other.destination);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != this.GetType()) return false;
+                return Equals((DeduplicationKey) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (messageId.GetHashCode()*397) ^ destination.GetHashCode();
+                }
+            }
+        }
     }
 }
