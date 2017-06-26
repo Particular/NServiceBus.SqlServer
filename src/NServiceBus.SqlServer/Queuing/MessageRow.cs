@@ -22,7 +22,7 @@
             return result;
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, byte[] body)
+        public static MessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan? timeToBeReceived)
         {
             var row = new MessageRow();
 
@@ -30,13 +30,9 @@
             row.correlationId = TryGetHeaderValue(headers, Headers.CorrelationId, s => s);
             row.replyToAddress = TryGetHeaderValue(headers, Headers.ReplyToAddress, s => s);
             row.recoverable = true;
-            row.timeToBeReceived = TryGetHeaderValue(headers, Headers.TimeToBeReceived, s =>
-            {
-                TimeSpan timeToBeReceived;
-                return TimeSpan.TryParse(s, out timeToBeReceived)
-                    ? (int?)timeToBeReceived.TotalMilliseconds
-                    : null;
-            });
+            row.timeToBeReceived = timeToBeReceived.HasValue
+                ? (int?) timeToBeReceived.Value.TotalMilliseconds
+                : null;
             row.headers = DictionarySerializer.Serialize(headers);
             row.bodyBytes = body;
 
