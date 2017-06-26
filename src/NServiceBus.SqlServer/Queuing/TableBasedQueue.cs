@@ -6,7 +6,6 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Transport;
     using Unicast.Queuing;
     using static System.String;
 
@@ -34,7 +33,7 @@ namespace NServiceBus.Transport.SQLServer
                 CommandTimeout = timeoutInSeconds
             })
             {
-                var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
 
                 return numberOfMessages;
             }
@@ -55,9 +54,9 @@ namespace NServiceBus.Transport.SQLServer
             return SendRawMessage(poisonMessage, connection, transaction);
         }
 
-        public Task Send(OutgoingMessage message, SqlConnection connection, SqlTransaction transaction)
+        public Task Send(MessageWithAddress message, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageRow = MessageRow.From(message.Headers, message.Body);
+            var messageRow = MessageRow.From(message.Message.Headers, message.Message.Body, message.TimeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction);
         }
@@ -154,7 +153,7 @@ namespace NServiceBus.Transport.SQLServer
 
             using (var command = new SqlCommand(commandText, connection))
             {
-                var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+                var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
 
                 if (rowsCount == 0)
                 {
