@@ -19,7 +19,7 @@
             return row.TryParse();
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, byte[] body)
+        public static MessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan? timeToBeReceived)
         {
             return new MessageRow
             {
@@ -27,13 +27,9 @@
                 correlationId = TryGetHeaderValue(headers, Headers.CorrelationId, s => s),
                 replyToAddress = TryGetHeaderValue(headers, Headers.ReplyToAddress, s => s),
                 recoverable = true,
-                timeToBeReceived = TryGetHeaderValue(headers, Headers.TimeToBeReceived, s =>
-                {
-                    TimeSpan timeToBeReceived;
-                    return TimeSpan.TryParse(s, out timeToBeReceived)
-                        ? (int?) timeToBeReceived.TotalMilliseconds
-                        : null;
-                }),
+                timeToBeReceived = timeToBeReceived.HasValue
+                    ? (int?) timeToBeReceived.Value.TotalMilliseconds
+                    : null,
                 headers = DictionarySerializer.Serialize(headers),
                 bodyBytes = body
             };

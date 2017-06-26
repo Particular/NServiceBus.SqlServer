@@ -91,7 +91,7 @@ namespace NServiceBus.Transport.SQLServer
             foreach (var operation in operations)
             {
                 var queue = queueFactory.Get(operation.Address);
-                await queue.Send(operation.Message, connection, transaction).ConfigureAwait(false);
+                await queue.Send(operation, connection, transaction).ConfigureAwait(false);
             }
         }
 
