@@ -5,7 +5,6 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Extensibility;
-    using Performance.TimeToBeReceived;
     using Transport;
 
     class MessageDispatcher : IDispatchMessages
