@@ -136,16 +136,16 @@ CREATE TABLE {0} (
     Headers varchar(max) NOT NULL,
     Body varbinary(max),
     RowVersion bigint IDENTITY(1,1) NOT NULL
-) ON [PRIMARY];
+);
 
 CREATE CLUSTERED INDEX Index_RowVersion ON {0}
 (
     RowVersion
-) ON [PRIMARY]
+)
 
 CREATE NONCLUSTERED INDEX Index_Expires ON {0}
 (
-    Expires ASC
+    Expires
 )
 INCLUDE
 (
