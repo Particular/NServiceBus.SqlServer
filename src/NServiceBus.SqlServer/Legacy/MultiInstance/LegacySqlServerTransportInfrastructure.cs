@@ -78,7 +78,7 @@
                         throw new Exception("Legacy multiinstance mode is supported only with TransportTransactionMode=TransactionScope");
                     }
 
-                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
+                    return new LegacyProcessWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
                 };
 
             Func<string, TableBasedQueue> queueFactory = x => new TableBasedQueue(addressTranslator.Parse(x).QualifiedTableName, x);
