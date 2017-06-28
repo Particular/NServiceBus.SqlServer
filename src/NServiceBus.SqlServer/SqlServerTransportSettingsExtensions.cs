@@ -31,7 +31,6 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -51,7 +50,6 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -162,7 +160,6 @@
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="delay">The delay value</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
