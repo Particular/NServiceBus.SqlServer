@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
+using NServiceBus.Transport.SQLServer;
 using NServiceBus.TransportTests;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
@@ -12,7 +13,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transportTransactionMode)
     {
         this.settings = settings;
-
+        settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
+        settings.Set<LogicalAddress>(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
+        var delayedDeliverySettings = new DelayedDeliverySettings();
+        delayedDeliverySettings.TableSuffix("Delayed");
+        settings.Set<DelayedDeliverySettings>(delayedDeliverySettings);
         return new TransportConfigurationResult
         {
             TransportInfrastructure = new SqlServerTransport().Initialize(settings, ConnectionString)

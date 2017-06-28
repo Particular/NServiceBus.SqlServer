@@ -13,7 +13,8 @@ public class ConfigureScenariosForSqlServerTransport : IConfigureSupportedScenar
 {
     public IEnumerable<Type> UnsupportedScenarioDescriptorTypes { get; } = new[]
     {
-        typeof(AllTransportsWithCentralizedPubSubSupport)
+        typeof(AllTransportsWithCentralizedPubSubSupport),
+        typeof(AllTransportsWithoutNativeDeferral),
     };
 }
 
@@ -25,7 +26,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         connectionString = settings.Get<string>("Transport.ConnectionString");
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
-
         transportConfig.ConnectionString(connectionString);
 
         var routingConfig = transportConfig.Routing();
@@ -50,15 +50,30 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse).ToList();
             foreach (var address in queueAddresses)
             {
-                using (var comm = conn.CreateCommand())
-                {
-                    comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
-                    comm.ExecuteNonQuery();
-                }
+                TryDeleteTable(conn, address);
+                TryDeleteTable(conn, new QueueAddress(address.TableName.Trim('[',']') + ".Delayed", address.SchemaName));
             }
         }
-
         return Task.FromResult(0);
+    }
+
+    static void TryDeleteTable(SqlConnection conn, QueueAddress address)
+    {
+        try
+        {
+            using (var comm = conn.CreateCommand())
+            {
+                comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
+                comm.ExecuteNonQuery();
+            }
+        }
+        catch (Exception e)
+        {
+            if (!e.Message.Contains("it does not exist or you do not have permission"))
+            {
+                throw;
+            }
+        }
     }
 
     string connectionString;

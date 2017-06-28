@@ -39,6 +39,14 @@ namespace NServiceBus.Transport.SQLServer.ConnectionStrings
 }
 namespace NServiceBus.Transport.SQLServer
 {
+    public class DelayedDeliverySettings
+    {
+        public DelayedDeliverySettings() { }
+        public void BatchSize(int batchSize) { }
+        public void DisableTimeoutManagerCompatibility() { }
+        public void ProcessingInterval(System.TimeSpan interval) { }
+        public void TableSuffix(string suffix) { }
+    }
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
     {
@@ -68,7 +76,10 @@ namespace NServiceBus.Transport.SQLServer
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PauseAfterReceiveFailure(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan delayTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> timeout = null, System.Nullable<System.Transactions.IsolationLevel> isolationLevel = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.Transport.SQLServer.DelayedDeliverySettings UseNativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         [System.ObsoleteAttribute(@"Multi-instance setup is supported for backwards compatibility and won't be supported from Version 4.0. To specify schema use `UseSpecificSchema()`, to specify connection string use `EnableLegacyMultiInstanceMode()`. The member currently throws a NotImplementedException. Will be removed in version 4.0.0.", true)]

@@ -74,18 +74,34 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Addressing\EndpointSchemasSettings.cs" />
-    <Compile Include="Addressing\TableSchemasSettings.cs" />
+    <Compile Include="Addressing\EndpointSchemaAndCatalogSettings.cs" />
+    <Compile Include="Addressing\QueueAddress.cs" />
+    <Compile Include="Addressing\TableSchemaAndCatalogSettings.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Configuration\ConnectionPoolValidator.cs" />
     <Compile Include="Configuration\SqlConnectionFactory.cs" />
     <Compile Include="Configuration\ConnectionStringsValidator.cs" />
     <Compile Include="Configuration\SettingsKeys.cs" />
     <Compile Include="Configuration\ValidationCheckResult.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeliveryInfrastructure.cs" />
+    <Compile Include="DelayedDelivery\PreventRoutingMessagesToTimeoutManager.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeliverySettings.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageRow.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageTable.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageHandler.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="InternalsVisibleTo.cs" />
     <Compile Include="Legacy\LegacyCallbacks.cs" />
-    <Compile Include="Queuing\TableBasedQueueCollection.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeliveryMessagePump.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeiveryTableBasedQueueFactory.cs" />
+    <Compile Include="Queuing\ITableBasedQueueOperationsReader.cs" />
+    <Compile Include="Queuing\TableBasedQueueOperationsReader.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyMessageDispatcher.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyQueueAddressTranslator.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacySql.cs" />
+    <Compile Include="Legacy\MultiInstance\LegacyCanonicalQueueAddress.cs" />
+    <Compile Include="DelayedDelivery\DelayedMessageProcessor.cs" />
+    <Compile Include="DelayedDelivery\DelayedDeliveryQueueCreator.cs" />
     <Compile Include="Receiving\QueuePeekerOptions.cs" />
     <Compile Include="Sending\IQueueDispatcher.cs" />
     <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
@@ -94,7 +110,6 @@
     <Compile Include="Legacy\MultiInstance\LegacyReceiveWithTransactionScope.cs" />
     <Compile Include="Legacy\MultiInstance\LegacySqlConnectionFactory.cs" />
     <Compile Include="Legacy\MultiInstance\LegacySqlServerTransportInfrastructure.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyTableBasedQueueDispatcher.cs" />
     <Compile Include="obsoletes.cs" />
     <Compile Include="Queuing\DictionarySerializer.cs" />
     <Compile Include="Receiving\ExpiredMessagesPurger.cs" />
@@ -108,13 +123,11 @@
     <Compile Include="Queuing\SqlConstants.cs" />
     <Compile Include="Queuing\Message.cs" />
     <Compile Include="Queuing\MessageRow.cs" />
-    <Compile Include="Addressing\QueueAddress.cs" />
-    <Compile Include="Addressing\QueueAddressParser.cs" />
+    <Compile Include="Addressing\CanonicalQueueAddress.cs" />
+    <Compile Include="Addressing\QueueAddressTranslator.cs" />
     <Compile Include="Resharper.Annotations.g.cs" />
     <Compile Include="Sending\MessageDispatcher.cs" />
     <Compile Include="Configuration\SqlScopeOptions.cs" />
-    <Compile Include="Sending\MessageWithAddress.cs" />
-    <Compile Include="Sending\OperationByMessageIdAndQueueAddressComparer.cs" />
     <Compile Include="Sending\TableBasedQueueDispatcher.cs" />
     <Compile Include="SqlServerTransport.cs" />
     <Compile Include="Receiving\MessagePump.cs" />
@@ -148,10 +161,10 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props'))" />
     <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
-    <Error Condition="!Exists('..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets'))" />
     <Error Condition="!Exists('..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets'))" />
+    <Error Condition="!Exists('..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets'))" />
   </Target>
   <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
-  <Import Project="..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.6.0\build\NuGetPackager.targets')" />
   <Import Project="..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets')" />
+  <Import Project="..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets')" />
 </Project>

@@ -25,7 +25,6 @@
             var failedMessage = exception.FailedMessages.Single();
 
             Assert.That(failedMessage.Exception.Message, Contains.Substring("Failed to send message to"));
-            Assert.That(failedMessage.Exception.Message, Contains.Substring("error]] VALUES(NEWID(), NULL, NULL, 1, NULL, '', NULL); DROP TABLE [Victim]]; INSERT INTO [error"));
         }
 
         class Context : ScenarioContext

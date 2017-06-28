@@ -17,7 +17,7 @@
         {
             var queueDispatcher = new FakeTableBasedQueueDispatcher();
 
-            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressParser("dbo", null, null));
+            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressTranslator("nservicebus", "dbo", null, null));
 
             await dispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 
@@ -70,13 +70,13 @@
         {
             public List<string> DispatchedMessageIds = new List<string>();
 
-            public Task DispatchAsNonIsolated(HashSet<MessageWithAddress> operations, TransportTransaction transportTransaction)
+            public Task DispatchAsNonIsolated(List<UnicastTransportOperation> operations, TransportTransaction transportTransaction)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);
             }
 
-            public Task DispatchAsIsolated(HashSet<MessageWithAddress> operations)
+            public Task DispatchAsIsolated(List<UnicastTransportOperation> operations)
             {
                 DispatchedMessageIds.AddRange(operations.Select(x => x.Message.MessageId));
                 return Task.FromResult(0);

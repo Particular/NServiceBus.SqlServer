@@ -46,6 +46,10 @@
       <HintPath>..\..\packages\NServiceBus.6.3.1\lib\net452\NServiceBus.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NServiceBus.Transport.SQLServer, Version=3.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NServiceBus.SqlServer.3.0.1\lib\net452\NServiceBus.Transport.SQLServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -69,11 +73,6 @@
     <ProjectReference Include="..\..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj">
       <Project>{531ab217-effe-428c-8ca0-a8a70c907992}</Project>
       <Name>NServiceBus.SqlServer.CompatibilityTests.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">
-      <Project>{fa1193bf-325c-4201-bb78-484032e09809}</Project>
-      <Name>NServiceBus.SqlServer</Name>
-      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

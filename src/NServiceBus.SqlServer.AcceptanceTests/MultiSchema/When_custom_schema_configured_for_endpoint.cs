@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using Transport.SQLServer;
 
-    public class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
+    public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
     {
         public const string ReceiverSchema = "receiver";
 

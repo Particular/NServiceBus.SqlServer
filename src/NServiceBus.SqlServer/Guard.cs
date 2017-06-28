@@ -22,5 +22,21 @@
                 throw new ArgumentNullException(argumentName);
             }
         }
+
+        public static void AgainstNegativeAndZero([InvokerParameterName] string argumentName, TimeSpan value)
+        {
+            if (value <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(argumentName);
+            }
+        }
+
+        public static void AgainstNegative([InvokerParameterName] string argumentName, TimeSpan value)
+        {
+            if (value < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(argumentName);
+            }
+        }
     }
 }
