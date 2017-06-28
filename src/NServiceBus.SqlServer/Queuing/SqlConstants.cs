@@ -30,7 +30,7 @@ VALUES (
     @CorrelationId,
     @ReplyToAddress,
     @Recoverable,
-    CASE WHEN @TimeToBeReceivedMs IS NOT NULL 
+    CASE WHEN @TimeToBeReceivedMs IS NOT NULL
         THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,
     @Headers,
     @Body);
@@ -140,7 +140,7 @@ CREATE TABLE {0} (
 
 CREATE CLUSTERED INDEX Index_RowVersion ON {0}
 (
-    RowVersion ASC
+    RowVersion
 ) ON [PRIMARY]
 
 CREATE NONCLUSTERED INDEX Index_Expires ON {0}
