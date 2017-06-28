@@ -29,7 +29,7 @@
                 var assemblyName = AssemblyNameResolver(version);
 
                 return RunningOnTeamCity()
-                    ? Path.Combine(TestContext.CurrentContext.WorkDirectory, $"src\\CompatibilityTests\\Facades\\{assemblyName}\\bin\\{configuration}")
+                    ? Path.Combine(TestContext.CurrentContext.WorkDirectory, $"src\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}")
                     : Path.Combine(TestContext.CurrentContext.TestDirectory, $"..\\..\\..\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}");
             };
 
