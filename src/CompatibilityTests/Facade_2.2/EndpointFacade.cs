@@ -83,7 +83,7 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
 
     public void MapMessageToEndpoint(Type messageType, string destination)
     {
-        customConfiguration.AddMapping(new MessageEndpointMapping() {Endpoint = destination, Messages = messageType.AssemblyQualifiedName});
+        customConfiguration.AddMapping(new MessageEndpointMapping {Endpoint = destination, Messages = messageType.AssemblyQualifiedName});
     }
 
     public void Start()
