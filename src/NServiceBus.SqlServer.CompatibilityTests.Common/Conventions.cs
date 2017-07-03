@@ -29,8 +29,8 @@
                 var assemblyName = AssemblyNameResolver(version);
 
                 return RunningOnTeamCity()
-                    ? Path.Combine(TestContext.CurrentContext.WorkDirectory, $"src\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}")
-                    : Path.Combine(TestContext.CurrentContext.TestDirectory, $"..\\..\\..\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}");
+                    ? Path.Combine(TestContext.CurrentContext.WorkDirectory, $"src\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}\\net452")
+                    : Path.Combine(TestContext.CurrentContext.TestDirectory, $"..\\..\\..\\CompatibilityTests\\{assemblyName}\\bin\\{configuration}\\net452");
             };
 
         public static Func<string, string> AssemblyPathResolver =
