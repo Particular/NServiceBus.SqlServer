@@ -16,11 +16,8 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Security" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Transactions" />
-    <Reference Include="System.Web" />
-    
+
     <PackageReference Include="Fody" Version="2.1.0" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
