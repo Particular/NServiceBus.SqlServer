@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
+    <AssemblyName>Facade</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,9 +10,5 @@
     <ProjectReference Include="..\..\NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj" />
     <ProjectReference Include="..\..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
     <Reference Include="System.Configuration" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
