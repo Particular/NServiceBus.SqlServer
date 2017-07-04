@@ -14,9 +14,9 @@
         static string SpyConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
 
         [Test]
-        public Task Error_should_be_sent_to_table_in_configured_catalog()
+        public async Task Error_should_be_sent_to_table_in_configured_catalog()
         {
-            return Scenario.Define<Context>()
+            var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Sender>(b =>
                 {
                     b.DoNotFailOnErrorMessages();
@@ -24,9 +24,9 @@
                 })
                 .WithEndpoint<ErrorSpy>()
                 .Done(c => c.FailedMessageProcessed)
-                .Repeat(r => r.For(NServiceBus.AcceptanceTests.ScenarioDescriptors.Transports.Default))
-                .Should(c => Assert.True(c.FailedMessageProcessed, "Message should be moved to error queue in custom schema"))
                 .Run();
+
+            Assert.True(ctx.FailedMessageProcessed, "Message should be moved to error queue in custom schema");
         }
 
         public class Context : ScenarioContext

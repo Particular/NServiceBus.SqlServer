@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
     using Routing;
@@ -15,15 +14,15 @@
     public class When_custom_schema_configured_for_endpoint_inside_physical_address : When_custom_schema_configured_for_endpoint
     {
         [Test]
-        public Task Should_receive_message()
+        public async Task Should_receive_message()
         {
-            return Scenario.Define<Context>()
+            var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
                 .WithEndpoint<Receiver>()
                 .Done(c => c.MessageReceived)
-                .Repeat(r => r.For(Transports.Default))
-                .Should(c => Assert.True(c.MessageReceived, "Message should be properly received"))
                 .Run();
+
+            Assert.True(ctx.MessageReceived, "Message should be properly received");
         }
 
         public class Sender : EndpointConfigurationBuilder

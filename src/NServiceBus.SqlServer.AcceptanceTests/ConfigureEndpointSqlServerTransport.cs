@@ -1,29 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.AcceptanceTests.ScenarioDescriptors;
 using NServiceBus.Configuration.AdvanceExtensibility;
 using NServiceBus.Transport;
-
-public class ConfigureScenariosForSqlServerTransport : IConfigureSupportedScenariosForTestExecution
-{
-    public IEnumerable<Type> UnsupportedScenarioDescriptorTypes { get; } = new[]
-    {
-        typeof(AllTransportsWithCentralizedPubSubSupport),
-        typeof(AllTransportsWithoutNativeDeferral),
-    };
-}
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
-        connectionString = settings.Get<string>("Transport.ConnectionString");
+
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new Exception("The 'SqlServerTransport.ConnectionString' environment variable is not set.");
+        }
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);

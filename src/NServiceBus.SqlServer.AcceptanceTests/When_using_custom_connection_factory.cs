@@ -6,21 +6,20 @@
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.AcceptanceTests.ScenarioDescriptors;
     using NUnit.Framework;
     using Transport.SQLServer;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {
         [Test]
-        public Task Should_use_provided_ready_to_use_connection()
+        public async Task Should_use_provided_ready_to_use_connection()
         {
-            return Scenario.Define<Context>()
+            var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                 .Done(c => c.MessageReceived)
-                .Repeat(r => r.For(Transports.Default))
-                .Should(c => Assert.True(c.MessageReceived, "Message should be properly received"))
                 .Run();
+
+            Assert.True(ctx.MessageReceived, "Message should be properly received");
         }
 
         public class Endpoint : EndpointConfigurationBuilder
