@@ -41,7 +41,7 @@
             AddParameter(command, "ReplyToAddress", SqlDbType.VarChar, replyToAddress);
             AddParameter(command, "Recoverable", SqlDbType.Bit, recoverable);
             AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
-            AddParameter(command, "Headers", SqlDbType.VarChar, headers);
+            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
         }
 

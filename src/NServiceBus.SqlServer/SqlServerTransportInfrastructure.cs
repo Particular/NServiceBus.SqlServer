@@ -77,6 +77,7 @@ namespace NServiceBus.Transport.SQLServer
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+            var schemaVerification = new SchemaVerification(queue => connectionFactory.OpenNewConnection());
 
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
@@ -86,7 +87,7 @@ namespace NServiceBus.Transport.SQLServer
             return new TransportReceiveInfrastructure(
                 () =>
                 {
-                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, waitTimeCircuitBreaker);
+                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification,  waitTimeCircuitBreaker);
                     if (delayedDeliverySettings == null)
                     {
                         return pump;
