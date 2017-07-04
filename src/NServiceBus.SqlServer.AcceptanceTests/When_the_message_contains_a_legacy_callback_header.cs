@@ -48,8 +48,11 @@
         {
             public OriginatingEndpoint()
             {
-                EndpointSetup<DefaultServer>()
-                    .AddMapping<Request>(typeof(ReceivingEndpoint));
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    var routing = c.ConfigureTransport().Routing();
+                    routing.RouteToEndpoint(typeof(Request), Conventions.EndpointNamingConvention(typeof(ReceivingEndpoint)));
+                });
             }
 
             class ReplyHandler : IHandleMessages<Reply>

@@ -1,173 +1,37 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props" Condition="Exists('..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FA1193BF-325C-4201-BB78-484032E09809}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NServiceBus.Transport.SQLServer</RootNamespace>
-    <AssemblyName>NServiceBus.Transport.SQLServer</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFrameworks>net452</TargetFrameworks>
+    <RootNamespace>NServiceBus.SqlServer</RootNamespace>
+    <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(SolutionDir)NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\binaries\NServiceBus.Transport.SQLServer.xml</DocumentationFile>
-    <NoWarn>
-    </NoWarn>
-    <Prefer32Bit>false</Prefer32Bit>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PackageId>NServiceBus.SqlServer</PackageId>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\..\binaries\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\binaries\NServiceBus.Transport.SQLServer.xml</DocumentationFile>
-    <NoWarn>
-    </NoWarn>
-    <Prefer32Bit>false</Prefer32Bit>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <UseVSHostingProcess>false</UseVSHostingProcess>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Janitor, Version=1.2.2.0, Culture=neutral, PublicKeyToken=d34c7d3bba3746e6, processorArchitecture=MSIL">
-      <HintPath>..\packages\Janitor.Fody.1.2.2.0\Lib\dotnet\Janitor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NServiceBus.Core, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.6.0.0\lib\net452\NServiceBus.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Obsolete, Version=4.1.0.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03, processorArchitecture=MSIL">
-      <HintPath>..\packages\Obsolete.Fody.4.1.0\lib\dotnet\Obsolete.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Transactions" />
-    <Reference Include="System.Web.Services" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
+
+    <PackageReference Include="Fody" Version="2.1.0" PrivateAssets="All" />
+    <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
+    <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
+    <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
+    <PackageReference Include="NServiceBus" Version="6.0.0" PrivateAssets="All" />
+    <PackageReference Include="GitVersionTask" Version="4.0.0-beta0011" />
+    <PackageReference Include="NuGetPackager" Version="0.6.5" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Addressing\EndpointSchemaAndCatalogSettings.cs" />
-    <Compile Include="Addressing\QueueAddress.cs" />
-    <Compile Include="Addressing\TableSchemaAndCatalogSettings.cs" />
-    <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Configuration\ConnectionPoolValidator.cs" />
-    <Compile Include="Configuration\SqlConnectionFactory.cs" />
-    <Compile Include="Configuration\ConnectionStringsValidator.cs" />
-    <Compile Include="Configuration\SettingsKeys.cs" />
-    <Compile Include="Configuration\ValidationCheckResult.cs" />
-    <Compile Include="DelayedDelivery\DelayedDeliveryInfrastructure.cs" />
-    <Compile Include="DelayedDelivery\PreventRoutingMessagesToTimeoutManager.cs" />
-    <Compile Include="DelayedDelivery\DelayedDeliverySettings.cs" />
-    <Compile Include="DelayedDelivery\DelayedMessageRow.cs" />
-    <Compile Include="DelayedDelivery\DelayedMessageTable.cs" />
-    <Compile Include="DelayedDelivery\DelayedMessageHandler.cs" />
-    <Compile Include="Guard.cs" />
-    <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="Legacy\LegacyCallbacks.cs" />
-    <Compile Include="DelayedDelivery\DelayedDeliveryMessagePump.cs" />
-    <Compile Include="DelayedDelivery\DelayedDeiveryTableBasedQueueFactory.cs" />
-    <Compile Include="Queuing\ITableBasedQueueOperationsReader.cs" />
-    <Compile Include="Queuing\TableBasedQueueOperationsReader.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyMessageDispatcher.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyQueueAddressTranslator.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacySql.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyCanonicalQueueAddress.cs" />
-    <Compile Include="DelayedDelivery\DelayedMessageProcessor.cs" />
-    <Compile Include="DelayedDelivery\DelayedDeliveryQueueCreator.cs" />
-    <Compile Include="Receiving\QueuePeekerOptions.cs" />
-    <Compile Include="Sending\IQueueDispatcher.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyQueueCreator.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyQueuePeeker.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyQueuePurger.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacyReceiveWithTransactionScope.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacySqlConnectionFactory.cs" />
-    <Compile Include="Legacy\MultiInstance\LegacySqlServerTransportInfrastructure.cs" />
-    <Compile Include="obsoletes.cs" />
-    <Compile Include="Queuing\DictionarySerializer.cs" />
-    <Compile Include="Receiving\ExpiredMessagesPurger.cs" />
-    <Compile Include="Receiving\IPeekMessagesInQueue.cs" />
-    <Compile Include="Receiving\IPurgeQueues.cs" />
-    <Compile Include="Receiving\IsolationLevelMapper.cs" />
-    <Compile Include="Receiving\QueuePeeker.cs" />
-    <Compile Include="Receiving\QueuePurger.cs" />
-    <Compile Include="Receiving\RepeatedFailuresOvertimeCurcuitBreaker.cs" />
-    <Compile Include="Receiving\ReceiveWithTransactionScope.cs" />
-    <Compile Include="Queuing\SqlConstants.cs" />
-    <Compile Include="Queuing\Message.cs" />
-    <Compile Include="Queuing\MessageRow.cs" />
-    <Compile Include="Addressing\CanonicalQueueAddress.cs" />
-    <Compile Include="Addressing\QueueAddressTranslator.cs" />
-    <Compile Include="Resharper.Annotations.g.cs" />
-    <Compile Include="Sending\MessageDispatcher.cs" />
-    <Compile Include="Configuration\SqlScopeOptions.cs" />
-    <Compile Include="Sending\TableBasedQueueDispatcher.cs" />
-    <Compile Include="SqlServerTransport.cs" />
-    <Compile Include="Receiving\MessagePump.cs" />
-    <Compile Include="Queuing\MessageReadResult.cs" />
-    <Compile Include="Receiving\ReceiveWithNativeTransaction.cs" />
-    <Compile Include="Receiving\ReceiveWithNoTransaction.cs" />
-    <Compile Include="Receiving\ReceiveStrategy.cs" />
-    <Compile Include="Receiving\QueueCreator.cs" />
-    <Compile Include="SqlServerTransportInfrastructure.cs" />
-    <Compile Include="SqlServerTransportSettingsExtensions.cs" />
-    <Compile Include="Queuing\TableBasedQueue.cs" />
-    <Compile Include="Sending\UsingV2ConfigurationChecker.cs" />
-    <Compile Include="TaskEx.cs" />
-    <Compile Include="Receiving\FailureInfoStorage.cs" />
+    <Content Include="$(OutputPath)\**\$(AssemblyName).pdb">
+      <Pack>true</Pack>
+      <PackagePath>lib\</PackagePath>
+    </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="FodyWeavers.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Analyzer Include="..\packages\Particular.CodeRules.0.1.1\tools\..\analyzers\dotnet\cs\Particular.CodeRules.dll" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Particular.CodeRules.0.1.1\build\Particular.CodeRules.props'))" />
-    <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
-    <Error Condition="!Exists('..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets'))" />
-    <Error Condition="!Exists('..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets'))" />
-  </Target>
-  <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
-  <Import Project="..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.6.4\build\dotnet\GitVersionTask.targets')" />
-  <Import Project="..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.6.5\build\NuGetPackager.targets')" />
-  <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
-  <Import Project="..\packages\NuGetPackager.0.6.1\build\NuGetPackager.targets" Condition="Exists('..\packages\NuGetPackager.0.6.1\build\NuGetPackager.targets')" />
-  <Import Project="..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets" Condition="Exists('..\packages\GitVersionTask.3.6.5\build\dotnet\GitVersionTask.targets')" />
+
 </Project>

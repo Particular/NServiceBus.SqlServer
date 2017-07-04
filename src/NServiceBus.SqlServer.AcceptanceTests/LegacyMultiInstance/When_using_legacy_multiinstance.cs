@@ -21,7 +21,7 @@
                 {
                     c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Sender))}@[]@nservicebus1");
 #pragma warning disable 0618
-                    c.UseTransport<SqlServerTransport>()
+                    var routing = c.UseTransport<SqlServerTransport>()
                         .ConnectionString("should-not-be-used")
                         .UseSchemaForEndpoint("Receiver", "receiver")
                         .UseSchemaForEndpoint("Sender", "sender")
@@ -33,9 +33,11 @@
                             await connection.OpenAsync();
 
                             return connection;
-                        });
+                        })
+                        .Routing();
+                    routing.RouteToEndpoint(typeof(Message), Conventions.EndpointNamingConvention(typeof(Receiver)));
 #pragma warning restore 0618
-                }).AddMapping<Message>(typeof(Receiver));
+                });
             }
 
             class Handler : IHandleMessages<Reply>

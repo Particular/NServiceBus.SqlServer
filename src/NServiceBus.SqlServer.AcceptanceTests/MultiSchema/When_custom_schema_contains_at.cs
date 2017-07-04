@@ -10,14 +10,14 @@
     public class When_custom_schema_contains_at : NServiceBusAcceptanceTest
     {
         [Test]
-        public Task Should_receive_message()
+        public async Task Should_receive_message()
         {
-            return Scenario.Define<Context>()
+            var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                 .Done(c => c.MessageReceived)
-                .Repeat(r => r.For(NServiceBus.AcceptanceTests.ScenarioDescriptors.Transports.Default))
-                .Should(c => Assert.True(c.MessageReceived, "Message should be properly received"))
                 .Run();
+
+            Assert.True(ctx.MessageReceived, "Message should be properly received");
         }
 
         public class Context : ScenarioContext
