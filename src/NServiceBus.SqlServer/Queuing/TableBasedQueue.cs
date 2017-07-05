@@ -5,7 +5,6 @@ namespace NServiceBus.Transport.SQLServer
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
-    using Logging;
     using Unicast.Queuing;
     using static System.String;
 
@@ -24,6 +23,7 @@ namespace NServiceBus.Transport.SQLServer
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
             checkIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+            checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
 #pragma warning restore 618
         }
 
@@ -128,16 +128,20 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
+        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
         {
             using (var command = new SqlCommand(checkIndexCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+                return rowsCount > 0;
+            }
+        }
 
-                if (rowsCount == 0)
-                {
-                    Logger.Warn($@"Table {qualifiedTableName} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
-                }
+        public async Task<string> CheckHeadersColumnType(SqlConnection connection)
+        {
+            using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
+            {
+                return (string)await command.ExecuteScalarAsync().ConfigureAwait(false);
             }
         }
 
@@ -146,7 +150,6 @@ namespace NServiceBus.Transport.SQLServer
             return qualifiedTableName;
         }
 
-        static ILog Logger = LogManager.GetLogger(typeof(TableBasedQueue));
         string qualifiedTableName;
         string peekCommand;
         string receiveCommand;
@@ -154,5 +157,6 @@ namespace NServiceBus.Transport.SQLServer
         string purgeCommand;
         string purgeExpiredCommand;
         string checkIndexCommand;
+        string checkHeadersColumnTypeCommand;
     }
 }
