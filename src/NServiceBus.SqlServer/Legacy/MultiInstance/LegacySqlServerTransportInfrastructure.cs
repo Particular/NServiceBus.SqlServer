@@ -57,7 +57,7 @@
             var queuePeeker = new LegacyQueuePeeker(connectionFactory, peekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
-            var schemaVerification = new SchemaVerification(queue => connectionFactory.OpenNewConnection(queue.Name));
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(queue.Name));
 
             SqlScopeOptions scopeOptions;
             if (!settings.TryGet(out scopeOptions))

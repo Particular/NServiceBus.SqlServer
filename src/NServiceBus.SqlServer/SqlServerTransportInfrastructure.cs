@@ -77,7 +77,7 @@ namespace NServiceBus.Transport.SQLServer
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
-            var schemaVerification = new SchemaVerification(queue => connectionFactory.OpenNewConnection());
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection());
 
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 

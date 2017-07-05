@@ -27,7 +27,7 @@
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
-                new SchemaVerification(_ => sqlConnectionFactory.OpenNewConnection()), 
+                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()), 
                 TimeSpan.MaxValue);
 
             await pump.Init(

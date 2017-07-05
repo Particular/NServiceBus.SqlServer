@@ -5,14 +5,14 @@
     using System.Threading.Tasks;
     using Logging;
 
-    class SchemaVerification
+    class SchemaInspector
     {
-        public SchemaVerification(Func<TableBasedQueue, Task<SqlConnection>> openConnection)
+        public SchemaInspector(Func<TableBasedQueue, Task<SqlConnection>> openConnection)
         {
             this.openConnection = openConnection;
         }
 
-        public async Task Perform(TableBasedQueue queue)
+        public async Task PerformInspection(TableBasedQueue queue)
         {
             await VerifyExpiredIndex(queue).ConfigureAwait(false);
             await VerifyHeadersColumnType(queue).ConfigureAwait(false);
