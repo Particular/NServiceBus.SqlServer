@@ -7,9 +7,9 @@
     using System.Transactions;
     using IsolationLevel = System.Data.IsolationLevel;
 
-    class ReceiveWithNativeTransaction : ReceiveStrategy
+    class ProcessWithNativeTransaction : ReceiveStrategy
     {
-        public ReceiveWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, bool transactionForReceiveOnly = false)
+        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, bool transactionForReceiveOnly = false)
         {
             this.connectionFactory = connectionFactory;
             this.failureInfoStorage = failureInfoStorage;

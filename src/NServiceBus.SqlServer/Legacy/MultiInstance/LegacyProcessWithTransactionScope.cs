@@ -6,9 +6,9 @@
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class LegacyReceiveWithTransactionScope : ReceiveStrategy
+    class LegacyProcessWithTransactionScope : ReceiveStrategy
     {
-        public LegacyReceiveWithTransactionScope(TransactionOptions transactionOptions, LegacySqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
+        public LegacyProcessWithTransactionScope(TransactionOptions transactionOptions, LegacySqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;

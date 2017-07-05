@@ -5,9 +5,9 @@
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class ReceiveWithTransactionScope : ReceiveStrategy
+    class ProcessWithTransactionScope : ReceiveStrategy
     {
-        public ReceiveWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
+        public ProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;

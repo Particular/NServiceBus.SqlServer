@@ -1,12 +1,13 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
 
-    class ReceiveWithNoTransaction : ReceiveStrategy
+    class ProcessWithNoTransaction : ReceiveStrategy
     {
-        public ReceiveWithNoTransaction(SqlConnectionFactory connectionFactory)
+        public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
@@ -15,7 +16,13 @@ namespace NServiceBus.Transport.SQLServer
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                var message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                Message message;
+                using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
+                {
+                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
+                    transaction.Commit();
+                }
+
                 if (message == null)
                 {
                     return;

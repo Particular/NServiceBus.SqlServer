@@ -123,20 +123,20 @@ namespace NServiceBus.Transport.SQLServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ReceiveWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
             }
 
-            return new ReceiveWithNoTransaction(connectionFactory);
+            return new ProcessWithNoTransaction(connectionFactory);
         }
 
         ExpiredMessagesPurger CreateExpiredMessagesPurger(SqlConnectionFactory connectionFactory)
