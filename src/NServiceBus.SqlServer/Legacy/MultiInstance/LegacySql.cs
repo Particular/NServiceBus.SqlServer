@@ -10,12 +10,12 @@ namespace NServiceBus.Transport.SQLServer
                     BEGIN
                         CREATE TABLE {0}(
                             [Id] [uniqueidentifier] NOT NULL,
-                            [CorrelationId] [varchar](255) NULL,
-                            [ReplyToAddress] [varchar](255) NULL,
+                            [CorrelationId] [varchar](255),
+                            [ReplyToAddress] [varchar](255),
                             [Recoverable] [bit] NOT NULL,
-                            [Expires] [datetime] NULL,
+                            [Expires] [datetime],
                             [Headers] [varchar](max) NOT NULL,
-                            [Body] [varbinary](max) NULL,
+                            [Body] [varbinary](max),
                             [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
                         ) ON [PRIMARY];
 
