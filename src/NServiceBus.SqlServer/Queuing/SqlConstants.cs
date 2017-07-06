@@ -177,7 +177,7 @@ END
 
 CREATE TABLE {0} (
     Headers nvarchar(max) NOT NULL,
-    Body varbinary(max) NULL,
+    Body varbinary(max),
     Due datetime NOT NULL,
     RowVersion bigint IDENTITY(1,1) NOT NULL
 ) ON [PRIMARY];
