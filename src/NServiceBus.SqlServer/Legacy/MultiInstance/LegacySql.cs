@@ -17,7 +17,7 @@ namespace NServiceBus.Transport.SQLServer
                             [Headers] [varchar](max) NOT NULL,
                             [Body] [varbinary](max),
                             [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
-                        ) ON [PRIMARY];
+                        );
 
                         CREATE CLUSTERED INDEX [Index_RowVersion] ON {0}
                         (

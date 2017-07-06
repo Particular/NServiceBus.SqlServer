@@ -180,7 +180,7 @@ CREATE TABLE {0} (
     Body varbinary(max),
     Due datetime NOT NULL,
     RowVersion bigint IDENTITY(1,1) NOT NULL
-) ON [PRIMARY];
+);
 
 CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
 (
