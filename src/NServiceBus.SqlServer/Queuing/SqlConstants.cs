@@ -184,7 +184,7 @@ CREATE TABLE {0} (
 
 CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
 (
-    [Due] ASC
+    [Due]
 )
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
