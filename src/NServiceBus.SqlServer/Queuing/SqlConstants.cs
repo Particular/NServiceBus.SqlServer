@@ -84,18 +84,18 @@ IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
 
 WITH message AS (
-    SELECT TOP(@BatchSize) * 
-    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK) 
+    SELECT TOP(@BatchSize) *
+    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
     WHERE Due < GETUTCDATE())
 DELETE FROM message
-OUTPUT 
-    NEWID(), 
-    NULL, 
-    NULL, 
-    1, 
-    NULL, 
-    deleted.Headers, 
-    deleted.Body 
+OUTPUT
+    NEWID(),
+    NULL,
+    NULL,
+    1,
+    NULL,
+    deleted.Headers,
+    deleted.Body
 INTO {1};
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
@@ -109,9 +109,9 @@ WHERE Expires IS NULL
 
         public static readonly string CreateQueueText = @"
 IF EXISTS (
-    SELECT * 
-    FROM {1}.sys.objects 
-    WHERE object_id = OBJECT_ID(N'{0}') 
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
@@ -157,9 +157,9 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         internal const string CreateDelayedMessageStoreText = @"
 IF EXISTS (
-    SELECT * 
-    FROM {1}.sys.objects 
-    WHERE object_id = OBJECT_ID(N'{0}') 
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
@@ -187,7 +187,7 @@ CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
     [Due] ASC
 )
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
-   
+
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public static readonly string PurgeBatchOfExpiredMessagesText = @"
