@@ -152,6 +152,8 @@ INCLUDE
     Id,
     RowVersion
 )
+WHERE
+    Expires IS NOT NULL
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
