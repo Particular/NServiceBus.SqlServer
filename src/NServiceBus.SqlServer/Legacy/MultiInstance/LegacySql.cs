@@ -10,30 +10,29 @@ namespace NServiceBus.Transport.SQLServer
                     BEGIN
                         CREATE TABLE {0}(
                             [Id] [uniqueidentifier] NOT NULL,
-                            [CorrelationId] [varchar](255) NULL,
-                            [ReplyToAddress] [varchar](255) NULL,
+                            [CorrelationId] [varchar](255),
+                            [ReplyToAddress] [varchar](255),
                             [Recoverable] [bit] NOT NULL,
-                            [Expires] [datetime] NULL,
+                            [Expires] [datetime],
                             [Headers] [varchar](max) NOT NULL,
-                            [Body] [varbinary](max) NULL,
+                            [Body] [varbinary](max),
                             [RowVersion] [bigint] IDENTITY(1,1) NOT NULL
-                        ) ON [PRIMARY];
+                        );
 
                         CREATE CLUSTERED INDEX [Index_RowVersion] ON {0}
                         (
-                            [RowVersion] ASC
-                        )WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+                            [RowVersion]
+                        )
 
                         CREATE NONCLUSTERED INDEX [Index_Expires] ON {0}
                         (
-                            [Expires] ASC
+                            [Expires]
                         )
                         INCLUDE
                         (
                             [Id],
                             [RowVersion]
                         )
-                        WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
                     END
 
                     EXEC sp_releaseapplock @Resource = '{0}_lock'
