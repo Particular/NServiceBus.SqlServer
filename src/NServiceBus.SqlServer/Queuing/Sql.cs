@@ -71,5 +71,12 @@ namespace NServiceBus.Transport.SQLServer
         internal const string CheckIfExpiresIndexIsPresent = @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
         internal const string ExpiresIndexName = "Index_Expires";
+
+        internal const string CheckHeadersColumnType = @"
+SELECT t.name
+FROM sys.columns c
+INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
+WHERE c.object_id = OBJECT_ID('{0}.{1}')
+    AND c.name = 'Headers'";
     }
 }

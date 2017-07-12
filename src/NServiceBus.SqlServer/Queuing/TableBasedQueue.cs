@@ -147,18 +147,28 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task LogWarningWhenIndexIsMissing(SqlConnection connection)
+        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
         {
             var commandText = Format(Sql.CheckIfExpiresIndexIsPresent, Sql.ExpiresIndexName, schemaName, tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
                 var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
+                return rowsCount > 0;
+                //if (rowsCount == 0)
+                //{
+                //    Logger.WarnFormat(@"Table {0}.{1} does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", schemaName, tableName, Sql.ExpiresIndexName);
+                //}
+            }
+        }
 
-                if (rowsCount == 0)
-                {
-                    Logger.WarnFormat(@"Table {0}.{1} does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", schemaName, tableName, Sql.ExpiresIndexName);
-                }
+        public async Task<string> CheckHeadersColumnType(SqlConnection connection)
+        {
+            var commandText = Format(Sql.CheckHeadersColumnType, schemaName, tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                return (string) await command.ExecuteScalarAsync().ConfigureAwait(false);
             }
         }
 

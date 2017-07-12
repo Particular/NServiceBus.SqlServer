@@ -25,6 +25,7 @@
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
+                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()),
                 new QueueAddressParser("dbo", null, null),
                 TimeSpan.MaxValue);
 

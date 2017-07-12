@@ -38,6 +38,8 @@
             var queuePurger = new LegacyQueuePurger(connectionFactory);
             var queuePeeker = new LegacyQueuePeeker(connectionFactory, peekerOptions);
 
+            var schemaInspector = new SchemaInspector(queue => connectionFactory.OpenNewConnection(queue.TransportAddress));
+
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
             SqlScopeOptions scopeOptions;
@@ -66,7 +68,7 @@
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaInspector,  addressParser, waitTimeCircuitBreaker),
                 () => new LegacyQueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }

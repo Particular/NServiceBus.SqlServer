@@ -71,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="When_checking_schema.cs" />
     <Compile Include="When_using_ttbr.cs" />
     <Compile Include="When_dispatching_messages.cs" />
     <Compile Include="When_message_receive_takes_long.cs" />
