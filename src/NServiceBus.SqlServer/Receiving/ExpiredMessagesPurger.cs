@@ -37,7 +37,7 @@
                         var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, PurgeBatchSize).ConfigureAwait(false);
 
                         totalPurgedRowsCount += purgedRowsCount;
-                        continuePurging = (purgedRowsCount == PurgeBatchSize);
+                        continuePurging = purgedRowsCount == PurgeBatchSize;
                     }
                 }
 
@@ -48,21 +48,6 @@
                 Logger.WarnFormat("Purging expired messages from table {0} failed after purging {1} messages.", queue, totalPurgedRowsCount);
 
                 throw;
-            }
-        }
-
-        public async Task Initialize(TableBasedQueue queue)
-        {
-            try
-            {
-                using (var connection = await openConnection(queue).ConfigureAwait(false))
-                {
-                    await queue.LogWarningWhenIndexIsMissing(connection).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
 

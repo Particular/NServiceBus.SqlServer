@@ -11,7 +11,7 @@
 
         public virtual async Task<int> Purge(TableBasedQueue queue)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(queue.TransportAddress).ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(queue.Name).ConfigureAwait(false))
             {
                 return await queue.Purge(connection).ConfigureAwait(false);
             }

@@ -1,3 +1,4 @@
+#pragma warning disable 618
 namespace NServiceBus.Transport.SQLServer
 {
     using System.Data;
@@ -7,10 +8,10 @@ namespace NServiceBus.Transport.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressParser addressParser)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator)
         {
             this.connectionFactory = connectionFactory;
-            this.addressParser = addressParser;
+            this.addressTranslator = addressTranslator;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -20,21 +21,20 @@ namespace NServiceBus.Transport.SQLServer
             {
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
                 }
 
-                foreach (var receivingAddress in queueBindings.SendingAddresses)
+                foreach (var sendingAddress in queueBindings.SendingAddresses)
                 {
-                    await CreateQueue(addressParser.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
                 }
-
                 transaction.Commit();
             }
         }
 
-        async Task CreateQueue(QueueAddress address, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
         {
-            var sql = string.Format(Sql.CreateQueueText, address.SchemaName, address.TableName);
+            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.Catalog);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -45,6 +45,7 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         SqlConnectionFactory connectionFactory;
-        QueueAddressParser addressParser;
+        QueueAddressTranslator addressTranslator;
     }
 }
+#pragma warning restore 618

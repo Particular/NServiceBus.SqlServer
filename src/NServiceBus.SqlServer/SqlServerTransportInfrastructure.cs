@@ -3,9 +3,10 @@ namespace NServiceBus.Transport.SQLServer
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
-    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
+    using DelayedDelivery;
+    using Features;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
@@ -13,39 +14,40 @@ namespace NServiceBus.Transport.SQLServer
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(QueueAddressParser addressParser, SettingsHolder settings, string connectionString)
+        internal SqlServerTransportInfrastructure(QueueAddressTranslator addressTranslator, SettingsHolder settings, string connectionString)
         {
-            this.addressParser = addressParser;
+            this.addressTranslator = addressTranslator;
             this.settings = settings;
             this.connectionString = connectionString;
 
-            this.endpointSchemasSettings = settings.GetOrCreate<EndpointSchemasSettings>();
-
+            schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
+            delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+            var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+            if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
+            {
+                delayedDeliverySettings.DisableTimeoutManagerCompatibility();
+            }
             //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
             RequireOutboxConsent = true;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.DeliveryConstraints" />
-        /// </summary>
-        public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
+        public override IEnumerable<Type> DeliveryConstraints
         {
-            typeof(DiscardIfNotReceivedBefore)
-        };
+            get
+            {
+                yield return typeof(DiscardIfNotReceivedBefore);
+                if (delayedDeliverySettings != null && delayedDeliverySettings.TimeoutManagerDisabled)
+                {
+                    yield return typeof(DoNotDeliverBefore);
+                    yield return typeof(DelayDeliveryWith);
+                }
+            }
+        }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.TransactionMode" />
-        /// </summary>
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
-        /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureReceiveInfrastructure" />
-        /// </summary>
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
             SqlScopeOptions scopeOptions;
@@ -75,12 +77,34 @@ namespace NServiceBus.Transport.SQLServer
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection());
 
-            Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
+            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
+            var delayedMessageStore = GetDelayedQueueTableName();
+
+            var sendInfra = ConfigureSendInfrastructure();
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressParser),
+                () =>
+                {
+                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification,  waitTimeCircuitBreaker);
+                    if (delayedDeliverySettings == null)
+                    {
+                        return pump;
+                    }
+                    var dispatcher = sendInfra.DispatcherFactory();
+                    var delayedMessageProcessor = new DelayedMessageProcessor(dispatcher, settings.LocalAddress());
+                    return new DelayedDeliveryMessagePump(pump, delayedMessageProcessor);
+                },
+                () =>
+                {
+                    var creator = new QueueCreator(connectionFactory, addressTranslator);
+                    if (delayedDeliverySettings == null)
+                    {
+                        return creator;
+                    }
+                    return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore);
+                },
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
@@ -96,24 +120,24 @@ namespace NServiceBus.Transport.SQLServer
             return SqlConnectionFactory.Default(connectionString);
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        static ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ReceiveWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
             }
 
-            return new ReceiveWithNoTransaction(connectionFactory);
+            return new ProcessWithNoTransaction(connectionFactory);
         }
 
         ExpiredMessagesPurger CreateExpiredMessagesPurger(SqlConnectionFactory connectionFactory)
@@ -124,22 +148,70 @@ namespace NServiceBus.Transport.SQLServer
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeTaskDelay, purgeBatchSize);
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSendInfrastructure" />
-        /// </summary>
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
         {
             var connectionFactory = CreateConnectionFactory();
 
-            settings.Get<EndpointInstances>().AddOrReplaceInstances("SqlServer", endpointSchemasSettings.ToEndpointInstances());
+            settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
             return new TransportSendInfrastructure(
-                () => new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory), addressParser),
+                () =>
+                {
+                    ITableBasedQueueOperationsReader queueOperationsReader = new TableBasedQueueOperationsReader(addressTranslator);
+                    if (delayedDeliverySettings != null)
+                    {
+                        queueOperationsReader = new DelayedDeliveryTableBasedQueueOperationsReader(CreateDelayedMessageTable(), queueOperationsReader);
+                    }
+                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator);
+                    return dispatcher;
+                },
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
+                    if (result.Succeeded && delayedDeliverySettings != null)
+                    {
+                        result = DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings);
+                    }
                     return Task.FromResult(result);
                 });
+        }
+
+        DelayedMessageTable CreateDelayedMessageTable()
+        {
+            var delatedQueueTableName = GetDelayedQueueTableName();
+            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, addressTranslator.Parse(settings.LocalAddress()).QualifiedTableName);
+        }
+
+        CanonicalQueueAddress GetDelayedQueueTableName()
+        {
+            if (delayedDeliverySettings == null)
+            {
+                return null;
+            }
+            if (string.IsNullOrEmpty(delayedDeliverySettings.Suffix))
+            {
+                throw new Exception("Native delayed delivery feature requires configuring a table suffix.");
+            }
+            var delayedQueueLogialAddress = settings.LogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogialAddress);
+            return addressTranslator.GetCanonicalForm(delayedQueueAddress);
+        }
+
+        public override Task Start()
+        {
+            if (delayedDeliverySettings == null)
+            {
+                return Task.FromResult(0);
+            }
+            var delayedMessageTable = CreateDelayedMessageTable();
+            delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
+            delayedMessageHandler.Start();
+            return Task.FromResult(0);
+        }
+
+        public override Task Stop()
+        {
+            return delayedMessageHandler?.Stop() ?? Task.FromResult(0);
         }
 
         /// <summary>
@@ -150,55 +222,38 @@ namespace NServiceBus.Transport.SQLServer
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.BindToLocalEndpoint" />
-        /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
-            var schemaSettings = settings.Get<EndpointSchemasSettings>();
+            var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
 
             string schema;
             if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
             {
-                schema = addressParser.DefaultSchema;
+                schema = addressTranslator.DefaultSchema;
             }
-
-            return instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+            var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
+            if (addressTranslator.DefaultCatalog != null)
+            {
+                result = result.SetProperty(SettingsKeys.CatalogPropertyKey, addressTranslator.DefaultCatalog);
+            }
+            return result;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ToTransportAddress" />
-        /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
-            var nonEmptyParts = new[]
-            {
-                logicalAddress.EndpointInstance.Endpoint,
-                logicalAddress.Qualifier,
-                logicalAddress.EndpointInstance.Discriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var tableName = string.Join(".", nonEmptyParts);
-
-            string schemaName;
-
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-            var queueAddress = new QueueAddress(tableName, schemaName);
-
-            return queueAddress.ToString();
+            return addressTranslator.Generate(logicalAddress).Value;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.MakeCanonicalForm" />
-        /// </summary>
         public override string MakeCanonicalForm(string transportAddress)
         {
-            return addressParser.Parse(transportAddress).ToString();
+            return addressTranslator.Parse(transportAddress).Address;
         }
 
-        QueueAddressParser addressParser;
+        QueueAddressTranslator addressTranslator;
         string connectionString;
         SettingsHolder settings;
-        EndpointSchemasSettings endpointSchemasSettings;
+        EndpointSchemaAndCatalogSettings schemaAndCatalogSettings;
+        DelayedMessageHandler delayedMessageHandler;
+        DelayedDeliverySettings delayedDeliverySettings;
     }
 }

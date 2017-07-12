@@ -44,7 +44,10 @@
 
         static void ValidateConnectionPool(string connectionString)
         {
-            if (hasValidated) return;
+            if (hasValidated)
+            {
+                return;
+            }
 
             var validationResult = ConnectionPoolValidator.Validate(connectionString);
             if (!validationResult.IsValid)

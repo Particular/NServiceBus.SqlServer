@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Configuration.AdvanceExtensibility;
+    using Features;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -16,7 +17,8 @@
         /// </summary>
         public static TransportExtensions<SqlServerTransport> DefaultSchema(this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
-            Guard.AgainstNullAndEmpty("schemaName", schemaName);
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
 
             transportExtensions.GetSettings().Set(SettingsKeys.DefaultSchemaSettingsKey, schemaName);
 
@@ -29,15 +31,15 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
             Guard.AgainstNullAndEmpty(nameof(schema), schema);
 
-            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemasSettings>();
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
-            schemasConfiguration.AddOrUpdate(endpointName, schema);
+            schemasConfiguration.SpecifySchema(endpointName, schema);
 
             return transportExtensions;
         }
@@ -48,15 +50,61 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNullAndEmpty(nameof(queueName), queueName);
             Guard.AgainstNullAndEmpty(nameof(schema), schema);
 
-            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<TableSchemasSettings>();
+            var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<QueueSchemaAndCatalogSettings>();
 
-            schemasConfiguration.AddOrUpdate(queueName, schema);
+            schemasConfiguration.SpecifySchema(queueName, schema);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies custom schema for given endpoint.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="endpointName">Endpoint name.</param>
+        /// <param name="catalog">Custom catalog value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(endpointName), endpointName);
+            Guard.AgainstNullAndEmpty(nameof(catalog), catalog);
+
+            var settings = transportExtensions.GetSettings();
+
+            settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+            var schemasConfiguration = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
+
+            schemasConfiguration.SpecifyCatalog(endpointName, catalog);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
+        /// Specifies custom schema for given queue.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="catalog">Custom catalog value.</param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(queueName), queueName);
+            Guard.AgainstNullAndEmpty(nameof(catalog), catalog);
+
+            var settings = transportExtensions.GetSettings();
+
+            settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+            var schemasConfiguration = settings.GetOrCreate<QueueSchemaAndCatalogSettings>();
+
+            schemasConfiguration.SpecifyCatalog(queueName, catalog);
 
             return transportExtensions;
         }
@@ -70,6 +118,9 @@
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
+
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
             return transportExtensions;
         }
@@ -81,7 +132,8 @@
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
         {
-            Guard.AgainstNull("sqlConnectionFactory", sqlConnectionFactory);
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
 
             transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
 
@@ -97,6 +149,8 @@
         /// </remarks>
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
             return transportExtensions;
         }
@@ -106,13 +160,30 @@
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="delay">The delay value</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+
             transportExtensions.GetSettings().Set<QueuePeekerOptions>(new QueuePeekerOptions(delay));
             return transportExtensions;
         }
 
+        /// <summary>
+        /// Enables native delayed delivery.
+        /// </summary>
+        public static DelayedDeliverySettings UseNativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            var sendOnlyEndpoint = transportExtensions.GetSettings().GetOrDefault<bool>("Endpoint.SendOnly");
+            if (sendOnlyEndpoint)
+            {
+                throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+            }
+            var settings = new DelayedDeliverySettings();
+            transportExtensions.GetSettings().Set<DelayedDeliverySettings>(settings);
+            transportExtensions.GetSettings().EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
+            return settings;
+        }
+        
         /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
@@ -121,6 +192,7 @@
         [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode has been deprecated and is no longer a recommended model of deployment. Please refer to documentation for more details.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
             Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
 
             transportExtensions.GetSettings().Set(SettingsKeys.LegacyMultiInstanceConnectionFactory, sqlConnectionFactory);

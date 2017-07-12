@@ -123,25 +123,25 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         async Task PrepareAsync()
         {
-            var addressParser = new QueueAddressParser("dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
 
             await CreateOutputQueueIfNecessary(addressParser);
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory), addressParser);
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser);
         }
 
-        Task PurgeOutputQueue(QueueAddressParser addressParser)
+        Task PurgeOutputQueue(QueueAddressTranslator addressParser)
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressParser.Parse(validAddress);
-            queue = new TableBasedQueue(queueAddress);
+            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address);
 
             return purger.Purge(queue);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressParser addressParser)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
             var queueBindings = new QueueBindings();

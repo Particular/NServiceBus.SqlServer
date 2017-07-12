@@ -3,7 +3,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Support;
+    using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -11,21 +11,19 @@
     public class When_ReplyTo_address_does_not_exist : NServiceBusAcceptanceTest
     {
         [Test]
-        public void Should_throw()
+        public async Task Should_throw()
         {
-            var exception = Assert.ThrowsAsync<MessagesFailedException>(async () =>
-                await Scenario.Define<Context>()
+            var ctx = await Scenario.Define<Context>()
                     .WithEndpoint<Attacker>(b => b.When(session => session.SendLocal(new StartCommand())))
-                    .WithEndpoint<Victim>()
+                    .WithEndpoint<Victim>(b => b.DoNotFailOnErrorMessages())
                     .Done(c => c.FailedMessages.Any())
-                    .Run());
+                    .Run();
 
-            Assert.That(exception.FailedMessages, Has.Count.EqualTo(1));
+            Assert.That(ctx.FailedMessages, Has.Count.EqualTo(1));
 
-            var failedMessage = exception.FailedMessages.Single();
+            var failedMessage = ctx.FailedMessages.Single();
 
-            Assert.That(failedMessage.Exception.Message, Contains.Substring("Failed to send message to"));
-            Assert.That(failedMessage.Exception.Message, Contains.Substring("error]] VALUES(NEWID(), NULL, NULL, 1, NULL, '', NULL); DROP TABLE [Victim]]; INSERT INTO [error"));
+            Assert.That(failedMessage.Value.First().Exception.Message, Contains.Substring("Failed to send message to"));
         }
 
         class Context : ScenarioContext
@@ -36,8 +34,12 @@
         {
             public Attacker()
             {
-                EndpointSetup<DefaultServer>(b => b.OverridePublicReturnAddress("error] VALUES(NEWID(), NULL, NULL, 1, NULL, '', NULL); DROP TABLE [Victim]; INSERT INTO [error"))
-                    .AddMapping<AttackCommand>(typeof(Victim));
+                EndpointSetup<DefaultServer>(b =>
+                {
+                    b.OverridePublicReturnAddress("error] VALUES(NEWID(), NULL, NULL, 1, NULL, '', NULL); DROP TABLE [Victim]; INSERT INTO [error");
+                    var routing = b.ConfigureTransport().Routing();
+                    routing.RouteToEndpoint(typeof(AttackCommand), Conventions.EndpointNamingConvention(typeof(Victim)));
+                });
             }
 
             class StartHandler : IHandleMessages<StartCommand>

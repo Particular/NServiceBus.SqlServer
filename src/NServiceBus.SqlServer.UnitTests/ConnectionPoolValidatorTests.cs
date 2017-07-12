@@ -31,14 +31,6 @@
         }
 
         [Test]
-        public void Is_not_validated_when_only_max_pool_size_is_specified()
-        {
-            var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Max Pool Size = 200");
-
-            Assert.IsFalse(result.IsValid);
-        }
-
-        [Test]
         public void Is_not_validated_when_pooling_is_enabled_and_no_min_and_max_is_set()
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = true");

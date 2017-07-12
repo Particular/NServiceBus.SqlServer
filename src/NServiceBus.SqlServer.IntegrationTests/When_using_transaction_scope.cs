@@ -38,7 +38,7 @@
         }
 
         [Test]
-        public async Task Transaction_shared_with_nhiberante_persistence_should_not_escalate_to_dtc()
+        public async Task Transaction_shared_with_nhibernate_persistence_should_not_escalate_to_dtc()
         {
             var options = new SendOptions();
             options.SetMessageId(context.Id.ToString());

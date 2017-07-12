@@ -12,9 +12,9 @@
     public class When_custom_schema_configured_for_publisher : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_receive_event()
+        public Task Should_receive_event()
         {
-            await Scenario.Define<Context>()
+            return Scenario.Define<Context>()
                 .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
                 .WithEndpoint<Subscriber>()
                 .Done(c => c.EventReceived)
