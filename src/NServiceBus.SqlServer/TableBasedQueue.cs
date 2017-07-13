@@ -203,19 +203,24 @@ namespace NServiceBus.Transports.SQLServer
             }
         }
 
-        public void LogWarningWhenIndexIsMissing(SqlConnection connection)
+        public bool CheckExpiresIndexPresence(SqlConnection connection)
         {
             var commandText = string.Format(SqlCheckIfExpiresIndexIsPresent, ExpiresIndexName, this.schema, this.tableName);
 
             using (var command = new SqlCommand(commandText, connection))
             {
                 var rowsCount = (int) command.ExecuteScalar();
+                return rowsCount > 0;
+            }
+        }
 
-                if (rowsCount == 0)
-                {
-                    Logger.Warn($@"Table {schema}.{tableName} does not contain index '{ExpiresIndexName}'.
-Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
-                }
+        public string CheckHeadersColumnType(SqlConnection connection)
+        {
+            var commandText = string.Format(SqlCheckHeaderColumnType, this.schema, this.tableName);
+
+            using (var command = new SqlCommand(commandText, connection))
+            {
+                return (string)command.ExecuteScalar();
             }
         }
 
@@ -239,7 +244,7 @@ Adding this index will speed up the process of purging expired messages from the
             SqlDbType.VarChar,
             SqlDbType.Bit,
             SqlDbType.Int,
-            SqlDbType.VarChar,
+            SqlDbType.NVarChar,
             SqlDbType.VarBinary
         };
 
@@ -260,6 +265,13 @@ Adding this index will speed up the process of purging expired messages from the
             @"SELECT COUNT(*) FROM [sys].[indexes] WHERE [name] = '{0}' AND [object_id] = OBJECT_ID('{1}.{2}')";
 
         const string ExpiresIndexName = "Index_Expires";
+
+        const string SqlCheckHeaderColumnType = 
+@"SELECT t.name
+FROM sys.columns c
+INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
+WHERE c.object_id = OBJECT_ID('{0}.{1}')
+    AND c.name = 'Headers'";
 
         const int IdColumn = 0;
         const int CorrelationIdColumn = 1;

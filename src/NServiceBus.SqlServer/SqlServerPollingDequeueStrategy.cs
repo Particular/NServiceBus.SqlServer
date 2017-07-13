@@ -5,6 +5,7 @@
     using CircuitBreakers;
     using Janitor;
     using NServiceBus.Features;
+    using NServiceBus.Transport.SQLServer;
     using Unicast.Transport;
 
     /// <summary>
@@ -55,16 +56,20 @@
             var primaryQueue = new TableBasedQueue(primaryAddress, locaConnectionParams.Schema);
             primaryReceiver = new AdaptivePollingReceiver(receiveStrategy, primaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
 
+            var schemaInspector = new SchemaInspector(() => connectionFactory.OpenNewConnection(locaConnectionParams.ConnectionString));
+            schemaInspector.PerformInspection(primaryQueue);
+
             if (secondaryReceiveSettings.IsEnabled)
             {
                 var secondaryQueue = new TableBasedQueue(SecondaryReceiveSettings.ReceiveQueue.GetTableName(), locaConnectionParams.Schema);
                 secondaryReceiver = new AdaptivePollingReceiver(receiveStrategy, secondaryQueue, endProcessMessage, circuitBreaker, transportNotifications);
+                schemaInspector.PerformInspection(secondaryQueue);
             }
             else
             {
                 secondaryReceiver = new NullExecutor();
             }
-
+            
             expiredMessagesPurger = new ExpiredMessagesPurger(primaryQueue, () => connectionFactory.OpenNewConnection(locaConnectionParams.ConnectionString), purgeExpiredMessagesParams);
         }
 

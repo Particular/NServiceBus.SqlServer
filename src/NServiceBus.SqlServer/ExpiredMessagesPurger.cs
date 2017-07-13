@@ -7,7 +7,7 @@
 
     class ExpiredMessagesPurger : IExecutor
     {
- static readonly ILog Logger = LogManager.GetLogger(typeof(ExpiredMessagesPurger));
+        static readonly ILog Logger = LogManager.GetLogger(typeof(ExpiredMessagesPurger));
 
         readonly TableBasedQueue queue;
         readonly Func<SqlConnection> openConnection;
@@ -25,8 +25,6 @@
 
         public void Start(int maximumConcurrency, CancellationToken token)
         {
-            LogWarningWhenIndexIsMissing();
-
             this.token = token;
             purgeTaskTimer = new Timer(PurgeExpiredMessagesCallback, null, TimeSpan.Zero, Timeout.InfiniteTimeSpan);
         }
@@ -37,21 +35,6 @@
             {
                 purgeTaskTimer.Dispose(waitHandle);
                 waitHandle.WaitOne();
-            }
-        }
-
-        void LogWarningWhenIndexIsMissing()
-        {
-            try
-            {
-                using (var connection = openConnection())
-                {
-                    queue.LogWarningWhenIndexIsMissing(connection);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
 
