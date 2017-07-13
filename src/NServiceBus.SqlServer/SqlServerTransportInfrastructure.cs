@@ -73,13 +73,14 @@ namespace NServiceBus.Transport.SQLServer
 
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
+            var schemaInspector = new SchemaInspector(_ => connectionFactory.OpenNewConnection());
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
 
             Func<QueueAddress, TableBasedQueue> queueFactory = qa => new TableBasedQueue(qa);
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, addressParser, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaInspector, addressParser, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressParser),
                 () => Task.FromResult(StartupCheckResult.Success));
         }
