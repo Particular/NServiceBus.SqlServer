@@ -155,10 +155,6 @@ namespace NServiceBus.Transport.SQLServer
             {
                 var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
-                //if (rowsCount == 0)
-                //{
-                //    Logger.WarnFormat(@"Table {0}.{1} does not contain index '{2}'." + Environment.NewLine + "Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.", schemaName, tableName, Sql.ExpiresIndexName);
-                //}
             }
         }
 
