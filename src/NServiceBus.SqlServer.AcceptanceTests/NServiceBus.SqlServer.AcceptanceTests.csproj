@@ -216,6 +216,7 @@
     <Compile Include="When_receiving_a_poison_message.cs" />
     <Compile Include="When_sharing_the_receive_connection.cs" />
     <Compile Include="When_publishing_an_event_with_the_subscriber_scaled_out.cs" />
+    <Compile Include="When_using_unicode_characters_in_headers.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj">

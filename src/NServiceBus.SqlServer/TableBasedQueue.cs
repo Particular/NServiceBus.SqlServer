@@ -239,7 +239,7 @@ Adding this index will speed up the process of purging expired messages from the
             SqlDbType.VarChar,
             SqlDbType.Bit,
             SqlDbType.Int,
-            SqlDbType.VarChar,
+            SqlDbType.NVarChar,
             SqlDbType.VarBinary
         };
 
