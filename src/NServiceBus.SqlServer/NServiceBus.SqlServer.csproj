@@ -111,6 +111,7 @@
     <Compile Include="ReceiveRampUpController.cs" />
     <Compile Include="ReceiveResult.cs" />
     <Compile Include="ReceiveStrategyFactory.cs" />
+    <Compile Include="SchemaInspector.cs" />
     <Compile Include="TaskTracker.cs" />
     <Compile Include="SecondaryReceiveConfiguration.cs" />
     <Compile Include="SecondaryReceiveSettings.cs" />

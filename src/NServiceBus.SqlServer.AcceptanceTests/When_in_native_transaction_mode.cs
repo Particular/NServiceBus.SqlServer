@@ -57,15 +57,16 @@ namespace NServiceBus.SqlServer.AcceptanceTests
         }
 
         [Test]
-        public void When_multi_schema_via_configuration_it_starts()
+        public void When_multi_schema_via_configuration_it_fails()
         {
+            //Fails because there are multiple connection strings at play
             var context = new Context();
             Scenario.Define(context)
                    .WithEndpoint<Receiver>(b => b.CustomConfig(c => AddConnectionString("NServiceBus/Transport/OtherEndpoint", OtherSchemaConnectionString)))
                    .Done(c => true)
                    .Run();
 
-            Assert.IsNull(context.Exceptions);
+            StringAssert.Contains(ExceptionText, context.Exceptions);
         }
 
         [Test]
