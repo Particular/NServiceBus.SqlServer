@@ -109,7 +109,7 @@ namespace NServiceBus.Transport.SQLServer
 
         static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
         {
-            return transportTransaction.TryGet(ReceiveWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
+            return transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
         }
 
         SqlConnectionFactory connectionFactory;

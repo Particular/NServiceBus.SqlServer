@@ -77,6 +77,7 @@ namespace NServiceBus.Transport.SQLServer
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection());
 
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
@@ -86,7 +87,7 @@ namespace NServiceBus.Transport.SQLServer
             return new TransportReceiveInfrastructure(
                 () =>
                 {
-                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, waitTimeCircuitBreaker);
+                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification,  waitTimeCircuitBreaker);
                     if (delayedDeliverySettings == null)
                     {
                         return pump;
@@ -123,20 +124,20 @@ namespace NServiceBus.Transport.SQLServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ReceiveWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000));
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ReceiveWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), transactionForReceiveOnly: true);
             }
 
-            return new ReceiveWithNoTransaction(connectionFactory);
+            return new ProcessWithNoTransaction(connectionFactory);
         }
 
         ExpiredMessagesPurger CreateExpiredMessagesPurger(SqlConnectionFactory connectionFactory)

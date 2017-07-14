@@ -22,11 +22,12 @@
             var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
 
             var pump = new MessagePump(
-                m => new ReceiveWithNoTransaction(sqlConnectionFactory),
+                m => new ProcessWithNoTransaction(sqlConnectionFactory),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
+                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()), 
                 TimeSpan.MaxValue);
 
             await pump.Init(

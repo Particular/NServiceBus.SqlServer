@@ -8,7 +8,7 @@
     public class DelayedDeliverySettings
     {
         internal string Suffix = "Delayed";
-        internal TimeSpan Interval;
+        internal TimeSpan Interval = TimeSpan.FromSeconds(1);
         internal bool TimeoutManagerDisabled;
         internal int MatureBatchSize = 100;
         

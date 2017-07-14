@@ -57,6 +57,7 @@
             var queuePeeker = new LegacyQueuePeeker(connectionFactory, peekerOptions);
 
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(queue.Name));
 
             SqlScopeOptions scopeOptions;
             if (!settings.TryGet(out scopeOptions))
@@ -78,13 +79,13 @@
                         throw new Exception("Legacy multiinstance mode is supported only with TransportTransactionMode=TransactionScope");
                     }
 
-                    return new LegacyReceiveWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
+                    return new LegacyProcessWithTransactionScope(scopeOptions.TransactionOptions, connectionFactory, new FailureInfoStorage(1000));
                 };
 
             Func<string, TableBasedQueue> queueFactory = x => new TableBasedQueue(addressTranslator.Parse(x).QualifiedTableName, x);
 
             return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, waitTimeCircuitBreaker),
+                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),
                 () => new LegacyQueueCreator(connectionFactory, addressTranslator),
                 () => Task.FromResult(StartupCheckResult.Success));
         }

@@ -133,7 +133,7 @@ CREATE TABLE {0} (
     ReplyToAddress varchar(255),
     Recoverable bit NOT NULL,
     Expires datetime,
-    Headers varchar(max) NOT NULL,
+    Headers nvarchar(max) NOT NULL,
     Body varbinary(max),
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
@@ -203,6 +203,13 @@ SELECT COUNT(*)
 FROM sys.indexes
 WHERE name = 'Index_Expires'
     AND object_id = OBJECT_ID('{0}')";
+
+        public static readonly string CheckHeadersColumnType = @"
+SELECT t.name
+FROM sys.columns c
+INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
+WHERE c.object_id = OBJECT_ID('{0}') 
+    AND c.name = 'Headers'";
 
     }
 }

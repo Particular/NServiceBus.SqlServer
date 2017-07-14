@@ -10,13 +10,14 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
             this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
+            this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
 
@@ -46,7 +47,7 @@
                 }
             }
 
-            await expiredMessagesPurger.Initialize(inputQueue).ConfigureAwait(false);
+            await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
         public void Start(PushRuntimeSettings limitations)
@@ -219,6 +220,7 @@
         Func<string, TableBasedQueue> queueFactory;
         ExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
+        SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
         ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;
