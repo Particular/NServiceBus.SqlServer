@@ -78,6 +78,7 @@
     <Compile Include="App_Packages\NSB.TransportTests.6.1.2\When_user_aborts_processing.cs" />
     <Compile Include="App_Packages\NSB.TransportTests.6.1.2\When_using_non_durable_delivery.cs" />
     <Compile Include="ConfigureSqlServerTransportInfrastructure.cs" />
+    <Compile Include="When_using_unicode_characters_in_headers.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
