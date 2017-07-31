@@ -49,7 +49,7 @@
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
             }
         }
-        
+
         protected override async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
             using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.Name).ConfigureAwait(false))

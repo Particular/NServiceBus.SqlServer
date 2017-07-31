@@ -27,11 +27,10 @@
             using (var connection = await sqlConnectionFactory.OpenNewConnection())
             {
                 var type = await queue.CheckHeadersColumnType(connection);
-                
                 Assert.AreEqual("nvarchar", type);
             }
         }
-        
+
         static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
 
         static async Task ResetQueue(QueueAddressTranslator addressTranslator)

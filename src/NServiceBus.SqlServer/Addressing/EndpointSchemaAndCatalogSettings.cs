@@ -15,7 +15,7 @@
         {
             catalogs[endpointName] = catalog;
         }
-        
+
         public bool TryGet(string endpointName, out string schema)
         {
             return schemas.TryGetValue(endpointName, out schema);

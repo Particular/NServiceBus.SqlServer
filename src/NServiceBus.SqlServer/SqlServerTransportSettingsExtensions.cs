@@ -183,7 +183,7 @@
             transportExtensions.GetSettings().EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
             return settings;
         }
-        
+
         /// <summary>
         /// Enables multi-instance mode.
         /// </summary>

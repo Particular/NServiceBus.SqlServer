@@ -23,7 +23,7 @@
             return ValidationCheckResult.Valid();
         }
 
-        const string ConnectionPoolSizeNotSet = 
+        const string ConnectionPoolSizeNotSet =
             "Maximum connection pooling value (Max Pool Size=N) is not " +
             "configured on the provided connection string. The default value (100) will be used.";
     }
