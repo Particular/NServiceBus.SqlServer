@@ -19,8 +19,7 @@ namespace NServiceBus.Transport.SQLServer
         public Func<SqlConnection, SqlTransaction, Task> Get(UnicastTransportOperation operation)
         {
             var behavior = GetDueTime(operation);
-            DiscardIfNotReceivedBefore discardIfNotReceivedBefore;
-            TryGetConstraint(operation, out discardIfNotReceivedBefore);
+            TryGetConstraint(operation, out DiscardIfNotReceivedBefore discardIfNotReceivedBefore);
             if (behavior.Defer)
             {
                 // align with TimeoutManager behavior
@@ -36,19 +35,16 @@ namespace NServiceBus.Transport.SQLServer
 
         static DispatchBehavior GetDueTime(UnicastTransportOperation operation)
         {
-            DoNotDeliverBefore doNotDeliverBefore;
-            DelayDeliveryWith delayDeliveryWith;
-            if (TryGetConstraint(operation, out doNotDeliverBefore))
+            if (TryGetConstraint(operation, out DoNotDeliverBefore doNotDeliverBefore))
             {
                 return DispatchBehavior.Deferred(doNotDeliverBefore.At, operation.Destination);
             }
-            if (TryGetConstraint(operation, out delayDeliveryWith))
+            if (TryGetConstraint(operation, out DelayDeliveryWith delayDeliveryWith))
             {
                 return DispatchBehavior.Deferred(DateTime.UtcNow + delayDeliveryWith.Delay, operation.Destination);
             }
-            string expireString;
             var headers = operation.Message.Headers;
-            if (headers.TryGetValue(TimeoutManagerHeaders.Expire, out expireString))
+            if (headers.TryGetValue(TimeoutManagerHeaders.Expire, out var expireString))
             {
                 var expirationTime = DateTimeExtensions.ToUtcDateTime(expireString);
                 var destination = headers[TimeoutManagerHeaders.RouteExpiredTimeoutTo];

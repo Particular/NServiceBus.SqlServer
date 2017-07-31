@@ -17,8 +17,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public Func<SqlConnection, SqlTransaction, Task> Get(UnicastTransportOperation operation)
         {
-            DiscardIfNotReceivedBefore discardIfNotReceivedBefore;
-            TryGetConstraint(operation, out discardIfNotReceivedBefore);
+            TryGetConstraint(operation, out DiscardIfNotReceivedBefore discardIfNotReceivedBefore);
 
             var address = addressTranslator.Parse(operation.Destination);
             var key = Tuple.Create(address.QualifiedTableName, address.Address);

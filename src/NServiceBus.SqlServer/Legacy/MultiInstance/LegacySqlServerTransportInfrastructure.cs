@@ -45,8 +45,7 @@
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
-            QueuePeekerOptions peekerOptions;
-            if (!settings.TryGet(out peekerOptions))
+            if (!settings.TryGet(out QueuePeekerOptions peekerOptions))
             {
                 peekerOptions = new QueuePeekerOptions();
             }
@@ -59,14 +58,12 @@
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(queue.Name));
 
-            SqlScopeOptions scopeOptions;
-            if (!settings.TryGet(out scopeOptions))
+            if (!settings.TryGet(out SqlScopeOptions scopeOptions))
             {
                 scopeOptions = new SqlScopeOptions();
             }
 
-            TimeSpan waitTimeCircuitBreaker;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
@@ -127,8 +124,7 @@
         {
             var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
 
-            string schema;
-            if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
+            if (schemaSettings.TryGet(instance.Endpoint, out var schema) == false)
             {
                 schema = addressTranslator.DefaultSchema;
             }

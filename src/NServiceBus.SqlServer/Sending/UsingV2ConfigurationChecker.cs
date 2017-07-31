@@ -11,8 +11,7 @@
         {
             var connectionSettings = ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>().ToList();
 
-            string message;
-            var validationPassed = new ConnectionStringsValidator().TryValidate(connectionSettings, out message);
+            var validationPassed = new ConnectionStringsValidator().TryValidate(connectionSettings, out var message);
 
             if (validationPassed == false)
             {

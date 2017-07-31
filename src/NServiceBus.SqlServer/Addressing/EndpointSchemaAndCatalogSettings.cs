@@ -31,12 +31,11 @@
         Dictionary<string, string> GetProperties(string endpoint)
         {
             var result = new Dictionary<string, string>();
-            string schema, catalog;
-            if (schemas.TryGetValue(endpoint, out schema))
+            if (schemas.TryGetValue(endpoint, out var schema))
             {
                 result[SettingsKeys.SchemaPropertyKey] = schema;
             }
-            if (catalogs.TryGetValue(endpoint, out catalog))
+            if (catalogs.TryGetValue(endpoint, out var catalog))
             {
                 result[SettingsKeys.CatalogPropertyKey] = catalog;
             }

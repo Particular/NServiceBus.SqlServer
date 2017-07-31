@@ -42,8 +42,7 @@
             var tableName = address.Substring(0, firstAtIndex);
             address = firstAtIndex + 1 < address.Length ? address.Substring(firstAtIndex + 1) : string.Empty;
 
-            string schemaName;
-            address = ExtractNextPart(address, out schemaName);
+            address = ExtractNextPart(address, out var schemaName);
 
             string catalogName = null;
 

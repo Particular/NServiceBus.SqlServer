@@ -26,9 +26,7 @@ namespace NServiceBus
 
         static bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
         {
-            Func<string, Task<SqlConnection>> legacyModeTurnedOn;
-
-            var legacyMode = settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out legacyModeTurnedOn);
+            var legacyMode = settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out Func<string, Task<SqlConnection>> _);
             if (legacyMode && settings.HasSetting(SettingsKeys.MultiCatalogEnabled))
             {
                 throw new Exception("Multi-catalog configuration is not supported in legacy multi instance mode. Please configure each catalog using a separate connection string.");
@@ -41,8 +39,7 @@ namespace NServiceBus
         /// </summary>
         public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
-            string defaultSchemaOverride;
-            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
+            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
 
             if (LegacyMultiInstanceModeTurnedOn(settings))
@@ -60,8 +57,7 @@ namespace NServiceBus
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
         {
-            Func<Task<SqlConnection>> factoryOverride;
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 using (var connection = factoryOverride().GetAwaiter().GetResult())
                 {
@@ -76,8 +72,7 @@ namespace NServiceBus
             {
                 ConnectionString = connectionString
             };
-            object catalog;
-            if (!parser.TryGetValue("Initial Catalog", out catalog) && !parser.TryGetValue("database", out catalog))
+            if (!parser.TryGetValue("Initial Catalog", out var catalog) && !parser.TryGetValue("database", out catalog))
             {
                 throw new Exception("Initial Catalog property is mandatory in the connection string.");
             }

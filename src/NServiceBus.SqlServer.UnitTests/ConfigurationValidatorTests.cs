@@ -10,12 +10,11 @@
     {
         Result Validate(params ConnectionStringSettings[] settings)
         {
-            string message;
             return new Result
-                {
-                    Success = new ConnectionStringsValidator().TryValidate(settings.ToList(), out message),
-                    Message = message
-                };
+            {
+                Success = new ConnectionStringsValidator().TryValidate(settings.ToList(), out var message),
+                Message = message
+            };
         }
 
         [Test]

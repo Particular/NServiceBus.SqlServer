@@ -29,8 +29,7 @@
         {
             var sqlAddress = QueueAddress.Parse(physicalAddress);
 
-            string specifiedSchema, _;
-            queueSettings.TryGet(sqlAddress.Table, out specifiedSchema, out _); //we ignore catalog
+            queueSettings.TryGet(sqlAddress.Table, out var specifiedSchema, out var _); //we ignore catalog
 
             var schema = specifiedSchema ?? sqlAddress.Schema ?? DefaultSchema;
 
@@ -48,13 +47,12 @@
 
             var tableName = string.Join(".", nonEmptyParts);
 
-            string schemaName;
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out var schemaName);
             var queueAddress = new QueueAddress(tableName, schemaName, null);
             return queueAddress;
         }
-        
+
         QueueSchemaAndCatalogSettings queueSettings;
         ConcurrentDictionary<string, LegacyCanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, LegacyCanonicalQueueAddress>();
         ConcurrentDictionary<LogicalAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<LogicalAddress, QueueAddress>();
