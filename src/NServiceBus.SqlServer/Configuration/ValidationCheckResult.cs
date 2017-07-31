@@ -18,7 +18,7 @@ namespace NServiceBus.Transport.SQLServer
             return new ValidationCheckResult(false, message);
         }
 
-        public bool IsValid { get; private set; }
-        public string Message { get; private set; }
+        public bool IsValid { get; }
+        public string Message { get; }
     }
 }
