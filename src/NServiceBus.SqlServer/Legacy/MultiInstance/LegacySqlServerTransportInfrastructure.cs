@@ -15,25 +15,16 @@
         {
             this.addressTranslator = addressTranslator;
             this.settings = settings;
-            this.schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
+            schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.DeliveryConstraints" />
-        /// </summary>
         public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
         {
             typeof(DiscardIfNotReceivedBefore)
         };
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.TransactionMode" />
-        /// </summary>
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
-        /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()
@@ -109,17 +100,11 @@
                 });
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.BindToLocalEndpoint" />
-        /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
             var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
@@ -133,17 +118,11 @@
             return result;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ToTransportAddress" />
-        /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             return addressTranslator.Generate(logicalAddress).Value;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.MakeCanonicalForm" />
-        /// </summary>
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressTranslator.Parse(transportAddress).Address;

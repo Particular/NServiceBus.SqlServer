@@ -210,9 +210,6 @@ namespace NServiceBus.Transport.SQLServer
             return delayedMessageHandler?.Stop() ?? Task.FromResult(0);
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
