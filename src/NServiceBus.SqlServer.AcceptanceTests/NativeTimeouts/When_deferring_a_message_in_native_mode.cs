@@ -59,7 +59,6 @@
             }
         }
 
-        
         public class MyMessage : IMessage
         {
         }

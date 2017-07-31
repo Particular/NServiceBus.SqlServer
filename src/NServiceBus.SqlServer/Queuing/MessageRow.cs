@@ -84,12 +84,11 @@
 
         static T TryGetHeaderValue<T>(Dictionary<string, string> headers, string name, Func<string, T> conversion)
         {
-            string text;
-            if (!headers.TryGetValue(name, out text))
+            if (headers.TryGetValue(name, out var text))
             {
-                return default(T);
+                return conversion(text);
             }
-            return conversion(text);
+            return default(T);
         }
 
         static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex)

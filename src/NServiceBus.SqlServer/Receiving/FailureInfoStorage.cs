@@ -17,8 +17,7 @@
         {
             lock (lockObject)
             {
-                FailureInfoNode node;
-                if (failureInfoPerMessage.TryGetValue(messageId, out node))
+                if (failureInfoPerMessage.TryGetValue(messageId, out var node))
                 {
                     // We have seen this message before, just update the counter and store exception.
                     node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception));
@@ -53,15 +52,13 @@
         {
             lock (lockObject)
             {
-                FailureInfoNode node;
-                if (!failureInfoPerMessage.TryGetValue(messageId, out node))
+                if (failureInfoPerMessage.TryGetValue(messageId, out var node))
                 {
-                    processingFailureInfo = null;
-                    return false;
+                    processingFailureInfo = node.FailureInfo;
+                    return true;
                 }
-                processingFailureInfo = node.FailureInfo;
-
-                return true;
+                processingFailureInfo = null;
+                return false;
             }
         }
 

@@ -160,9 +160,8 @@ public class EndpointFacade : MarshalByRefObject, IEndpointFacade, IEndpointConf
         {
             next();
 
-            string intent;
 
-            if (context.PhysicalMessage.Headers.TryGetValue(Headers.MessageIntent, out intent) && intent == "Subscribe")
+            if (context.PhysicalMessage.Headers.TryGetValue(Headers.MessageIntent, out var intent) && intent == "Subscribe")
             {
                 SubscriptionStore.Increment();
             }

@@ -5,7 +5,7 @@
     [Serializable]
     public class EndpointDefinition
     {
-        public string Name { get; private set; }
+        public string Name { get; }
         public string MachineName { get; set; }
 
         public EndpointDefinition(string name)

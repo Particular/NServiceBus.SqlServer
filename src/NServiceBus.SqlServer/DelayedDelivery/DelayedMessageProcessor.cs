@@ -15,8 +15,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<bool> Handle(MessageContext context)
         {
-            string forwardDestination;
-            context.Headers.TryGetValue(ForwardHeader, out forwardDestination);
+            context.Headers.TryGetValue(ForwardHeader, out var forwardDestination);
             if (forwardDestination == null)
             {
                 //This is not a delayed message. Process in local endpoint instance.

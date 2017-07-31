@@ -66,13 +66,10 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<UnicastTransportOperation> operations)
         {
-            SqlConnection sqlTransportConnection;
-            SqlTransaction sqlTransportTransaction;
-            Transaction ambientTransaction;
 
-            transportTransaction.TryGet(out sqlTransportConnection);
-            transportTransaction.TryGet(out sqlTransportTransaction);
-            transportTransaction.TryGet(out ambientTransaction);
+            transportTransaction.TryGet(out SqlConnection sqlTransportConnection);
+            transportTransaction.TryGet(out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
             {
@@ -98,11 +95,9 @@ namespace NServiceBus.Transport.SQLServer
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            SqlTransaction nativeTransaction;
-            transportTransaction.TryGet(out nativeTransaction);
+            transportTransaction.TryGet(out SqlTransaction nativeTransaction);
 
-            Transaction ambientTransaction;
-            transportTransaction.TryGet(out ambientTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;
         }

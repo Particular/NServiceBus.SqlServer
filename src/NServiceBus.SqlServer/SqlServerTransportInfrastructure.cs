@@ -50,20 +50,17 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
-            SqlScopeOptions scopeOptions;
-            if (!settings.TryGet(out scopeOptions))
+            if (!settings.TryGet(out SqlScopeOptions scopeOptions))
             {
                 scopeOptions = new SqlScopeOptions();
             }
 
-            TimeSpan waitTimeCircuitBreaker;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
 
-            QueuePeekerOptions queuePeekerOptions;
-            if (!settings.TryGet(out queuePeekerOptions))
+            if (!settings.TryGet(out QueuePeekerOptions queuePeekerOptions))
             {
                 queuePeekerOptions = new QueuePeekerOptions();
             }
@@ -110,9 +107,8 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-            Func<Task<SqlConnection>> factoryOverride;
 
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 return new SqlConnectionFactory(factoryOverride);
             }
@@ -214,9 +210,6 @@ namespace NServiceBus.Transport.SQLServer
             return delayedMessageHandler?.Stop() ?? Task.FromResult(0);
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
@@ -226,8 +219,7 @@ namespace NServiceBus.Transport.SQLServer
         {
             var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
 
-            string schema;
-            if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
+            if (schemaSettings.TryGet(instance.Endpoint, out var schema) == false)
             {
                 schema = addressTranslator.DefaultSchema;
             }

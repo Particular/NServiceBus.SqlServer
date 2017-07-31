@@ -69,9 +69,7 @@ namespace NServiceBus.Transport.SQLServer
                     return MessageReadResult.NoMessage;
                 }
 
-                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
-
-                return readResult;
+                return await MessageRow.Read(dataReader).ConfigureAwait(false);
             }
         }
 

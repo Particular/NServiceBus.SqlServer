@@ -13,7 +13,7 @@
         {
             catalogs[queueName] = catalog;
         }
-        
+
         public void TryGet(string queueName, out string schema, out string catalog)
         {
             schemas.TryGetValue(queueName, out schema);

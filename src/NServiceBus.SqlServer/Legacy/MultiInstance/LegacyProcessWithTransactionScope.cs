@@ -49,7 +49,7 @@
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
             }
         }
-        
+
         protected override async Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
         {
             using (var errorConnection = await connectionFactory.OpenNewConnection(ErrorQueue.Name).ConfigureAwait(false))
@@ -71,8 +71,7 @@
 
         async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
         {
-            FailureInfoStorage.ProcessingFailureInfo failure;
-            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out failure))
+            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
                 var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
 

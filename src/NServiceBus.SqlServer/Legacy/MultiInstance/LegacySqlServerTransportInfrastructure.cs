@@ -15,25 +15,16 @@
         {
             this.addressTranslator = addressTranslator;
             this.settings = settings;
-            this.schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
+            schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.DeliveryConstraints" />
-        /// </summary>
         public override IEnumerable<Type> DeliveryConstraints { get; } = new[]
         {
             typeof(DiscardIfNotReceivedBefore)
         };
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.TransactionMode" />
-        /// </summary>
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.OutboundRoutingPolicy" />
-        /// </summary>
         public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
 
         LegacySqlConnectionFactory CreateLegacyConnectionFactory()
@@ -45,8 +36,7 @@
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
-            QueuePeekerOptions peekerOptions;
-            if (!settings.TryGet(out peekerOptions))
+            if (!settings.TryGet(out QueuePeekerOptions peekerOptions))
             {
                 peekerOptions = new QueuePeekerOptions();
             }
@@ -59,14 +49,12 @@
             var expiredMessagesPurger = CreateExpiredMessagesPurger(connectionFactory);
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(queue.Name));
 
-            SqlScopeOptions scopeOptions;
-            if (!settings.TryGet(out scopeOptions))
+            if (!settings.TryGet(out SqlScopeOptions scopeOptions))
             {
                 scopeOptions = new SqlScopeOptions();
             }
 
-            TimeSpan waitTimeCircuitBreaker;
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out waitTimeCircuitBreaker))
+            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
@@ -104,7 +92,7 @@
 
             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
             return new TransportSendInfrastructure(
-                () => new LegacyMessageDispatcher(addressTranslator, connectionFactory), 
+                () => new LegacyMessageDispatcher(addressTranslator, connectionFactory),
                 () =>
                 {
                     var result = UsingV2ConfigurationChecker.Check();
@@ -112,23 +100,16 @@
                 });
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ConfigureSubscriptionInfrastructure" />
-        /// </summary>
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.BindToLocalEndpoint" />
-        /// </summary>
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
         {
             var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
 
-            string schema;
-            if (schemaSettings.TryGet(instance.Endpoint, out schema) == false)
+            if (schemaSettings.TryGet(instance.Endpoint, out var schema) == false)
             {
                 schema = addressTranslator.DefaultSchema;
             }
@@ -137,17 +118,11 @@
             return result;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.ToTransportAddress" />
-        /// </summary>
         public override string ToTransportAddress(LogicalAddress logicalAddress)
         {
             return addressTranslator.Generate(logicalAddress).Value;
         }
 
-        /// <summary>
-        /// <see cref="TransportInfrastructure.MakeCanonicalForm" />
-        /// </summary>
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressTranslator.Parse(transportAddress).Address;
