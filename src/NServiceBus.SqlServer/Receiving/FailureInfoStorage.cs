@@ -52,14 +52,13 @@
         {
             lock (lockObject)
             {
-                if (!failureInfoPerMessage.TryGetValue(messageId, out var node))
+                if (failureInfoPerMessage.TryGetValue(messageId, out var node))
                 {
-                    processingFailureInfo = null;
-                    return false;
+                    processingFailureInfo = node.FailureInfo;
+                    return true;
                 }
-                processingFailureInfo = node.FailureInfo;
-
-                return true;
+                processingFailureInfo = null;
+                return false;
             }
         }
 

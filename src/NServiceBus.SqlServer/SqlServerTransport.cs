@@ -72,11 +72,12 @@ namespace NServiceBus
             {
                 ConnectionString = connectionString
             };
-            if (!parser.TryGetValue("Initial Catalog", out var catalog) && !parser.TryGetValue("database", out catalog))
+            if (parser.TryGetValue("Initial Catalog", out var catalog) ||
+                parser.TryGetValue("database", out catalog))
             {
-                throw new Exception("Initial Catalog property is mandatory in the connection string.");
+                return (string)catalog;
             }
-            return (string)catalog;
+            throw new Exception("Initial Catalog property is mandatory in the connection string.");
         }
     }
 }

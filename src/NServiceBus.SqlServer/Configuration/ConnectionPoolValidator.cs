@@ -15,12 +15,11 @@
                 return ValidationCheckResult.Valid();
             }
 
-            if (!keys.ContainsKey("Max Pool Size"))
+            if (keys.ContainsKey("Max Pool Size"))
             {
-                return ValidationCheckResult.Invalid(ConnectionPoolSizeNotSet);
+                return ValidationCheckResult.Valid();
             }
-
-            return ValidationCheckResult.Valid();
+            return ValidationCheckResult.Invalid(ConnectionPoolSizeNotSet);
         }
 
         const string ConnectionPoolSizeNotSet =

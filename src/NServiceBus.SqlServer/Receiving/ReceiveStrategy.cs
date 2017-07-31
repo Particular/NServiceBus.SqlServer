@@ -36,13 +36,12 @@
                 return null;
             }
 
-            if (!receiveResult.Successful)
+            if (receiveResult.Successful)
             {
-                receiveCancellationTokenSource.Cancel();
-                return null;
+                return receiveResult.Message;
             }
-
-            return receiveResult.Message;
+            receiveCancellationTokenSource.Cancel();
+            return null;
         }
 
         protected virtual Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
