@@ -22,6 +22,7 @@
         public string Address { get; }
 
         public string QualifiedTableName { get; }
+        public string QuotedCatalogName => Quote(Catalog);
 
         string GetCanonicalForm()
         {
