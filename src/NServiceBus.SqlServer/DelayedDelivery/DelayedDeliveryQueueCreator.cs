@@ -27,7 +27,7 @@ namespace NServiceBus.Transport.SQLServer
         static async Task CreateDelayedMessageQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
         {
 #pragma warning disable 618
-            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.Catalog);
+            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
 #pragma warning restore 618
             using (var command = new SqlCommand(sql, connection, transaction)
             {

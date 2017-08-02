@@ -34,7 +34,7 @@ namespace NServiceBus.Transport.SQLServer
 
         static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
         {
-            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.Catalog);
+            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
