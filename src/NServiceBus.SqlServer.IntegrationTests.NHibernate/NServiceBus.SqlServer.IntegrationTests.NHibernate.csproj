@@ -4,17 +4,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="6.*" />
+    <PackageReference Include="NServiceBus" Version="7.0.0-alpharelease0051" />
     <PackageReference Include="NServiceBus.NHibernate" Version="7.2.1" />
     <PackageReference Include="NUnit" Version="3.*" />
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="System.Transactions" />
   </ItemGroup>
 </Project>

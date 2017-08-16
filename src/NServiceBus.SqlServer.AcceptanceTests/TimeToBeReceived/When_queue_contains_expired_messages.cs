@@ -5,9 +5,9 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
+    using Configuration.AdvancedExtensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
 
     public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest

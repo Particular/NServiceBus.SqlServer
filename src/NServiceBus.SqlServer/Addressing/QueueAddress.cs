@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
     using System.Text;
 
     class QueueAddress
@@ -102,25 +101,15 @@
 
         static string Quote(string name)
         {
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                return sanitizer.QuoteIdentifier(name);
-            }
+            return NameHelper.Quote(name);
         }
 
         static string SafeUnquote(string name)
         {
-            if (name == null)
-            {
-                return null;
-            }
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                var result = sanitizer.UnquoteIdentifier(name);
-                return string.IsNullOrWhiteSpace(result)
-                    ? null
-                    : result;
-            }
+            var result = NameHelper.Unquote(name);
+            return string.IsNullOrWhiteSpace(result)
+                ? null
+                : result;
         }
     }
 }

@@ -27,8 +27,6 @@ namespace NServiceBus.Transport.SQLServer
             {
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
             }
-            //HINT: this flag indicates that user need to explicitly turn outbox in configuration.
-            RequireOutboxConsent = true;
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -163,8 +161,8 @@ namespace NServiceBus.Transport.SQLServer
                 },
                 () =>
                 {
-                    var result = UsingV2ConfigurationChecker.Check();
-                    if (result.Succeeded && delayedDeliverySettings != null)
+                    var result = StartupCheckResult.Success;
+                    if (delayedDeliverySettings != null)
                     {
                         result = DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings);
                     }

@@ -1,9 +1,7 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Configuration;
     using System.Transactions;
-    using System.Transactions.Configuration;
 
     class SqlScopeOptions
     {
@@ -13,11 +11,11 @@ namespace NServiceBus.Transport.SQLServer
 
             if (requestedTimeout.HasValue)
             {
-                if (requestedTimeout.Value > GetMaxTimeout())
+                if (requestedTimeout.Value > TransactionManager.MaximumTimeout)
                 {
                     var message = "Timeout requested is longer than the maximum value for this machine. Override using the maxTimeout setting of the system.transactions section in machine.config";
 
-                    throw new ConfigurationErrorsException(message);
+                    throw new Exception(message);
                 }
 
                 timeout = requestedTimeout.Value;
@@ -31,21 +29,5 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         public TransactionOptions TransactionOptions { get; }
-
-        static TimeSpan GetMaxTimeout()
-        {
-            var systemTransactionsGroup = ConfigurationManager
-                .OpenMachineConfiguration()
-                .GetSectionGroup("system.transactions");
-
-            var machineSettings = systemTransactionsGroup?.Sections.Get("machineSettings") as MachineSettingsSection;
-
-            if (machineSettings == null)
-            {
-                //default is always 10 minutes
-                return TimeSpan.FromMinutes(10);
-            }
-            return machineSettings.MaxTimeout;
-        }
     }
 }

@@ -30,7 +30,7 @@ namespace NServiceBus.Transport.SQLServer
             var outgoingMessage = new OutgoingMessage(context.MessageId, context.Headers, context.Body);
             var transportOperation = new TransportOperation(outgoingMessage, new UnicastAddressTag(forwardDestination));
             context.Headers.Remove(ForwardHeader);
-            await dispatcher.Dispatch(new TransportOperations(transportOperation), context.TransportTransaction, context.Context).ConfigureAwait(false);
+            await dispatcher.Dispatch(new TransportOperations(transportOperation), context.TransportTransaction, context.Extensions).ConfigureAwait(false);
             return true;
         }
 
