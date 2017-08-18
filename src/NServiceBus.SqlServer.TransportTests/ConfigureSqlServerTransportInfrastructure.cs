@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,9 +19,14 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         var delayedDeliverySettings = new DelayedDeliverySettings();
         delayedDeliverySettings.TableSuffix("Delayed");
         settings.Set<DelayedDeliverySettings>(delayedDeliverySettings);
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        }
         return new TransportConfigurationResult
         {
-            TransportInfrastructure = new SqlServerTransport().Initialize(settings, ConnectionString)
+            TransportInfrastructure = new SqlServerTransport().Initialize(settings, connectionString)
         };
     }
 
@@ -29,7 +35,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         var queueBindings = settings.Get<QueueBindings>();
         var queueNames = new List<string>();
 
-        using (var conn = new SqlConnection(ConnectionString))
+        using (var conn = new SqlConnection(connectionString))
         {
             await conn.OpenAsync();
 
@@ -70,5 +76,5 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     }
 
     SettingsHolder settings;
-    const string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+    string connectionString;
 }

@@ -20,12 +20,18 @@
             configuration.EnableInstallers();
             configuration.MakeInstanceUniquelyAddressable("1");
 
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
             configuration.UseTransport<SqlServerTransport>()
                 .Transactions(TransportTransactionMode.TransactionScope)
-                .ConnectionString(ConnectionString);
+                .ConnectionString(connectionString);
 
             var persistence = configuration.UsePersistence<SqlPersistence>();
-            persistence.ConnectionBuilder(() => new SqlConnection(ConnectionString));
+            persistence.ConnectionBuilder(() => new SqlConnection(connectionString));
             persistence.SubscriptionSettings().DisableCache();
 
             context = new Context();
@@ -61,7 +67,7 @@
 
         IEndpointInstance endpoint;
         Context context;
-        const string ConnectionString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True";
+        string connectionString;
 
         public class Context
         {

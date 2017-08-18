@@ -12,6 +12,16 @@
 
     public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
     {
+        [SetUp]
+        public void SetUpConnectionString()
+        {
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
+            }
+        }
+
         [TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
@@ -41,7 +51,7 @@
         {
             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
             // TODO: Move opening SQL connection out of the method.
-            using (var connection = new SqlConnection(@"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;"))
+            using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();
                 using (var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection))
@@ -90,5 +100,7 @@
         public class Message : IMessage
         {
         }
+
+        string connectionString;
     }
 }

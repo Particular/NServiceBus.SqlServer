@@ -3,15 +3,14 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Transport.SQLServer;
 
-    public class When_custom_catalog_configured_for_endpoint : NServiceBusAcceptanceTest
+    public class When_custom_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
     {
-        static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
-        static string ReceiverConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
+        static string SenderConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
+        static string ReceiverConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
         static string ReceiverEndpoint => Conventions.EndpointNamingConvention(typeof(Receiver));
 
         [Test]

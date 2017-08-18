@@ -21,6 +21,14 @@
 
             var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
 
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            var sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
             var pump = new MessagePump(
                 m => new ProcessWithNoTransaction(sqlConnectionFactory),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
@@ -61,8 +69,6 @@
 
             throw new Exception("Condition has not been met in predefined timespan.");
         }
-
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
 
         class FakeTableBasedQueue : TableBasedQueue
         {

@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 {
+    using System;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Transport.SQLServer;
@@ -16,7 +17,15 @@
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            await ResetQueue(addressParser);
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
+            await ResetQueue(addressParser, sqlConnectionFactory);
 
             queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName);
         }
@@ -31,9 +40,9 @@
             }
         }
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+        SqlConnectionFactory sqlConnectionFactory;
 
-        static async Task ResetQueue(QueueAddressTranslator addressTranslator)
+        static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
             var queueBindings = new QueueBindings();
