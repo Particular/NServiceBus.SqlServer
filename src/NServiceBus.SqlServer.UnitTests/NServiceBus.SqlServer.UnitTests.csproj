@@ -1,21 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFrameworks>net452;netstandard2.0;netcoreapp2.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="6.*" />
-    <PackageReference Include="NUnit" Version="3.*" />
-    <PackageReference Include="ApprovalTests" Version="3.*" />
-    <PackageReference Include="ApprovalUtilities" Version="3.*" />
-    <PackageReference Include="Mono.Cecil" Version="0.9.*" />
-    <PackageReference Include="ApiApprover" Version="3.*" />
-    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Transactions" />
+    <PackageReference Include="NUnit.ApplicationDomain" Version="11.0.0" />
+    <PackageReference Include="PublicApiGenerator" Version="6.1.0-beta2" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="NServiceBus" Version="7.0.0-*" />
+    <PackageReference Include="NUnit" Version="3.7.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0-alpha1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
+    <PackageReference Include="ApprovalTests" Version="3.*" />
+    <PackageReference Include="ApprovalUtilities" Version="3.*" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
+    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestDlls/**/*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

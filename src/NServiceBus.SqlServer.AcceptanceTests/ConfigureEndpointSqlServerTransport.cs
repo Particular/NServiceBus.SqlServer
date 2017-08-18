@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Configuration.AdvanceExtensibility;
+using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
+using NServiceBus.Transport.SQLServer;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
@@ -77,8 +78,8 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         public QueueAddress(string tableName, string schemaName)
         {
-            TableName = SafeQuote(tableName);
-            SchemaName = SafeQuote(schemaName);
+            TableName = NameHelper.Quote(tableName);
+            SchemaName = NameHelper.Quote(schemaName);
         }
 
         public string TableName { get; }
@@ -121,19 +122,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
                     noRightBrackets++;
                 }
                 index++;
-            }
-        }
-
-        static string SafeQuote(string identifier)
-        {
-            if (string.IsNullOrWhiteSpace(identifier))
-            {
-                return identifier;
-            }
-
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
             }
         }
 

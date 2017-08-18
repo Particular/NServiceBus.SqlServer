@@ -93,11 +93,7 @@
             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
             return new TransportSendInfrastructure(
                 () => new LegacyMessageDispatcher(addressTranslator, connectionFactory),
-                () =>
-                {
-                    var result = UsingV2ConfigurationChecker.Check();
-                    return Task.FromResult(result);
-                });
+                () => Task.FromResult(StartupCheckResult.Success));
         }
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()

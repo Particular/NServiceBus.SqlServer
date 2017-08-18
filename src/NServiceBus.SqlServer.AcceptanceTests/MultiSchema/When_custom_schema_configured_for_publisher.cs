@@ -5,7 +5,6 @@
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NServiceBus.AcceptanceTests.Routing;
     using NUnit.Framework;
     using Transport.SQLServer;
 
