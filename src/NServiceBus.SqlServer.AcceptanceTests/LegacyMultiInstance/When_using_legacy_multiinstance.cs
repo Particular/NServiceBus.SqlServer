@@ -4,14 +4,13 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using Transport.SQLServer;
 
-    public abstract class When_using_legacy_multiinstance : NServiceBusAcceptanceTest
+    public abstract class When_using_legacy_multiinstance : MultiCatalog.MultiCatalogAcceptanceTest
     {
-        protected static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
-        static string ReceiverConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
+        protected static string SenderConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
+        static string ReceiverConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
 
         public class Sender : EndpointConfigurationBuilder
         {

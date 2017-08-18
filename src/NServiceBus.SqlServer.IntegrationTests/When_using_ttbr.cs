@@ -125,7 +125,15 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
 
-            await CreateOutputQueueIfNecessary(addressParser);
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
+            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
             await PurgeOutputQueue(addressParser);
 
@@ -141,7 +149,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             return purger.Purge(queue);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
             var queueBindings = new QueueBindings();
@@ -153,8 +161,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         QueuePurger purger;
         MessageDispatcher dispatcher;
         TableBasedQueue queue;
-        const string validAddress = "TTBRTests";
+        SqlConnectionFactory sqlConnectionFactory;
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+        const string validAddress = "TTBRTests";
     }
 }

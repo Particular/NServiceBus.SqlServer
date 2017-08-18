@@ -23,7 +23,15 @@
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            await CreateQueueIfNotExists(addressParser);
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
+            await CreateQueueIfNotExists(addressParser, sqlConnectionFactory);
 
             queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName);
         }
@@ -31,45 +39,44 @@
         [Test]
         public async Task It_does_not_block_queue_peeking()
         {
-            await SendMessage(queue);
+            await SendMessage(queue, sqlConnectionFactory);
 
-            var receiveTask = ReceiveWithLongHandling(queue);
+            var receiveTask = ReceiveWithLongHandling(queue, sqlConnectionFactory);
 
-            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue);});
+            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue, sqlConnectionFactory);});
 
             await receiveTask;
         }
 
-        static async Task SendMessage(TableBasedQueue tableBasedQueue)
+        static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
             await ExecuteInTransactionScope(async c =>
             {
                 var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
 
                 await tableBasedQueue.Send(message, TimeSpan.MaxValue, c, null);
-            });
+            }, sqlConnectionFactory);
         }
 
-        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue)
+        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
             await ExecuteInTransactionScope(async c => {
                 await tableBasedQueue.TryPeek(c, CancellationToken.None, PeekTimeoutInSeconds);
-            });
+            }, sqlConnectionFactory);
         }
 
-        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue)
+        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
             await ExecuteInTransactionScope(async c => {
                 await tableBasedQueue.TryReceive(c, null);
 
                 await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds));
-            });
+            }, sqlConnectionFactory);
         }
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+        SqlConnectionFactory sqlConnectionFactory;
 
-
-        static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator)
+        static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
             var queueBindings = new QueueBindings();
@@ -78,7 +85,7 @@
             return queueCreator.CreateQueueIfNecessary(queueBindings, "");
         }
 
-        static async Task ExecuteInTransactionScope(Func<SqlConnection, Task> operations)
+        static async Task ExecuteInTransactionScope(Func<SqlConnection, Task> operations, SqlConnectionFactory sqlConnectionFactory)
         {
             var transactionOptions = new TransactionOptions
             {

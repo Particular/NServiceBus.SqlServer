@@ -4,15 +4,14 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Transport.SQLServer;
 
-    public class When_doing_request_reply_between_modes : NServiceBusAcceptanceTest
+    public class When_doing_request_reply_between_modes : MultiCatalog.MultiCatalogAcceptanceTest
     {
-        static string MultiCatalogEndpointConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
-        static string MultiInstanceEndpointConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
+        static string MultiCatalogEndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
+        static string MultiInstanceEndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
 
         static string MultiCatalogEndpointName => Conventions.EndpointNamingConvention(typeof(MultiCatalogEndpoint));
         static string MultiInstanceEndpointName => Conventions.EndpointNamingConvention(typeof(MultiInstanceEndpoint));

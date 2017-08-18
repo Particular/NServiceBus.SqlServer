@@ -3,15 +3,14 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Transport.SQLServer;
 
-    public class When_custom_catalog_configured_for_error_queue : NServiceBusAcceptanceTest
+    public class When_custom_catalog_configured_for_error_queue : MultiCatalogAcceptanceTest
     {
-        static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
-        static string SpyConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
+        static string SenderConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
+        static string SpyConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
 
         [Test]
         public async Task Error_should_be_sent_to_table_in_configured_catalog()
