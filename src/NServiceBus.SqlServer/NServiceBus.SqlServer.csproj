@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
     <RootNamespace>NServiceBus.SqlServer</RootNamespace>
+    <PackageId>NServiceBus.SqlServer</PackageId>
     <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
