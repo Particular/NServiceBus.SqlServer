@@ -1,4 +1,5 @@
-﻿namespace NServiceBus.SqlServer.UnitTests
+﻿#if NET452
+namespace NServiceBus.SqlServer.UnitTests
 {
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
@@ -39,3 +40,4 @@
         }
     }
 }
+#endif
