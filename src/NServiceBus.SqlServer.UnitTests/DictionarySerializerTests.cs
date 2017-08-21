@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.UnitTests
 {
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
     using ApprovalTests;
     using NUnit.Framework;
     using Transport.SQLServer;
@@ -10,6 +11,7 @@
     {
 
         [Test]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Can_round_trip()
         {
             var before = new Dictionary<string, string>
