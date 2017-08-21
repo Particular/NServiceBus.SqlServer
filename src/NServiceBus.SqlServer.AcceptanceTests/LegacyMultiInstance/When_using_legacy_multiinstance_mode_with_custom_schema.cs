@@ -1,4 +1,5 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
+﻿#if NET452
+namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -17,3 +18,4 @@
         }
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
+﻿#if NET452
+namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
 {
 #pragma warning disable 0618
     using System;
@@ -54,3 +55,4 @@
         }
     }
 }
+#endif

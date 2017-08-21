@@ -23,6 +23,10 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);
 
+#if !NET452
+        transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+#endif
+
         var routingConfig = transportConfig.Routing();
 
         foreach (var publisher in publisherMetadata.Publishers)
