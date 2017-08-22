@@ -21,7 +21,11 @@
 
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions {IsolationLevel = IsolationLevel.ReadCommitted}, TransactionScopeAsyncFlowOption.Enabled))
+#if NET452
+                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
+#else
+                using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+#endif
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
                     messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);

@@ -186,7 +186,6 @@
 
         //TODO: Figure out what to do with multi-instance!!!
 
-#if NET452
         /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
@@ -202,6 +201,5 @@
 
             return transportExtensions;
         }
-#endif
     }
 }
