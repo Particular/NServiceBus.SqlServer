@@ -1,10 +1,10 @@
-﻿#if NET452
-namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
+﻿namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
 {
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
+    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Transport.SQLServer;
@@ -20,6 +20,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
         [Test]
         public Task Should_be_able_to_send_and_receive_messages()
         {
+            Requires.DtcSupport();
+
             return Scenario.Define<Context>()
                 .WithEndpoint<MultiCatalogEndpoint>(c => c.When(x => x.EndpointsStarted,  s => s.Send(new MultiCatalogRequest())))
                 .WithEndpoint<MultiInstanceEndpoint>(c => c.When(x => x.EndpointsStarted, s => s.Send(new MultiInstanceRequest())))
@@ -132,4 +134,3 @@ namespace NServiceBus.SqlServer.AcceptanceTests.LegacyMultiInstance
         }
     }
 }
-#endif
