@@ -22,7 +22,9 @@
             }
         }
 
+#if NET452
         [TestCase(TransportTransactionMode.TransactionScope)]
+#endif
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]

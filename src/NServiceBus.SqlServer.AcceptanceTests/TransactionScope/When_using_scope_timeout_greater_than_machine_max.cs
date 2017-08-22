@@ -12,6 +12,8 @@
         [Test]
         public void Should_throw()
         {
+            Requires.DtcSupport();
+
             var exception = Assert.ThrowsAsync<Exception>(async () =>
             {
                 await Scenario.Define<Context>()

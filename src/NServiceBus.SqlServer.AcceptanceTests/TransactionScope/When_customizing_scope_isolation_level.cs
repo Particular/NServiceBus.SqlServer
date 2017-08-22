@@ -13,6 +13,8 @@
         [Test]
         public async Task Should_honor_configured_level()
         {
+            Requires.DtcSupport();
+
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(c => c.When(b => b.SendLocal(new MyMessage())))
                 .Done(c => c.Done)
