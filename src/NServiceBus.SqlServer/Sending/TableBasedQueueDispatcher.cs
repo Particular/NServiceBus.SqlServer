@@ -20,7 +20,11 @@ namespace NServiceBus.Transport.SQLServer
             {
                 return;
             }
+#if NET452
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+#else
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+#endif
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 await Send(operations, connection, null).ConfigureAwait(false);
