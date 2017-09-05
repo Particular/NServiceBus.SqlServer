@@ -184,22 +184,18 @@
             return settings;
         }
 
-        //TODO: Figure out what to do with multi-instance!!!
-
         /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
-        [ObsoleteEx(RemoveInVersion = "5.0", TreatAsErrorFromVersion = "5.0", Message = "Multi-instance mode has been deprecated and is no longer a recommended model of deployment. Please refer to documentation for more details.")]
+        [ObsoleteEx(
+            RemoveInVersion = "5.0", 
+            TreatAsErrorFromVersion = "4.0", 
+            Message = "Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalog addressing instead.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
-
-            transportExtensions.GetSettings().Set(SettingsKeys.LegacyMultiInstanceConnectionFactory, sqlConnectionFactory);
-
-            return transportExtensions;
+            throw new NotImplementedException();
         }
     }
 }
