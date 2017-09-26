@@ -14,7 +14,7 @@ public class APIApprovals
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void Approve()
     {
-        var publicApi = Filter(ApiGenerator.GeneratePublicApi(typeof(Endpoint).Assembly));
+        var publicApi = Filter(ApiGenerator.GeneratePublicApi(typeof(SqlServerTransport).Assembly));
         Approvals.Verify(publicApi);
     }
 
