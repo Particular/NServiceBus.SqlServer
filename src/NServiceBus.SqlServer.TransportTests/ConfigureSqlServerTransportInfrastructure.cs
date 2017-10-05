@@ -45,13 +45,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 var nameParts = n.Split('@');
                 if (nameParts.Length == 2)
                 {
-                    using (var sanitizer = new SqlCommandBuilder())
-                    {
-                        var sanitizedSchemaName = SanitizeIdentifier(nameParts[1], sanitizer);
-                        var sanitizedTableName = SanitizeIdentifier(nameParts[0], sanitizer);
+                    var sanitizedSchemaName = SanitizeIdentifier(nameParts[1]);
+                    var sanitizedTableName = SanitizeIdentifier(nameParts[0]);
 
-                        queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
-                    }
+                    queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
                 }
                 else
                 {
@@ -69,12 +66,40 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         }
     }
 
-    static string SanitizeIdentifier(string identifier, SqlCommandBuilder sanitizer)
+    static string SanitizeIdentifier(string identifier)
     {
         // Identifier may initially quoted or unquoted.
-        return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
+        return Quote(Unquote(identifier));
+    }
+
+    static string Quote(string unquotedName)
+    {
+        if (unquotedName == null)
+        {
+            return null;
+        }
+        return prefix + unquotedName.Replace(suffix, suffix + suffix) + suffix;
+    }
+
+    static string Unquote(string quotedString)
+    {
+        if (quotedString == null)
+        {
+            return null;
+        }
+
+        if (!quotedString.StartsWith(prefix) || !quotedString.EndsWith(suffix))
+        {
+            return quotedString;
+        }
+
+        return quotedString
+            .Substring(prefix.Length, quotedString.Length - prefix.Length - suffix.Length).Replace(suffix + suffix, suffix);
     }
 
     SettingsHolder settings;
     string connectionString;
+
+    const string prefix = "[";
+    const string suffix = "]";
 }
