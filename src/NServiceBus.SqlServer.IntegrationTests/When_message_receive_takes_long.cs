@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -50,28 +49,44 @@
 
         static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
-            await ExecuteInTransactionScope(async c =>
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-
-                await tableBasedQueue.Send(message, TimeSpan.MaxValue, c, null);
-            }, sqlConnectionFactory);
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var tx = connection.BeginTransaction())
+                {
+                    var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
+                    await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx);
+                    tx.Commit();
+                    scope.Complete();
+                }
+            }
         }
 
         static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
-            await ExecuteInTransactionScope(async c => {
-                await tableBasedQueue.TryPeek(c, CancellationToken.None, PeekTimeoutInSeconds);
-            }, sqlConnectionFactory);
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                {
+                    await tableBasedQueue.TryPeek(connection, CancellationToken.None, PeekTimeoutInSeconds);
+                    scope.Complete();
+                }
+            }
         }
 
         static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory)
         {
-            await ExecuteInTransactionScope(async c => {
-                await tableBasedQueue.TryReceive(c, null);
-
-                await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds));
-            }, sqlConnectionFactory);
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var tx = connection.BeginTransaction())
+                {
+                    await tableBasedQueue.TryReceive(connection, tx);
+                    await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds));
+                    tx.Commit();
+                    scope.Complete();
+                }
+            }
         }
 
         SqlConnectionFactory sqlConnectionFactory;
@@ -83,24 +98,6 @@
             queueBindings.BindReceiving(QueueTableName);
 
             return queueCreator.CreateQueueIfNecessary(queueBindings, "");
-        }
-
-        static async Task ExecuteInTransactionScope(Func<SqlConnection, Task> operations, SqlConnectionFactory sqlConnectionFactory)
-        {
-            var transactionOptions = new TransactionOptions
-            {
-                IsolationLevel = IsolationLevel.ReadCommitted
-            };
-
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection())
-                {
-                    await operations(connection);
-
-                    scope.Complete();
-                }
-            }
         }
     }
 }

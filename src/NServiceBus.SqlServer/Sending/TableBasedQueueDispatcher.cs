@@ -22,15 +22,23 @@ namespace NServiceBus.Transport.SQLServer
             }
 #if NET452
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-#else
-            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-#endif
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 await Send(operations, connection, null).ConfigureAwait(false);
 
                 scope.Complete();
             }
+#else
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var tx = connection.BeginTransaction())
+            {
+                await Send(operations, connection, tx).ConfigureAwait(false);
+                tx.Commit();
+                scope.Complete();
+            }
+#endif
+
         }
 
         public async Task DispatchAsNonIsolated(List<UnicastTransportOperation> operations, TransportTransaction transportTransaction)
