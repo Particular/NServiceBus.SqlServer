@@ -67,8 +67,9 @@
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var tx = connection.BeginTransaction())
                 {
-                    await tableBasedQueue.TryPeek(connection, CancellationToken.None, PeekTimeoutInSeconds);
+                    await tableBasedQueue.TryPeek(connection, tx, CancellationToken.None, PeekTimeoutInSeconds);
                     scope.Complete();
                 }
             }
