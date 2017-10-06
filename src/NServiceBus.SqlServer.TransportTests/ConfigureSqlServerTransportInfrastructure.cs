@@ -8,11 +8,18 @@ using NServiceBus.Settings;
 using NServiceBus.Transport;
 using NServiceBus.Transport.SQLServer;
 using NServiceBus.TransportTests;
+using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transportTransactionMode)
     {
+#if !NET46
+        if (transportTransactionMode == TransportTransactionMode.TransactionScope)
+        {
+            Assert.Ignore("TransactionScope not supported in net core");
+        }
+#endif
         this.settings = settings;
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
         settings.Set<LogicalAddress>(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
@@ -32,6 +39,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task Cleanup()
     {
+        if (settings == null)
+        {
+            return;
+        }
         var queueBindings = settings.Get<QueueBindings>();
         var queueNames = new List<string>();
 
