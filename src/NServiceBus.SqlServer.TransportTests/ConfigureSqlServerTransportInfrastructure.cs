@@ -26,7 +26,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         var delayedDeliverySettings = new DelayedDeliverySettings();
         delayedDeliverySettings.TableSuffix("Delayed");
         settings.Set<DelayedDeliverySettings>(delayedDeliverySettings);
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
         if (string.IsNullOrEmpty(connectionString))
         {
             connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";

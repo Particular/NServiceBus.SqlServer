@@ -20,7 +20,7 @@
             configuration.EnableInstallers();
             configuration.MakeInstanceUniquelyAddressable("1");
 
-            connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
@@ -33,6 +33,7 @@
             var persistence = configuration.UsePersistence<SqlPersistence>();
             persistence.ConnectionBuilder(() => new SqlConnection(connectionString));
             persistence.SubscriptionSettings().DisableCache();
+            persistence.SqlDialect<SqlDialect.MsSqlServer>();
 
             context = new Context();
 

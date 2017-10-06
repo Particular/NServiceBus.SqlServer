@@ -13,7 +13,7 @@
         [SetUp]
         public void Prepare()
         {
-            connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
