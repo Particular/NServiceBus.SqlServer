@@ -8,7 +8,6 @@ using NServiceBus.Settings;
 using NServiceBus.Transport;
 using NServiceBus.Transport.SQLServer;
 using NServiceBus.TransportTests;
-using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
@@ -17,7 +16,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 #if !NET46
         if (transportTransactionMode == TransportTransactionMode.TransactionScope)
         {
-            Assert.Ignore("TransactionScope not supported in net core");
+            NUnit.Framework.Assert.Ignore("TransactionScope not supported in net core");
         }
 #endif
         this.settings = settings;
