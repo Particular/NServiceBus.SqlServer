@@ -13,10 +13,6 @@
     <Description>SQL transport support for NServiceBus</Description>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Fody" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.5.1" PrivateAssets="All" />
