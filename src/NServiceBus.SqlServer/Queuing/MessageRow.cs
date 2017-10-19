@@ -48,22 +48,15 @@
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
         {
             //HINT: we are assuming that dataReader is sequential. Order or reads is important !
-            var id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false);
-            var correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false);
-            var replyTo = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false);
-            var recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false);
-            var expired = await dataReader.GetFieldValueAsync<int>(4).ConfigureAwait(false) == 1;
-            var headers = await GetHeaders(dataReader, 5).ConfigureAwait(false);
-            var body = await GetBody(dataReader, 6).ConfigureAwait(false);
             return new MessageRow
             {
-                id = id,
-                correlationId = correlationId,
-                replyToAddress = replyTo,
-                recoverable = recoverable,
-                expired = expired,
-                headers = headers,
-                bodyBytes = body
+                id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false),
+                correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false),
+                replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
+                recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false),
+                expired = await dataReader.GetFieldValueAsync<int>(4).ConfigureAwait(false) == 1,
+                headers = await GetHeaders(dataReader, 5).ConfigureAwait(false),
+                bodyBytes = await GetBody(dataReader, 6).ConfigureAwait(false)
             };
         }
 
