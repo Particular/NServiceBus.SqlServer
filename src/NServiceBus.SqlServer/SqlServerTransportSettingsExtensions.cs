@@ -185,6 +185,21 @@
         }
 
         /// <summary>
+        /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="purgeBatchSize">Maximum number of messages in each delete batch.</param>
+        public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(this TransportExtensions<SqlServerTransport> transportExtensions, int? purgeBatchSize)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.PurgeEnableKey, true);
+            if (purgeBatchSize.HasValue)
+            {
+                transportExtensions.GetSettings().Set(SettingsKeys.PurgeBatchSizeKey, purgeBatchSize);
+            }
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
