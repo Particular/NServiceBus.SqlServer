@@ -47,6 +47,8 @@
                 }
             }
 
+            await PurgeExpiredMessages().ConfigureAwait(false);
+
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
@@ -87,7 +89,6 @@
 
         async Task ProcessMessages()
         {
-            await PurgeExpiredMessages().ConfigureAwait(false);
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
