@@ -3,12 +3,26 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net462</TargetFramework>
+    <Configurations>Debug;Release;ReleaseNuget</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
-    <PackageReference Include="NServiceBus" Version="7.0.0-*" />
-    <!--<PackageReference Include="NServiceBus.SqlServer" Version="4.0.0-beta0004" />-->
+    <None Remove="NServiceBus.SqlServer.TestHarness.sln.DotSettings" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NServiceBus" Version="7.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'ReleaseNuget'">
+    <PackageReference Include="NServiceBus.SqlServer" Version="4.0.0-beta0005" />
+  </ItemGroup>
 </Project>
