@@ -8,22 +8,22 @@
 
     class ExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, TimeSpan? purgeTaskDelay, int? purgeBatchSize)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, int? purgeBatchSize, bool enable)
         {
             this.openConnection = openConnection;
-
-            PurgeTaskDelay = purgeTaskDelay ?? DefaultPurgeTaskDelay;
-            PurgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
+            this.enable = enable;
+            this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
-
-        public TimeSpan PurgeTaskDelay { get; }
-
-        int PurgeBatchSize { get; }
 
         public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
         {
-            Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
+            if (!enable)
+            {
+                Logger.DebugFormat("Purging expired messages on startup is not enabled for {0}.", queue);
+                return;
+            }
 
+            Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
             var totalPurgedRowsCount = 0;
 
             try
@@ -34,10 +34,10 @@
 
                     while (continuePurging && !cancellationToken.IsCancellationRequested)
                     {
-                        var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, PurgeBatchSize).ConfigureAwait(false);
+                        var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, purgeBatchSize).ConfigureAwait(false);
 
                         totalPurgedRowsCount += purgedRowsCount;
-                        continuePurging = purgedRowsCount == PurgeBatchSize;
+                        continuePurging = purgedRowsCount == purgeBatchSize;
                     }
                 }
 
@@ -46,14 +46,14 @@
             catch
             {
                 Logger.WarnFormat("Purging expired messages from table {0} failed after purging {1} messages.", queue, totalPurgedRowsCount);
-
                 throw;
             }
         }
 
+        int purgeBatchSize;
         Func<TableBasedQueue, Task<SqlConnection>> openConnection;
+        readonly bool enable;
         const int DefaultPurgeBatchSize = 10000;
-        static TimeSpan DefaultPurgeTaskDelay = TimeSpan.FromMinutes(5);
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
 }

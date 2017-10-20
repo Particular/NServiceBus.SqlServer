@@ -33,7 +33,7 @@
                 m => new ProcessWithNoTransaction(sqlConnectionFactory),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
-                new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
+                new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), 0, false),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
                 new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()),
                 TimeSpan.MaxValue);
@@ -89,7 +89,7 @@
                 NumberOfReceives ++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0]))
+                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0], false))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);

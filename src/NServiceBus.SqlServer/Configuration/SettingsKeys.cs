@@ -9,8 +9,8 @@
         public const string LegacyMultiInstanceConnectionFactory = "SqlServer.LegacyMultiInstanceConnectionFactory";
         public const string MultiCatalogEnabled = "SqlServer.MultiCatalogEnabled";
 
-        public const string PurgeTaskDelayTimeSpanKey = "SqlServer.PurgeTaskDelayTimeSpan";
         public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
+        public const string PurgeEnableKey = "SqlServer.PurgeExpiredOnStartup";
 
         public const string SchemaPropertyKey = "Schema";
         public const string CatalogPropertyKey = "Catalog";
