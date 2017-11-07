@@ -88,7 +88,7 @@ namespace NServiceBus.Transport.SQLServer
                         return pump;
                     }
                     var dispatcher = sendInfra.DispatcherFactory();
-                    var delayedMessageProcessor = new DelayedMessageProcessor(dispatcher, settings.LocalAddress());
+                    var delayedMessageProcessor = new DelayedMessageProcessor(dispatcher);
                     return new DelayedDeliveryMessagePump(pump, delayedMessageProcessor);
                 },
                 () =>
@@ -105,7 +105,6 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-
             if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 return new SqlConnectionFactory(factoryOverride);
@@ -173,7 +172,23 @@ namespace NServiceBus.Transport.SQLServer
         DelayedMessageTable CreateDelayedMessageTable()
         {
             var delatedQueueTableName = GetDelayedQueueTableName();
-            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, addressTranslator.Parse(settings.LocalAddress()).QualifiedTableName);
+
+            var inputQueueTable = addressTranslator.Parse(ToTransportAddress(GetLogicalAddress())).QualifiedTableName;
+            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, inputQueueTable);
+        }
+
+        /// <summary>
+        /// This method is copied from the core because there is no other way to reliable get the address of the main input queue.
+        /// </summary>
+        /// <returns></returns>
+        LogicalAddress GetLogicalAddress()
+        {
+            var queueNameBase = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
+
+            //note: This is an old hack, we are passing the endpoint name to bind but we only care about the properties
+            var mainInstanceProperties = BindToLocalEndpoint(new EndpointInstance(settings.EndpointName())).Properties;
+
+            return LogicalAddress.CreateLocalAddress(queueNameBase, mainInstanceProperties);
         }
 
         CanonicalQueueAddress GetDelayedQueueTableName()
@@ -186,7 +201,7 @@ namespace NServiceBus.Transport.SQLServer
             {
                 throw new Exception("Native delayed delivery feature requires configuring a table suffix.");
             }
-            var delayedQueueLogialAddress = settings.LogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueLogialAddress = GetLogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
             var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogialAddress);
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }
