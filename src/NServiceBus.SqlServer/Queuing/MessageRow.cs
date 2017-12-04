@@ -42,7 +42,7 @@
             AddParameter(command, "Recoverable", SqlDbType.Bit, recoverable);
             AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
             AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
+            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
@@ -129,6 +129,11 @@
         void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
         {
             command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
+        }
+
+        void AddParameter(SqlCommand command, string name, SqlDbType type, object value, int size)
+        {
+            command.Parameters.Add(name, type, size).Value = value ?? DBNull.Value;
         }
 
         Guid id;
