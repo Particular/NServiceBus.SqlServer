@@ -26,9 +26,7 @@ namespace NServiceBus
 
         static bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
         {
-            Func<string, Task<SqlConnection>> legacyModeTurnedOn;
-
-            var legacyMode = settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out legacyModeTurnedOn);
+            var legacyMode = settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out Func<string, Task<SqlConnection>> _);
             if (legacyMode && settings.HasSetting(SettingsKeys.MultiCatalogEnabled))
             {
                 throw new Exception("Multi-catalog configuration is not supported in legacy multi instance mode. Please configure each catalog using a separate connection string.");
