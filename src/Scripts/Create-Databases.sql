@@ -43,6 +43,7 @@ INCLUDE
 )
 WHERE
     Expires IS NOT NULL
+GO
 
 CREATE DATABASE nservicebus1
 GO
