@@ -135,3 +135,32 @@ BEGIN
 	EXEC('CREATE SCHEMA dest')
 END
 GO
+
+/*Create error queue to avoid race conditions*/
+CREATE TABLE error (
+    Id uniqueidentifier NOT NULL,
+    CorrelationId varchar(255),
+    ReplyToAddress varchar(255),
+    Recoverable bit NOT NULL,
+    Expires datetime,
+    Headers nvarchar(max) NOT NULL,
+    Body varbinary(max),
+    RowVersion bigint IDENTITY(1,1) NOT NULL
+);
+
+CREATE CLUSTERED INDEX Index_RowVersion ON error
+(
+    RowVersion
+)
+
+CREATE NONCLUSTERED INDEX Index_Expires ON error
+(
+    Expires
+)
+INCLUDE
+(
+    Id,
+    RowVersion
+)
+WHERE
+    Expires IS NOT NULL
