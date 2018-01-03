@@ -14,5 +14,7 @@
 
         public const string SchemaPropertyKey = "Schema";
         public const string CatalogPropertyKey = "Catalog";
+
+        public const string DisableConnectionStringValidation = "SqlServer.DisableConnectionStringValidation";
     }
 }
