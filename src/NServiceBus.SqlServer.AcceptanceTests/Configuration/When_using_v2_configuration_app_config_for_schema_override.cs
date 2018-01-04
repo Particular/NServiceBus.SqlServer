@@ -6,6 +6,7 @@
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Configuration.AdvanceExtensibility;
     using NUnit.Framework;
 
     public class When_using_v2_configuration_app_config_for_schema_override : NServiceBusAcceptanceTest
@@ -13,19 +14,7 @@
         [Test]
         public Task Should_fail_on_startup()
         {
-            var appConfigFilename = "app.sqlv2.config";
-            var appConfigPath = Path.Combine(Directory.GetCurrentDirectory(), appConfigFilename);
-
-            var expectedErrorMessage = "Schema override in connection string is not supported anymore";
-
-            File.WriteAllText(appConfigPath,
-                @"<?xml version='1.0' encoding='utf-8'?>
-                            <configuration>
-                                <connectionStrings>
-                                  <clear />
-                                  <add name=""NServiceBus/Transport"" connectionString=""Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;Queue Schema=nsb""/>
-                                </connectionStrings>
-                            </configuration>");
+            var appConfigPath = CreateV2ConfigurationFile();
 
             using (AppConfig.Change(appConfigPath))
             {
@@ -36,10 +25,50 @@
                         .Run();
                 }, "Endpoint startup should throw and exception");
 
-                Assert.That(exception.Message, Contains.Substring(expectedErrorMessage),  "Endpoint should fail on startup due to unsupported v2 configuration.");
+                var expectedErrorMessage = "Schema override in connection string is not supported anymore";
 
-                return Task.FromResult(0);
+                Assert.That(exception.Message, Contains.Substring(expectedErrorMessage), "Endpoint should fail on startup due to unsupported v2 configuration.");
             }
+
+            return Task.FromResult(0);
+        }
+
+        [Test]
+        public Task Should_work_when_connection_string_validation_is_disabled()
+        {
+            var appConfigPath = CreateV2ConfigurationFile();
+
+            using (AppConfig.Change(appConfigPath))
+            {
+                Assert.DoesNotThrowAsync(async () =>
+                {
+                    await Scenario.Define<Context>()
+                        .WithEndpoint<Endpoint>(c => c.CustomConfig(ec =>
+                        {
+                            ec.GetSettings().Set("SqlServer.DisableConnectionStringValidation", true);
+                        }))
+                    .Run();
+                }, "Endpoint startup should not throw with connection string validation turned off.");
+            }
+
+            return Task.FromResult(0);
+        }
+
+        static string CreateV2ConfigurationFile()
+        {
+            var appConfigFilename = "app.sqlv2.config";
+            var appConfigPath = Path.Combine(Directory.GetCurrentDirectory(), appConfigFilename);
+
+
+            File.WriteAllText(appConfigPath,
+                @"<?xml version='1.0' encoding='utf-8'?>
+                            <configuration>
+                                <connectionStrings>
+                                  <clear />
+                                  <add name=""NServiceBus/Transport"" connectionString=""Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;Queue Schema=nsb""/>
+                                </connectionStrings>
+                            </configuration>");
+            return appConfigPath;
         }
 
         public class Context : ScenarioContext

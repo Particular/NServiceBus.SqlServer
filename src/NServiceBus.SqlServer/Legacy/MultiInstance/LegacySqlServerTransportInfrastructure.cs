@@ -107,6 +107,11 @@
                 () => new LegacyMessageDispatcher(addressTranslator, connectionFactory), 
                 () =>
                 {
+                    if (settings.HasSetting(SettingsKeys.DisableConnectionStringValidation))
+                    {
+                        return Task.FromResult(StartupCheckResult.Success);
+                    }
+
                     var result = UsingV2ConfigurationChecker.Check();
                     return Task.FromResult(result);
                 });

@@ -167,7 +167,10 @@ namespace NServiceBus.Transport.SQLServer
                 },
                 () =>
                 {
-                    var result = UsingV2ConfigurationChecker.Check();
+                    var result = settings.HasSetting(SettingsKeys.DisableConnectionStringValidation) 
+                        ? StartupCheckResult.Success 
+                        : UsingV2ConfigurationChecker.Check();
+                    
                     if (result.Succeeded && delayedDeliverySettings != null)
                     {
                         result = DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings);
