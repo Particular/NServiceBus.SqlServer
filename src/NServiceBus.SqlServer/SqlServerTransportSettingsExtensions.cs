@@ -189,7 +189,6 @@
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
-        [ObsoleteEx(RemoveInVersion = "4.0", TreatAsErrorFromVersion = "4.0", Message = "Multi-instance mode has been deprecated and is no longer a recommended model of deployment. Please refer to documentation for more details.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
