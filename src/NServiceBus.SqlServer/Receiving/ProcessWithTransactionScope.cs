@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -35,7 +36,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(connection)).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -55,12 +56,13 @@
             }
         }
 
-        TransportTransaction PrepareTransportTransaction()
+        TransportTransaction PrepareTransportTransaction(SqlConnection connection)
         {
             var transportTransaction = new TransportTransaction();
 
             //those resources are meant to be used by anyone except message dispatcher e.g. persister
             transportTransaction.Set(Transaction.Current);
+            transportTransaction.Set(connection);
 
             return transportTransaction;
         }
