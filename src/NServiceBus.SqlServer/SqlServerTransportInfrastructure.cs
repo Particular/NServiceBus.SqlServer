@@ -82,7 +82,7 @@ namespace NServiceBus.Transport.SQLServer
             return new TransportReceiveInfrastructure(
                 () =>
                 {
-                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification,  waitTimeCircuitBreaker);
+                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker);
                     if (delayedDeliverySettings == null)
                     {
                         return pump;
@@ -100,7 +100,7 @@ namespace NServiceBus.Transport.SQLServer
                     }
                     return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore);
                 },
-                () => Task.FromResult(StartupCheckResult.Success));
+                () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
         }
 
         SqlConnectionFactory CreateConnectionFactory()
@@ -139,6 +139,33 @@ namespace NServiceBus.Transport.SQLServer
             var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
 
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
+        }
+
+        async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(SqlConnectionFactory connectionFactory, TransactionOptions transactionOptions)
+        {
+            if (!settings.TryGet(out TransportTransactionMode requestedTransportTransactionMode))
+            {
+                requestedTransportTransactionMode = TransactionMode;
+            }
+
+            if (requestedTransportTransactionMode == TransportTransactionMode.TransactionScope)
+            {
+                try
+                {
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        scope.Complete();
+                    }
+                }
+                catch (NotSupportedException)
+                {
+                    var message = "The version of System.Data.SqlClient in use does not support enlisting SQL connections in ambient transactions, so the TransactionScope transport transaction mode cannot be used. Use `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions` to select a different transport transaction mode.";
+                    return StartupCheckResult.Failed(message);
+                }
+            }
+
+            return StartupCheckResult.Success;
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
