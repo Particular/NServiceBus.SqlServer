@@ -88,7 +88,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         [SetUp]
         public void Prepare()
         {
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";

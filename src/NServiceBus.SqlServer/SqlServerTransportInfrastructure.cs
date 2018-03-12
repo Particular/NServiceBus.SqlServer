@@ -82,13 +82,13 @@ namespace NServiceBus.Transport.SQLServer
             return new TransportReceiveInfrastructure(
                 () =>
                 {
-                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification,  waitTimeCircuitBreaker);
+                    var pump = new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker);
                     if (delayedDeliverySettings == null)
                     {
                         return pump;
                     }
                     var dispatcher = sendInfra.DispatcherFactory();
-                    var delayedMessageProcessor = new DelayedMessageProcessor(dispatcher, settings.LocalAddress());
+                    var delayedMessageProcessor = new DelayedMessageProcessor(dispatcher);
                     return new DelayedDeliveryMessagePump(pump, delayedMessageProcessor);
                 },
                 () =>
@@ -100,12 +100,11 @@ namespace NServiceBus.Transport.SQLServer
                     }
                     return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore);
                 },
-                () => Task.FromResult(StartupCheckResult.Success));
+                () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
         }
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-
             if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 return new SqlConnectionFactory(factoryOverride);
@@ -136,10 +135,37 @@ namespace NServiceBus.Transport.SQLServer
 
         ExpiredMessagesPurger CreateExpiredMessagesPurger(SqlConnectionFactory connectionFactory)
         {
-            var purgeTaskDelay = settings.HasSetting(SettingsKeys.PurgeTaskDelayTimeSpanKey) ? settings.Get<TimeSpan?>(SettingsKeys.PurgeTaskDelayTimeSpanKey) : null;
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+            var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
 
-            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeTaskDelay, purgeBatchSize);
+            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
+        }
+
+        async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(SqlConnectionFactory connectionFactory, TransactionOptions transactionOptions)
+        {
+            if (!settings.TryGet(out TransportTransactionMode requestedTransportTransactionMode))
+            {
+                requestedTransportTransactionMode = TransactionMode;
+            }
+
+            if (requestedTransportTransactionMode == TransportTransactionMode.TransactionScope)
+            {
+                try
+                {
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        scope.Complete();
+                    }
+                }
+                catch (NotSupportedException)
+                {
+                    var message = "The version of System.Data.SqlClient in use does not support enlisting SQL connections in ambient transactions, so the TransactionScope transport transaction mode cannot be used. Use `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions` to select a different transport transaction mode.";
+                    return StartupCheckResult.Failed(message);
+                }
+            }
+
+            return StartupCheckResult.Success;
         }
 
         public override TransportSendInfrastructure ConfigureSendInfrastructure()
@@ -173,7 +199,23 @@ namespace NServiceBus.Transport.SQLServer
         DelayedMessageTable CreateDelayedMessageTable()
         {
             var delatedQueueTableName = GetDelayedQueueTableName();
-            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, addressTranslator.Parse(settings.LocalAddress()).QualifiedTableName);
+
+            var inputQueueTable = addressTranslator.Parse(ToTransportAddress(GetLogicalAddress())).QualifiedTableName;
+            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, inputQueueTable);
+        }
+
+        /// <summary>
+        /// This method is copied from the core because there is no other way to reliable get the address of the main input queue.
+        /// </summary>
+        /// <returns></returns>
+        LogicalAddress GetLogicalAddress()
+        {
+            var queueNameBase = settings.GetOrDefault<string>("BaseInputQueueName") ?? settings.EndpointName();
+
+            //note: This is an old hack, we are passing the endpoint name to bind but we only care about the properties
+            var mainInstanceProperties = BindToLocalEndpoint(new EndpointInstance(settings.EndpointName())).Properties;
+
+            return LogicalAddress.CreateLocalAddress(queueNameBase, mainInstanceProperties);
         }
 
         CanonicalQueueAddress GetDelayedQueueTableName()
@@ -186,7 +228,7 @@ namespace NServiceBus.Transport.SQLServer
             {
                 throw new Exception("Native delayed delivery feature requires configuring a table suffix.");
             }
-            var delayedQueueLogialAddress = settings.LogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueLogialAddress = GetLogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
             var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogialAddress);
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }

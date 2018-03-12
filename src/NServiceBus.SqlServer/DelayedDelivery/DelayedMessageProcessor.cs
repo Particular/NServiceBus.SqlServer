@@ -7,9 +7,13 @@ namespace NServiceBus.Transport.SQLServer
     {
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
 
-        public DelayedMessageProcessor(IDispatchMessages dispatcher, string localAddress)
+        public DelayedMessageProcessor(IDispatchMessages dispatcher)
         {
             this.dispatcher = dispatcher;
+        }
+
+        public void Init(string localAddress)
+        {
             this.localAddress = localAddress;
         }
 

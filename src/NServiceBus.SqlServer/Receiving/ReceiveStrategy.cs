@@ -32,7 +32,7 @@
 
             if (receiveResult.IsPoison)
             {
-                await DeadLetter(receiveResult, connection, transaction).ConfigureAwait(false);
+                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
                 return null;
             }
 
@@ -44,13 +44,12 @@
             return null;
         }
 
-        protected virtual Task DeadLetter(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
-        {
-            return ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction);
-        }
-
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {
+            if (message.Expired) //Do not process expired messages
+            {
+                return true;
+            }
             using (var pushCancellationTokenSource = new CancellationTokenSource())
             {
                 var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, pushCancellationTokenSource, new ContextBag());

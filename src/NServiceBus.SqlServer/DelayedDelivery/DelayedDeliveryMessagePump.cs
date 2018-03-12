@@ -13,6 +13,7 @@
 
         public Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
         {
+            delayedMessageProcessor.Init(settings.InputQueue);
             return pump.Init(async context =>
             {
                 if (await delayedMessageProcessor.Handle(context).ConfigureAwait(false))

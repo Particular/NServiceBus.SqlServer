@@ -17,7 +17,7 @@
 
         static string GetDefault()
         {
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
