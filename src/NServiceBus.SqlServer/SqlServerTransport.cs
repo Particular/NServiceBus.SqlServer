@@ -42,17 +42,9 @@ namespace NServiceBus
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
 
-            if (LegacyMultiInstanceModeTurnedOn(settings))
-            {
-                var addressParser = new LegacyQueueAddressTranslator("dbo", defaultSchemaOverride, queueSchemaSettings);
-                return new LegacySqlServerTransportInfrastructure(addressParser, settings);
-            }
-            else
-            {
-                var catalog = GetDefaultCatalog(settings, connectionString);
-                var addressParser = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
-                return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
-            }
+            var catalog = GetDefaultCatalog(settings, connectionString);
+            var addressParser = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
+            return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
         }
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)

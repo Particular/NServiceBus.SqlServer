@@ -23,12 +23,9 @@
             {
 #if NET452
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
-#else
-                using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-#endif
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    messageCount = await inputQueue.TryPeek(connection, cancellationToken).ConfigureAwait(false);
+                    messageCount = await inputQueue.TryPeek(connection, null, cancellationToken).ConfigureAwait(false);
 
                     circuitBreaker.Success();
 
@@ -41,6 +38,25 @@
 
                     scope.Complete();
                 }
+#else
+                using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var tx = connection.BeginTransaction())
+                {
+                    messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken).ConfigureAwait(false);
+
+                    circuitBreaker.Success();
+
+                    if (messageCount == 0)
+                    {
+                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+
+                        await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
+                    }
+                    tx.Commit();
+                    scope.Complete();
+                }
+#endif
             }
             catch (OperationCanceledException)
             {

@@ -42,7 +42,7 @@
             AddParameter(command, "Recoverable", SqlDbType.Bit, recoverable);
             AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
             AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
+            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
@@ -54,8 +54,9 @@
                 correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false),
                 replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
                 recoverable = await dataReader.GetFieldValueAsync<bool>(3).ConfigureAwait(false),
-                headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false)
+                expired = await dataReader.GetFieldValueAsync<int>(4).ConfigureAwait(false) == 1,
+                headers = await GetHeaders(dataReader, 5).ConfigureAwait(false),
+                bodyBytes = await GetBody(dataReader, 6).ConfigureAwait(false)
             };
         }
 
@@ -73,7 +74,7 @@
                 }
 
                 LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
-                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes));
+                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes, expired));
             }
             catch (Exception ex)
             {
@@ -130,10 +131,16 @@
             command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
         }
 
+        void AddParameter(SqlCommand command, string name, SqlDbType type, object value, int size)
+        {
+            command.Parameters.Add(name, type, size).Value = value ?? DBNull.Value;
+        }
+
         Guid id;
         string correlationId;
         string replyToAddress;
         bool recoverable;
+        bool expired;
         int? timeToBeReceived;
         string headers;
         byte[] bodyBytes;
