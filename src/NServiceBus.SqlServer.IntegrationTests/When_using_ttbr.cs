@@ -40,9 +40,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                     transaction.Commit();
                 }
 
-                var expired = await queue.PurgeBatchOfExpiredMessages(connection, 100).ConfigureAwait(false);
-
-                Assert.AreEqual(0, expired);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                Assert.IsFalse(message.Message.Expired);
             }
         }
 
@@ -74,9 +73,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                     transaction.Commit();
                 }
 
-                var expired = await queue.PurgeBatchOfExpiredMessages(connection, 100).ConfigureAwait(false);
-
-                Assert.AreEqual(0, expired);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                Assert.IsFalse(message.Message.Expired);
             }
         }
 
@@ -109,9 +107,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                     transaction.Commit();
                 }
 
-                var expired = await queue.PurgeBatchOfExpiredMessages(connection, 100).ConfigureAwait(false);
-
-                Assert.AreEqual(1, expired);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                Assert.IsTrue(message.Message.Expired);
             }
         }
 
@@ -125,7 +122,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
 
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
