@@ -139,6 +139,7 @@ CREATE TABLE {0} (
     Expires datetime,
     Headers nvarchar(max) NOT NULL,
     Body varbinary(max),
+    BodyString as cast(Body as nvarchar(max)),
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
 
@@ -184,6 +185,7 @@ END
 CREATE TABLE {0} (
     Headers nvarchar(max) NOT NULL,
     Body varbinary(max),
+    BodyString as cast(Body AS nvarchar(max)),
     Due datetime NOT NULL,
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
