@@ -23,6 +23,7 @@ CREATE TABLE error (
     Recoverable bit NOT NULL,
     Expires datetime,
     Headers nvarchar(max) NOT NULL,
+    BodyString as cast(Body as nvarchar(max)),
     Body varbinary(max),
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
