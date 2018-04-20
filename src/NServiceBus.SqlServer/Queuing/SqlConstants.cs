@@ -29,7 +29,7 @@ VALUES (
     @Id,
     @CorrelationId,
     @ReplyToAddress,
-    @Recoverable,
+    1,
     CASE WHEN @TimeToBeReceivedMs IS NOT NULL
         THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,
     @Headers,
@@ -70,7 +70,6 @@ OUTPUT
     deleted.Id,
     deleted.CorrelationId,
     deleted.ReplyToAddress,
-    deleted.Recoverable,
     CASE WHEN deleted.Expires IS NULL
         THEN 0
         ELSE CASE WHEN deleted.Expires > GETUTCDATE()
