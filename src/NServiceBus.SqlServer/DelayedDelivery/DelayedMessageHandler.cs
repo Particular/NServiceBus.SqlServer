@@ -56,11 +56,11 @@ namespace NServiceBus.Transport.SQLServer
                 }
                 catch (SqlException e) when (cancellationToken.IsCancellationRequested)
                 {
-                    Logger.Debug("Exception thown while performing cancellation", e);
+                    Logger.Debug("Exception thrown while performing cancellation", e);
                 }
                 catch (Exception e)
                 {
-                    Logger.Fatal("Exception thown while performing cancellation", e);
+                    Logger.Fatal("Exception thrown while performing cancellation", e);
                 }
             }
         }
