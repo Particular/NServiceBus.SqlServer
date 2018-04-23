@@ -161,7 +161,7 @@ WHERE
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
-        internal const string CreateDelayedMessageStoreText = @"
+        public const string CreateDelayedMessageStoreText = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
