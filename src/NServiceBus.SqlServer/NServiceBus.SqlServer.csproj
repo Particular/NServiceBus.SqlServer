@@ -19,11 +19,8 @@
     <PackageReference Include="Obsolete.Fody" Version="4.2.4" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.1.0" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="[7.0.0-beta0012, 8.0.0)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="NServiceBus" Version="[7.0.0-rc0001, 8.0.0)" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.2" />
   </ItemGroup>
 
   <ItemGroup>
