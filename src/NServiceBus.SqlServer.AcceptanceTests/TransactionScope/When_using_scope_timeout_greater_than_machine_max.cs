@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransactionScope
 {
     using System;
-    using System.Configuration;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -13,7 +12,9 @@
         [Test]
         public void Should_throw()
         {
-            var exception = Assert.ThrowsAsync<ConfigurationErrorsException>(async () =>
+            Requires.DtcSupport();
+
+            var exception = Assert.ThrowsAsync<Exception>(async () =>
             {
                 await Scenario.Define<Context>()
                     .WithEndpoint<Endpoint>()

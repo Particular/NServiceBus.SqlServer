@@ -7,16 +7,19 @@ namespace NServiceBus.Transport.SQLServer
     {
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
 
-        public DelayedMessageProcessor(IDispatchMessages dispatcher, string localAddress)
+        public DelayedMessageProcessor(IDispatchMessages dispatcher)
         {
             this.dispatcher = dispatcher;
+        }
+
+        public void Init(string localAddress)
+        {
             this.localAddress = localAddress;
         }
 
         public async Task<bool> Handle(MessageContext context)
         {
-            string forwardDestination;
-            context.Headers.TryGetValue(ForwardHeader, out forwardDestination);
+            context.Headers.TryGetValue(ForwardHeader, out var forwardDestination);
             if (forwardDestination == null)
             {
                 //This is not a delayed message. Process in local endpoint instance.
@@ -31,7 +34,7 @@ namespace NServiceBus.Transport.SQLServer
             var outgoingMessage = new OutgoingMessage(context.MessageId, context.Headers, context.Body);
             var transportOperation = new TransportOperation(outgoingMessage, new UnicastAddressTag(forwardDestination));
             context.Headers.Remove(ForwardHeader);
-            await dispatcher.Dispatch(new TransportOperations(transportOperation), context.TransportTransaction, context.Context).ConfigureAwait(false);
+            await dispatcher.Dispatch(new TransportOperations(transportOperation), context.TransportTransaction, context.Extensions).ConfigureAwait(false);
             return true;
         }
 

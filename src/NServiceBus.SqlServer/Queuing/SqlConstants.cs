@@ -64,7 +64,6 @@ SET NOCOUNT ON;
 WITH message AS (
     SELECT TOP(1) *
     FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
-    WHERE Expires IS NULL OR Expires > GETUTCDATE()
     ORDER BY RowVersion)
 DELETE FROM message
 OUTPUT
@@ -72,6 +71,13 @@ OUTPUT
     deleted.CorrelationId,
     deleted.ReplyToAddress,
     deleted.Recoverable,
+    CASE WHEN deleted.Expires IS NULL
+        THEN 0
+        ELSE CASE WHEN deleted.Expires > GETUTCDATE()
+            THEN 0
+            ELSE 1
+        END
+    END,
     deleted.Headers,
     deleted.Body;
 
@@ -103,9 +109,7 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string PeekText = @"
 SELECT count(*) Id
-FROM {0} WITH (READPAST)
-WHERE Expires IS NULL
-    OR Expires > GETUTCDATE();";
+FROM {0} WITH (READPAST);";
 
         public static readonly string CreateQueueText = @"
 IF EXISTS (
@@ -195,7 +199,7 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
 DELETE FROM {0}
 WHERE RowVersion
     IN (SELECT TOP (@BatchSize) RowVersion
-        FROM {0} WITH (NOLOCK)
+        FROM {0} WITH (READPAST)
         WHERE Expires < GETUTCDATE())";
 
         public static readonly string CheckIfExpiresIndexIsPresent = @"
@@ -208,7 +212,7 @@ WHERE name = 'Index_Expires'
 SELECT t.name
 FROM sys.columns c
 INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
-WHERE c.object_id = OBJECT_ID('{0}') 
+WHERE c.object_id = OBJECT_ID('{0}')
     AND c.name = 'Headers'";
 
     }

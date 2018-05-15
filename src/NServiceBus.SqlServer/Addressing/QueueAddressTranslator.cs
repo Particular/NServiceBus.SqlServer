@@ -37,8 +37,7 @@
 
         public CanonicalQueueAddress GetCanonicalForm(QueueAddress transportAddress)
         {
-            string specifiedSchema, specifiedCatalog;
-            queueSettings.TryGet(transportAddress.Table, out specifiedSchema, out specifiedCatalog);
+            queueSettings.TryGet(transportAddress.Table, out var specifiedSchema, out var specifiedCatalog);
 
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
             var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
@@ -62,10 +61,9 @@
 
             var tableName = string.Join(".", nonEmptyParts);
 
-            string schemaName, catalogName;
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out var schemaName);
+            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out var catalogName);
 
             return new QueueAddress(tableName, schemaName, catalogName);
         }

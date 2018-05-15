@@ -10,13 +10,24 @@
     [TestFixture]
     public class SqlServerTransportTests
     {
+        [SetUp]
+        public void Prepare()
+        {
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+        }
+
         [Test]
         public void It_reads_catalog_from_open_connection()
         {
             var definition = new SqlServerTransport();
             Func<Task<SqlConnection>> factory = async () =>
             {
-                var connection = new SqlConnection(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+                
+                var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync().ConfigureAwait(false);
                 return connection;
             };
@@ -25,5 +36,7 @@
             definition.Initialize(settings, "Invalid-connection-string");
             Assert.Pass();
         }
+
+        string connectionString;
     }
 }

@@ -4,6 +4,6 @@
 
     public class TestResponse
     {
-        public Guid ResponseId { get; set; } 
+        public Guid ResponseId { get; set; }
     }
 }

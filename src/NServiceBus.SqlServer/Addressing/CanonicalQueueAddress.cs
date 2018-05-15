@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System.Data.SqlClient;
+    using static NameHelper;
 
     class CanonicalQueueAddress
     {
@@ -27,14 +27,6 @@
         string GetCanonicalForm()
         {
             return $"{Table}@{Quote(Schema)}@{Quote(Catalog)}";
-        }
-
-        static string Quote(string name)
-        {
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                return sanitizer.QuoteIdentifier(name);
-            }
         }
     }
 }

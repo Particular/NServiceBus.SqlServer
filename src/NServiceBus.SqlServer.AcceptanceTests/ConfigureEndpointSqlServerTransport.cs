@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Configuration.AdvanceExtensibility;
+using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
@@ -13,14 +13,18 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
 
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
         if (string.IsNullOrEmpty(connectionString))
         {
-            throw new Exception("The 'SqlServerTransport.ConnectionString' environment variable is not set.");
+            throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");
         }
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);
+
+#if !NET452
+        transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+#endif
 
         var routingConfig = transportConfig.Routing();
 
@@ -45,7 +49,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             foreach (var address in queueAddresses)
             {
                 TryDeleteTable(conn, address);
-                TryDeleteTable(conn, new QueueAddress(address.TableName.Trim('[',']') + ".Delayed", address.SchemaName));
+                TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog));
             }
         }
         return Task.FromResult(0);
@@ -57,7 +61,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         {
             using (var comm = conn.CreateCommand())
             {
-                comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
+                comm.CommandText = $"IF OBJECT_ID('{address.QualifiedTableName}', 'U') IS NOT NULL DROP TABLE {address.QualifiedTableName}";
                 comm.ExecuteNonQuery();
             }
         }
@@ -75,14 +79,16 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     class QueueAddress
     {
-        public QueueAddress(string tableName, string schemaName)
+        public QueueAddress(string table, string schemaName, string catalogName)
         {
-            TableName = SafeQuote(tableName);
-            SchemaName = SafeQuote(schemaName);
+            Table = table;
+            Catalog = SafeUnquote(catalogName);
+            Schema = SafeUnquote(schemaName);
         }
 
-        public string TableName { get; }
-        public string SchemaName { get; }
+        public string Catalog { get; }
+        public string Table { get; }
+        public string Schema { get; }
 
         public static QueueAddress Parse(string address)
         {
@@ -90,17 +96,26 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
             if (firstAtIndex == -1)
             {
-                return new QueueAddress(address, null);
+                return new QueueAddress(address, null, null);
             }
 
             var tableName = address.Substring(0, firstAtIndex);
             address = firstAtIndex + 1 < address.Length ? address.Substring(firstAtIndex + 1) : string.Empty;
 
-            var schemaName = ExtractSchema(address);
-            return new QueueAddress(tableName, schemaName);
+            address = ExtractNextPart(address, out var schemaName);
+
+            string catalogName = null;
+
+            if (address != string.Empty)
+            {
+                ExtractNextPart(address, out catalogName);
+            }
+            return new QueueAddress(tableName, schemaName, catalogName);
         }
 
-        static string ExtractSchema(string address)
+        public string QualifiedTableName => $"{Quote(Catalog)}.{Quote(Schema)}.{Quote(Table)}";
+
+        static string ExtractNextPart(string address, out string part)
         {
             var noRightBrackets = 0;
             var index = 1;
@@ -109,41 +124,58 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             {
                 if (index >= address.Length)
                 {
-                    return address;
+                    part = address;
+                    return string.Empty;
                 }
+
                 if (address[index] == '@' && (address[0] != '[' || noRightBrackets % 2 == 1))
                 {
-                    return address.Substring(0, index);
+                    part = address.Substring(0, index);
+                    return index + 1 < address.Length ? address.Substring(index + 1) : string.Empty;
                 }
 
                 if (address[index] == ']')
                 {
                     noRightBrackets++;
                 }
+
                 index++;
             }
         }
 
-        static string SafeQuote(string identifier)
+        static string Quote(string name)
         {
-            if (string.IsNullOrWhiteSpace(identifier))
+            if (name == null)
             {
-                return identifier;
+                return null;
             }
-
-            using (var sanitizer = new SqlCommandBuilder())
-            {
-                return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
-            }
+            return prefix + name.Replace(suffix, suffix + suffix) + suffix;
         }
 
-        public override string ToString()
+        static string SafeUnquote(string name)
         {
-            if (SchemaName == null)
+            var result = Unquote(name);
+            return string.IsNullOrWhiteSpace(result)
+                ? null
+                : result;
+        }
+
+        const string prefix = "[";
+        const string suffix = "]";
+        static string Unquote(string quotedString)
+        {
+            if (quotedString == null)
             {
-                return TableName;
+                return null;
             }
-            return $"{SchemaName}.{TableName}";
+
+            if (!quotedString.StartsWith(prefix) || !quotedString.EndsWith(suffix))
+            {
+                return quotedString;
+            }
+
+            return quotedString
+                .Substring(prefix.Length, quotedString.Length - prefix.Length - suffix.Length).Replace(suffix + suffix, suffix);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests
 {
+    using System;
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -22,6 +23,16 @@
             Assert.True(ctx.MessageReceived, "Message should be properly received");
         }
 
+        static string GetConnectionString()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
+            }
+            return connectionString;
+        }
+
         public class Endpoint : EndpointConfigurationBuilder
         {
             public Endpoint()
@@ -33,7 +44,7 @@
                         .ConnectionString("this-will-not-work")
                         .UseCustomSqlConnectionFactory(async () =>
                         {
-                            var connection = new SqlConnection(@"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;");
+                            var connection = new SqlConnection(GetConnectionString());
 
                             await connection.OpenAsync();
 

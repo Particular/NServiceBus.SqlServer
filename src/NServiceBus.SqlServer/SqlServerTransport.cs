@@ -39,27 +39,17 @@ namespace NServiceBus
         /// </summary>
         public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
-            string defaultSchemaOverride;
-            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out defaultSchemaOverride);
+            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
 
-            if (LegacyMultiInstanceModeTurnedOn(settings))
-            {
-                var addressParser = new LegacyQueueAddressTranslator("dbo", defaultSchemaOverride, queueSchemaSettings);
-                return new LegacySqlServerTransportInfrastructure(addressParser, settings);
-            }
-            else
-            {
-                var catalog = GetDefaultCatalog(settings, connectionString);
-                var addressParser = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
-                return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
-            }
+            var catalog = GetDefaultCatalog(settings, connectionString);
+            var addressParser = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
+            return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
         }
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
         {
-            Func<Task<SqlConnection>> factoryOverride;
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 using (var connection = factoryOverride().GetAwaiter().GetResult())
                 {
@@ -74,12 +64,12 @@ namespace NServiceBus
             {
                 ConnectionString = connectionString
             };
-            object catalog;
-            if (!parser.TryGetValue("Initial Catalog", out catalog) && !parser.TryGetValue("database", out catalog))
+            if (parser.TryGetValue("Initial Catalog", out var catalog) ||
+                parser.TryGetValue("database", out catalog))
             {
-                throw new Exception("Initial Catalog property is mandatory in the connection string.");
+                return (string)catalog;
             }
-            return (string)catalog;
+            throw new Exception("Initial Catalog property is mandatory in the connection string.");
         }
     }
 }

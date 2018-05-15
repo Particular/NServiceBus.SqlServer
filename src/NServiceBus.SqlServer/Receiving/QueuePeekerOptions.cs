@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Configuration;
     using Logging;
 
     class QueuePeekerOptions
@@ -24,7 +23,7 @@
             if (delay < TimeSpan.FromMilliseconds(100))
             {
                 var message = "Delay requested is invalid. The value should be greater than 100 ms and less than 10 seconds.";
-                throw new ConfigurationErrorsException(message);
+                throw new Exception(message);
             }
 
             if (delay > TimeSpan.FromSeconds(10))

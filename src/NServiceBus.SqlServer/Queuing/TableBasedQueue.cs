@@ -27,9 +27,9 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning restore 618
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
+        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
         {
-            using (var command = new SqlCommand(peekCommand, connection)
+            using (var command = new SqlCommand(peekCommand, connection, transaction)
             {
                 CommandTimeout = timeoutInSeconds
             })
@@ -69,9 +69,7 @@ namespace NServiceBus.Transport.SQLServer
                     return MessageReadResult.NoMessage;
                 }
 
-                var readResult = await MessageRow.Read(dataReader).ConfigureAwait(false);
-
-                return readResult;
+                return await MessageRow.Read(dataReader).ConfigureAwait(false);
             }
         }
 

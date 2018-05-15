@@ -21,13 +21,21 @@
 
             var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
 
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            var sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
             var pump = new MessagePump(
                 m => new ProcessWithNoTransaction(sqlConnectionFactory),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
-                new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), TimeSpan.MaxValue, 0),
+                new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), 0, false),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
-                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()), 
+                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()),
                 TimeSpan.MaxValue);
 
             await pump.Init(
@@ -62,8 +70,6 @@
             throw new Exception("Condition has not been met in predefined timespan.");
         }
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
-
         class FakeTableBasedQueue : TableBasedQueue
         {
             public int NumberOfReceives { get; set; }
@@ -83,13 +89,13 @@
                 NumberOfReceives ++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0]))
+                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0], false))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
             }
 
-            public override Task<int> TryPeek(SqlConnection connection, CancellationToken token, int timeoutInSeconds = 30)
+            public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
             {
                 NumberOfPeeks ++;
 

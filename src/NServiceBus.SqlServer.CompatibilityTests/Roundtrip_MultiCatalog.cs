@@ -29,7 +29,7 @@ namespace NServiceBus.SqlServer.CompatibilityTests
 
             VerifyRoundtrip(sourceConfig, destinationConfig);
         }
-        
+
         [Test]
         public void Roundtrip_2_2_to_3_1_in_different_catalogs()
         {

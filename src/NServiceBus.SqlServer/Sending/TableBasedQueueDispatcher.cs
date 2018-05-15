@@ -20,6 +20,7 @@ namespace NServiceBus.Transport.SQLServer
             {
                 return;
             }
+#if NET452
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -27,6 +28,17 @@ namespace NServiceBus.Transport.SQLServer
 
                 scope.Complete();
             }
+#else
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var tx = connection.BeginTransaction())
+            {
+                await Send(operations, connection, tx).ConfigureAwait(false);
+                tx.Commit();
+                scope.Complete();
+            }
+#endif
+
         }
 
         public async Task DispatchAsNonIsolated(List<UnicastTransportOperation> operations, TransportTransaction transportTransaction)
@@ -66,13 +78,10 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, List<UnicastTransportOperation> operations)
         {
-            SqlConnection sqlTransportConnection;
-            SqlTransaction sqlTransportTransaction;
-            Transaction ambientTransaction;
 
-            transportTransaction.TryGet(out sqlTransportConnection);
-            transportTransaction.TryGet(out sqlTransportTransaction);
-            transportTransaction.TryGet(out ambientTransaction);
+            transportTransaction.TryGet(out SqlConnection sqlTransportConnection);
+            transportTransaction.TryGet(out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
             {
@@ -98,11 +107,9 @@ namespace NServiceBus.Transport.SQLServer
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            SqlTransaction nativeTransaction;
-            transportTransaction.TryGet(out nativeTransaction);
+            transportTransaction.TryGet(out SqlTransaction nativeTransaction);
 
-            Transaction ambientTransaction;
-            transportTransaction.TryGet(out ambientTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;
         }

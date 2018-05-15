@@ -15,13 +15,25 @@
 
     public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
     {
+        [SetUp]
+        public void SetConnectionString()
+        {
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
+            }
+        }
+
+#if NET452
         [TestCase(TransportTransactionMode.TransactionScope)]
+#endif
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
         public async Task Should_move_it_to_the_error_queue_when_headers_corrupted(TransportTransactionMode txMode)
         {
-            PurgeQueues();
+            PurgeQueues(connectionString);
             try
             {
                 await Scenario.Define<Context>()
@@ -37,7 +49,7 @@
                         {
                             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-                            using (var conn = new SqlConnection(connString))
+                            using (var conn = new SqlConnection(connectionString))
                             {
                                 await conn.OpenAsync();
                                 var command = conn.CreateCommand();
@@ -61,21 +73,23 @@
                     .Done(c => c.Logs.Any(l => l.Level == LogLevel.Error))
                     .Run();
 
-                Assert.True(MessageExistsInErrorQueue(), "The message should have been moved to the error queue");
+                Assert.True(MessageExistsInErrorQueue(connectionString), "The message should have been moved to the error queue");
             }
             finally
             {
-                PurgeQueues();
+                PurgeQueues(connectionString);
             }
         }
 
+#if NET452
         [TestCase(TransportTransactionMode.TransactionScope)]
+#endif
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
         public async Task Should_move_it_to_the_error_queue_when_body_corrupted(TransportTransactionMode txMode)
         {
-            PurgeQueues();
+            PurgeQueues(connectionString);
             try
             {
                 await Scenario.Define<Context>()
@@ -91,7 +105,7 @@
                         {
                             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-                            using (var conn = new SqlConnection(connString))
+                            using (var conn = new SqlConnection(connectionString))
                             {
                                 await conn.OpenAsync();
                                 var command = conn.CreateCommand();
@@ -125,17 +139,17 @@
                     .Done(c => c.Logs.Any(l => l.Level == LogLevel.Error))
                     .Run();
 
-                Assert.True(MessageExistsInErrorQueue(), "The message should have been moved to the error queue");
+                Assert.True(MessageExistsInErrorQueue(connectionString), "The message should have been moved to the error queue");
             }
             finally
             {
-                PurgeQueues();
+                PurgeQueues(connectionString);
             }
         }
 
-        static void PurgeQueues()
+        static void PurgeQueues(string connectionString)
         {
-            using (var conn = new SqlConnection(connString))
+            using (var conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
@@ -147,9 +161,9 @@ END";
             }
         }
 
-        static bool MessageExistsInErrorQueue()
+        static bool MessageExistsInErrorQueue(string connectionString)
         {
-            using (var conn = new SqlConnection(connString))
+            using (var conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
@@ -160,7 +174,7 @@ END";
             }
         }
 
-        const string connString = @"Server=localhost\sqlexpress;Database=nservicebus;Trusted_Connection=True;";
+        string connectionString;
         const string errorQueueName = "error";
 
         public class Context : ScenarioContext

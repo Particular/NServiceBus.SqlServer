@@ -47,6 +47,8 @@
                 }
             }
 
+            await PurgeExpiredMessages().ConfigureAwait(false);
+
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
@@ -59,7 +61,6 @@
             cancellationToken = cancellationTokenSource.Token;
 
             messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
-            purgeTask = Task.Run(PurgeExpiredMessages, CancellationToken.None);
         }
 
         public async Task Stop()
@@ -71,8 +72,7 @@
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutDurationInSeconds));
             var allTasks = runningReceiveTasks.Values.Concat(new[]
             {
-                messagePumpTask,
-                purgeTask
+                messagePumpTask
             });
             var finishedTask = await Task.WhenAny(Task.WhenAll(allTasks), timeoutTask).ConfigureAwait(false);
 
@@ -144,8 +144,8 @@
 
                     receiveTask.ContinueWith((t, state) =>
                     {
-                        var receiveTasks = (ConcurrentDictionary<Task, Task>) state;
-                        receiveTasks.TryRemove(t, out Task _);
+                        var receiveTasks = (ConcurrentDictionary<Task, Task>)state;
+                        receiveTasks.TryRemove(t, out _);
                     }, runningReceiveTasks, TaskContinuationOptions.ExecuteSynchronously)
                     .Ignore();
                 }
@@ -184,32 +184,22 @@
 
         async Task PurgeExpiredMessages()
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
-
-                    Logger.DebugFormat("Scheduling next expired message purge task for queue {0} in {1}", inputQueue, expiredMessagesPurger.PurgeTaskDelay);
-                    await Task.Delay(expiredMessagesPurger.PurgeTaskDelay, cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Graceful shutdown
-                }
-                catch (SqlException e) when (e.Number == 1205)
-                {
-                    //Purge has been victim of a lock resolution
-                    Logger.Warn("Purger has been selected as a lock victim.", e);
-                }
-                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
-                {
-                    Logger.Debug("Exception thown while performing cancellation", e);
-                }
-                catch (Exception e)
-                {
-                    Logger.WarnFormat("Purging expired messages from table {0} failed with exception: {1}.", inputQueue, e);
-                }
+                await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful shutdown
+            }
+            catch (SqlException e) when (e.Number == 1205)
+            {
+                //Purge has been victim of a lock resolution
+                Logger.Warn("Purger has been selected as a lock victim.", e);
+            }
+            catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+            {
+                Logger.Debug("Exception thown while performing cancellation", e);
             }
         }
 
@@ -229,7 +219,6 @@
         RepeatedFailuresOverTimeCircuitBreaker peekCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker receiveCircuitBreaker;
         Task messagePumpTask;
-        Task purgeTask;
         ReceiveStrategy receiveStrategy;
 
         static ILog Logger = LogManager.GetLogger<MessagePump>();

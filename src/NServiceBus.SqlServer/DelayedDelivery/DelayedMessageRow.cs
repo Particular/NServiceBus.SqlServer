@@ -29,16 +29,6 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
             AddParameter(command, "Due", SqlDbType.DateTime, due);
         }
-        
-        static T TryGetHeaderValue<T>(Dictionary<string, string> headers, string name, Func<string, T> conversion)
-        {
-            string text;
-            if (!headers.TryGetValue(name, out text))
-            {
-                return default(T);
-            }
-            return conversion(text);
-        }
 
         void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
         {

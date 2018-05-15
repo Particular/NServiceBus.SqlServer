@@ -17,8 +17,7 @@
 
             storage.RecordFailureInfoForMessage(messageId, exception);
 
-            FailureInfoStorage.ProcessingFailureInfo failureInfo;
-            storage.TryGetFailureInfoForMessage(messageId, out failureInfo);
+            storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.NotNull(failureInfo);
             Assert.AreEqual(1, failureInfo.NumberOfProcessingAttempts);
@@ -36,8 +35,7 @@
             storage.RecordFailureInfoForMessage(messageId, new Exception());
             storage.RecordFailureInfoForMessage(messageId, secondException);
 
-            FailureInfoStorage.ProcessingFailureInfo failureInfo;
-            storage.TryGetFailureInfoForMessage(messageId, out failureInfo);
+            storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.NotNull(failureInfo);
             Assert.AreEqual(2, failureInfo.NumberOfProcessingAttempts);
@@ -53,9 +51,8 @@
 
             storage.RecordFailureInfoForMessage(messageId, new Exception());
 
-            FailureInfoStorage.ProcessingFailureInfo failureInfo;
 
-            storage.TryGetFailureInfoForMessage(messageId, out failureInfo);
+            storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
             Assert.NotNull(failureInfo);
 
             storage.ClearFailureInfoForMessage(messageId);
@@ -82,8 +79,7 @@
                 storage.RecordFailureInfoForMessage(messageId, exception);
             }
 
-            FailureInfoStorage.ProcessingFailureInfo failureInfo;
-            storage.TryGetFailureInfoForMessage(lruMessageId, out failureInfo);
+            storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
             Assert.IsNull(failureInfo);
         }
@@ -113,8 +109,7 @@
 
             storage.RecordFailureInfoForMessage(messageIds[MaxElements - 1], new Exception());
 
-            FailureInfoStorage.ProcessingFailureInfo failureInfo;
-            storage.TryGetFailureInfoForMessage(lruMessageId, out failureInfo);
+            storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
             Assert.IsNotNull(failureInfo);
         }

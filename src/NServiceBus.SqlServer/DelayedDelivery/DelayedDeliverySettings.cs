@@ -11,7 +11,7 @@
         internal TimeSpan Interval = TimeSpan.FromSeconds(1);
         internal bool TimeoutManagerDisabled;
         internal int MatureBatchSize = 100;
-        
+
         /// <summary>
         /// Sets the suffix for the table storing delayed messages.
         /// </summary>

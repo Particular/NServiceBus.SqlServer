@@ -3,15 +3,11 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_configured_error_queue_includes_catalog : NServiceBusAcceptanceTest
+    public class When_configured_error_queue_includes_catalog : MultiCatalogAcceptanceTest
     {
-        static string SenderConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus1;Integrated Security=True";
-        static string SpyConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus2;Integrated Security=True";
-
         [Test]
         public async Task Error_should_be_sent_to_table_in_configured_catalog()
         {
@@ -86,5 +82,8 @@
         }
 
         public class Message : ICommand { }
+
+        static string SenderConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
+        static string SpyConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
     }
 }

@@ -22,7 +22,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Isolated)]
         public async Task Outgoing_operations_are_stored_in_destination_queue(Type contextProviderType, DispatchConsistency dispatchConsistency)
         {
-            using (var contextProvider = CreateContext(contextProviderType))
+            using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
             {
                 var operations = new TransportOperations(
                     CreateTransportOperation(id: "1", destination: validAddress, consistency: dispatchConsistency),
@@ -45,7 +45,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Isolated)]
         public async Task Outgoing_operations_are_stored_atomically(Type contextProviderType, DispatchConsistency dispatchConsistency)
         {
-            using (var contextProvider = CreateContext(contextProviderType))
+            using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
             {
                 var invalidOperations = new TransportOperations(
                     CreateTransportOperation(id: "3", destination: validAddress, consistency: dispatchConsistency),
@@ -80,14 +80,22 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
                 );
         }
 
-        static IContextProvider CreateContext(Type contextType)
+        static IContextProvider CreateContext(Type contextType, SqlConnectionFactory sqlConnectionFactory)
         {
-            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider();
+            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(sqlConnectionFactory);
         }
 
         [SetUp]
         public void Prepare()
         {
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            }
+
+            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+
             PrepareAsync().GetAwaiter().GetResult();
         }
 
@@ -95,7 +103,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            await CreateOutputQueueIfNecessary(addressParser);
+            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
             await PurgeOutputQueue(addressParser);
 
@@ -111,7 +119,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
             return purger.Purge(queue);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
             var queueBindings = new QueueBindings();
@@ -126,7 +134,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         const string validAddress = "TableBasedQueueDispatcherTests";
         const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
-        static SqlConnectionFactory sqlConnectionFactory = SqlConnectionFactory.Default(@"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True");
+        SqlConnectionFactory sqlConnectionFactory;
 
         interface IContextProvider : IDisposable
         {
@@ -151,7 +159,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider()
+            public HandlerContextProvider(SqlConnectionFactory sqlConnectionFactory)
             {
                 sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();

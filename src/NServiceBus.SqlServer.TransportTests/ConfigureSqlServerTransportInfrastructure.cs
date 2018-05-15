@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,24 +13,39 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 {
     public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transportTransactionMode)
     {
+#if !NET46
+        if (transportTransactionMode == TransportTransactionMode.TransactionScope)
+        {
+            NUnit.Framework.Assert.Ignore("TransactionScope not supported in net core");
+        }
+#endif
         this.settings = settings;
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
         settings.Set<LogicalAddress>(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
         var delayedDeliverySettings = new DelayedDeliverySettings();
         delayedDeliverySettings.TableSuffix("Delayed");
         settings.Set<DelayedDeliverySettings>(delayedDeliverySettings);
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        }
         return new TransportConfigurationResult
         {
-            TransportInfrastructure = new SqlServerTransport().Initialize(settings, ConnectionString)
+            TransportInfrastructure = new SqlServerTransport().Initialize(settings, connectionString)
         };
     }
 
     public async Task Cleanup()
     {
+        if (settings == null)
+        {
+            return;
+        }
         var queueBindings = settings.Get<QueueBindings>();
         var queueNames = new List<string>();
 
-        using (var conn = new SqlConnection(ConnectionString))
+        using (var conn = new SqlConnection(connectionString))
         {
             await conn.OpenAsync();
 
@@ -39,13 +55,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 var nameParts = n.Split('@');
                 if (nameParts.Length == 2)
                 {
-                    using (var sanitizer = new SqlCommandBuilder())
-                    {
-                        var sanitizedSchemaName = SanitizeIdentifier(nameParts[1], sanitizer);
-                        var sanitizedTableName = SanitizeIdentifier(nameParts[0], sanitizer);
+                    var sanitizedSchemaName = SanitizeIdentifier(nameParts[1]);
+                    var sanitizedTableName = SanitizeIdentifier(nameParts[0]);
 
-                        queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
-                    }
+                    queueNames.Add($"{sanitizedSchemaName}.{sanitizedTableName}");
                 }
                 else
                 {
@@ -63,12 +76,40 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         }
     }
 
-    static string SanitizeIdentifier(string identifier, SqlCommandBuilder sanitizer)
+    static string SanitizeIdentifier(string identifier)
     {
         // Identifier may initially quoted or unquoted.
-        return sanitizer.QuoteIdentifier(sanitizer.UnquoteIdentifier(identifier));
+        return Quote(Unquote(identifier));
+    }
+
+    static string Quote(string unquotedName)
+    {
+        if (unquotedName == null)
+        {
+            return null;
+        }
+        return prefix + unquotedName.Replace(suffix, suffix + suffix) + suffix;
+    }
+
+    static string Unquote(string quotedString)
+    {
+        if (quotedString == null)
+        {
+            return null;
+        }
+
+        if (!quotedString.StartsWith(prefix) || !quotedString.EndsWith(suffix))
+        {
+            return quotedString;
+        }
+
+        return quotedString
+            .Substring(prefix.Length, quotedString.Length - prefix.Length - suffix.Length).Replace(suffix + suffix, suffix);
     }
 
     SettingsHolder settings;
-    const string ConnectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+    string connectionString;
+
+    const string prefix = "[";
+    const string suffix = "]";
 }
