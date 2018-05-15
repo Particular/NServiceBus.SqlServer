@@ -36,8 +36,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_0", "Compatibility
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_1", "CompatibilityTests\Facade_3.1\Facade_3_1.csproj", "{66D10F43-3859-4F55-B8A8-60E32AD6B813}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.IntegrationTests.Sql", "NServiceBus.SqlServer.IntegrationTests.Sql\NServiceBus.SqlServer.IntegrationTests.Sql.csproj", "{15430E85-0954-445B-9F1D-4E5D321AE9BB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,10 +86,6 @@ Global
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Release|Any CPU.Build.0 = Release|Any CPU
-		{15430E85-0954-445B-9F1D-4E5D321AE9BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{15430E85-0954-445B-9F1D-4E5D321AE9BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{15430E85-0954-445B-9F1D-4E5D321AE9BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{15430E85-0954-445B-9F1D-4E5D321AE9BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
