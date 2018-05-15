@@ -200,7 +200,7 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
 DELETE FROM {0}
 WHERE RowVersion
     IN (SELECT TOP (@BatchSize) RowVersion
-        FROM {0} WITH (NOLOCK)
+        FROM {0} WITH (READPAST)
         WHERE Expires < GETUTCDATE())";
 
         public static readonly string CheckIfExpiresIndexIsPresent = @"

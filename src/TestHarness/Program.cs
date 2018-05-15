@@ -44,7 +44,7 @@ namespace NServiceBus.SqlServer.TestHarness
             var runningTasks = new ConcurrentDictionary<Task, Task>();
             for (var i = 0; i < MessageCount; i++)
             {
-                concurrencyLimiter.Wait();
+                await concurrencyLimiter.WaitAsync();
 
                 var receiveTask = Send(concurrencyLimiter, sender);
                 runningTasks.TryAdd(receiveTask, receiveTask);

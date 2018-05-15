@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -11,18 +11,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="7.0.0-*" />
+    <PackageReference Include="NServiceBus" Version="7.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+  <ItemGroup Condition="'$(Configuration)' != 'ReleaseNuget'">
     <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'ReleaseNuget'">
-    <PackageReference Include="NServiceBus.SqlServer" Version="4.0.0-beta0005" />
+    <PackageReference Include="NServiceBus.SqlServer" Version="4.0.0" />
   </ItemGroup>
+
 </Project>
