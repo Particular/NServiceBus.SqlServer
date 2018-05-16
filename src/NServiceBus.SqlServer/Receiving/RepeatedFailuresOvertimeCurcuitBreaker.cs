@@ -16,6 +16,8 @@
             timer = new Timer(CircuitBreakerTriggered);
         }
 
+        public bool Triggered { get; private set; }
+
         public void Dispose()
         {
             //Injected
@@ -31,7 +33,7 @@
             }
 
             timer.Change(Timeout.Infinite, Timeout.Infinite);
-            delay = NonThrottledDelay;
+            Triggered = false;
             Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
         }
 
@@ -46,6 +48,7 @@
                 Logger.WarnFormat("The circuit breaker for {0} is now in the armed state", name);
             }
 
+            var delay = Triggered ? ThrottledDelay : NonThrottledDelay;
             return Task.Delay(delay);
         }
 
@@ -53,13 +56,13 @@
         {
             if (Interlocked.Read(ref failureCount) > 0)
             {
-                delay = ThrottledDelay;
+                Triggered = true;
                 Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
                 triggerAction(lastException);
             }
         }
 
-        TimeSpan delay = NonThrottledDelay;
+
         string name;
         TimeSpan timeToWaitBeforeTriggering;
         Timer timer;
