@@ -16,7 +16,7 @@
             timer = new Timer(CircuitBreakerTriggered);
         }
 
-        public bool Triggered { get; private set; }
+        public bool Triggered => triggered;
 
         public void Dispose()
         {
@@ -33,7 +33,7 @@
             }
 
             timer.Change(Timeout.Infinite, Timeout.Infinite);
-            Triggered = false;
+            triggered = false;
             Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
         }
 
@@ -56,7 +56,7 @@
         {
             if (Interlocked.Read(ref failureCount) > 0)
             {
-                Triggered = true;
+                triggered = true;
                 Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
                 triggerAction(lastException);
             }
@@ -69,6 +69,7 @@
         Action<Exception> triggerAction;
         long failureCount;
         Exception lastException;
+        volatile bool triggered;
 
         static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
         static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();
