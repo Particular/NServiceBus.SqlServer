@@ -16,6 +16,8 @@
             timer = new Timer(CircuitBreakerTriggered);
         }
 
+        public bool Triggered => triggered;
+
         public void Dispose()
         {
             //Injected
@@ -31,6 +33,7 @@
             }
 
             timer.Change(Timeout.Infinite, Timeout.Infinite);
+            triggered = false;
             Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
         }
 
@@ -45,17 +48,20 @@
                 Logger.WarnFormat("The circuit breaker for {0} is now in the armed state", name);
             }
 
-            return Task.Delay(TimeSpan.FromSeconds(1));
+            var delay = Triggered ? ThrottledDelay : NonThrottledDelay;
+            return Task.Delay(delay);
         }
 
         void CircuitBreakerTriggered(object state)
         {
             if (Interlocked.Read(ref failureCount) > 0)
             {
+                triggered = true;
                 Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
                 triggerAction(lastException);
             }
         }
+
 
         string name;
         TimeSpan timeToWaitBeforeTriggering;
@@ -63,8 +69,11 @@
         Action<Exception> triggerAction;
         long failureCount;
         Exception lastException;
+        volatile bool triggered;
 
         static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
         static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();
+        static TimeSpan NonThrottledDelay = TimeSpan.FromSeconds(1);
+        static TimeSpan ThrottledDelay = TimeSpan.FromSeconds(10);
     }
 }
