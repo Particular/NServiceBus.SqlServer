@@ -8,10 +8,11 @@ namespace NServiceBus.Transport.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
+            this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -21,20 +22,21 @@ namespace NServiceBus.Transport.SQLServer
             {
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(receivingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 foreach (var sendingAddress in queueBindings.SendingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction).ConfigureAwait(false);
+                    await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
                 transaction.Commit();
             }
         }
 
-        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
-            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+            var messageBodyComputedColumn = createMessageBodyColumn ? SqlConstants.MessageBodyStringColumn : string.Empty;
+            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName, messageBodyComputedColumn);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -46,6 +48,7 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
+        readonly bool createMessageBodyColumn;
     }
 }
 #pragma warning restore 618

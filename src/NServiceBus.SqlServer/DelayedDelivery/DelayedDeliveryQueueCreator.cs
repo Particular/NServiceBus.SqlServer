@@ -6,11 +6,12 @@ namespace NServiceBus.Transport.SQLServer
 
     class DelayedDeliveryQueueCreator : ICreateQueues
     {
-        public DelayedDeliveryQueueCreator(SqlConnectionFactory connectionFactory, ICreateQueues queueCreator, CanonicalQueueAddress delayedMessageTable)
+        public DelayedDeliveryQueueCreator(SqlConnectionFactory connectionFactory, ICreateQueues queueCreator, CanonicalQueueAddress delayedMessageTable, bool createMessageBodyComputedColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.queueCreator = queueCreator;
             this.delayedMessageTable = delayedMessageTable;
+            this.createMessageBodyComputedColumn = createMessageBodyComputedColumn;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -19,15 +20,16 @@ namespace NServiceBus.Transport.SQLServer
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             using (var transaction = connection.BeginTransaction())
             {
-                await CreateDelayedMessageQueue(delayedMessageTable, connection, transaction).ConfigureAwait(false);
+                await CreateDelayedMessageQueue(delayedMessageTable, connection, transaction, createMessageBodyComputedColumn).ConfigureAwait(false);
                 transaction.Commit();
             }
         }
 
-        static async Task CreateDelayedMessageQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction)
+        static async Task CreateDelayedMessageQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
 #pragma warning disable 618
-            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+            var messageBodyComputedColumn = createMessageBodyColumn ? SqlConstants.MessageBodyStringColumn : string.Empty;
+            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName, messageBodyComputedColumn);
 #pragma warning restore 618
             using (var command = new SqlCommand(sql, connection, transaction)
             {
@@ -41,5 +43,6 @@ namespace NServiceBus.Transport.SQLServer
         SqlConnectionFactory connectionFactory;
         ICreateQueues queueCreator;
         CanonicalQueueAddress delayedMessageTable;
+        readonly bool createMessageBodyComputedColumn;
     }
 }
