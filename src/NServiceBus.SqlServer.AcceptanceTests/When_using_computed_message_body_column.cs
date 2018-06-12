@@ -13,7 +13,7 @@
         public async Task Simple_send_is_received()
         {
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<Endpoint>(b => b.When((session, c) => session.Send(new MyMessage())))
+                .WithEndpoint<Endpoint>(b => b.When((session, c) => session.SendLocal(new MyMessage())))
                 .Done(c => c.WasCalled)
                 .Run();
 
