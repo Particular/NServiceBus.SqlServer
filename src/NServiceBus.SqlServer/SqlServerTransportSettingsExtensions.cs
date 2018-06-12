@@ -6,6 +6,7 @@
     using System.Transactions;
     using Configuration.AdvancedExtensibility;
     using Features;
+    using Logging;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -151,6 +152,11 @@
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
+            if (isolationLevel != IsolationLevel.ReadCommitted && isolationLevel != IsolationLevel.Serializable)
+            {
+                Logger.Warn("TransactionScope should be only used with Serializable or ReadCommited isolation levels.");
+            }
+
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
             return transportExtensions;
         }
@@ -212,5 +218,7 @@
         {
             throw new NotImplementedException();
         }
+
+        static ILog Logger = LogManager.GetLogger<SqlServerTransport>();
     }
 }
