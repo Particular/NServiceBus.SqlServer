@@ -152,9 +152,9 @@
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            if (isolationLevel != IsolationLevel.ReadCommitted && isolationLevel != IsolationLevel.Serializable)
+            if (isolationLevel != IsolationLevel.ReadCommitted)
             {
-                Logger.Warn("TransactionScope should be only used with Serializable or ReadCommited isolation levels.");
+                Logger.Warn("TransactionScope should be only used with ReadCommited isolation level.");
             }
 
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
