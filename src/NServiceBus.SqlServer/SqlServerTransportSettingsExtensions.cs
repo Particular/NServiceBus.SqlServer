@@ -40,6 +40,10 @@
             var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifySchema(endpointName, schema);
+            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CustomSchema", new
+            {
+                FeatureEnabled = true
+            });
 
             return transportExtensions;
         }
@@ -59,6 +63,10 @@
             var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<QueueSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifySchema(queueName, schema);
+            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CustomSchema", new
+            {
+                FeatureEnabled = true
+            });
 
             return transportExtensions;
         }
@@ -79,6 +87,11 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.MultiCatalogEnabled", new
+            {
+                FeatureEnabled = true
+            });
+
             var schemasConfiguration = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(endpointName, catalog);
@@ -102,6 +115,11 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.MultiCatalogEnabled", new
+            {
+                FeatureEnabled = true
+            });
+
             var schemasConfiguration = settings.GetOrCreate<QueueSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(queueName, catalog);
@@ -122,6 +140,12 @@
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
 
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
+
+            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CircuitBreaker", new
+            {
+                TimeToWaitBeforeTriggering = waitTime
+            });
+
             return transportExtensions;
         }
 
@@ -152,6 +176,13 @@
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
+
+            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.TransactionScope", new
+            {
+                FeatureEnabled = true,
+                IsolationLevel = isolationLevel
+            });
+
             return transportExtensions;
         }
 
