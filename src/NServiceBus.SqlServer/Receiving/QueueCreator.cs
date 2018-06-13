@@ -35,8 +35,7 @@ namespace NServiceBus.Transport.SQLServer
 
         static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
-            var messageBodyComputedColumn = createMessageBodyColumn ? SqlConstants.MessageBodyStringColumn : string.Empty;
-            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName, messageBodyComputedColumn);
+            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -44,11 +43,23 @@ namespace NServiceBus.Transport.SQLServer
             {
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
+
+            if (createMessageBodyColumn)
+            {
+                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+            }
         }
 
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
-        readonly bool createMessageBodyColumn;
+        bool createMessageBodyColumn;
     }
 }
 #pragma warning restore 618

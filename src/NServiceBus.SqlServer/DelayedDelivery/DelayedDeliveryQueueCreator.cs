@@ -21,15 +21,15 @@ namespace NServiceBus.Transport.SQLServer
             using (var transaction = connection.BeginTransaction())
             {
                 await CreateDelayedMessageQueue(delayedMessageTable, connection, transaction, createMessageBodyComputedColumn).ConfigureAwait(false);
+
                 transaction.Commit();
             }
         }
 
-        static async Task CreateDelayedMessageQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateDelayedMessageQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyComputedColumn)
         {
 #pragma warning disable 618
-            var messageBodyComputedColumn = createMessageBodyColumn ? SqlConstants.MessageBodyStringColumn : string.Empty;
-            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName, messageBodyComputedColumn);
+            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
 #pragma warning restore 618
             using (var command = new SqlCommand(sql, connection, transaction)
             {
@@ -38,11 +38,24 @@ namespace NServiceBus.Transport.SQLServer
             {
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
+            if (createMessageBodyComputedColumn)
+            {
+                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+
+            }
         }
+
 
         SqlConnectionFactory connectionFactory;
         ICreateQueues queueCreator;
         CanonicalQueueAddress delayedMessageTable;
-        readonly bool createMessageBodyComputedColumn;
+        bool createMessageBodyComputedColumn;
     }
 }
