@@ -23,6 +23,10 @@ namespace NServiceBus.Transport.SQLServer
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
             var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.TimeoutManager", new
+            {
+                FeatureEnabled = !timeoutManagerFeatureDisabled
+            });
             if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
             {
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
@@ -137,6 +141,12 @@ namespace NServiceBus.Transport.SQLServer
         {
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
             var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
+
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+            {
+                FeatureEnabled = enable,
+                BatchSize = purgeBatchSize
+            });
 
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
         }
