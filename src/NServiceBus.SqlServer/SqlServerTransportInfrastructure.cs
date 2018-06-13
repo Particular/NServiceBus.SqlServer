@@ -237,8 +237,21 @@ namespace NServiceBus.Transport.SQLServer
         {
             if (delayedDeliverySettings == null)
             {
+                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                {
+                    Native = false
+                });
                 return Task.FromResult(0);
             }
+
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+            {
+                Native = true,
+                delayedDeliverySettings.Suffix,
+                delayedDeliverySettings.Interval,
+                BatchSize = delayedDeliverySettings.MatureBatchSize,
+                TimoutManager = delayedDeliverySettings.TimeoutManagerDisabled ? "disabled" : "enabled"
+            });
             var delayedMessageTable = CreateDelayedMessageTable();
             delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
             delayedMessageHandler.Start();
