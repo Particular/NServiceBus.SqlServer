@@ -25,6 +25,7 @@ namespace NServiceBus.Transport.SQLServer
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
     {
+        public static readonly string AddMessageBodyStringColumn;
         public static readonly string CheckHeadersColumnType;
         public static readonly string CheckIfExpiresIndexIsPresent;
         public const string CreateDelayedMessageStoreText = @"
