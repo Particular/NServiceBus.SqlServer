@@ -58,7 +58,6 @@ CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
         public static readonly string CreateQueueText;
         public static readonly string PeekText;
-        public static readonly string AddMessageBodyStringColumn;
         public static readonly string PurgeBatchOfExpiredMessagesText;
         public static readonly string PurgeText;
         public static readonly string ReceiveText;
@@ -66,6 +65,7 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
     }
     public class static SqlServerTransportSettingsExtensions
     {
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         [System.ObsoleteAttribute("Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalo" +
             "g addressing instead. The member currently throws a NotImplementedException. Wil" +
