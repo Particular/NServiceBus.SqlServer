@@ -40,7 +40,9 @@ namespace NServiceBus.Transport.SQLServer
             }
             if (createMessageBodyComputedColumn)
             {
+#pragma warning disable 618
                 var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+#pragma warning restore 618
                 using (var command = new SqlCommand(bodyStringSql, connection, transaction)
                 {
                     CommandType = CommandType.Text
