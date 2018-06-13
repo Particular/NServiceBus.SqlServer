@@ -58,6 +58,7 @@ CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
         public static readonly string CreateQueueText;
         public static readonly string PeekText;
+        public static readonly string MessageBodyStringColumn;
         public static readonly string PurgeBatchOfExpiredMessagesText;
         public static readonly string PurgeText;
         public static readonly string ReceiveText;
