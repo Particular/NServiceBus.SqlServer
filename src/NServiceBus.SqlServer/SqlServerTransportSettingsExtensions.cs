@@ -140,12 +140,7 @@
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
 
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
-
-            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CircuitBreaker", new
-            {
-                TimeToWaitBeforeTriggering = waitTime
-            });
-
+            
             return transportExtensions;
         }
 
@@ -176,12 +171,6 @@
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
-
-            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.TransactionScope", new
-            {
-                FeatureEnabled = true,
-                IsolationLevel = isolationLevel
-            });
 
             return transportExtensions;
         }
