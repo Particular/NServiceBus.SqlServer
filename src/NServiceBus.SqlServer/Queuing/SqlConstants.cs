@@ -118,6 +118,14 @@ IF NOT EXISTS (
         AND type in (N'U'))
 RETURN
 
+IF EXISTS (
+  SELECT * 
+  FROM   {1}.sys.columns 
+  WHERE  object_id = OBJECT_ID(N'{0}') 
+         AND name = 'BodyString'
+)
+RETURN
+
 EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 ALTER TABLE {0} 
