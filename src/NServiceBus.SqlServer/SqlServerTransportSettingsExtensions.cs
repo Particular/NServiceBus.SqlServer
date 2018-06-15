@@ -40,10 +40,6 @@
             var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifySchema(endpointName, schema);
-            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CustomSchema", new
-            {
-                FeatureEnabled = true
-            });
 
             return transportExtensions;
         }
@@ -63,10 +59,6 @@
             var schemasConfiguration = transportExtensions.GetSettings().GetOrCreate<QueueSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifySchema(queueName, schema);
-            transportExtensions.GetSettings().AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CustomSchema", new
-            {
-                FeatureEnabled = true
-            });
 
             return transportExtensions;
         }
@@ -87,10 +79,6 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.MultiCatalogEnabled", new
-            {
-                FeatureEnabled = true
-            });
 
             var schemasConfiguration = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
@@ -115,10 +103,6 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.MultiCatalogEnabled", new
-            {
-                FeatureEnabled = true
-            });
 
             var schemasConfiguration = settings.GetOrCreate<QueueSchemaAndCatalogSettings>();
 

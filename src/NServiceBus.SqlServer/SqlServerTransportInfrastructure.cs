@@ -56,15 +56,14 @@ namespace NServiceBus.Transport.SQLServer
             {
                 scopeOptions = new SqlScopeOptions();
             }
-            else
+
+            settings.TryGet(out TransportTransactionMode transactionMode);
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.Transactions", new
             {
-                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.TransactionScope", new
-                {
-                    FeatureEnabled = true,
-                    scopeOptions.TransactionOptions.IsolationLevel,
-                    scopeOptions.TransactionOptions.Timeout
-                });
-            }
+                TransactionMode = transactionMode,
+                scopeOptions.TransactionOptions.IsolationLevel,
+                scopeOptions.TransactionOptions.Timeout
+            });
 
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
             {
