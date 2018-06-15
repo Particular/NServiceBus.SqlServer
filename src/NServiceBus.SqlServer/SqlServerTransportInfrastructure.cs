@@ -63,6 +63,8 @@ namespace NServiceBus.Transport.SQLServer
                 queuePeekerOptions = new QueuePeekerOptions();
             }
 
+            var createMessageBodyComputedColumn = settings.GetOrDefault<bool>(SettingsKeys.CreateMessageBodyComputedColumn);
+
             var connectionFactory = CreateConnectionFactory();
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
@@ -93,12 +95,12 @@ namespace NServiceBus.Transport.SQLServer
                 },
                 () =>
                 {
-                    var creator = new QueueCreator(connectionFactory, addressTranslator);
+                    var creator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
                     if (delayedDeliverySettings == null)
                     {
                         return creator;
                     }
-                    return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore);
+                    return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore, createMessageBodyComputedColumn);
                 },
                 () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
         }

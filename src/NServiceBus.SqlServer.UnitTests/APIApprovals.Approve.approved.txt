@@ -25,6 +25,7 @@ namespace NServiceBus.Transport.SQLServer
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
     {
+        public static readonly string AddMessageBodyStringColumn;
         public static readonly string CheckHeadersColumnType;
         public static readonly string CheckIfExpiresIndexIsPresent;
         public const string CreateDelayedMessageStoreText = @"
@@ -46,7 +47,6 @@ BEGIN
 END
 CREATE TABLE {0} (
     Headers nvarchar(max) NOT NULL,
-    BodyString as cast(Body AS nvarchar(max)),
     Body varbinary(max),
     Due datetime NOT NULL,
     RowVersion bigint IDENTITY(1,1) NOT NULL
@@ -65,6 +65,7 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
     }
     public class static SqlServerTransportSettingsExtensions
     {
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         [System.ObsoleteAttribute("Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalo" +
             "g addressing instead. The member currently throws a NotImplementedException. Wil" +

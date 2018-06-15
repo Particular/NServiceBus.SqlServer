@@ -200,6 +200,17 @@
         }
 
         /// <summary>
+        /// Instructs the transport to create a computed column for inspecting message body contents.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.CreateMessageBodyComputedColumn, true);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
