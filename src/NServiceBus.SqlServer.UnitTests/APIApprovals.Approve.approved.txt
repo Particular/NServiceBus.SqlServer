@@ -22,6 +22,10 @@ namespace NServiceBus.Transport.SQLServer
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
     }
+    public class static SendOptionsExtensions
+    {
+        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
+    }
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
     {
