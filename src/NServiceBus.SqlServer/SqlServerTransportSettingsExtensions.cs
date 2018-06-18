@@ -152,9 +152,9 @@
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            if (isolationLevel != IsolationLevel.ReadCommitted)
+            if (isolationLevel != IsolationLevel.ReadCommitted && isolationLevel != IsolationLevel.RepeatableRead)
             {
-                Logger.Warn("TransactionScope should be only used with ReadCommited isolation level.");
+                Logger.Warn("TransactionScope should be only used with either the ReadCommited or the RepeatableRead isolation level.");
             }
 
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
