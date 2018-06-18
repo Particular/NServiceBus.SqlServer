@@ -4,16 +4,14 @@
     using System.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using Extensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport;
     using Transport.SQLServer;
 
     public class When_passing_custom_transaction_via_sendoptions : NServiceBusAcceptanceTest
     {
-        public static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
 
         [Test]
         public async Task Should_be_used_by_send_operations()
@@ -21,20 +19,20 @@
             await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
                 {
-                    using (var connection = new SqlConnection(@"Server=localhost\sqlexpress;Initial Catalog=nservicebus;uid=sa;pwd=sa;"))
+                    using (var connection = new SqlConnection(ConnectionString))
                     {
                         connection.Open();
 
-                        using (var rolledbackTrasaction = connection.BeginTransaction())
+                        using (var rolledbackTransaction = connection.BeginTransaction())
                         {
                             var options = new SendOptions();
                             options.RouteToThisEndpoint();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTrasaction);
+                            options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTransaction);
 
                             await bus.Send(new Request{FromCommitedTransaction = false}, options);
 
-                            rolledbackTrasaction.Rollback();
+                            rolledbackTransaction.Rollback();
                         }
 
                         using (var commitedTransaction = connection.BeginTransaction())
@@ -55,7 +53,7 @@
                 .Run(TimeSpan.FromMinutes(1));
         }
 
-        public class Request : IMessage
+        class Request : IMessage
         {
             public bool FromCommitedTransaction { get; set; }
         }
