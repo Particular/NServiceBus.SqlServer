@@ -16,7 +16,7 @@
         [Test]
         public async Task Should_be_used_by_send_operations()
         {
-            await Scenario.Define<MyContext>()
+            var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
                 {
                     using (var connection = new SqlConnection(ConnectionString))
@@ -30,7 +30,7 @@
 
                             options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTransaction);
 
-                            await bus.Send(new Request{FromCommitedTransaction = false}, options);
+                            await bus.Send(new FromRolledbackTransaction(), options);
 
                             rolledbackTransaction.Rollback();
                         }
@@ -42,25 +42,31 @@
 
                             options.UseCustomSqlConnectionAndTransaction(connection, commitedTransaction);
 
-                            await bus.Send(new Request{FromCommitedTransaction = true}, options);
+                            await bus.Send(new FromCommitedTransaction(), options);
 
                             commitedTransaction.Commit();
                         }
                     }
                     
                 }))
-                .Done(c => c.Done)
+                .Done(c => c.ReceivedFromCommitedTransaction)
                 .Run(TimeSpan.FromMinutes(1));
+
+            Assert.IsFalse(context.ReceivedFromRolledbackTransaction);
         }
 
-        class Request : IMessage
+        class FromCommitedTransaction : IMessage
         {
-            public bool FromCommitedTransaction { get; set; }
+        }
+
+        class FromRolledbackTransaction : IMessage
+        {
         }
 
         class MyContext : ScenarioContext
         {
-            public bool Done { get; set; }
+            public bool ReceivedFromCommitedTransaction { get; set; }
+            public bool ReceivedFromRolledbackTransaction { get; set; }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
@@ -70,13 +76,21 @@
                 EndpointSetup<DefaultServer>();
             }
 
-            class ReplyHandler : IHandleMessages<Request>
+            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>, 
+                IHandleMessages<FromCommitedTransaction>
             {
                 public MyContext Context { get; set; }
 
-                public Task Handle(Request message, IMessageHandlerContext context)
+                public Task Handle(FromRolledbackTransaction message, IMessageHandlerContext context)
                 {
-                    Context.Done = message.FromCommitedTransaction;
+                    Context.ReceivedFromRolledbackTransaction = true;
+
+                    return Task.FromResult(0);
+                }
+
+                public Task Handle(FromCommitedTransaction message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedFromCommitedTransaction = true;
 
                     return Task.FromResult(0);
                 }
