@@ -6,6 +6,7 @@
     using System.Transactions;
     using Configuration.AdvancedExtensibility;
     using Features;
+    using Logging;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
@@ -79,6 +80,7 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+
             var schemasConfiguration = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(endpointName, catalog);
@@ -102,6 +104,7 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+
             var schemasConfiguration = settings.GetOrCreate<QueueSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(queueName, catalog);
@@ -122,6 +125,7 @@
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
 
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
+            
             return transportExtensions;
         }
 
@@ -151,7 +155,13 @@
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
+            if (isolationLevel != IsolationLevel.ReadCommitted && isolationLevel != IsolationLevel.RepeatableRead)
+            {
+                Logger.Warn("TransactionScope should be only used with either the ReadCommited or the RepeatableRead isolation level.");
+            }
+
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
+
             return transportExtensions;
         }
 
@@ -200,6 +210,17 @@
         }
 
         /// <summary>
+        /// Instructs the transport to create a computed column for inspecting message body contents.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.CreateMessageBodyComputedColumn, true);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
@@ -212,5 +233,7 @@
         {
             throw new NotImplementedException();
         }
+
+        static ILog Logger = LogManager.GetLogger<SqlServerTransport>();
     }
 }

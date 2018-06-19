@@ -23,6 +23,12 @@ namespace NServiceBus.Transport.SQLServer
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
             var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
+            
+            diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
+            {
+                FeatureEnabled = !timeoutManagerFeatureDisabled
+            });
+            
             if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
             {
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
@@ -53,15 +59,29 @@ namespace NServiceBus.Transport.SQLServer
                 scopeOptions = new SqlScopeOptions();
             }
 
+            settings.TryGet(out TransportTransactionMode transactionMode);
+            diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
+            {
+                TransactionMode = transactionMode,
+                scopeOptions.TransactionOptions.IsolationLevel,
+                scopeOptions.TransactionOptions.Timeout
+            });
+
             if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
+            diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
+            {
+                TimeToWaitBeforeTriggering = waitTimeCircuitBreaker
+            });
 
             if (!settings.TryGet(out QueuePeekerOptions queuePeekerOptions))
             {
                 queuePeekerOptions = new QueuePeekerOptions();
             }
+
+            var createMessageBodyComputedColumn = settings.GetOrDefault<bool>(SettingsKeys.CreateMessageBodyComputedColumn);
 
             var connectionFactory = CreateConnectionFactory();
 
@@ -93,12 +113,12 @@ namespace NServiceBus.Transport.SQLServer
                 },
                 () =>
                 {
-                    var creator = new QueueCreator(connectionFactory, addressTranslator);
+                    var creator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
                     if (delayedDeliverySettings == null)
                     {
                         return creator;
                     }
-                    return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore);
+                    return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore, createMessageBodyComputedColumn);
                 },
                 () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
         }
@@ -137,6 +157,12 @@ namespace NServiceBus.Transport.SQLServer
         {
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
             var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
+
+            diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+            {
+                FeatureEnabled = enable,
+                BatchSize = purgeBatchSize
+            });
 
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
         }
@@ -235,10 +261,29 @@ namespace NServiceBus.Transport.SQLServer
 
         public override Task Start()
         {
+            foreach (var diagnosticSection in diagnostics)
+            {
+                settings.AddStartupDiagnosticsSection(diagnosticSection.Key, diagnosticSection.Value);
+            }
+
             if (delayedDeliverySettings == null)
             {
+                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                {
+                    Native = false
+                });
                 return Task.FromResult(0);
             }
+
+            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+            {
+                Native = true,
+                delayedDeliverySettings.Suffix,
+                delayedDeliverySettings.Interval,
+                BatchSize = delayedDeliverySettings.MatureBatchSize,
+                TimoutManager = delayedDeliverySettings.TimeoutManagerDisabled ? "disabled" : "enabled"
+            });
+
             var delayedMessageTable = CreateDelayedMessageTable();
             delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
             delayedMessageHandler.Start();
@@ -287,5 +332,6 @@ namespace NServiceBus.Transport.SQLServer
         EndpointSchemaAndCatalogSettings schemaAndCatalogSettings;
         DelayedMessageHandler delayedMessageHandler;
         DelayedDeliverySettings delayedDeliverySettings;
+        Dictionary<string, object> diagnostics = new Dictionary<string, object>();
     }
 }

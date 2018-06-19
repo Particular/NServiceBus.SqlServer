@@ -110,6 +110,40 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 SELECT count(*) Id
 FROM {0} WITH (READPAST);";
 
+        public static readonly string AddMessageBodyStringColumn = @"
+IF NOT EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+IF EXISTS (
+  SELECT * 
+  FROM   {1}.sys.columns 
+  WHERE  object_id = OBJECT_ID(N'{0}') 
+         AND name = 'BodyString'
+)
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+  SELECT * 
+  FROM   {1}.sys.columns 
+  WHERE  object_id = OBJECT_ID(N'{0}') 
+         AND name = 'BodyString'
+)
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+ALTER TABLE {0} 
+ADD BodyString as cast(Body as nvarchar(max));
+
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
+
         public static readonly string CreateQueueText = @"
 IF EXISTS (
     SELECT *
@@ -137,7 +171,6 @@ CREATE TABLE {0} (
     Recoverable bit NOT NULL,
     Expires datetime,
     Headers nvarchar(max) NOT NULL,
-    BodyString as cast(Body as nvarchar(max)),
     Body varbinary(max),
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
@@ -183,7 +216,6 @@ END
 
 CREATE TABLE {0} (
     Headers nvarchar(max) NOT NULL,
-    BodyString as cast(Body AS nvarchar(max)),
     Body varbinary(max),
     Due datetime NOT NULL,
     RowVersion bigint IDENTITY(1,1) NOT NULL
