@@ -26,7 +26,6 @@
                         using (var rolledbackTransaction = connection.BeginTransaction())
                         {
                             var options = new SendOptions();
-                            options.RouteToThisEndpoint();
 
                             options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTransaction);
 
@@ -38,7 +37,6 @@
                         using (var commitedTransaction = connection.BeginTransaction())
                         {
                             var options = new SendOptions();
-                            options.RouteToThisEndpoint();
 
                             options.UseCustomSqlConnectionAndTransaction(connection, commitedTransaction);
 
@@ -73,7 +71,16 @@
         {
             public AnEndpoint()
             {
-                EndpointSetup<DefaultServer>();
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.LimitMessageProcessingConcurrencyTo(1);
+
+                    var routing = c.ConfigureTransport().Routing();
+                    var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));
+
+                    routing.RouteToEndpoint(typeof(FromCommitedTransaction), anEndpointName);
+                    routing.RouteToEndpoint(typeof(FromRolledbackTransaction), anEndpointName);
+                });
             }
 
             class ReplyHandler : IHandleMessages<FromRolledbackTransaction>, 
