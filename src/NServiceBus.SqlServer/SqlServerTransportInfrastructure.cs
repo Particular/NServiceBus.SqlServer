@@ -23,10 +23,12 @@ namespace NServiceBus.Transport.SQLServer
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
             var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.TimeoutManager", new
+            
+            diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
                 FeatureEnabled = !timeoutManagerFeatureDisabled
             });
+            
             if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
             {
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
@@ -58,7 +60,7 @@ namespace NServiceBus.Transport.SQLServer
             }
 
             settings.TryGet(out TransportTransactionMode transactionMode);
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.Transactions", new
+            diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
             {
                 TransactionMode = transactionMode,
                 scopeOptions.TransactionOptions.IsolationLevel,
@@ -69,7 +71,7 @@ namespace NServiceBus.Transport.SQLServer
             {
                 waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
             }
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.CircuitBreaker", new
+            diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
             {
                 TimeToWaitBeforeTriggering = waitTimeCircuitBreaker
             });
@@ -154,7 +156,7 @@ namespace NServiceBus.Transport.SQLServer
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
             var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
 
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+            diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
             {
                 FeatureEnabled = enable,
                 BatchSize = purgeBatchSize
@@ -257,6 +259,11 @@ namespace NServiceBus.Transport.SQLServer
 
         public override Task Start()
         {
+            foreach (var diagnosticSection in diagnostics)
+            {
+                settings.AddStartupDiagnosticsSection(diagnosticSection.Key, diagnosticSection.Value);
+            }
+
             if (delayedDeliverySettings == null)
             {
                 settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
@@ -274,6 +281,7 @@ namespace NServiceBus.Transport.SQLServer
                 BatchSize = delayedDeliverySettings.MatureBatchSize,
                 TimoutManager = delayedDeliverySettings.TimeoutManagerDisabled ? "disabled" : "enabled"
             });
+
             var delayedMessageTable = CreateDelayedMessageTable();
             delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
             delayedMessageHandler.Start();
@@ -322,5 +330,6 @@ namespace NServiceBus.Transport.SQLServer
         EndpointSchemaAndCatalogSettings schemaAndCatalogSettings;
         DelayedMessageHandler delayedMessageHandler;
         DelayedDeliverySettings delayedDeliverySettings;
+        Dictionary<string, object> diagnostics = new Dictionary<string, object>();
     }
 }
