@@ -11,7 +11,7 @@
 
     public class When_passing_custom_transaction_via_sendoptions : NServiceBusAcceptanceTest
     {
-        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransport.ConnectionString");
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task Should_be_used_by_send_operations()
