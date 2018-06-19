@@ -80,6 +80,7 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+
             var schemasConfiguration = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(endpointName, catalog);
@@ -103,6 +104,7 @@
             var settings = transportExtensions.GetSettings();
 
             settings.Set(SettingsKeys.MultiCatalogEnabled, true);
+
             var schemasConfiguration = settings.GetOrCreate<QueueSchemaAndCatalogSettings>();
 
             schemasConfiguration.SpecifyCatalog(queueName, catalog);
@@ -123,6 +125,7 @@
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
 
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
+            
             return transportExtensions;
         }
 
@@ -158,6 +161,7 @@
             }
 
             transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
+
             return transportExtensions;
         }
 
