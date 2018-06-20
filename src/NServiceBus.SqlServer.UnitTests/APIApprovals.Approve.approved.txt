@@ -22,11 +22,44 @@ namespace NServiceBus.Transport.SQLServer
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
     }
+    public class static SendOptionsExtensions
+    {
+        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
+    }
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
     {
+        public static readonly string AddMessageBodyStringColumn;
         public static readonly string CheckHeadersColumnType;
         public static readonly string CheckIfExpiresIndexIsPresent;
+        public const string CreateDelayedMessageStoreText = @"
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+CREATE TABLE {0} (
+    Headers nvarchar(max) NOT NULL,
+    Body varbinary(max),
+    Due datetime NOT NULL,
+    RowVersion bigint IDENTITY(1,1) NOT NULL
+);
+CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
+(
+    [Due]
+)
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
         public static readonly string CreateQueueText;
         public static readonly string PeekText;
         public static readonly string PurgeBatchOfExpiredMessagesText;
@@ -36,6 +69,7 @@ namespace NServiceBus.Transport.SQLServer
     }
     public class static SqlServerTransportSettingsExtensions
     {
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         [System.ObsoleteAttribute("Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalo" +
             "g addressing instead. The member currently throws a NotImplementedException. Wil" +

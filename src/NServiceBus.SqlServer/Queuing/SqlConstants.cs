@@ -29,7 +29,7 @@ VALUES (
     @Id,
     @CorrelationId,
     @ReplyToAddress,
-    @Recoverable,
+    1,
     CASE WHEN @TimeToBeReceivedMs IS NOT NULL
         THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,
     @Headers,
@@ -70,7 +70,6 @@ OUTPUT
     deleted.Id,
     deleted.CorrelationId,
     deleted.ReplyToAddress,
-    deleted.Recoverable,
     CASE WHEN deleted.Expires IS NULL
         THEN 0
         ELSE CASE WHEN deleted.Expires > GETUTCDATE()
@@ -110,6 +109,40 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
         public static readonly string PeekText = @"
 SELECT count(*) Id
 FROM {0} WITH (READPAST);";
+
+        public static readonly string AddMessageBodyStringColumn = @"
+IF NOT EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+IF EXISTS (
+  SELECT * 
+  FROM   {1}.sys.columns 
+  WHERE  object_id = OBJECT_ID(N'{0}') 
+         AND name = 'BodyString'
+)
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+  SELECT * 
+  FROM   {1}.sys.columns 
+  WHERE  object_id = OBJECT_ID(N'{0}') 
+         AND name = 'BodyString'
+)
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+ALTER TABLE {0} 
+ADD BodyString as cast(Body as nvarchar(max));
+
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public static readonly string CreateQueueText = @"
 IF EXISTS (
@@ -161,7 +194,7 @@ WHERE
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
-        internal const string CreateDelayedMessageStoreText = @"
+        public const string CreateDelayedMessageStoreText = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
