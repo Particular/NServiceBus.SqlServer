@@ -140,7 +140,7 @@ BEGIN
 END
 
 ALTER TABLE {0} 
-ADD BodyString as cast(Body as nvarchar(max));
+ADD BodyString as cast(Body as varchar(max));
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
