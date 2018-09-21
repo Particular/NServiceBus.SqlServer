@@ -34,26 +34,26 @@
                             rolledbackTransaction.Rollback();
                         }
 
-                        using (var commitedTransaction = connection.BeginTransaction())
+                        using (var committedTransaction = connection.BeginTransaction())
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, commitedTransaction);
+                            options.UseCustomSqlConnectionAndTransaction(connection, committedTransaction);
 
-                            await bus.Send(new FromCommitedTransaction(), options);
+                            await bus.Send(new FromCommittedTransaction(), options);
 
-                            commitedTransaction.Commit();
+                            committedTransaction.Commit();
                         }
                     }
-                    
+
                 }))
-                .Done(c => c.ReceivedFromCommitedTransaction)
+                .Done(c => c.ReceivedFromCommittedTransaction)
                 .Run(TimeSpan.FromMinutes(1));
 
             Assert.IsFalse(context.ReceivedFromRolledbackTransaction);
         }
 
-        class FromCommitedTransaction : IMessage
+        class FromCommittedTransaction : IMessage
         {
         }
 
@@ -63,7 +63,7 @@
 
         class MyContext : ScenarioContext
         {
-            public bool ReceivedFromCommitedTransaction { get; set; }
+            public bool ReceivedFromCommittedTransaction { get; set; }
             public bool ReceivedFromRolledbackTransaction { get; set; }
         }
 
@@ -78,13 +78,13 @@
                     var routing = c.ConfigureTransport().Routing();
                     var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));
 
-                    routing.RouteToEndpoint(typeof(FromCommitedTransaction), anEndpointName);
+                    routing.RouteToEndpoint(typeof(FromCommittedTransaction), anEndpointName);
                     routing.RouteToEndpoint(typeof(FromRolledbackTransaction), anEndpointName);
                 });
             }
 
-            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>, 
-                IHandleMessages<FromCommitedTransaction>
+            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>,
+                IHandleMessages<FromCommittedTransaction>
             {
                 public MyContext Context { get; set; }
 
@@ -95,15 +95,15 @@
                     return Task.FromResult(0);
                 }
 
-                public Task Handle(FromCommitedTransaction message, IMessageHandlerContext context)
+                public Task Handle(FromCommittedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedFromCommitedTransaction = true;
+                    Context.ReceivedFromCommittedTransaction = true;
 
                     return Task.FromResult(0);
                 }
             }
         }
 
-       
+
     }
 }
