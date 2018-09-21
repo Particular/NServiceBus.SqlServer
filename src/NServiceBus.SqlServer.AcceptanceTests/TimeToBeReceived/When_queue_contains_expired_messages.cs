@@ -38,11 +38,10 @@
                         c.UseTransport<SqlServerTransport>()
                             .Transactions(transactionMode);
                     });
-                    b.When((bus, c) =>
+                    b.When(async (bus, c) =>
                     {
-                        bus.SendLocal(new ExpiredMessage());
-                        bus.SendLocal(new Message());
-                        return Task.FromResult(0);
+                        await bus.SendLocal(new ExpiredMessage());
+                        await bus.SendLocal(new Message());
                     });
                 })
                 .Done(c => c.MessageWasHandled && QueueIsEmpty())

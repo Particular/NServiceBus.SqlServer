@@ -21,10 +21,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 #endif
         this.settings = settings;
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
-        settings.Set<LogicalAddress>(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
+        settings.Set(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
         var delayedDeliverySettings = new DelayedDeliverySettings();
         delayedDeliverySettings.TableSuffix("Delayed");
-        settings.Set<DelayedDeliverySettings>(delayedDeliverySettings);
+        settings.Set(delayedDeliverySettings);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
         if (string.IsNullOrEmpty(connectionString))
         {
