@@ -27,7 +27,7 @@
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTransaction);
+                            options.UseCustomSqlConnectionAndTransaction(rolledbackTransaction);
 
                             await bus.Send(new FromRolledbackTransaction(), options);
 
@@ -38,14 +38,14 @@
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, commitedTransaction);
+                            options.UseCustomSqlConnectionAndTransaction(commitedTransaction);
 
                             await bus.Send(new FromCommitedTransaction(), options);
 
                             commitedTransaction.Commit();
                         }
                     }
-                    
+
                 }))
                 .Done(c => c.ReceivedFromCommitedTransaction)
                 .Run(TimeSpan.FromMinutes(1));
@@ -83,7 +83,7 @@
                 });
             }
 
-            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>, 
+            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>,
                 IHandleMessages<FromCommitedTransaction>
             {
                 public MyContext Context { get; set; }
@@ -104,6 +104,6 @@
             }
         }
 
-       
+
     }
 }
