@@ -60,7 +60,7 @@
                 return "3.1";
             }
 
-            throw new Exception("Unknow endpoint version.");
+            throw new Exception("Unknown endpoint version.");
         }
     }
 

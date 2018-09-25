@@ -74,7 +74,7 @@
             }
             catch (Exception ex)
             {
-                criticalError.Raise($"Failed to execute reverability actions for message `{message.TransportId}`", ex);
+                criticalError.Raise($"Failed to execute recoverability actions for message `{message.TransportId}`", ex);
 
                 return ErrorHandleResult.RetryRequired;
             }
