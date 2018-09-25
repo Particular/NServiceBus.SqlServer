@@ -16,9 +16,7 @@ public class Handler : IHandleMessages<TestCommand>, IHandleMessages<TestRequest
 
     public Task Handle(TestRequest message, IMessageHandlerContext context)
     {
-        context.Reply(new TestResponse { ResponseId = message.RequestId });
-
-        return Task.FromResult(0);
+        return context.Reply(new TestResponse { ResponseId = message.RequestId });
     }
 
     public Task Handle(TestResponse message, IMessageHandlerContext context)
