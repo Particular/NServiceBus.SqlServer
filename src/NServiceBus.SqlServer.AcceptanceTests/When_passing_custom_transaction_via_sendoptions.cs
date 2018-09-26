@@ -38,7 +38,7 @@
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(commitedTransaction);
+                            options.UseCustomSqlConnectionAndTransaction(committedTransaction);
 
                             await bus.Send(new FromCommittedTransaction(), options);
 
