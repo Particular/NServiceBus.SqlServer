@@ -119,9 +119,9 @@ IF NOT EXISTS (
 RETURN
 
 IF EXISTS (
-  SELECT * 
-  FROM   {1}.sys.columns 
-  WHERE  object_id = OBJECT_ID(N'{0}') 
+  SELECT *
+  FROM   {1}.sys.columns
+  WHERE  object_id = OBJECT_ID(N'{0}')
          AND name = 'BodyString'
 )
 RETURN
@@ -129,9 +129,9 @@ RETURN
 EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
-  SELECT * 
-  FROM   {1}.sys.columns 
-  WHERE  object_id = OBJECT_ID(N'{0}') 
+  SELECT *
+  FROM   {1}.sys.columns
+  WHERE  object_id = OBJECT_ID(N'{0}')
          AND name = 'BodyString'
 )
 BEGIN

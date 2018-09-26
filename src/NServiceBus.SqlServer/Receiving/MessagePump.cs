@@ -202,7 +202,7 @@
             }
             catch (SqlException e) when (cancellationToken.IsCancellationRequested)
             {
-                Logger.Debug("Exception thown while performing cancellation", e);
+                Logger.Debug("Exception thrown while performing cancellation", e);
             }
         }
 

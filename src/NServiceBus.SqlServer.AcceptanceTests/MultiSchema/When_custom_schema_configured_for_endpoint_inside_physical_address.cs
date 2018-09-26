@@ -9,7 +9,7 @@
     using Routing;
     using static AcceptanceTesting.Customization.Conventions;
 
-    //HINT: Message mappings specifed in app.config added to routing table using UnicastRoute.CreateFromPhysicalAddress.
+    //HINT: Message mappings specified in app.config added to routing table using UnicastRoute.CreateFromPhysicalAddress.
     //      As a result this test covers also an app.config message mappings scenario
     public class When_custom_schema_configured_for_endpoint_inside_physical_address : When_custom_schema_configured_for_endpoint
     {
