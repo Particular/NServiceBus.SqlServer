@@ -24,7 +24,10 @@ namespace NServiceBus.Transport.SQLServer
     }
     public class static SendOptionsExtensions
     {
+        [System.ObsoleteAttribute("The connection parameter is no longer required. Use the alternate overload with o" +
+            "nly the transaction parameter. Will be removed in version 5.0.0.", true)]
         public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
+        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlTransaction transaction) { }
     }
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
