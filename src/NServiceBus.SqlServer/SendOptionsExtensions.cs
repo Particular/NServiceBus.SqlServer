@@ -34,7 +34,7 @@
         /// </summary>
         /// <param name="options">The <see cref="SendOptions" /> to extend.</param>
         /// <param name="transaction">SqlTransaction instance that will be used by any operations perfromed by the transport.</param>
-        public static void UseCustomSqlConnectionAndTransaction(this SendOptions options, SqlTransaction transaction)
+        public static void UseCustomSqlTransaction(this SendOptions options, SqlTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();
             transportTransaction.Set(transaction.Connection);
