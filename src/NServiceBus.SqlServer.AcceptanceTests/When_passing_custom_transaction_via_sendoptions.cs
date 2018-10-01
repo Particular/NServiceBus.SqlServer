@@ -27,7 +27,7 @@
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, rolledbackTransaction);
+                            options.UseCustomSqlTransaction(rolledbackTransaction);
 
                             await bus.Send(new FromRolledbackTransaction(), options);
 
@@ -38,7 +38,7 @@
                         {
                             var options = new SendOptions();
 
-                            options.UseCustomSqlConnectionAndTransaction(connection, committedTransaction);
+                            options.UseCustomSqlTransaction(committedTransaction);
 
                             await bus.Send(new FromCommittedTransaction(), options);
 
