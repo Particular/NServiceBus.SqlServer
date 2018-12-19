@@ -1,0 +1,91 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.IntegrationTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
+namespace NServiceBus
+{
+    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition, NServiceBus.Routing.IMessageDrivenSubscriptionTransport
+    {
+        public SqlServerTransport() { }
+        public override string ExampleConnectionStringForErrorMessage { get; }
+        public override bool RequiresConnectionString { get; }
+        public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
+    }
+}
+namespace NServiceBus.Transport.SQLServer
+{
+    public class DelayedDeliverySettings
+    {
+        public DelayedDeliverySettings() { }
+        public void BatchSize(int batchSize) { }
+        public void DisableTimeoutManagerCompatibility() { }
+        public void ProcessingInterval(System.TimeSpan interval) { }
+        public void TableSuffix(string suffix) { }
+    }
+    public class static SendOptionsExtensions
+    {
+        [System.ObsoleteAttribute("The connection parameter is no longer required. Use the alternate overload with o" +
+            "nly the transaction parameter. Will be removed in version 5.0.0.", true)]
+        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
+        public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlTransaction transaction) { }
+    }
+    [System.ObsoleteAttribute("Not for public use.")]
+    public class static SqlConstants
+    {
+        public static readonly string AddMessageBodyStringColumn;
+        public static readonly string CheckHeadersColumnType;
+        public static readonly string CheckIfExpiresIndexIsPresent;
+        public const string CreateDelayedMessageStoreText = @"
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+CREATE TABLE {0} (
+    Headers nvarchar(max) NOT NULL,
+    Body varbinary(max),
+    Due datetime NOT NULL,
+    RowVersion bigint IDENTITY(1,1) NOT NULL
+);
+CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
+(
+    [Due]
+)
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
+        public static readonly string CreateQueueText;
+        public static readonly string PeekText;
+        public static readonly string PurgeBatchOfExpiredMessagesText;
+        public static readonly string PurgeText;
+        public static readonly string ReceiveText;
+        public static readonly string SendText;
+    }
+    public class static SqlServerTransportSettingsExtensions
+    {
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
+        [System.ObsoleteAttribute("Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalo" +
+            "g addressing instead. The member currently throws a NotImplementedException. Wil" +
+            "l be removed in version 5.0.0.", true)]
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> EnableLegacyMultiInstanceMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<int> purgeBatchSize) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> timeout = null, System.Nullable<System.Transactions.IsolationLevel> isolationLevel = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.Transport.SQLServer.DelayedDeliverySettings UseNativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
+    }
+}
