@@ -1,10 +1,8 @@
-﻿#if NET452
-namespace NServiceBus.SqlServer.UnitTests
+﻿namespace NServiceBus.SqlServer.UnitTests
 {
     using System.Collections.Generic;
-    using System.Runtime.CompilerServices;
-    using ApprovalTests;
     using NUnit.Framework;
+    using Particular.Approvals;
     using Transport.SQLServer;
 
     [TestFixture]
@@ -12,7 +10,6 @@ namespace NServiceBus.SqlServer.UnitTests
     {
 
         [Test]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Can_round_trip()
         {
             var before = new Dictionary<string, string>
@@ -23,7 +20,7 @@ namespace NServiceBus.SqlServer.UnitTests
                 {"keyWithEmpty", ""}
             };
             var serialize = DictionarySerializer.Serialize(before);
-            Approvals.Verify(serialize);
+            Approver.Verify(serialize);
 
             var after = DictionarySerializer.DeSerialize(serialize);
 
@@ -40,4 +37,3 @@ namespace NServiceBus.SqlServer.UnitTests
         }
     }
 }
-#endif
