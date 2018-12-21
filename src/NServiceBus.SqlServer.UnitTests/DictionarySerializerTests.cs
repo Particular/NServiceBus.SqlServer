@@ -1,8 +1,8 @@
 ﻿namespace NServiceBus.SqlServer.UnitTests
 {
     using System.Collections.Generic;
-    using ApprovalTests;
     using NUnit.Framework;
+    using Particular.Approvals;
     using Transport.SQLServer;
 
     [TestFixture]
@@ -20,7 +20,7 @@
                 {"keyWithEmpty", ""}
             };
             var serialize = DictionarySerializer.Serialize(before);
-            Approvals.Verify(serialize);
+            Approver.Verify(serialize);
 
             var after = DictionarySerializer.DeSerialize(serialize);
 
