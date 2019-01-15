@@ -16,5 +16,7 @@
 
         public const string SchemaPropertyKey = "Schema";
         public const string CatalogPropertyKey = "Catalog";
+
+        public const string EnableMigrationMode = "NServiceBus.TimeoutManager.EnableMigrationMode";
     }
 }

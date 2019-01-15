@@ -5,7 +5,6 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Configuration.AdvancedExtensibility;
-    using Features;
     using Logging;
 
     /// <summary>
@@ -190,7 +189,6 @@
             }
             var settings = new DelayedDeliverySettings();
             transportExtensions.GetSettings().Set<DelayedDeliverySettings>(settings);
-            transportExtensions.GetSettings().EnableFeatureByDefault<PreventRoutingMessagesToTimeoutManager>();
             return settings;
         }
 

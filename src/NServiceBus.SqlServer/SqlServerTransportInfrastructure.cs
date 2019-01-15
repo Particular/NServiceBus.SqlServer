@@ -23,30 +23,23 @@ namespace NServiceBus.Transport.SQLServer
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
             var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-            
+
+            var timeoutManagerDisabled = (delayedDeliverySettings != null && delayedDeliverySettings.TimeoutManagerDisabled) || timeoutManagerFeatureDisabled;
+
+            settings.SetDefault(SettingsKeys.EnableMigrationMode, !timeoutManagerDisabled);
+
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
                 FeatureEnabled = !timeoutManagerFeatureDisabled
             });
-            
-            if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
+
+            if (delayedDeliverySettings != null && timeoutManagerDisabled)
             {
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
             }
         }
 
-        public override IEnumerable<Type> DeliveryConstraints
-        {
-            get
-            {
-                yield return typeof(DiscardIfNotReceivedBefore);
-                if (delayedDeliverySettings != null && delayedDeliverySettings.TimeoutManagerDisabled)
-                {
-                    yield return typeof(DoNotDeliverBefore);
-                    yield return typeof(DelayDeliveryWith);
-                }
-            }
-        }
+        public override IEnumerable<Type> DeliveryConstraints => new List<Type> {typeof(DiscardIfNotReceivedBefore), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith)};
 
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
