@@ -43,17 +43,6 @@ namespace NServiceBus.Transport.SQLServer
             {
                 return DispatchBehavior.Deferred(DateTime.UtcNow + delayDeliveryWith.Delay, operation.Destination);
             }
-            var headers = operation.Message.Headers;
-            if (headers.TryGetValue(TimeoutManagerHeaders.Expire, out var expireString))
-            {
-                var expirationTime = DateTimeExtensions.ToUtcDateTime(expireString);
-                var destination = headers[TimeoutManagerHeaders.RouteExpiredTimeoutTo];
-
-                headers.Remove(TimeoutManagerHeaders.RouteExpiredTimeoutTo);
-                headers.Remove(TimeoutManagerHeaders.Expire);
-
-                return DispatchBehavior.Deferred(expirationTime, destination);
-            }
             return DispatchBehavior.Immediately();
         }
 
@@ -86,12 +75,6 @@ namespace NServiceBus.Transport.SQLServer
                     Destination = destination
                 };
             }
-        }
-
-        static class TimeoutManagerHeaders
-        {
-            public const string Expire = "NServiceBus.Timeout.Expire";
-            public const string RouteExpiredTimeoutTo = "NServiceBus.Timeout.RouteExpiredTimeoutTo";
         }
     }
 }

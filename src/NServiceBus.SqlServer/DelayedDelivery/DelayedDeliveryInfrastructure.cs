@@ -6,11 +6,6 @@
     {
         public static StartupCheckResult CheckForInvalidSettings(SettingsHolder settings)
         {
-            var externalTimeoutManagerAddress = settings.GetOrDefault<string>("NServiceBus.ExternalTimeoutManagerAddress") != null;
-            if (externalTimeoutManagerAddress)
-            {
-                return StartupCheckResult.Failed("An external timeout manager address cannot be configured because the timeout manager is not being used for delayed delivery.");
-            }
             var sendOnlyEndpoint = settings.GetOrDefault<bool>("Endpoint.SendOnly");
             if (sendOnlyEndpoint)
             {
