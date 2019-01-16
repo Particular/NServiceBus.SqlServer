@@ -159,7 +159,7 @@
                 Logger.Warn("TransactionScope should be only used with either the ReadCommitted or the RepeatableRead isolation level.");
             }
 
-            transportExtensions.GetSettings().Set<SqlScopeOptions>(new SqlScopeOptions(timeout, isolationLevel));
+            transportExtensions.GetSettings().Set(new SqlScopeOptions(timeout, isolationLevel));
 
             return transportExtensions;
         }
@@ -173,7 +173,7 @@
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            transportExtensions.GetSettings().Set<QueuePeekerOptions>(new QueuePeekerOptions(delay));
+            transportExtensions.GetSettings().Set(new QueuePeekerOptions(delay));
             return transportExtensions;
         }
 
@@ -188,7 +188,7 @@
                 throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
             }
             var settings = new DelayedDeliverySettings();
-            transportExtensions.GetSettings().Set<DelayedDeliverySettings>(settings);
+            transportExtensions.GetSettings().Set(settings);
             return settings;
         }
 
