@@ -39,7 +39,18 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public override IEnumerable<Type> DeliveryConstraints => new List<Type> {typeof(DiscardIfNotReceivedBefore), typeof(DoNotDeliverBefore), typeof(DelayDeliveryWith)};
+        public override IEnumerable<Type> DeliveryConstraints
+        {
+            get
+            {
+                yield return typeof(DiscardIfNotReceivedBefore);
+                if (delayedDeliverySettings != null)
+                {
+                    yield return typeof(DoNotDeliverBefore);
+                    yield return typeof(DelayDeliveryWith);
+                }
+            }
+        }
 
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
