@@ -22,20 +22,21 @@ namespace NServiceBus.Transport.SQLServer
 
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
-            var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-
-            var timeoutManagerDisabled = (delayedDeliverySettings != null && delayedDeliverySettings.TimeoutManagerDisabled) || timeoutManagerFeatureDisabled;
-
-            settings.SetDefault(SettingsKeys.EnableMigrationMode, !timeoutManagerDisabled);
+            var timeoutManagerFeatureDisabled = !settings.IsFeatureActive(typeof(TimeoutManager));
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
                 FeatureEnabled = !timeoutManagerFeatureDisabled
             });
 
-            if (delayedDeliverySettings != null && timeoutManagerDisabled)
+            if (delayedDeliverySettings != null)
             {
-                delayedDeliverySettings.DisableTimeoutManagerCompatibility();
+                settings.Set(SettingsKeys.EnableMigrationMode, true);
+
+                if (timeoutManagerFeatureDisabled)
+                {
+                    delayedDeliverySettings.DisableTimeoutManagerCompatibility();
+                }
             }
         }
 
