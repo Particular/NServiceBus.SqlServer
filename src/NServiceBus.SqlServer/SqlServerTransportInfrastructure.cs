@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.SQLServer
 
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
-            var timeoutManagerFeatureDisabled = !settings.IsFeatureActive(typeof(TimeoutManager));
+            var timeoutManagerFeatureDisabled = !settings.IsFeatureEnabled(typeof(TimeoutManager));
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
