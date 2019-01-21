@@ -31,12 +31,12 @@ namespace NServiceBus.Transport.SQLServer
 
             if (delayedDeliverySettings != null)
             {
-                settings.Set(SettingsKeys.EnableMigrationMode, true);
-
                 if (timeoutManagerFeatureDisabled)
                 {
                     delayedDeliverySettings.DisableTimeoutManagerCompatibility();
                 }
+
+                settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
             }
         }
 
@@ -286,7 +286,7 @@ namespace NServiceBus.Transport.SQLServer
                 delayedDeliverySettings.Suffix,
                 delayedDeliverySettings.Interval,
                 BatchSize = delayedDeliverySettings.MatureBatchSize,
-                TimoutManager = delayedDeliverySettings.TimeoutManagerDisabled ? "disabled" : "enabled"
+                TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
             });
 
             var delayedMessageTable = CreateDelayedMessageTable();
