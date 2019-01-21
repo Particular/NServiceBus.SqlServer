@@ -187,8 +187,8 @@
             {
                 throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
             }
-            var settings = new DelayedDeliverySettings();
-            transportExtensions.GetSettings().Set(settings);
+
+            var settings = transportExtensions.GetSettings().GetOrCreate<DelayedDeliverySettings>();
             return settings;
         }
 
