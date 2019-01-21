@@ -9,7 +9,7 @@
     {
         internal string Suffix = "Delayed";
         internal TimeSpan Interval = TimeSpan.FromSeconds(1);
-        internal bool TimeoutManagerDisabled;
+        internal bool EnableMigrationMode = true;
         internal int MatureBatchSize = 100;
 
         /// <summary>
@@ -39,7 +39,7 @@
         /// </summary>
         public void DisableTimeoutManagerCompatibility()
         {
-            TimeoutManagerDisabled = true;
+            EnableMigrationMode = false;
         }
 
         /// <summary>
