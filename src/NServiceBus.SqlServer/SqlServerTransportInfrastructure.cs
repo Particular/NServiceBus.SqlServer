@@ -22,16 +22,21 @@ namespace NServiceBus.Transport.SQLServer
 
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
-            var timeoutManagerFeatureDisabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Disabled;
-            
+            var timeoutManagerFeatureDisabled = !settings.IsFeatureEnabled(typeof(TimeoutManager));
+
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
                 FeatureEnabled = !timeoutManagerFeatureDisabled
             });
-            
-            if (delayedDeliverySettings != null && timeoutManagerFeatureDisabled)
+
+            if (delayedDeliverySettings != null)
             {
-                delayedDeliverySettings.DisableTimeoutManagerCompatibility();
+                if (timeoutManagerFeatureDisabled)
+                {
+                    delayedDeliverySettings.DisableTimeoutManagerCompatibility();
+                }
+
+                settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
             }
         }
 
@@ -40,7 +45,7 @@ namespace NServiceBus.Transport.SQLServer
             get
             {
                 yield return typeof(DiscardIfNotReceivedBefore);
-                if (delayedDeliverySettings != null && delayedDeliverySettings.TimeoutManagerDisabled)
+                if (delayedDeliverySettings != null)
                 {
                     yield return typeof(DoNotDeliverBefore);
                     yield return typeof(DelayDeliveryWith);
@@ -281,7 +286,7 @@ namespace NServiceBus.Transport.SQLServer
                 delayedDeliverySettings.Suffix,
                 delayedDeliverySettings.Interval,
                 BatchSize = delayedDeliverySettings.MatureBatchSize,
-                TimoutManager = delayedDeliverySettings.TimeoutManagerDisabled ? "disabled" : "enabled"
+                TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
             });
 
             var delayedMessageTable = CreateDelayedMessageTable();
