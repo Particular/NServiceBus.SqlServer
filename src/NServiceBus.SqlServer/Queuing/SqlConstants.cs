@@ -108,7 +108,7 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string PeekText = @"
 SELECT count(*) Id
-FROM {0} WITH (READPAST);";
+FROM (SELECT TOP {1} * FROM {0} WITH (READPAST)) as count_table;";
 
         public static readonly string AddMessageBodyStringColumn = @"
 IF NOT EXISTS (
