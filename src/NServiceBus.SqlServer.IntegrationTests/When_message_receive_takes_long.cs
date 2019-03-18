@@ -69,6 +69,7 @@
                 using (var connection = await sqlConnectionFactory.OpenNewConnection())
                 using (var tx = connection.BeginTransaction())
                 {
+                    tableBasedQueue.FormatPeekCommand(100);
                     await tableBasedQueue.TryPeek(connection, tx, CancellationToken.None, PeekTimeoutInSeconds);
                     scope.Complete();
                 }
