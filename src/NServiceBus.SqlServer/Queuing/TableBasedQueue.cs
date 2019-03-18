@@ -17,7 +17,6 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning disable 618
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
-            peekCommand = Format(SqlConstants.PeekText, this.qualifiedTableName, 100);
             receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
             sendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);

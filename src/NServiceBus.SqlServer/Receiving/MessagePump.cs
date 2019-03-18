@@ -54,7 +54,7 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            inputQueue.FormatPeekCommand(limitations.MaxConcurrency);
+            inputQueue.FormatPeekCommand(Math.Min(100, 10 * limitations.MaxConcurrency));
             runningReceiveTasks = new ConcurrentDictionary<Task, Task>();
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
             cancellationTokenSource = new CancellationTokenSource();
