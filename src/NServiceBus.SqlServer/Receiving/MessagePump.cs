@@ -54,6 +54,7 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
+            inputQueue.FormatPeekCommand(Math.Min(100, 10 * limitations.MaxConcurrency));
             runningReceiveTasks = new ConcurrentDictionary<Task, Task>();
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
             cancellationTokenSource = new CancellationTokenSource();
@@ -202,7 +203,7 @@
             }
             catch (SqlException e) when (cancellationToken.IsCancellationRequested)
             {
-                Logger.Debug("Exception thown while performing cancellation", e);
+                Logger.Debug("Exception thrown while performing cancellation", e);
             }
         }
 

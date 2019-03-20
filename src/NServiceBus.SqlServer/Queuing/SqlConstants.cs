@@ -108,7 +108,7 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string PeekText = @"
 SELECT count(*) Id
-FROM {0} WITH (READPAST);";
+FROM (SELECT TOP {1} * FROM {0} WITH (READPAST)) as count_table;";
 
         public static readonly string AddMessageBodyStringColumn = @"
 IF NOT EXISTS (
@@ -119,9 +119,9 @@ IF NOT EXISTS (
 RETURN
 
 IF EXISTS (
-  SELECT * 
-  FROM   {1}.sys.columns 
-  WHERE  object_id = OBJECT_ID(N'{0}') 
+  SELECT *
+  FROM   {1}.sys.columns
+  WHERE  object_id = OBJECT_ID(N'{0}')
          AND name = 'BodyString'
 )
 RETURN
@@ -129,9 +129,9 @@ RETURN
 EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
-  SELECT * 
-  FROM   {1}.sys.columns 
-  WHERE  object_id = OBJECT_ID(N'{0}') 
+  SELECT *
+  FROM   {1}.sys.columns
+  WHERE  object_id = OBJECT_ID(N'{0}')
          AND name = 'BodyString'
 )
 BEGIN

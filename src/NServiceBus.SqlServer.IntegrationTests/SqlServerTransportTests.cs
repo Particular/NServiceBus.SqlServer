@@ -26,7 +26,6 @@
             var definition = new SqlServerTransport();
             Func<Task<SqlConnection>> factory = async () =>
             {
-                
                 var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync().ConfigureAwait(false);
                 return connection;

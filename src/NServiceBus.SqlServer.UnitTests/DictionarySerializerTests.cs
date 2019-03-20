@@ -29,9 +29,9 @@
 
         void AssertDictionariesAreTheSame(Dictionary<string, string> before, Dictionary<string, string> after)
         {
-            foreach (var beforeitem in before)
+            foreach (var beforeItem in before)
             {
-                Assert.AreEqual(beforeitem.Value, after[beforeitem.Key]);
+                Assert.AreEqual(beforeItem.Value, after[beforeItem.Key]);
             }
             Assert.AreEqual(before.Count, after.Count);
         }

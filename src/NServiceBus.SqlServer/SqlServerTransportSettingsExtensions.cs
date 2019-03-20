@@ -124,7 +124,7 @@
             Guard.AgainstNegativeAndZero(nameof(waitTime), waitTime);
 
             transportExtensions.GetSettings().Set(SettingsKeys.TimeToWaitBeforeTriggering, waitTime);
-            
+
             return transportExtensions;
         }
 
@@ -144,11 +144,11 @@
         }
 
         /// <summary>
-        /// Allows the IsolationLevel and transaction timeout to be changed for the TransactionScope used to receive messages.
+        /// Allows the <see cref="IsolationLevel"/> and transaction timeout to be changed for the <see cref="TransactionScope"/> used to receive messages.
         /// </summary>
         /// <remarks>
         /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to
-        /// `ReadCommited`.
+        /// <see cref="IsolationLevel.ReadCommitted"/>.
         /// </remarks>
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)
         {
@@ -156,7 +156,7 @@
 
             if (isolationLevel != IsolationLevel.ReadCommitted && isolationLevel != IsolationLevel.RepeatableRead)
             {
-                Logger.Warn("TransactionScope should be only used with either the ReadCommited or the RepeatableRead isolation level.");
+                Logger.Warn("TransactionScope should be only used with either the ReadCommitted or the RepeatableRead isolation level.");
             }
 
             transportExtensions.GetSettings().Set(new SqlScopeOptions(timeout, isolationLevel));
@@ -224,8 +224,8 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
         [ObsoleteEx(
-            RemoveInVersion = "5.0", 
-            TreatAsErrorFromVersion = "4.0", 
+            RemoveInVersion = "5.0",
+            TreatAsErrorFromVersion = "4.0",
             Message = "Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalog addressing instead.")]
         public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
         {

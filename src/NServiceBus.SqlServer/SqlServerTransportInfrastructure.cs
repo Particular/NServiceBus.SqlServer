@@ -229,10 +229,10 @@ namespace NServiceBus.Transport.SQLServer
 
         DelayedMessageTable CreateDelayedMessageTable()
         {
-            var delatedQueueTableName = GetDelayedQueueTableName();
+            var deletedQueueTableName = GetDelayedQueueTableName();
 
             var inputQueueTable = addressTranslator.Parse(ToTransportAddress(GetLogicalAddress())).QualifiedTableName;
-            return new DelayedMessageTable(delatedQueueTableName.QualifiedTableName, inputQueueTable);
+            return new DelayedMessageTable(deletedQueueTableName.QualifiedTableName, inputQueueTable);
         }
 
         /// <summary>
@@ -259,8 +259,8 @@ namespace NServiceBus.Transport.SQLServer
             {
                 throw new Exception("Native delayed delivery feature requires configuring a table suffix.");
             }
-            var delayedQueueLogialAddress = GetLogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
-            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogialAddress);
+            var delayedQueueLogicalAddress = GetLogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }
 
