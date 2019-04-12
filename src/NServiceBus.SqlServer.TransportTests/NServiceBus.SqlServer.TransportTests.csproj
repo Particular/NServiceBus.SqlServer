@@ -16,4 +16,11 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
   </ItemGroup>
 
+  <!-- Replaces transport tests/classes as of 7.1.6. See KTLO issue 218 , can removed once a core 7.2 version is released -->
+  <ItemGroup>
+    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\When_on_error_throws.cs" />
+    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\NServiceBusTransportTest.cs" />
+    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\TransportTestLoggerFactory.cs" />
+  </ItemGroup>
+
 </Project>
