@@ -11,16 +11,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.1.6" />
+    <PackageReference Include="NServiceBus.TransportTests.Sources" Version="7.2.0-beta0079" />
     <PackageReference Include="NUnit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
-  </ItemGroup>
-
-  <!-- Replaces transport tests/classes as of 7.1.6. See KTLO issue 218 , can removed once a core 7.2 version is released -->
-  <ItemGroup>
-    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\When_on_error_throws.cs" />
-    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\NServiceBusTransportTest.cs" />
-    <Compile Remove="\**\NServiceBus.TransportTests.Sources\**\TransportTestLoggerFactory.cs" />
   </ItemGroup>
 
 </Project>
