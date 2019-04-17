@@ -74,7 +74,7 @@
             }
             catch (Exception ex)
             {
-                criticalError.Raise($"Failed to execute recoverability actions for message `{message.TransportId}`", ex);
+                criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
 
                 return ErrorHandleResult.RetryRequired;
             }
