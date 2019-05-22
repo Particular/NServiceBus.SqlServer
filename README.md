@@ -19,6 +19,3 @@ Before doing anything else, make sure you have SQL Server up and running in your
 ## Samples
 
 See http://docs.particular.net/samples/
-
-## Maintainers
-The following team is responsible for this repository: @Particular/sqlserver-transport-maintainers
