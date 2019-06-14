@@ -9,5 +9,5 @@ branches:
   release:
     tag: ''
  ignore:
-  sha:
-    - 009340d9da04914da738009a4d80e68a96fd4e5c
+    sha:
+       - 009340d9da04914da738009a4d80e68a96fd4e5c
