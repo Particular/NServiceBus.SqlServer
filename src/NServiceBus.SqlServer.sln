@@ -1,37 +1,36 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.AcceptanceTests", "NServiceBus.SqlServer.AcceptanceTests\NServiceBus.SqlServer.AcceptanceTests.csproj", "{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.AcceptanceTests", "NServiceBus.SqlServer.AcceptanceTests\NServiceBus.SqlServer.AcceptanceTests.csproj", "{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8C6EF3B-1488-44A7-BF9E-D85DB09B0FFE}"
 	ProjectSection(SolutionItems) = preProject
-		..\packaging\nuget\NServiceBus.SqlServer.nuspec = ..\packaging\nuget\NServiceBus.SqlServer.nuspec
 		NuGet.Config = NuGet.Config
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.UnitTests", "NServiceBus.SqlServer.UnitTests\NServiceBus.SqlServer.UnitTests.csproj", "{9FD87362-6F80-495C-B5F0-CA84CA40DE02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.UnitTests", "NServiceBus.SqlServer.UnitTests\NServiceBus.SqlServer.UnitTests.csproj", "{9FD87362-6F80-495C-B5F0-CA84CA40DE02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.IntegrationTests", "NServiceBus.SqlServer.IntegrationTests\NServiceBus.SqlServer.IntegrationTests.csproj", "{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.IntegrationTests", "NServiceBus.SqlServer.IntegrationTests\NServiceBus.SqlServer.IntegrationTests.csproj", "{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.TransportTests", "NServiceBus.SqlServer.TransportTests\NServiceBus.SqlServer.TransportTests.csproj", "{165C21AA-A7ED-48F2-A122-C2418B2DEB59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.TransportTests", "NServiceBus.SqlServer.TransportTests\NServiceBus.SqlServer.TransportTests.csproj", "{165C21AA-A7ED-48F2-A122-C2418B2DEB59}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CompatibilityTests", "CompatibilityTests", "{08C78355-DA03-4ED5-B0FC-20229979AE52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.CompatibilityTests.Common", "NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj", "{531AB217-EFFE-428C-8CA0-A8A70C907992}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.CompatibilityTests.Common", "NServiceBus.SqlServer.CompatibilityTests.Common\NServiceBus.SqlServer.CompatibilityTests.Common.csproj", "{531AB217-EFFE-428C-8CA0-A8A70C907992}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.CompatibilityTests", "NServiceBus.SqlServer.CompatibilityTests\NServiceBus.SqlServer.CompatibilityTests.csproj", "{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.CompatibilityTests", "NServiceBus.SqlServer.CompatibilityTests\NServiceBus.SqlServer.CompatibilityTests.csproj", "{937A1BF0-12F4-442A-B2F0-ACF57DF73C23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facade_1.2", "CompatibilityTests\Facade_1.2\Facade_1.2.csproj", "{B5D74165-91F9-46CF-8523-1775598F5EE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_1.2", "CompatibilityTests\Facade_1.2\Facade_1.2.csproj", "{B5D74165-91F9-46CF-8523-1775598F5EE6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facade_2.2", "CompatibilityTests\Facade_2.2\Facade_2.2.csproj", "{EEAE4525-249C-4AEE-BE10-BD338D537594}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_2.2", "CompatibilityTests\Facade_2.2\Facade_2.2.csproj", "{EEAE4525-249C-4AEE-BE10-BD338D537594}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facade_3.0", "CompatibilityTests\Facade_3.0\Facade_3.0.csproj", "{FEC856E8-44EE-4E93-8964-32FD236E9DF7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3.0", "CompatibilityTests\Facade_3.0\Facade_3.0.csproj", "{FEC856E8-44EE-4E93-8964-32FD236E9DF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facade_3.1", "CompatibilityTests\Facade_3.1\Facade_3.1.csproj", "{66D10F43-3859-4F55-B8A8-60E32AD6B813}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3.1", "CompatibilityTests\Facade_3.1\Facade_3.1.csproj", "{66D10F43-3859-4F55-B8A8-60E32AD6B813}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,5 +91,8 @@ Global
 		{EEAE4525-249C-4AEE-BE10-BD338D537594} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{FEC856E8-44EE-4E93-8964-32FD236E9DF7} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {76E7EEEC-B151-440C-BF90-26E95FDB1502}
 	EndGlobalSection
 EndGlobal

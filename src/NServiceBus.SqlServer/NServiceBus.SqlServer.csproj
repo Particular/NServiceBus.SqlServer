@@ -1,40 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452</TargetFrameworks>
-    <RootNamespace>NServiceBus.SqlServer</RootNamespace>
+    <TargetFramework>net452</TargetFramework>
     <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <UpdateAssemblyInfo>true</UpdateAssemblyInfo>
-    <PackageId>NServiceBus.SqlServer</PackageId>
+    <Description>SQL transport support for NServiceBus</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Transactions" />
+  </ItemGroup>
 
+  <ItemGroup>
     <PackageReference Include="Fody" Version="2.1.0" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.4.1" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="4.2.2" PrivateAssets="All" />
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.3.0" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="6.0.0" />
-    <Reference Include="System.Web.Services" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="$(OutputPath)\**\$(AssemblyName).pdb">
-      <Pack>true</Pack>
-      <PackagePath>lib\</PackagePath>
-    </Content>
+    <PackageReference Include="NServiceBus" Version="[6.0.0, 7.0.0)" />
   </ItemGroup>
 
 </Project>
