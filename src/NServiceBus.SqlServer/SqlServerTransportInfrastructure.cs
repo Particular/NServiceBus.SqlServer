@@ -189,9 +189,15 @@ namespace NServiceBus.Transport.SQLServer
                         scope.Complete();
                     }
                 }
-                catch (NotSupportedException)
+                catch (NotSupportedException ex)
                 {
-                    var message = "The version of System.Data.SqlClient in use does not support enlisting SQL connections in ambient transactions, so the TransactionScope transport transaction mode cannot be used. Use `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions` to select a different transport transaction mode.";
+                    var message = "The version of System.Data.SqlClient in use does not support one of the selected connection string options or " +
+                                  "enlisting SQL connections in distributed transactions. Check original error message for details. " +
+                                  "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
+                                  "specify a different transaction mode via `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions`. " +
+                                  "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
+                                  "transactions to atomically update the database and consume a message. Original error message: " + ex.Message;
+
                     return StartupCheckResult.Failed(message);
                 }
             }
