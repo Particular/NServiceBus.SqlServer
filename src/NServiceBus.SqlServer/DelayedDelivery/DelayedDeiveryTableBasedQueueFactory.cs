@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.SQLServer
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return (conn, trans) => delayedMessageTable.Store(operation.Message, behavior.DueTime, behavior.Destination, conn, trans);
+                return (conn, trans) => delayedMessageTable.Store(operation.Message, behavior.DueAfter, behavior.Destination, conn, trans);
             }
             return immediateDeliveryQueueOperationsReader.Get(operation);
         }
@@ -37,11 +37,11 @@ namespace NServiceBus.Transport.SQLServer
         {
             if (TryGetConstraint(operation, out DoNotDeliverBefore doNotDeliverBefore))
             {
-                return DispatchBehavior.Deferred(doNotDeliverBefore.At, operation.Destination);
+                return DispatchBehavior.Deferred(doNotDeliverBefore.At - DateTime.UtcNow, operation.Destination);
             }
             if (TryGetConstraint(operation, out DelayDeliveryWith delayDeliveryWith))
             {
-                return DispatchBehavior.Deferred(DateTime.UtcNow + delayDeliveryWith.Delay, operation.Destination);
+                return DispatchBehavior.Deferred(delayDeliveryWith.Delay, operation.Destination);
             }
             return DispatchBehavior.Immediately();
         }
@@ -58,7 +58,7 @@ namespace NServiceBus.Transport.SQLServer
         struct DispatchBehavior
         {
             public bool Defer;
-            public DateTime DueTime;
+            public TimeSpan DueAfter;
             public string Destination;
 
             public static DispatchBehavior Immediately()
@@ -66,11 +66,11 @@ namespace NServiceBus.Transport.SQLServer
                 return new DispatchBehavior();
             }
 
-            public static DispatchBehavior Deferred(DateTime dueTime, string destination)
+            public static DispatchBehavior Deferred(TimeSpan dueAfter, string destination)
             {
                 return new DispatchBehavior
                 {
-                    DueTime = dueTime,
+                    DueAfter = dueAfter,
                     Defer = true,
                     Destination = destination
                 };

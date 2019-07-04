@@ -51,7 +51,7 @@ INSERT INTO {0} (
 VALUES (
     @Headers,
     @Body,
-    @Due);
+    DATEADD(ms, @DueAfterMs, GETUTCDATE()));
 
 IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
