@@ -70,7 +70,7 @@ namespace NServiceBus.Transport.SQLServer
             {
                 return new DispatchBehavior
                 {
-                    DueAfter = dueAfter,
+                    DueAfter = dueAfter < TimeSpan.Zero ? TimeSpan.Zero : dueAfter,
                     Defer = true,
                     Destination = destination
                 };
