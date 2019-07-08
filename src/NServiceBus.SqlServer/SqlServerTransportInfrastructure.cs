@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.SQLServer
     using System.Transactions;
     using DelayedDelivery;
     using Features;
-    using NServiceBus.Logging;
+    using Logging;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
