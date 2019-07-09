@@ -25,11 +25,6 @@ namespace NServiceBus.Transport.SQLServer
             delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
             var timeoutManagerFeatureDisabled = !settings.IsFeatureEnabled(typeof(TimeoutManager));
 
-            if (!timeoutManagerFeatureDisabled)
-            {
-                Logger.Warn("TimeoutManager feature has been enabled. SqlTransport supports delayed delivery natively and it is recommended to use the Native Timeout Manager instead.");
-            }
-
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
             {
                 FeatureEnabled = !timeoutManagerFeatureDisabled
@@ -350,6 +345,5 @@ namespace NServiceBus.Transport.SQLServer
         DelayedMessageHandler delayedMessageHandler;
         DelayedDeliverySettings delayedDeliverySettings;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
-        static ILog Logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
 }
