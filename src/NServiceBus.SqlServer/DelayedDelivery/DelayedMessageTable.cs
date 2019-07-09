@@ -17,7 +17,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
         {
-            var messageRow = DelayedMessageRow.From(message.Headers, message.Body, dueAfter, destination);
+            var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
             using (var command = new SqlCommand(storeCommand, connection, transaction))
             {
                 messageRow.PrepareSendCommand(command);

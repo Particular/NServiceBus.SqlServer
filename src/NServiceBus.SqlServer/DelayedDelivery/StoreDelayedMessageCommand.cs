@@ -5,15 +5,15 @@
     using System.Data;
     using System.Data.SqlClient;
 
-    class DelayedMessageRow
+    class StoreDelayedMessageCommand
     {
-        DelayedMessageRow() { }
+        StoreDelayedMessageCommand() { }
 
-        public static DelayedMessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan dueAfter, string destination)
+        public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, byte[] body, TimeSpan dueAfter, string destination)
         {
             Guard.AgainstNull(nameof(destination), destination);
 
-            var row = new DelayedMessageRow();
+            var row = new StoreDelayedMessageCommand();
 
             headers["NServiceBus.SqlServer.ForwardDestination"] = destination;
             row.headers = DictionarySerializer.Serialize(headers);
