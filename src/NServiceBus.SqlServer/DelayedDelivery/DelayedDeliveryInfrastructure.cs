@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using NServiceBus.Features;
-    using NServiceBus.Logging;
+    using Features;
+    using Logging;
     using Settings;
 
     static class DelayedDeliveryInfrastructure
