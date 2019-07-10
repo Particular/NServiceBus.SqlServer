@@ -5,20 +5,20 @@
     using System.Data;
     using System.Data.SqlClient;
 
-    class DelayedMessageRow
+    class StoreDelayedMessageCommand
     {
-        DelayedMessageRow() { }
+        StoreDelayedMessageCommand() { }
 
-        public static DelayedMessageRow From(Dictionary<string, string> headers, byte[] body, DateTime due, string destination)
+        public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, byte[] body, TimeSpan dueAfter, string destination)
         {
             Guard.AgainstNull(nameof(destination), destination);
 
-            var row = new DelayedMessageRow();
+            var row = new StoreDelayedMessageCommand();
 
             headers["NServiceBus.SqlServer.ForwardDestination"] = destination;
             row.headers = DictionarySerializer.Serialize(headers);
             row.bodyBytes = body;
-            row.due = due;
+            row.dueAfter = dueAfter;
             return row;
         }
 
@@ -27,7 +27,7 @@
         {
             AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
-            AddParameter(command, "Due", SqlDbType.DateTime, due);
+            AddParameter(command, "DueAfterMs", SqlDbType.BigInt, dueAfter.TotalMilliseconds);
         }
 
         void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
@@ -37,6 +37,6 @@
 
         string headers;
         byte[] bodyBytes;
-        DateTime due;
+        TimeSpan dueAfter;
     }
 }
