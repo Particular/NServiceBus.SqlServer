@@ -222,15 +222,7 @@ namespace NServiceBus.Transport.SQLServer
                     var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator);
                     return dispatcher;
                 },
-                () =>
-                {
-                    var result = StartupCheckResult.Success;
-                    if (delayedDeliverySettings != null)
-                    {
-                        result = DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings);
-                    }
-                    return Task.FromResult(result);
-                });
+                () => Task.FromResult(DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings)));
         }
 
         DelayedMessageTable CreateDelayedMessageTable()

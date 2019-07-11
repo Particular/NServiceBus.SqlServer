@@ -11,14 +11,19 @@
             var timeoutManagerEnabled = settings.GetOrDefault<FeatureState>(typeof(TimeoutManager).FullName) == FeatureState.Active;
             if (timeoutManagerEnabled)
             {
-                Logger.Warn("Current configuration of the endpoint uses TimeoutManager feature for delayed delivery - an option which is not recommended for new deployments. SqlTransport native delayed delivery should be used instead. It can be enabled by calling `UseNativeDelayedDelivery`.");
+                Logger.Warn("Current configuration of the endpoint uses the TimeoutManager feature for delayed delivery - an option which is not recommended for new deployments. SqlTransport native delayed delivery should be used instead. It can be enabled by calling `UseNativeDelayedDelivery()`.");
             }
 
-            var sendOnlyEndpoint = settings.GetOrDefault<bool>("Endpoint.SendOnly");
-            if (sendOnlyEndpoint)
+            var delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+            if (delayedDeliverySettings != null)
             {
-                return StartupCheckResult.Failed("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+                var sendOnlyEndpoint = settings.GetOrDefault<bool>("Endpoint.SendOnly");
+                if (sendOnlyEndpoint)
+                {
+                    return StartupCheckResult.Failed("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+                }
             }
+
             return StartupCheckResult.Success;
         }
 
