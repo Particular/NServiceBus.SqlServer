@@ -83,7 +83,8 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
-                    config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    var settings = config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    settings.DisableTimeoutManagerCompatibility();
                 });
             }
         }
