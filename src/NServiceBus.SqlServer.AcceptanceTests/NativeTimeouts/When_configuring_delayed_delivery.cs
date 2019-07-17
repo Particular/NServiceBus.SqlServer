@@ -57,6 +57,21 @@
             Assert.IsEmpty(context.Logs.Where(l => l.Message.Contains("Current configuration of the endpoint uses the TimeoutManager feature for delayed delivery - an option which is not recommended for new deployments. SqlTransport native delayed delivery should be used instead. It can be enabled by calling `UseNativeDelayedDelivery()`.")));
         }
 
+        [Test]
+        public async Task Should_not_warn_when_both_native_delayed_delivery_and_timeoutmanage_is_configured_with_compatibility_disabled()
+        {
+            Requires.MessageDrivenPubSub();
+
+            var context = await Scenario.Define<ScenarioContext>()
+                .WithEndpoint<EndpointWithTimeoutManagerAndNativeEnabledButCompatibilityDisabled>()
+                .Done(c => c.EndpointsStarted)
+                .Run();
+
+            Assert.True(context.EndpointsStarted, "because it should not prevent endpoint startup");
+
+            Assert.IsEmpty(context.Logs.Where(l => l.Message.Contains("Current configuration of the endpoint uses the TimeoutManager feature for delayed delivery - an option which is not recommended for new deployments. SqlTransport native delayed delivery should be used instead. It can be enabled by calling `UseNativeDelayedDelivery()`.")));
+        }
+
         public class EndpointWithTimeoutManagerAndNotNative : EndpointConfigurationBuilder
         {
             public EndpointWithTimeoutManagerAndNotNative()
@@ -71,8 +86,8 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
-                    config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
                     config.EnableFeature<TimeoutManager>();
+                    config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
                 });
             }
         }
@@ -83,6 +98,20 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
+                    var settings = config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    settings.DisableTimeoutManagerCompatibility();
+                });
+            }
+        }
+
+        public class EndpointWithTimeoutManagerAndNativeEnabledButCompatibilityDisabled : EndpointConfigurationBuilder
+        {
+            public EndpointWithTimeoutManagerAndNativeEnabledButCompatibilityDisabled()
+            {
+                EndpointSetup<DefaultServer>(config =>
+                {
+                    config.EnableFeature<TimeoutManager>();
+
                     var settings = config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
                     settings.DisableTimeoutManagerCompatibility();
                 });
