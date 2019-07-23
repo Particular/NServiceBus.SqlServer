@@ -58,7 +58,7 @@
         }
 
         [Test]
-        public async Task Should_not_warn_when_both_native_delayed_delivery_and_timeoutmanage_is_configured_with_compatibility_disabled()
+        public async Task Should_not_warn_when_both_native_delayed_delivery_and_timeoutmanager_is_configured_with_compatibility_disabled()
         {
             Requires.MessageDrivenPubSub();
 
