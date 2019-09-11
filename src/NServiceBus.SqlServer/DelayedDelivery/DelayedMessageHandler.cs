@@ -54,13 +54,16 @@ namespace NServiceBus.Transport.SQLServer
                 {
                     // Graceful shutdown
                 }
-                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+                catch (Exception e) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
                 }
                 catch (Exception e)
                 {
-                    Logger.Fatal("Exception thrown while performing cancellation", e);
+                    Logger.Fatal("Exception thrown while moving matured delayed messages", e);
+
+                    Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
+                    await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
