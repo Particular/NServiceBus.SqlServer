@@ -14,6 +14,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionFactory = connectionFactory;
             this.interval = interval;
             this.batchSize = batchSize;
+            message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
         }
 
         public void Start()
@@ -64,16 +65,14 @@ namespace NServiceBus.Transport.SQLServer
                 }
                 finally
                 {
-                    if (!cancellationToken.IsCancellationRequested && Logger.IsDebugEnabled)
-                    {
-                        Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
-                    }
+                    Logger.DebugFormat(message);
                     await Task.Delay(interval, cancellationToken).IgnoreCancellation()
                         .ConfigureAwait(false);
                 }
             }
         }
 
+        string message;
         DelayedMessageTable table;
         SqlConnectionFactory connectionFactory;
         TimeSpan interval;
