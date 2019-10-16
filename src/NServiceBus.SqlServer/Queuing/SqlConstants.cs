@@ -44,8 +44,8 @@ DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
 SET NOCOUNT ON;
 
-DECLARE @ms int = @DueAfter%1000
-DECLARE @s int = @DueAfter/1000
+DECLARE @ms int = @DueAfterMs%1000
+DECLARE @s int = @DueAfterMs/1000
 DECLARE @DueAfter DATETIME = GETUTCDATE()
 SET @DueAfter = DATEADD(ms, @ms, @DueAfter)
 SET @DueAfter = DATEADD(s, @s, @DueAfter) -- Overflows at 68 years
