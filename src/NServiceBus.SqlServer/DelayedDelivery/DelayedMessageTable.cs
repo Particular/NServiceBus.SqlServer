@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data.SqlClient;
+    using System.Threading;
     using System.Threading.Tasks;
     using Transport;
 
@@ -25,12 +26,12 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task MoveMaturedMessages(int batchSize, SqlConnection connection, SqlTransaction transaction)
+        public async Task MoveMaturedMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             using (var command = new SqlCommand(moveMaturedCommand, connection, transaction))
             {
                 command.Parameters.AddWithValue("BatchSize", batchSize);
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 

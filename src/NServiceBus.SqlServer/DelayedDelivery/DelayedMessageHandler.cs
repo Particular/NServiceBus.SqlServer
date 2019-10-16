@@ -43,7 +43,7 @@ namespace NServiceBus.Transport.SQLServer
                     {
                         using (var transaction = connection.BeginTransaction())
                         {
-                            await table.MoveMaturedMessages(batchSize, connection, transaction).ConfigureAwait(false);
+                            await table.MoveMaturedMessages(batchSize, connection, transaction, cancellationToken).ConfigureAwait(false);
                             transaction.Commit();
                         }
                     }
@@ -51,10 +51,12 @@ namespace NServiceBus.Transport.SQLServer
                 catch (OperationCanceledException)
                 {
                     // Graceful shutdown
+                    return;
                 }
                 catch (SqlException e) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
+                    return;
                 }
                 catch (Exception e)
                 {
