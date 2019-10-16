@@ -14,6 +14,7 @@ namespace NServiceBus.Transport.SQLServer
             this.connectionFactory = connectionFactory;
             this.interval = interval;
             this.batchSize = batchSize;
+            message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
         }
 
         public void Start()
@@ -43,28 +44,35 @@ namespace NServiceBus.Transport.SQLServer
                     {
                         using (var transaction = connection.BeginTransaction())
                         {
-                            await table.MoveMaturedMessages(batchSize, connection, transaction).ConfigureAwait(false);
+                            await table.MoveMaturedMessages(batchSize, connection, transaction, cancellationToken).ConfigureAwait(false);
                             transaction.Commit();
                         }
                     }
-                    Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
-                    await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     // Graceful shutdown
+                    return;
                 }
                 catch (SqlException e) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
+                    return;
                 }
                 catch (Exception e)
                 {
-                    Logger.Fatal("Exception thrown while performing cancellation", e);
+                    Logger.Fatal("Exception thrown while moving matured delayed messages", e);
+                }
+                finally
+                {
+                    Logger.DebugFormat(message);
+                    await Task.Delay(interval, cancellationToken).IgnoreCancellation()
+                        .ConfigureAwait(false);
                 }
             }
         }
 
+        string message;
         DelayedMessageTable table;
         SqlConnectionFactory connectionFactory;
         TimeSpan interval;

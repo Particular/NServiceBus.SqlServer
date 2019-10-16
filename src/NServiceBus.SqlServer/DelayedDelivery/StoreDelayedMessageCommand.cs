@@ -27,7 +27,11 @@
         {
             AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
-            AddParameter(command, "DueAfterMs", SqlDbType.BigInt, dueAfter.TotalMilliseconds);
+            AddParameter(command, "DueAfterDays", SqlDbType.Int, dueAfter.Days);
+            AddParameter(command, "DueAfterHours", SqlDbType.Int, dueAfter.Hours);
+            AddParameter(command, "DueAfterMinutes", SqlDbType.Int, dueAfter.Minutes);
+            AddParameter(command, "DueAfterSeconds", SqlDbType.Int, dueAfter.Seconds);
+            AddParameter(command, "DueAfterMilliseconds", SqlDbType.Int, dueAfter.Milliseconds);
         }
 
         void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
