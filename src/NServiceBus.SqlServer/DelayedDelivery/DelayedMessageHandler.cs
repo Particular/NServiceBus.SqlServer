@@ -62,7 +62,10 @@ namespace NServiceBus.Transport.SQLServer
                 }
                 finally
                 {
-                    Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
+                    if (!cancellationToken.IsCancellationRequested && Logger.IsDebugEnabled)
+                    {
+                        Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
+                    }
                     await Task.Delay(interval, cancellationToken).IgnoreCancellation()
                         .ConfigureAwait(false);
                 }
