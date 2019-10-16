@@ -27,7 +27,7 @@ BEGIN
     EXEC (@SQL)
     PRINT 'Dropped View: ' + @schema + '.' + @name
 	SELECT  @name = NULL
-	SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objects INNER JOIN sys.schemas ON sys.objects.schema_id = sys.schemas.schema_id WHERE [type] = 'V' ORDER BY sys.objects.name    
+	SELECT TOP 1 @name = sys.objects.name, @schema = sys.schemas.name FROM sys.objects INNER JOIN sys.schemas ON sys.objects.schema_id = sys.schemas.schema_id WHERE [type] = 'V' ORDER BY sys.objects.name
 END
 GO
 
@@ -55,7 +55,7 @@ DECLARE @SQL NVARCHAR(254)
 SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE constraint_catalog=DB_NAME() AND CONSTRAINT_TYPE = 'FOREIGN KEY' ORDER BY TABLE_NAME
 
 WHILE @name is not null
-BEGIN    
+BEGIN
     SELECT @SQL = 'ALTER TABLE ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name)) +' DROP CONSTRAINT ' + QUOTENAME(RTRIM(@constraint))
     EXEC (@SQL)
     PRINT 'Dropped FK Constraint: ' + @constraint + ' on ' + @schema + '.' + @name
@@ -73,12 +73,12 @@ DECLARE @SQL NVARCHAR(254)
 SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE constraint_catalog=DB_NAME() AND CONSTRAINT_TYPE = 'PRIMARY KEY' ORDER BY TABLE_NAME
 
 WHILE @name IS NOT NULL
-BEGIN    
+BEGIN
     SELECT @SQL = 'ALTER TABLE ' + QUOTENAME(@schema) + '.' + QUOTENAME(RTRIM(@name)) +' DROP CONSTRAINT ' + QUOTENAME(RTRIM(@constraint))
     EXEC (@SQL)
     PRINT 'Dropped PK Constraint: ' + @constraint + ' on ' + @schema + '.' + @name
     SELECT  @name = NULL
-	SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE constraint_catalog=DB_NAME() AND CONSTRAINT_TYPE = 'PRIMARY KEY' ORDER BY TABLE_NAME	
+	SELECT TOP 1 @name = TABLE_NAME, @schema = CONSTRAINT_SCHEMA, @constraint = CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE constraint_catalog=DB_NAME() AND CONSTRAINT_TYPE = 'PRIMARY KEY' ORDER BY TABLE_NAME
 END
 GO
 
@@ -135,3 +135,32 @@ BEGIN
 	EXEC('CREATE SCHEMA dest')
 END
 GO
+
+/*Create error queue to avoid race conditions*/
+CREATE TABLE error (
+    Id uniqueidentifier NOT NULL,
+    CorrelationId varchar(255),
+    ReplyToAddress varchar(255),
+    Recoverable bit NOT NULL,
+    Expires datetime,
+    Headers nvarchar(max) NOT NULL,
+    Body varbinary(max),
+    RowVersion bigint IDENTITY(1,1) NOT NULL
+);
+
+CREATE CLUSTERED INDEX Index_RowVersion ON error
+(
+    RowVersion
+)
+
+CREATE NONCLUSTERED INDEX Index_Expires ON error
+(
+    Expires
+)
+INCLUDE
+(
+    Id,
+    RowVersion
+)
+WHERE
+    Expires IS NOT NULL
