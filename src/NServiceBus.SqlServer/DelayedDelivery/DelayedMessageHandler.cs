@@ -47,23 +47,24 @@ namespace NServiceBus.Transport.SQLServer
                             transaction.Commit();
                         }
                     }
-                    Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
-                    await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     // Graceful shutdown
                 }
-                catch (Exception e) when (cancellationToken.IsCancellationRequested)
+                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
                 }
                 catch (Exception e)
                 {
                     Logger.Fatal("Exception thrown while moving matured delayed messages", e);
-
+                }
+                finally
+                {
                     Logger.DebugFormat("Scheduling next attempt to move matured delayed messages to input queue in {0}", interval);
-                    await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(interval, cancellationToken).IgnoreCancellation()
+                        .ConfigureAwait(false);
                 }
             }
         }
