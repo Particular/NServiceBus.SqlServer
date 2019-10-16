@@ -46,7 +46,6 @@ SET NOCOUNT ON;
 
 DECLARE @ms int = @DueAfter%1000
 DECLARE @s int = @DueAfter/1000
-
 DECLARE @DueAfter DATETIME = GETUTCDATE()
 SET @DueAfter = DATEADD(ms, @ms, @DueAfter)
 SET @DueAfter = DATEADD(s, @s, @DueAfter) -- Overflows at 68 years
