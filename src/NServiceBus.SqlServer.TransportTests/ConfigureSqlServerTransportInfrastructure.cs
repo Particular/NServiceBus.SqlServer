@@ -20,6 +20,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         }
 #endif
         this.settings = settings;
+        settings.Set(transportTransactionMode);
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
         settings.Set(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
         var delayedDeliverySettings = new DelayedDeliverySettings();
