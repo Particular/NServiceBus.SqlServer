@@ -70,7 +70,12 @@
                             }
                         });
                     })
-                    .Done(c => c.Logs.Any(l => l.Level == LogLevel.Error))
+                    .Done(c =>
+                    {
+                        var firstErrorEntry = c.Logs.FirstOrDefault(l => l.Level == LogLevel.Error);
+                        c.FirstErrorEntry = firstErrorEntry?.Message;
+                        return firstErrorEntry != null;
+                    })
                     .Run();
 
                 Assert.True(MessageExistsInErrorQueue(connectionString), "The message should have been moved to the error queue");
@@ -179,6 +184,7 @@ END";
 
         public class Context : ScenarioContext
         {
+            public string FirstErrorEntry { get; set; }
         }
 
 
