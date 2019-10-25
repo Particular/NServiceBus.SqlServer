@@ -3,7 +3,7 @@
 [assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
 namespace NServiceBus
 {
-    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition, NServiceBus.Routing.IMessageDrivenSubscriptionTransport
+    public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
     {
         public SqlServerTransport() { }
         public override string ExampleConnectionStringForErrorMessage { get; }

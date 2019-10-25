@@ -25,16 +25,16 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 #if !NET452
         transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
 #endif
+        // TODO: Put this back when we support compatability mode
+        //var routingConfig = transportConfig.Routing();
 
-        var routingConfig = transportConfig.Routing();
-
-        foreach (var publisher in publisherMetadata.Publishers)
-        {
-            foreach (var eventType in publisher.Events)
-            {
-                routingConfig.RegisterPublisher(eventType, publisher.PublisherName);
-            }
-        }
+        //foreach (var publisher in publisherMetadata.Publishers)
+        //{
+        //    foreach (var eventType in publisher.Events)
+        //    {
+        //        routingConfig.RegisterPublisher(eventType, publisher.PublisherName);
+        //    }
+        //}
 
         return Task.FromResult(0);
     }

@@ -50,10 +50,11 @@
 
                     b.UseTransport<SqlServerTransport>()
                         .DefaultSchema("receiver")
-                        .UseSchemaForEndpoint(publisherEndpoint, "sender")
-                        .Routing().RegisterPublisher(
-                            eventType: typeof(Event),
-                            publisherEndpoint: publisherEndpoint);
+                        .UseSchemaForEndpoint(publisherEndpoint, "sender");
+                    // TODO: Use this for compatibility mode
+                    //.Routing().RegisterPublisher(
+                    //    eventType: typeof(Event),
+                    //    publisherEndpoint: publisherEndpoint);
                 });
             }
 

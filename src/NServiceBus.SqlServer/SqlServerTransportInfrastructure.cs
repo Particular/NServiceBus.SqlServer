@@ -55,7 +55,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
+        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
@@ -300,7 +300,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            throw new NotImplementedException();
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager());
         }
 
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
