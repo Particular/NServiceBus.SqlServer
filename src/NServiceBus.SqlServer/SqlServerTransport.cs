@@ -12,7 +12,7 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServerTransport : TransportDefinition, IMessageDrivenSubscriptionTransport
+    public class SqlServerTransport : TransportDefinition
     {
         /// <summary>
         /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
