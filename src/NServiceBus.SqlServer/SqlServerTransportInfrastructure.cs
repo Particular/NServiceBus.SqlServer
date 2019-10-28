@@ -38,6 +38,8 @@ namespace NServiceBus.Transport.SQLServer
 
                 settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
             }
+
+            tableBasedSubscriptions = new TableBasedSubscriptions(CreateConnectionFactory());
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -219,7 +221,7 @@ namespace NServiceBus.Transport.SQLServer
                     {
                         queueOperationsReader = new DelayedDeliveryTableBasedQueueOperationsReader(CreateDelayedMessageTable(), queueOperationsReader);
                     }
-                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator);
+                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator, tableBasedSubscriptions);
                     return dispatcher;
                 },
                 () => Task.FromResult(DelayedDeliveryInfrastructure.CheckForInvalidSettings(settings)));
@@ -262,8 +264,11 @@ namespace NServiceBus.Transport.SQLServer
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }
 
-        public override Task Start()
+        public override async Task Start()
         {
+            // TODO: Move this to an installer?
+            await tableBasedSubscriptions.CreateSubscriptionTable().ConfigureAwait(false);
+
             foreach (var diagnosticSection in diagnostics)
             {
                 settings.AddStartupDiagnosticsSection(diagnosticSection.Key, diagnosticSection.Value);
@@ -275,22 +280,22 @@ namespace NServiceBus.Transport.SQLServer
                 {
                     Native = false
                 });
-                return Task.FromResult(0);
             }
-
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+            else
             {
-                Native = true,
-                delayedDeliverySettings.Suffix,
-                delayedDeliverySettings.Interval,
-                BatchSize = delayedDeliverySettings.MatureBatchSize,
-                TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
-            });
+                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                {
+                    Native = true,
+                    delayedDeliverySettings.Suffix,
+                    delayedDeliverySettings.Interval,
+                    BatchSize = delayedDeliverySettings.MatureBatchSize,
+                    TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
+                });
 
-            var delayedMessageTable = CreateDelayedMessageTable();
-            delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
-            delayedMessageHandler.Start();
-            return Task.FromResult(0);
+                var delayedMessageTable = CreateDelayedMessageTable();
+                delayedMessageHandler = new DelayedMessageHandler(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
+                delayedMessageHandler.Start();
+            }
         }
 
         public override Task Stop()
@@ -300,7 +305,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager());
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(tableBasedSubscriptions, settings));
         }
 
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
@@ -336,5 +341,6 @@ namespace NServiceBus.Transport.SQLServer
         DelayedMessageHandler delayedMessageHandler;
         DelayedDeliverySettings delayedDeliverySettings;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
+        TableBasedSubscriptions tableBasedSubscriptions;
     }
 }

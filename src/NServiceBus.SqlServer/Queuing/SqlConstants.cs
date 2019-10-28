@@ -255,5 +255,60 @@ INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
 WHERE c.object_id = OBJECT_ID('{0}')
     AND c.name = 'Headers'";
 
+        public static readonly string CreateSubscriptionTableText = @"
+IF NOT EXISTS
+(
+    SELECT *
+    FROM sys.objects
+    WHERE
+        object_id = object_id('[dbo].[SubscriptionRouting]') AND
+        type IN ('U')
+)
+BEGIN
+    CREATE TABLE [dbo].[SubscriptionRouting] (
+        Subscriber NVARCHAR(200) NOT NULL,
+        Endpoint NVARCHAR(200),
+        MessageType NVARCHAR(200) NOT NULL,
+        PRIMARY KEY CLUSTERED
+        (
+            Subscriber,
+            MessageType
+        )
+    )
+END";
+
+        public static readonly string SubscribeText = @"
+MERGE [dbo].[SubscriptionRouting] WITH (HOLDLOCK, TABLOCK) AS target
+USING(SELECT @Endpoint AS Endpoint, @Subscriber AS Subscriber, @MessageType AS MessageType) AS source
+ON target.Subscriber = source.Subscriber
+AND target.MessageType = source.MessageType
+WHEN MATCHED AND source.Endpoint IS NOT NULL AND (target.Endpoint IS NULL OR target.Endpoint <> source.Endpoint) THEN
+UPDATE SET Endpoint = @Endpoint
+WHEN NOT MATCHED THEN
+INSERT
+(
+    Subscriber,
+    MessageType,
+    Endpoint
+)
+VALUES
+(
+    @Subscriber,
+    @MessageType,
+    @Endpoint
+);";
+
+        public static readonly string GetSubscribersText = @"
+SELECT DISTINCT Subscriber, Endpoint
+FROM [dbo].[SubscriptionRouting]
+WHERE MessageType IN (@MessageType)
+";
+
+        public static readonly string UnsubscribeText = @"
+DELETE FROM [dbo].[SubscriptionRouting]
+WHERE
+    Subscriber = @Subscriber and
+    MessageType = @MessageType";
+
     }
 }

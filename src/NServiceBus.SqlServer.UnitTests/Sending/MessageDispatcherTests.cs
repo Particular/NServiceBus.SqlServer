@@ -17,7 +17,7 @@
         {
             var queueDispatcher = new FakeTableBasedQueueDispatcher();
 
-            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressTranslator("nservicebus", "dbo", null, null));
+            var dispatcher = new MessageDispatcher(queueDispatcher, new QueueAddressTranslator("nservicebus", "dbo", null, null), null /* TODO: Put something in here */);
 
             await dispatcher.Dispatch(transportOperations, new TransportTransaction(), new ContextBag());
 
