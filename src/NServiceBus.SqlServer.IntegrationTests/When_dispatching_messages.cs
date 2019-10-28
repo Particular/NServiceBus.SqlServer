@@ -107,7 +107,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser, new NoOpSubscriptionStore());
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser, null)), addressParser, new NoOpSubscriptionStore());
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
@@ -121,7 +121,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 

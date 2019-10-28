@@ -30,7 +30,7 @@
             var sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
 
             var pump = new MessagePump(
-                m => new ProcessWithNoTransaction(sqlConnectionFactory),
+                m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
                 new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), 0, false),

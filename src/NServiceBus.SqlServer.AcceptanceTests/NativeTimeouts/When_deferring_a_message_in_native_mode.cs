@@ -43,7 +43,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config => config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery());
+                EndpointSetup<DefaultServer>(config => config.UseTransport<SqlServerTransport>().NativeDelayedDelivery());
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>

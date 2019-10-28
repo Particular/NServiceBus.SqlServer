@@ -71,7 +71,7 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.EnableFeature<TimeoutManager>(); //Because the acceptance tests framework disables it by default.
-                    c.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    c.UseTransport<SqlServerTransport>().NativeDelayedDelivery();
                 });
             }
         }

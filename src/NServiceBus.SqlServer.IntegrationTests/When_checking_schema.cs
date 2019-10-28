@@ -44,7 +44,7 @@
 
         static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(QueueTableName);
 

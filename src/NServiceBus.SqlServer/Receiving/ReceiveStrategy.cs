@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
+    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,6 +14,11 @@
 
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
+
+        protected ReceiveStrategy(IQueueDispatcher queueDispatcher)
+        {
+            this.queueDispatcher = queueDispatcher;
+        }
 
         public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError)
         {
@@ -69,6 +75,7 @@
             try
             {
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts);
+                errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext).ConfigureAwait(false);
             }
@@ -80,6 +87,31 @@
             }
         }
 
+        public async Task<bool> TryHandleDelayedMessage(MessageContext context)
+        {
+            context.Headers.TryGetValue(ForwardHeader, out var forwardDestination);
+            if (forwardDestination == null)
+            {
+                //This is not a delayed message. Process in local endpoint instance.
+                return false;
+            }
+            if (forwardDestination == InputQueue.Name)
+            {
+                context.Headers.Remove(ForwardHeader);
+                //Do not forward the message. Process in local endpoint instance.
+                return false;
+            }
+            var outgoingMessage = new OutgoingMessage(context.MessageId, context.Headers, context.Body);
+            context.Headers.Remove(ForwardHeader);
+            await queueDispatcher.DispatchAsNonIsolated(new List<UnicastTransportOperation>
+            {
+                new UnicastTransportOperation(outgoingMessage, forwardDestination)
+            }, context.TransportTransaction).ConfigureAwait(false);
+            return true;
+        }
+
+        const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
+        IQueueDispatcher queueDispatcher;
         CriticalError criticalError;
     }
 }

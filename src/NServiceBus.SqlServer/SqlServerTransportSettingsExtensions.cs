@@ -180,12 +180,12 @@
         /// <summary>
         /// Enables native delayed delivery.
         /// </summary>
-        public static DelayedDeliverySettings UseNativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        public static DelayedDeliverySettings NativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
             var sendOnlyEndpoint = transportExtensions.GetSettings().GetOrDefault<bool>("Endpoint.SendOnly");
             if (sendOnlyEndpoint)
             {
-                throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+                throw new Exception("Delayed delivery is only supported for endpoints capable of receiving messages.");
             }
 
             var settings = transportExtensions.GetSettings().GetOrCreate<DelayedDeliverySettings>();
