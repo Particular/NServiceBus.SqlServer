@@ -134,7 +134,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser);
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser, new NoOpSubscriptionStore());
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser)
@@ -161,5 +161,15 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         SqlConnectionFactory sqlConnectionFactory;
 
         const string validAddress = "TTBRTests";
+
+        // TODO: Figure out if this is appropriate in this test
+        class NoOpSubscriptionStore : IKnowWhereTheSubscriptionsAre
+        {
+            public Task<List<string>> GetSubscribersForEvent(string eventType)
+            {
+                return Task.FromResult(new List<string>());
+            }
+        }
+
     }
 }

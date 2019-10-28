@@ -3,19 +3,36 @@ namespace NServiceBus.Transport.SQLServer
     using System;
     using System.Threading.Tasks;
     using Extensibility;
+    using Settings;
 
     class SubscriptionManager : IManageSubscriptions
     {
+        TableBasedSubscriptions tableBasedSubscriptions;
+        string endpointName;
+        string localAddress;
+
+        public SubscriptionManager(TableBasedSubscriptions tableBasedSubscriptions, ReadOnlySettings settings)
+        {
+            this.tableBasedSubscriptions = tableBasedSubscriptions;
+            endpointName = settings.EndpointName();
+            localAddress = settings.LocalAddress();
+        }
+
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            // TODO: Add subscription to table
-            throw new NotImplementedException();
+            return tableBasedSubscriptions.Subscribe(
+                endpointName,
+                localAddress,
+                eventType.ToString()
+            );
         }
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            // TODO: Remove subscription from table
-            throw new NotImplementedException();
+            return tableBasedSubscriptions.Unsubscribe(
+                endpointName,
+                eventType.ToString()
+            );
         }
     }
 }

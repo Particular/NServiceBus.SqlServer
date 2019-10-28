@@ -9,23 +9,27 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, IKnowWhereTheSubscriptionsAre subscriptions)
         {
             this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
+            this.subscriptions = subscriptions;
         }
 
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, ContextBag context)
         {
-            // TODO: Convert Multicast operations into unicast operations
-            await DeduplicateAndDispatch(operations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-            await DeduplicateAndDispatch(operations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
+            await DeduplicateAndDispatch(operations.UnicastTransportOperations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
+            await DeduplicateAndDispatch(operations.UnicastTransportOperations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
+
+            var multicastOperations = await ConvertToUnicastOperations(operations).ConfigureAwait(false);
+            await DeduplicateAndDispatch(multicastOperations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
+            await DeduplicateAndDispatch(multicastOperations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
         }
 
-        Task DeduplicateAndDispatch(TransportOperations operations, Func<List<UnicastTransportOperation>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
+        Task DeduplicateAndDispatch(IEnumerable<UnicastTransportOperation> transportOperations, Func<List<UnicastTransportOperation>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
         {
-            var operationsToDispatch = operations.UnicastTransportOperations
+            var operationsToDispatch = transportOperations
                 .Where(o => o.RequiredDispatchConsistency == dispatchConsistency)
                 .GroupBy(o => new DeduplicationKey(o.Message.MessageId, addressTranslator.Parse(o.Destination).Address))
                 .Select(g => g.First())
@@ -34,8 +38,30 @@
             return dispatchMethod(operationsToDispatch);
         }
 
+
+        async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
+        {
+            var tasks = operations.MulticastTransportOperations.Select(m => ConvertToUnicastOperations(m)).ToArray();
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+            return tasks.SelectMany(t => t.Result).ToList();
+        }
+
+        async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(MulticastTransportOperation transportOperation)
+        {
+            var destinations = await subscriptions.GetSubscribersForEvent(transportOperation.MessageType.ToString()).ConfigureAwait(false);
+
+            return (from destination in destinations
+                    select new UnicastTransportOperation(
+                        transportOperation.Message,
+                        destination,
+                        transportOperation.RequiredDispatchConsistency,
+                        transportOperation.DeliveryConstraints
+                    )).ToList();
+        }
+
         IQueueDispatcher dispatcher;
         QueueAddressTranslator addressTranslator;
+        IKnowWhereTheSubscriptionsAre subscriptions;
 
         class DeduplicationKey
         {

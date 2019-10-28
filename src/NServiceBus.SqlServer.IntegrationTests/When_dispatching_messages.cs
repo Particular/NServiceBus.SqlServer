@@ -107,7 +107,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser);
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser, new NoOpSubscriptionStore());
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
@@ -135,6 +135,15 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
         SqlConnectionFactory sqlConnectionFactory;
+
+        // TODO: Figure out if this is appropriate in this test
+        class NoOpSubscriptionStore : IKnowWhereTheSubscriptionsAre
+        {
+            public Task<List<string>> GetSubscribersForEvent(string eventType)
+            {
+                return Task.FromResult(new List<string>());
+            }
+        }
 
         interface IContextProvider : IDisposable
         {
