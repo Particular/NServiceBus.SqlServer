@@ -125,7 +125,7 @@ namespace NServiceBus.Transport.SQLServer
                     }
                     return new DelayedDeliveryQueueCreator(connectionFactory, creator, delayedMessageStore, createMessageBodyComputedColumn);
                 },
-                () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
+                () => CheckConnectivityAndForAmbientTransactionEnlistmentSupportIfNecessary(connectionFactory, scopeOptions.TransactionOptions));
         }
 
         SqlConnectionFactory CreateConnectionFactory()
@@ -172,7 +172,7 @@ namespace NServiceBus.Transport.SQLServer
             return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
         }
 
-        async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(SqlConnectionFactory connectionFactory, TransactionOptions transactionOptions)
+        async Task<StartupCheckResult> CheckConnectivityAndForAmbientTransactionEnlistmentSupportIfNecessary(SqlConnectionFactory connectionFactory, TransactionOptions transactionOptions)
         {
             if (!settings.TryGet(out TransportTransactionMode requestedTransportTransactionMode))
             {
