@@ -200,6 +200,10 @@ namespace NServiceBus.Transport.SQLServer
 
                     return StartupCheckResult.Failed(message);
                 }
+                catch (SqlException)
+                {
+                    // intentionally ignored and relying on circuit breaker discovering problems with the connection
+                }
             }
 
             return StartupCheckResult.Success;
