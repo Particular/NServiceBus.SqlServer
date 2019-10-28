@@ -7,7 +7,8 @@ namespace NServiceBus.Transport.SQLServer
 
     class ProcessWithNoTransaction : ReceiveStrategy
     {
-        public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory)
+        public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory, IQueueDispatcher dispatcher)
+        : base(dispatcher)
         {
             this.connectionFactory = connectionFactory;
         }

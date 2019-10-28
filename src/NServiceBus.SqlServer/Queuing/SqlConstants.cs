@@ -90,7 +90,7 @@ OUTPUT
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string MoveMaturedDelayedMessageText = @"
+        internal const string MoveDueDelayedMessageText = @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
