@@ -36,7 +36,14 @@ namespace NServiceBus.Transport.SQLServer
 
             settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
 
-            tableBasedSubscriptions = new TableBasedSubscriptions(CreateConnectionFactory());
+            var pubSubSettings = settings.GetOrCreate<TransportPubSubOptions>();
+
+            subscriptions = new TableBasedSubscriptions(CreateConnectionFactory());
+
+            if (pubSubSettings.TimeToCacheSubscription.HasValue)
+            {
+                subscriptions = new SubscriptionCache(subscriptions, pubSubSettings.TimeToCacheSubscription.Value);
+            }
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -194,7 +201,7 @@ namespace NServiceBus.Transport.SQLServer
                 () =>
                 {
                     ITableBasedQueueOperationsReader queueOperationsReader = new TableBasedQueueOperationsReader(addressTranslator, CreateDelayedMessageTable());
-                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator, tableBasedSubscriptions);
+                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator, subscriptions);
                     return dispatcher;
                 },
                 () => Task.FromResult(StartupCheckResult.Success));
@@ -234,11 +241,8 @@ namespace NServiceBus.Transport.SQLServer
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }
 
-        public override async Task Start()
+        public override Task Start()
         {
-            // TODO: Move this to an installer?
-            await tableBasedSubscriptions.CreateSubscriptionTable().ConfigureAwait(false);
-
             foreach (var diagnosticSection in diagnostics)
             {
                 settings.AddStartupDiagnosticsSection(diagnosticSection.Key, diagnosticSection.Value);
@@ -256,6 +260,8 @@ namespace NServiceBus.Transport.SQLServer
             var delayedMessageTable = CreateDelayedMessageTable();
             dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, CreateConnectionFactory(), delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
             dueDelayedMessageProcessor.Start();
+
+            return Task.FromResult(0);
         }
 
         public override Task Stop()
@@ -265,7 +271,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(tableBasedSubscriptions, settings));
+            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(subscriptions, settings));
         }
 
         public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
@@ -301,6 +307,6 @@ namespace NServiceBus.Transport.SQLServer
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         DelayedDeliverySettings delayedDeliverySettings;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
-        TableBasedSubscriptions tableBasedSubscriptions;
+        IManageTransportSubscriptions subscriptions;
     }
 }

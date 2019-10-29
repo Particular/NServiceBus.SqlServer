@@ -5,14 +5,13 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class TableBasedSubscriptions : IKnowWhereTheSubscriptionsAre
+    class TableBasedSubscriptions : IManageTransportSubscriptions
     {
         SqlConnectionFactory connectionFactory;
         string subscribeCommand;
         string unsubscribeCommand;
         string getSubscribersCommand;
         string createSubscriptionsTableCommand;
-
 
         public TableBasedSubscriptions(SqlConnectionFactory connectionFactory)
         {
@@ -80,18 +79,6 @@ namespace NServiceBus.Transport.SQLServer
 
                     return results;
                 }
-            }
-        }
-
-        public async Task CreateSubscriptionTable()
-        {
-            // TODO: Call this from somewhere
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = createSubscriptionsTableCommand;
-
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
     }

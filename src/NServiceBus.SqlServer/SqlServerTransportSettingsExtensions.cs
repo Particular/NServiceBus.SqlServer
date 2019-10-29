@@ -219,6 +219,16 @@
         }
 
         /// <summary>
+        /// Instructs the transport to cache subscriptions
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="timeToCacheSubscriptions">The length of time to cache subscriptions.</param>
+        public static void CacheSubscriptionsFor(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan timeToCacheSubscriptions)
+        {
+            transportExtensions.GetSettings().GetOrCreate<TransportPubSubOptions>().TimeToCacheSubscription = timeToCacheSubscriptions;
+        }
+
+        /// <summary>
         /// Enables multi-instance mode.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
