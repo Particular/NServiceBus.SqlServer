@@ -9,7 +9,7 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, IKnowWhereTheSubscriptionsAre subscriptions)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, IManageTransportSubscriptions subscriptions)
         {
             this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
@@ -61,7 +61,7 @@
 
         IQueueDispatcher dispatcher;
         QueueAddressTranslator addressTranslator;
-        IKnowWhereTheSubscriptionsAre subscriptions;
+        IManageTransportSubscriptions subscriptions;
 
         class DeduplicationKey
         {

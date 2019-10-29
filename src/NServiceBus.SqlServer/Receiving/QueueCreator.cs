@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.SQLServer
             using (var transaction = connection.BeginTransaction())
             {
                 await CreateDelayedMessageQueue(delayedMessageTable, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
-
+                await CreateSubscriptionsTable(connection, transaction).ConfigureAwait(false);
                 transaction.Commit();
             }
         }
@@ -91,6 +91,20 @@ namespace NServiceBus.Transport.SQLServer
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
 
+            }
+        }
+
+        static async Task CreateSubscriptionsTable(SqlConnection connection, SqlTransaction transaction)
+        {
+#pragma warning disable 618
+            var sql = SqlConstants.CreateSubscriptionTableText;
+#pragma warning restore 618
+            using (var command = new SqlCommand(sql, connection, transaction)
+            {
+                CommandType = CommandType.Text
+            })
+            {
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 

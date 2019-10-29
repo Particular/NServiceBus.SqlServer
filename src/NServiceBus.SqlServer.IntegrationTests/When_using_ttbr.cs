@@ -163,11 +163,21 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         const string validAddress = "TTBRTests";
 
         // TODO: Figure out if this is appropriate in this test
-        class NoOpSubscriptionStore : IKnowWhereTheSubscriptionsAre
+        class NoOpSubscriptionStore : IManageTransportSubscriptions
         {
             public Task<List<string>> GetSubscribersForEvent(string eventType)
             {
                 return Task.FromResult(new List<string>());
+            }
+
+            public Task Subscribe(string endpointName, string endpointAddress, string eventType)
+            {
+                return Task.FromResult(0);
+            }
+
+            public Task Unsubscribe(string endpointName, string eventType)
+            {
+                return Task.FromResult(0);
             }
         }
 

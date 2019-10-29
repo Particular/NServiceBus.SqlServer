@@ -7,20 +7,20 @@ namespace NServiceBus.Transport.SQLServer
 
     class SubscriptionManager : IManageSubscriptions
     {
-        TableBasedSubscriptions tableBasedSubscriptions;
+        IManageTransportSubscriptions subscriptions;
         string endpointName;
         string localAddress;
 
-        public SubscriptionManager(TableBasedSubscriptions tableBasedSubscriptions, ReadOnlySettings settings)
+        public SubscriptionManager(IManageTransportSubscriptions subscriptions, ReadOnlySettings settings)
         {
-            this.tableBasedSubscriptions = tableBasedSubscriptions;
+            this.subscriptions = subscriptions;
             endpointName = settings.EndpointName();
             localAddress = settings.LocalAddress();
         }
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            return tableBasedSubscriptions.Subscribe(
+            return subscriptions.Subscribe(
                 endpointName,
                 localAddress,
                 eventType.ToString()
@@ -29,7 +29,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            return tableBasedSubscriptions.Unsubscribe(
+            return subscriptions.Unsubscribe(
                 endpointName,
                 eventType.ToString()
             );
