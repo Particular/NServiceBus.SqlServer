@@ -20,19 +20,12 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            return subscriptions.Subscribe(
-                endpointName,
-                localAddress,
-                eventType.ToString()
-            );
+            return subscriptions.Subscribe(endpointName, localAddress, eventType);
         }
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            return subscriptions.Unsubscribe(
-                endpointName,
-                eventType.ToString()
-            );
+            return subscriptions.Unsubscribe(endpointName, eventType);
         }
     }
 }
