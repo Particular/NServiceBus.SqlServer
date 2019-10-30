@@ -139,17 +139,17 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         // TODO: Figure out if this is appropriate in this test
         class NoOpSubscriptionStore : IManageTransportSubscriptions
         {
-            public Task<List<string>> GetSubscribersForEvent(string eventType)
+            public Task<List<string>> GetSubscribersForEvent(Type eventType)
             {
                 return Task.FromResult(new List<string>());
             }
 
-            public Task Subscribe(string endpointName, string endpointAddress, string eventType)
+            public Task Subscribe(string endpointName, string endpointAddress, Type eventType)
             {
                 return Task.FromResult(0);
             }
 
-            public Task Unsubscribe(string endpointName, string eventType)
+            public Task Unsubscribe(string endpointName, Type eventType)
             {
                 return Task.FromResult(0);
             }

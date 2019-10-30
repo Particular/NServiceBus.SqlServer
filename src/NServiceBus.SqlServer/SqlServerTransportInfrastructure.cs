@@ -35,15 +35,6 @@ namespace NServiceBus.Transport.SQLServer
             }
 
             settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
-
-            var pubSubSettings = settings.GetOrCreate<TransportPubSubOptions>();
-
-            subscriptions = new TableBasedSubscriptions(CreateConnectionFactory());
-
-            if (pubSubSettings.TimeToCacheSubscription.HasValue)
-            {
-                subscriptions = new SubscriptionCache(subscriptions, pubSubSettings.TimeToCacheSubscription.Value);
-            }
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -197,6 +188,8 @@ namespace NServiceBus.Transport.SQLServer
 
             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
+            var subscriptions = pubSub.GetTransportSubscriptionsManager(settings, connectionFactory);
+
             return new TransportSendInfrastructure(
                 () =>
                 {
@@ -271,6 +264,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
         {
+            var subscriptions = pubSub.GetTransportSubscriptionsManager(settings, CreateConnectionFactory());
             return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(subscriptions, settings));
         }
 
@@ -307,6 +301,6 @@ namespace NServiceBus.Transport.SQLServer
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         DelayedDeliverySettings delayedDeliverySettings;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
-        IManageTransportSubscriptions subscriptions;
+        TransportPubSub pubSub = new TransportPubSub();
     }
 }

@@ -48,7 +48,7 @@
 
         async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(MulticastTransportOperation transportOperation)
         {
-            var destinations = await subscriptions.GetSubscribersForEvent(transportOperation.MessageType.ToString()).ConfigureAwait(false);
+            var destinations = await subscriptions.GetSubscribersForEvent(transportOperation.MessageType).ConfigureAwait(false);
 
             return (from destination in destinations
                     select new UnicastTransportOperation(

@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.SQLServer
             this.cacheFor = cacheFor;
         }
 
-        public Task<List<string>> GetSubscribersForEvent(string eventType)
+        public Task<List<string>> GetSubscribersForEvent(Type eventType)
         {
             var cacheItem = Cache.GetOrAdd(eventType,
                 _ => new CacheItem
@@ -32,26 +32,26 @@ namespace NServiceBus.Transport.SQLServer
             return cacheItem.Subscribers;
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, string eventType)
+        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType)
         {
             await inner.Subscribe(endpointName, endpointAddress, eventType).ConfigureAwait(false);
             ClearForMessageType(eventType);
         }
 
-        public async Task Unsubscribe(string endpointName, string eventType)
+        public async Task Unsubscribe(string endpointName, Type eventType)
         {
             await inner.Unsubscribe(endpointName, eventType).ConfigureAwait(false);
             ClearForMessageType(eventType);
         }
 
-        void ClearForMessageType(string eventType)
+        void ClearForMessageType(Type eventType)
         {
             Cache.TryRemove(eventType, out _);
         }
 
         TimeSpan cacheFor;
         IManageTransportSubscriptions inner;
-        ConcurrentDictionary<string, CacheItem> Cache = new ConcurrentDictionary<string, CacheItem>();
+        ConcurrentDictionary<Type, CacheItem> Cache = new ConcurrentDictionary<Type, CacheItem>();
 
         class CacheItem
         {
