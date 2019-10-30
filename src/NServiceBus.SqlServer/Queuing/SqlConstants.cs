@@ -256,29 +256,40 @@ WHERE c.object_id = OBJECT_ID('{0}')
     AND c.name = 'Headers'";
 
         public static readonly string CreateSubscriptionTableText = @"
-IF NOT EXISTS
-(
+
+IF EXISTS (
     SELECT *
-    FROM sys.objects
-    WHERE
-        object_id = object_id('[dbo].[SubscriptionRouting]') AND
-        type IN ('U')
-)
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
 BEGIN
-    CREATE TABLE [dbo].[SubscriptionRouting] (
-        Subscriber NVARCHAR(200) NOT NULL,
-        Endpoint NVARCHAR(200),
-        MessageType NVARCHAR(200) NOT NULL,
-        PRIMARY KEY CLUSTERED
-        (
-            Subscriber,
-            MessageType
-        )
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+CREATE TABLE {0} (
+    Subscriber NVARCHAR(200) NOT NULL,
+    Endpoint NVARCHAR(200),
+    MessageType NVARCHAR(200) NOT NULL,
+    PRIMARY KEY CLUSTERED
+    (
+        Subscriber,
+        MessageType
     )
-END";
+)
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public static readonly string SubscribeText = @"
-MERGE [dbo].[SubscriptionRouting] WITH (HOLDLOCK, TABLOCK) AS target
+MERGE {0} WITH (HOLDLOCK, TABLOCK) AS target
 USING(SELECT @Endpoint AS Endpoint, @Subscriber AS Subscriber, @MessageType AS MessageType) AS source
 ON target.Subscriber = source.Subscriber
 AND target.MessageType = source.MessageType
@@ -300,12 +311,12 @@ VALUES
 
         public static readonly string GetSubscribersText = @"
 SELECT DISTINCT Subscriber, Endpoint
-FROM [dbo].[SubscriptionRouting]
+FROM {0}
 WHERE MessageType IN (@MessageType)
 ";
 
         public static readonly string UnsubscribeText = @"
-DELETE FROM [dbo].[SubscriptionRouting]
+DELETE FROM {0}
 WHERE
     Subscriber = @Subscriber and
     MessageType = @MessageType";

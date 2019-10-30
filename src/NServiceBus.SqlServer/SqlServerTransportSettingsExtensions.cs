@@ -178,7 +178,7 @@
         }
 
         /// <summary>
-        /// Enables native delayed delivery.
+        /// Configures native delayed delivery.
         /// </summary>
         public static DelayedDeliverySettings NativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
@@ -190,6 +190,14 @@
 
             var settings = transportExtensions.GetSettings().GetOrCreate<DelayedDeliverySettings>();
             return settings;
+        }
+
+        /// <summary>
+        /// Configures publish/subscribe.
+        /// </summary>
+        public static PubSubSettings PubSub(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            return transportExtensions.GetSettings().GetOrCreate<PubSubSettings>();
         }
 
         /// <summary>
@@ -216,16 +224,6 @@
             transportExtensions.GetSettings().Set(SettingsKeys.CreateMessageBodyComputedColumn, true);
 
             return transportExtensions;
-        }
-
-        /// <summary>
-        /// Instructs the transport to cache subscriptions
-        /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="timeToCacheSubscriptions">The length of time to cache subscriptions.</param>
-        public static void CacheSubscriptionsFor(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan timeToCacheSubscriptions)
-        {
-            transportExtensions.GetSettings().GetOrCreate<TransportPubSubOptions>().TimeToCacheSubscription = timeToCacheSubscriptions;
         }
 
         /// <summary>

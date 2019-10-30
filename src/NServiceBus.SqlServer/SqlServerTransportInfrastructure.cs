@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.SQLServer
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
@@ -22,6 +23,8 @@ namespace NServiceBus.Transport.SQLServer
 
             schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             delayedDeliverySettings = settings.GetOrCreate<DelayedDeliverySettings>();
+            pubSubSettings = settings.GetOrCreate<PubSubSettings>();
+
             var timeoutManagerFeatureDisabled = !settings.IsFeatureEnabled(typeof(TimeoutManager));
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
@@ -35,6 +38,15 @@ namespace NServiceBus.Transport.SQLServer
             }
 
             settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
+
+            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(addressTranslator.DefaultSchema, addressTranslator.DefaultCatalog);
+            subscriptions = new TableBasedSubscriptions(subscriptionTableName.QuotedQualifiedName, CreateConnectionFactory());
+
+            var timeToCacheSubscriptions = pubSubSettings.GetCacheFor();
+            if (timeToCacheSubscriptions.HasValue)
+            {
+                subscriptions = new SubscriptionCache(subscriptions, timeToCacheSubscriptions.Value);
+            }
         }
 
         public override IEnumerable<Type> DeliveryConstraints
@@ -96,10 +108,11 @@ namespace NServiceBus.Transport.SQLServer
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
             var delayedMessageStore = GetDelayedQueueTableName();
+            var qualifiedSubscriptionTable = pubSubSettings.SubscriptionTable.Qualify(addressTranslator.DefaultSchema, addressTranslator.DefaultCatalog);
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressTranslator, delayedMessageStore, createMessageBodyComputedColumn),
+                () => new QueueCreator(connectionFactory, addressTranslator, delayedMessageStore, qualifiedSubscriptionTable, createMessageBodyComputedColumn),
                 () => CheckForAmbientTransactionEnlistmentSupport(connectionFactory, scopeOptions.TransactionOptions));
         }
 
@@ -225,10 +238,6 @@ namespace NServiceBus.Transport.SQLServer
 
         CanonicalQueueAddress GetDelayedQueueTableName()
         {
-            if (string.IsNullOrEmpty(delayedDeliverySettings.Suffix))
-            {
-                throw new Exception("Native delayed delivery feature requires configuring a table suffix.");
-            }
             var delayedQueueLogicalAddress = GetLogicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
             var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);

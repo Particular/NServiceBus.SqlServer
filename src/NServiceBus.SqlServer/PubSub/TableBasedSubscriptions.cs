@@ -13,14 +13,14 @@ namespace NServiceBus.Transport.SQLServer
         string unsubscribeCommand;
         string getSubscribersCommand;
 
-        public TableBasedSubscriptions(SqlConnectionFactory connectionFactory)
+        public TableBasedSubscriptions(string qualifiedTableName, SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
             // TODO: Be able to change the subscriptions table name and schema
 #pragma warning disable 618
-            subscribeCommand = SqlConstants.SubscribeText;
-            unsubscribeCommand = SqlConstants.UnsubscribeText;
-            getSubscribersCommand = SqlConstants.GetSubscribersText;
+            subscribeCommand = string.Format(SqlConstants.SubscribeText, qualifiedTableName);
+            unsubscribeCommand = string.Format(SqlConstants.UnsubscribeText, qualifiedTableName);
+            getSubscribersCommand = string.Format(SqlConstants.GetSubscribersText, qualifiedTableName);
 #pragma warning restore 618
         }
 
