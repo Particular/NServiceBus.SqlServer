@@ -14,13 +14,17 @@ namespace NServiceBus.Transport.SQLServer
                 return subscriptions;
             }
 
-            var pubSubSettings = settings.GetOrDefault<TransportPubSubOptions>() ?? new TransportPubSubOptions();
-            var messageMetadataRegistry = settings.Get<MessageMetadataRegistry>();
+            subscriptions = new TableBasedSubscriptions(connectionFactory);
 
-            subscriptions = new PolymorphicTransportSubscriptionsManagerWrapper(
-                new TableBasedSubscriptions(connectionFactory),
-                messageMetadataRegistry
-            );
+            if (settings.TryGet<MessageMetadataRegistry>(out var messageMetadataRegistry))
+            {
+                subscriptions = new PolymorphicTransportSubscriptionsManagerWrapper(
+                    subscriptions,
+                    messageMetadataRegistry
+                );
+            }
+
+            var pubSubSettings = settings.GetOrDefault<TransportPubSubOptions>() ?? new TransportPubSubOptions();
 
             if (pubSubSettings.TimeToCacheSubscription.HasValue)
             {
@@ -28,7 +32,6 @@ namespace NServiceBus.Transport.SQLServer
             }
 
             return subscriptions;
-
         }
     }
 }
