@@ -148,10 +148,9 @@ namespace NServiceBus.Transport.SQLServer
                 TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
             });
 
-            var delayedQueueLogicalAddress = logicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
-            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
-            var delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(delayedQueueAddress);
-            var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, localAddress());
+            var delayedQueueCanonicalAddress = GetDelayedTableAddress(delayedDeliverySettings);
+            var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
+            var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
@@ -161,6 +160,13 @@ namespace NServiceBus.Transport.SQLServer
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressTranslator, delayedQueueCanonicalAddress, createMessageBodyComputedColumn),
                 () => CheckForAmbientTransactionEnlistmentSupport(scopeOptions.TransactionOptions));
+        }
+
+        CanonicalQueueAddress GetDelayedTableAddress(DelayedDeliverySettings delayedDeliverySettings)
+        {
+            var delayedQueueLogicalAddress = logicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
+            return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)

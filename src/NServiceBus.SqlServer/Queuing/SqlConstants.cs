@@ -310,7 +310,7 @@ VALUES
 );";
 
         public static readonly string GetSubscribersText = @"
-SELECT DISTINCT QueueAddress, Endpoint
+SELECT DISTINCT QueueAddress
 FROM {0}
 WHERE Topic = @Topic
 ";
