@@ -23,7 +23,7 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning restore 618
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, string topic)
+        public async Task Subscribe(string endpointName, string queueAddress, string topic)
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -31,9 +31,9 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
-                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = endpointName;
+                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
+                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = queueAddress;
                     command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointAddress;
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
@@ -71,7 +71,7 @@ namespace NServiceBus.Transport.SQLServer
                     {
                         while (await reader.ReadAsync().ConfigureAwait(false))
                         {
-                            results.Add(reader.GetString(1));
+                            results.Add(reader.GetString(0));
                         }
                     }
 

@@ -51,6 +51,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             foreach (var address in queueAddresses)
             {
                 TryDeleteTable(conn, address);
+                TryDeleteTable(conn, new QueueAddress("SubscriptionRouting", address.Schema, address.Catalog));
                 TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog));
             }
         }
