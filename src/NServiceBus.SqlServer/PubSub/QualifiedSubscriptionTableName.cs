@@ -14,7 +14,7 @@
             if (schema == null) throw new ArgumentNullException(nameof(schema));
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             QuotedCatalog = Quote(catalog);
-            QuotedQualifiedName = $"{Quote(table)}.{Quote(schema)}.{Quote(catalog)}";
+            QuotedQualifiedName = $"{Quote(catalog)}.{Quote(schema)}.{Quote(table)}";
         }
     }
 }

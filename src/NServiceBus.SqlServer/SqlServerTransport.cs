@@ -38,12 +38,9 @@ namespace NServiceBus
         /// </summary>
         public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
-            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
-            var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
-
             var catalog = GetDefaultCatalog(settings, connectionString);
-            var addressParser = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
-            return new SqlServerTransportInfrastructure(addressParser, settings, connectionString);
+
+            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress);
         }
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)

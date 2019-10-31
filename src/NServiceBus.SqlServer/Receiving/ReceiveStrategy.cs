@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
@@ -15,9 +14,9 @@
         Func<MessageContext, Task> onMessage;
         Func<ErrorContext, Task<ErrorHandleResult>> onError;
 
-        protected ReceiveStrategy(IQueueDispatcher queueDispatcher)
+        protected ReceiveStrategy(TableBasedQueueCache tableBasedQueueCache)
         {
-            this.queueDispatcher = queueDispatcher;
+            this.tableBasedQueueCache = tableBasedQueueCache;
         }
 
         public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError)
@@ -44,6 +43,11 @@
 
             if (receiveResult.Successful)
             {
+                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
+                {
+                    return null;
+                }
+
                 return receiveResult.Message;
             }
             receiveCancellationTokenSource.Cancel();
@@ -59,7 +63,6 @@
             using (var pushCancellationTokenSource = new CancellationTokenSource())
             {
                 var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, pushCancellationTokenSource, new ContextBag());
-
                 await onMessage(messageContext).ConfigureAwait(false);
 
                 // Cancellation is requested when message processing is aborted.
@@ -87,9 +90,13 @@
             }
         }
 
-        public async Task<bool> TryHandleDelayedMessage(MessageContext context)
+        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
         {
-            context.Headers.TryGetValue(ForwardHeader, out var forwardDestination);
+            if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
+            {
+                message.Headers.Remove(ForwardHeader);
+            }
+
             if (forwardDestination == null)
             {
                 //This is not a delayed message. Process in local endpoint instance.
@@ -97,21 +104,18 @@
             }
             if (forwardDestination == InputQueue.Name)
             {
-                context.Headers.Remove(ForwardHeader);
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
             }
-            var outgoingMessage = new OutgoingMessage(context.MessageId, context.Headers, context.Body);
-            context.Headers.Remove(ForwardHeader);
-            await queueDispatcher.DispatchAsNonIsolated(new List<UnicastTransportOperation>
-            {
-                new UnicastTransportOperation(outgoingMessage, forwardDestination)
-            }, context.TransportTransaction).ConfigureAwait(false);
+            var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
+
+            var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
+            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction).ConfigureAwait(false);
             return true;
         }
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
-        IQueueDispatcher queueDispatcher;
+        TableBasedQueueCache tableBasedQueueCache;
         CriticalError criticalError;
     }
 }

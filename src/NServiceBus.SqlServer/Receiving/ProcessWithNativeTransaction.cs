@@ -9,8 +9,8 @@
 
     class ProcessWithNativeTransaction : ReceiveStrategy
     {
-        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, IQueueDispatcher queueDispatcher, bool transactionForReceiveOnly = false)
-        : base(queueDispatcher)
+        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
+        : base(tableBasedQueueCache)
         {
             this.connectionFactory = connectionFactory;
             this.failureInfoStorage = failureInfoStorage;

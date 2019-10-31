@@ -5,53 +5,53 @@ namespace NServiceBus.Transport.SQLServer
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    class SubscriptionCache : IManageTransportSubscriptions
+    class SubscriptionCache : ISubscriptionStore
     {
-        public SubscriptionCache(IManageTransportSubscriptions inner, TimeSpan cacheFor)
+        public SubscriptionCache(ISubscriptionStore inner, TimeSpan cacheFor)
         {
             this.inner = inner;
             this.cacheFor = cacheFor;
         }
 
-        public Task<List<string>> GetSubscribersForEvent(Type eventType)
+        public Task<List<string>> GetSubscribersForTopic(string topic)
         {
-            var cacheItem = Cache.GetOrAdd(eventType,
+            var cacheItem = Cache.GetOrAdd(topic,
                 _ => new CacheItem
                 {
                     Stored = DateTime.UtcNow,
-                    Subscribers = inner.GetSubscribersForEvent(eventType)
+                    Subscribers = inner.GetSubscribersForTopic(topic)
                 });
 
             var age = DateTime.UtcNow - cacheItem.Stored;
             if (age >= cacheFor)
             {
-                cacheItem.Subscribers = inner.GetSubscribersForEvent(eventType);
+                cacheItem.Subscribers = inner.GetSubscribersForTopic(topic);
                 cacheItem.Stored = DateTime.UtcNow;
             }
 
             return cacheItem.Subscribers;
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType)
+        public async Task Subscribe(string endpointName, string endpointAddress, string topic)
         {
-            await inner.Subscribe(endpointName, endpointAddress, eventType).ConfigureAwait(false);
-            ClearForMessageType(eventType);
+            await inner.Subscribe(endpointName, endpointAddress, topic).ConfigureAwait(false);
+            ClearForMessageType(topic);
         }
 
-        public async Task Unsubscribe(string endpointName, Type eventType)
+        public async Task Unsubscribe(string endpointName, string topic)
         {
-            await inner.Unsubscribe(endpointName, eventType).ConfigureAwait(false);
-            ClearForMessageType(eventType);
+            await inner.Unsubscribe(endpointName, topic).ConfigureAwait(false);
+            ClearForMessageType(topic);
         }
 
-        void ClearForMessageType(Type eventType)
+        void ClearForMessageType(string topice)
         {
-            Cache.TryRemove(eventType, out _);
+            Cache.TryRemove(topice, out _);
         }
 
         TimeSpan cacheFor;
-        IManageTransportSubscriptions inner;
-        ConcurrentDictionary<Type, CacheItem> Cache = new ConcurrentDictionary<Type, CacheItem>();
+        ISubscriptionStore inner;
+        ConcurrentDictionary<string, CacheItem> Cache = new ConcurrentDictionary<string, CacheItem>();
 
         class CacheItem
         {

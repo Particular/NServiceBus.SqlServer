@@ -277,49 +277,49 @@ BEGIN
 END
 
 CREATE TABLE {0} (
-    Subscriber NVARCHAR(200) NOT NULL,
+    QueueAddress NVARCHAR(200) NOT NULL,
     Endpoint NVARCHAR(200),
-    MessageType NVARCHAR(200) NOT NULL,
+    Topic NVARCHAR(200) NOT NULL,
     PRIMARY KEY CLUSTERED
     (
-        Subscriber,
-        MessageType
+        Endpoint,
+        Topic
     )
 )
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public static readonly string SubscribeText = @"
 MERGE {0} WITH (HOLDLOCK, TABLOCK) AS target
-USING(SELECT @Endpoint AS Endpoint, @Subscriber AS Subscriber, @MessageType AS MessageType) AS source
-ON target.Subscriber = source.Subscriber
-AND target.MessageType = source.MessageType
-WHEN MATCHED AND source.Endpoint IS NOT NULL AND (target.Endpoint IS NULL OR target.Endpoint <> source.Endpoint) THEN
-UPDATE SET Endpoint = @Endpoint
+USING(SELECT @Endpoint AS Endpoint, @QueueAddress AS QueueAddress, @Topic AS Topic) AS source
+ON target.Endpoint = source.Endpoint
+AND target.Topic = source.Topic
+WHEN MATCHED AND target.QueueAddress <> source.QueueAddress THEN
+UPDATE SET QueueAddress = @QueueAddress
 WHEN NOT MATCHED THEN
 INSERT
 (
-    Subscriber,
-    MessageType,
+    QueueAddress,
+    Topic,
     Endpoint
 )
 VALUES
 (
-    @Subscriber,
-    @MessageType,
+    @QueueAddress,
+    @Topic,
     @Endpoint
 );";
 
         public static readonly string GetSubscribersText = @"
-SELECT DISTINCT Subscriber, Endpoint
+SELECT DISTINCT QueueAddress, Endpoint
 FROM {0}
-WHERE MessageType IN (@MessageType)
+WHERE Topic = @Topic
 ";
 
         public static readonly string UnsubscribeText = @"
 DELETE FROM {0}
 WHERE
-    Subscriber = @Subscriber and
-    MessageType = @MessageType";
+    Endpoint = @Endpoint and
+    Topic = @Topic";
 
     }
 }

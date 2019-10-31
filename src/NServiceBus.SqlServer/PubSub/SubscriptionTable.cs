@@ -1,19 +1,18 @@
 namespace NServiceBus.Transport.SQLServer
 {
-    using System;
     using System.Collections.Generic;
     using System.Data;
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class TableBasedSubscriptions : IManageTransportSubscriptions
+    class SubscriptionTable : ISubscriptionStore
     {
         SqlConnectionFactory connectionFactory;
         string subscribeCommand;
         string unsubscribeCommand;
         string getSubscribersCommand;
 
-        public TableBasedSubscriptions(string qualifiedTableName, SqlConnectionFactory connectionFactory)
+        public SubscriptionTable(string qualifiedTableName, SqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
             // TODO: Be able to change the subscriptions table name and schema
@@ -24,7 +23,7 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning restore 618
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType)
+        public async Task Subscribe(string endpointName, string endpointAddress, string topic)
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -32,8 +31,8 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
-                    command.Parameters.Add("Subscriber", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("MessageType", SqlDbType.VarChar).Value = eventType.ToString();
+                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = endpointName;
+                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
                     command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointAddress;
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -41,7 +40,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task Unsubscribe(string endpointName, Type eventType)
+        public async Task Unsubscribe(string endpointName, string topic)
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -49,15 +48,15 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = unsubscribeCommand;
-                    command.Parameters.Add("Subscriber", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("MessageType", SqlDbType.VarChar).Value = eventType.ToString();
+                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
+                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
         }
 
-        public async Task<List<string>> GetSubscribersForEvent(Type eventType)
+        public async Task<List<string>> GetSubscribersForTopic(string topic)
         {
             var results = new List<string>();
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
@@ -66,7 +65,7 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = getSubscribersCommand;
-                    command.Parameters.Add("MessageType", SqlDbType.VarChar).Value = eventType.ToString();
+                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
 
                     using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                     {

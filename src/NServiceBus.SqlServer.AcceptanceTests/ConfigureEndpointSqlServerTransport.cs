@@ -6,6 +6,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
+using NServiceBus.Transport.SQLServer;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
@@ -21,6 +22,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);
+        transportConfig.PubSub().DisableSubscriptionCache();
 
 #if !NET452
         transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);

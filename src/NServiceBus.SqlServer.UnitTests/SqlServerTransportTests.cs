@@ -2,6 +2,7 @@
 {
     using NUnit.Framework;
     using Settings;
+    using Transport.SQLServer;
 
     [TestFixture]
     public class SqlServerTransportTests
@@ -10,7 +11,12 @@
         public void It_rejects_connection_string_without_catalog_property()
         {
             var definition = new SqlServerTransport();
-            Assert.That( () => definition.Initialize(new SettingsHolder(), @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
+            var subscriptionSettings = new PubSubSettings();
+            subscriptionSettings.DisableSubscriptionCache();
+            var settings = new SettingsHolder();
+            settings.Set(subscriptionSettings);
+
+            Assert.That( () => definition.Initialize(settings, @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
                 Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
         }
 
@@ -22,7 +28,13 @@
         public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
             var definition = new SqlServerTransport();
-            definition.Initialize(new SettingsHolder(), connectionString);
+
+            var subscriptionSettings = new PubSubSettings();
+            subscriptionSettings.DisableSubscriptionCache();
+            var settings = new SettingsHolder();
+            settings.Set(subscriptionSettings);
+
+            definition.Initialize(settings, connectionString);
             Assert.Pass();
         }
     }
