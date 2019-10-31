@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using Settings;
 
     /// <summary>
     /// Configures the native pub/sub behavior

@@ -6,7 +6,20 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading.Tasks;
     using Transport;
 
-    class DelayedMessageTable
+    interface IDelayedMessageStore
+    {
+        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction);
+    }
+
+    class SendOnlyDelayedMessageStore : IDelayedMessageStore
+    {
+        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
+        {
+            throw new Exception("Delayed delivery is only supported for non send-only endpoints.");
+        }
+    }
+
+    class DelayedMessageTable : IDelayedMessageStore
     {
         public DelayedMessageTable(string delayedQueueTable, string inputQueueTable)
         {

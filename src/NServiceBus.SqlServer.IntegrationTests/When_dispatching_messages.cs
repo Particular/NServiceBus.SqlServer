@@ -102,12 +102,13 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         async Task PrepareAsync()
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var tableCache = new TableBasedQueueCache(addressParser);
 
             await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser, null)), addressParser, new NoOpSubscriptionStore());
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(tableCache, null)), addressParser, new NoOpSubscriptionStore());
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
@@ -121,7 +122,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator,  new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 
@@ -137,19 +138,19 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         SqlConnectionFactory sqlConnectionFactory;
 
         // TODO: Figure out if this is appropriate in this test
-        class NoOpSubscriptionStore : IManageTransportSubscriptions
+        class NoOpSubscriptionStore : ISubscriptionStore
         {
-            public Task<List<string>> GetSubscribersForEvent(Type eventType)
+            public Task<List<string>> GetSubscribersForTopic(string topic)
             {
                 return Task.FromResult(new List<string>());
             }
 
-            public Task Subscribe(string endpointName, string endpointAddress, Type eventType)
+            public Task Subscribe(string endpointName, string endpointAddress, string topic)
             {
                 return Task.FromResult(0);
             }
 
-            public Task Unsubscribe(string endpointName, Type eventType)
+            public Task Unsubscribe(string endpointName, string topic)
             {
                 return Task.FromResult(0);
             }

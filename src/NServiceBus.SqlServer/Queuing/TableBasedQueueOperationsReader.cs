@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
@@ -11,9 +10,9 @@ namespace NServiceBus.Transport.SQLServer
 
     class TableBasedQueueOperationsReader : ITableBasedQueueOperationsReader
     {
-        public TableBasedQueueOperationsReader(QueueAddressTranslator addressTranslator, DelayedMessageTable delayedMessageTable)
+        public TableBasedQueueOperationsReader(TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable)
         {
-            this.addressTranslator = addressTranslator;
+            this.tableBasedQueueCache = tableBasedQueueCache;
             this.delayedMessageTable = delayedMessageTable;
         }
 
@@ -32,10 +31,7 @@ namespace NServiceBus.Transport.SQLServer
                 return (conn, trans) => delayedMessageTable.Store(operation.Message, behavior.DueAfter, behavior.Destination, conn, trans);
             }
 
-            var address = addressTranslator.Parse(operation.Destination);
-            var key = Tuple.Create(address.QualifiedTableName, address.Address);
-            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(x.Item1, x.Item2));
-
+            var queue = tableBasedQueueCache.Get(operation.Destination);
             return (conn, trans) => queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, conn, trans);
         }
 
@@ -80,8 +76,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        DelayedMessageTable delayedMessageTable;
-        QueueAddressTranslator addressTranslator;
-        ConcurrentDictionary<Tuple<string, string>, TableBasedQueue> cache = new ConcurrentDictionary<Tuple<string, string>, TableBasedQueue>();
+        TableBasedQueueCache tableBasedQueueCache;
+        IDelayedMessageStore delayedMessageTable;
     }
 }

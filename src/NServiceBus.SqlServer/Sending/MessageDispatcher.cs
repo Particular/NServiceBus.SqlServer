@@ -9,7 +9,7 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, IManageTransportSubscriptions subscriptions)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, ISubscriptionStore subscriptions)
         {
             this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
@@ -48,7 +48,7 @@
 
         async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(MulticastTransportOperation transportOperation)
         {
-            var destinations = await subscriptions.GetSubscribersForEvent(transportOperation.MessageType).ConfigureAwait(false);
+            var destinations = await subscriptions.GetSubscribersForTopic(TopicName(transportOperation.MessageType)).ConfigureAwait(false);
 
             return (from destination in destinations
                     select new UnicastTransportOperation(
@@ -61,7 +61,13 @@
 
         IQueueDispatcher dispatcher;
         QueueAddressTranslator addressTranslator;
-        IManageTransportSubscriptions subscriptions;
+        ISubscriptionStore subscriptions;
+
+        static string TopicName(Type type)
+        {
+            return $"{type.Namespace}.{type.Name}";
+        }
+
 
         class DeduplicationKey
         {

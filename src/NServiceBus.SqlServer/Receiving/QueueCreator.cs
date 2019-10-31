@@ -8,14 +8,12 @@ namespace NServiceBus.Transport.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, 
-            LogicalAddress delayedQueueAddress, QualifiedSubscriptionTableName subscriptionTable,
-            bool createMessageBodyColumn = false)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator,
+            CanonicalQueueAddress delayedQueueAddress, bool createMessageBodyColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
             this.delayedQueueAddress = delayedQueueAddress;
-            this.subscriptionTable = subscriptionTable;
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
@@ -40,7 +38,6 @@ namespace NServiceBus.Transport.SQLServer
             using (var transaction = connection.BeginTransaction())
             {
                 await CreateDelayedMessageQueue(connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
-                await CreateSubscriptionsTable(connection, transaction).ConfigureAwait(false);
                 transaction.Commit();
             }
         }
@@ -71,9 +68,8 @@ namespace NServiceBus.Transport.SQLServer
 
         async Task CreateDelayedMessageQueue(SqlConnection connection, SqlTransaction transaction, bool createMessageBodyComputedColumn)
         {
-            var delayedQueue = GetDelayedQueueTableName();
 #pragma warning disable 618
-            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, delayedQueue.QualifiedTableName, delayedQueue.QuotedCatalogName);
+            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress.QualifiedTableName, delayedQueueAddress.QuotedCatalogName);
 #pragma warning restore 618
             using (var command = new SqlCommand(sql, connection, transaction)
             {
@@ -85,7 +81,7 @@ namespace NServiceBus.Transport.SQLServer
             if (createMessageBodyComputedColumn)
             {
 #pragma warning disable 618
-                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, delayedQueue.QualifiedTableName, delayedQueue.QuotedCatalogName);
+                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, delayedQueueAddress.QualifiedTableName, delayedQueueAddress.QuotedCatalogName);
 #pragma warning restore 618
                 using (var command = new SqlCommand(bodyStringSql, connection, transaction)
                 {
@@ -98,29 +94,9 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task CreateSubscriptionsTable(SqlConnection connection, SqlTransaction transaction)
-        {
-#pragma warning disable 618
-            var sql = string.Format(SqlConstants.CreateSubscriptionTableText, subscriptionTable.QuotedQualifiedName, subscriptionTable.QuotedCatalog);
-#pragma warning restore 618
-            using (var command = new SqlCommand(sql, connection, transaction)
-            {
-                CommandType = CommandType.Text
-            })
-            {
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-            }
-        }
-
-        CanonicalQueueAddress GetDelayedQueueTableName()
-        {
-            return addressTranslator.GetCanonicalForm(addressTranslator.Generate(delayedQueueAddress));
-        }
-
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
-        LogicalAddress delayedQueueAddress;
-        QualifiedSubscriptionTableName subscriptionTable;
+        CanonicalQueueAddress delayedQueueAddress;
         bool createMessageBodyColumn;
     }
 }
