@@ -135,7 +135,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(tableCache, null)), addressParser, new NoOpMulticastToUnicastConverter());
+            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser)
