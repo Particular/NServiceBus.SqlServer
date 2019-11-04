@@ -14,7 +14,7 @@
         public Task Should_receive_event()
         {
             return Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
+                .WithEndpoint<Publisher>(b => b.When(c => c.EndpointsStarted, session => session.Publish(new Event())))
                 .WithEndpoint<Subscriber>()
                 .Done(c => c.EventReceived)
                 .Run();
@@ -22,7 +22,6 @@
 
         class Context : ScenarioContext
         {
-            public bool Subscribed { get; set; }
             public bool EventReceived { get; set; }
         }
 
@@ -33,9 +32,8 @@
                 EndpointSetup<DefaultPublisher>(b =>
                 {
                     b.UseTransport<SqlServerTransport>()
-                        .DefaultSchema("sender");
-
-                    b.OnEndpointSubscribed<Context>((args, context) => { context.Subscribed = true; });
+                        .DefaultSchema("sender")
+                        .PubSub().SubscriptionTableName("SubscriptionRouting", "dbo");
                 });
             }
         }
@@ -50,7 +48,9 @@
 
                     b.UseTransport<SqlServerTransport>()
                         .DefaultSchema("receiver")
-                        .UseSchemaForEndpoint(publisherEndpoint, "sender");
+                        .UseSchemaForEndpoint(publisherEndpoint, "sender")
+                        .PubSub().SubscriptionTableName("SubscriptionRouting", "dbo");
+
                     // TODO: Use this for compatibility mode
                     //.Routing().RegisterPublisher(
                     //    eventType: typeof(Event),
