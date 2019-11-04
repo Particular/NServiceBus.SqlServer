@@ -135,7 +135,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(tableCache, null)), addressParser, new NoOpSubscriptionStore());
+            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(tableCache, null)), addressParser, new NoOpMulticastToUnicastConverter());
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser)
@@ -164,21 +164,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         const string validAddress = "TTBRTests";
 
         // TODO: Figure out if this is appropriate in this test
-        class NoOpSubscriptionStore : ISubscriptionStore
+        class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<string>> GetSubscribersForTopic(string topic)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
             {
-                return Task.FromResult(new List<string>());
-            }
-
-            public Task Subscribe(string endpointName, string endpointAddress, string topic)
-            {
-                return Task.FromResult(0);
-            }
-
-            public Task Unsubscribe(string endpointName, string topic)
-            {
-                return Task.FromResult(0);
+                return Task.FromResult(new List<UnicastTransportOperation>());
             }
         }
 
