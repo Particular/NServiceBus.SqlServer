@@ -2,113 +2,180 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
+    using System.Transactions;
+    using DelayedDelivery;
+    using DeliveryConstraints;
     using Extensibility;
+    using Performance.TimeToBeReceived;
     using Transport;
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, ISubscriptionStore subscriptions)
+        public MessageDispatcher(QueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, SqlConnectionFactory connectionFactory)
         {
-            this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
-            this.subscriptions = subscriptions;
+            this.multicastToUnicastConverter = multicastToUnicastConverter;
+            this.tableBasedQueueCache = tableBasedQueueCache;
+            this.delayedMessageTable = delayedMessageTable;
+            this.connectionFactory = connectionFactory;
         }
 
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, ContextBag context)
         {
-            await DeduplicateAndDispatch(operations.UnicastTransportOperations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-            await DeduplicateAndDispatch(operations.UnicastTransportOperations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
+            var sortedOperations = operations.UnicastTransportOperations
+                .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))
+                .SortAndDeduplicate(addressTranslator);
 
-            var multicastOperations = await ConvertToUnicastOperations(operations).ConfigureAwait(false);
-            await DeduplicateAndDispatch(multicastOperations, dispatcher.DispatchAsIsolated, DispatchConsistency.Isolated).ConfigureAwait(false);
-            await DeduplicateAndDispatch(multicastOperations, ops => dispatcher.DispatchAsNonIsolated(ops, transportTransaction), DispatchConsistency.Default).ConfigureAwait(false);
+            await DispatchDefault(sortedOperations, transportTransaction).ConfigureAwait(false);
+            await DispatchIsolated(sortedOperations).ConfigureAwait(false);
         }
-
-        Task DeduplicateAndDispatch(IEnumerable<UnicastTransportOperation> transportOperations, Func<List<UnicastTransportOperation>, Task> dispatchMethod, DispatchConsistency dispatchConsistency)
-        {
-            var operationsToDispatch = transportOperations
-                .Where(o => o.RequiredDispatchConsistency == dispatchConsistency)
-                .GroupBy(o => new DeduplicationKey(o.Message.MessageId, addressTranslator.Parse(o.Destination).Address))
-                .Select(g => g.First())
-                .ToList();
-
-            return dispatchMethod(operationsToDispatch);
-        }
-
 
         async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
         {
-            var tasks = operations.MulticastTransportOperations.Select(m => ConvertToUnicastOperations(m)).ToArray();
+            var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert).ToArray();
             await Task.WhenAll(tasks).ConfigureAwait(false);
             return tasks.SelectMany(t => t.Result).ToList();
         }
 
-        async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(MulticastTransportOperation transportOperation)
+        async Task DispatchIsolated(SortingResult sortedOperations)
         {
-            var destinations = await subscriptions.GetSubscribersForTopic(TopicName(transportOperation.MessageType)).ConfigureAwait(false);
+            if (sortedOperations.IsolatedDispatch == null)
+            {
+                return;
+            }
 
-            return (from destination in destinations
-                    select new UnicastTransportOperation(
-                        transportOperation.Message,
-                        destination,
-                        transportOperation.RequiredDispatchConsistency,
-                        transportOperation.DeliveryConstraints
-                    )).ToList();
+#if NET452
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            {
+                await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
+
+                scope.Complete();
+            }
+#else
+            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var tx = connection.BeginTransaction())
+            {
+                await Dispatch(sortedOperations.IsolatedDispatch, connection, tx).ConfigureAwait(false);
+                tx.Commit();
+                scope.Complete();
+            }
+#endif
+
         }
 
-        IQueueDispatcher dispatcher;
+        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction)
+        {
+            if (sortedOperations.DefaultDispatch == null)
+            {
+                return;
+            }
+
+            if (InReceiveWithNoTransactionMode(transportTransaction) || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            {
+                await DispatchUsingNewConnectionAndTransaction(sortedOperations.DefaultDispatch).ConfigureAwait(false);
+                return;
+            }
+
+            await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch).ConfigureAwait(false);
+        }
+
+
+        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations)
+        {
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    await Dispatch(operations, connection, transaction).ConfigureAwait(false);
+                    transaction.Commit();
+                }
+            }
+        }
+
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations)
+        {
+            transportTransaction.TryGet(out SqlConnection sqlTransportConnection);
+            transportTransaction.TryGet(out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
+
+            if (ambientTransaction != null)
+            {
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                    await Dispatch(operations, connection, null).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await Dispatch(operations, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+            }
+        }
+
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction)
+        {
+            foreach (var operation in operations)
+            {
+                await Dispatch(connection, transaction, operation).ConfigureAwait(false);
+            }
+        }
+
+        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation)
+        {
+            TryGetConstraint(operation, out DiscardIfNotReceivedBefore discardIfNotReceivedBefore);
+            if (TryGetConstraint(operation, out DoNotDeliverBefore doNotDeliverBefore))
+            {
+                if (discardIfNotReceivedBefore != null && discardIfNotReceivedBefore.MaxTime < TimeSpan.MaxValue)
+                {
+                    throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
+                }
+
+                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTime.UtcNow, operation.Destination, connection, transaction);
+            }
+            if (TryGetConstraint(operation, out DelayDeliveryWith delayDeliveryWith))
+            {
+                if (discardIfNotReceivedBefore != null && discardIfNotReceivedBefore.MaxTime < TimeSpan.MaxValue)
+                {
+                    throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
+                }
+
+                return delayedMessageTable.Store(operation.Message, delayDeliveryWith.Delay, operation.Destination, connection, transaction);
+            }
+
+            var queue = tableBasedQueueCache.Get(operation.Destination);
+            return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction);
+        }
+
+        static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
+        {
+            transportTransaction.TryGet(out SqlTransaction nativeTransaction);
+            transportTransaction.TryGet(out Transaction ambientTransaction);
+
+            return nativeTransaction == null && ambientTransaction == null;
+        }
+
+        static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
+        {
+            return transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
+        }
+
+        static bool TryGetConstraint<T>(IOutgoingTransportOperation operation, out T constraint) where T : DeliveryConstraint
+        {
+            constraint = operation.DeliveryConstraints.OfType<T>().FirstOrDefault();
+            return constraint != null;
+        }
+
+        TableBasedQueueCache tableBasedQueueCache;
+        IDelayedMessageStore delayedMessageTable;
+        SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
-        ISubscriptionStore subscriptions;
-
-        static string TopicName(Type type)
-        {
-            return $"{type.Namespace}.{type.Name}";
-        }
+        IMulticastToUnicastConverter multicastToUnicastConverter;
 
 
-        class DeduplicationKey
-        {
-            string messageId;
-            string destination;
-
-            public DeduplicationKey(string messageId, string destination)
-            {
-                this.messageId = messageId;
-                this.destination = destination;
-            }
-
-            bool Equals(DeduplicationKey other)
-            {
-                return string.Equals(messageId, other.messageId) && string.Equals(destination, other.destination);
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (ReferenceEquals(null, obj))
-                {
-                    return false;
-                }
-                if (ReferenceEquals(this, obj))
-                {
-                    return true;
-                }
-                if (obj.GetType() != this.GetType())
-                {
-                    return false;
-                }
-                return Equals((DeduplicationKey) obj);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return (messageId.GetHashCode()*397) ^ destination.GetHashCode();
-                }
-            }
-        }
     }
 }
