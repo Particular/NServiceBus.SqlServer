@@ -9,11 +9,11 @@
 
     class MessageDispatcher : IDispatchMessages
     {
-        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, ISubscriptionStore subscriptions)
+        public MessageDispatcher(IQueueDispatcher dispatcher, QueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter)
         {
             this.dispatcher = dispatcher;
             this.addressTranslator = addressTranslator;
-            this.subscriptions = subscriptions;
+            this.multicastToUnicastConverter = multicastToUnicastConverter;
         }
 
         // We need to check if we can support cancellation in here as well?
@@ -38,36 +38,16 @@
             return dispatchMethod(operationsToDispatch);
         }
 
-
         async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
         {
-            var tasks = operations.MulticastTransportOperations.Select(m => ConvertToUnicastOperations(m)).ToArray();
+            var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert).ToArray();
             await Task.WhenAll(tasks).ConfigureAwait(false);
             return tasks.SelectMany(t => t.Result).ToList();
         }
 
-        async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(MulticastTransportOperation transportOperation)
-        {
-            var destinations = await subscriptions.GetSubscribersForTopic(TopicName(transportOperation.MessageType)).ConfigureAwait(false);
-
-            return (from destination in destinations
-                    select new UnicastTransportOperation(
-                        transportOperation.Message,
-                        destination,
-                        transportOperation.RequiredDispatchConsistency,
-                        transportOperation.DeliveryConstraints
-                    )).ToList();
-        }
-
         IQueueDispatcher dispatcher;
         QueueAddressTranslator addressTranslator;
-        ISubscriptionStore subscriptions;
-
-        static string TopicName(Type type)
-        {
-            return $"{type.Namespace}.{type.Name}";
-        }
-
+        IMulticastToUnicastConverter multicastToUnicastConverter;
 
         class DeduplicationKey
         {

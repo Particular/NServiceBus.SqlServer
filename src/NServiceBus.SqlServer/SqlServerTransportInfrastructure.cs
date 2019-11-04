@@ -242,10 +242,22 @@ namespace NServiceBus.Transport.SQLServer
                 () =>
                 {
                     var queueOperationsReader = new TableBasedQueueOperationsReader(tableBasedQueueCache, delayedMessageStore);
-                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator, subscriptionStore);
+                    var topicManager = CreateTopicManager();
+                    var multicastToUnicastConverter = new TopicBasedMulticastToUnicastConverter(topicManager, subscriptionStore);
+                    var dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(connectionFactory, queueOperationsReader), addressTranslator, multicastToUnicastConverter);
                     return dispatcher;
                 },
                 () => Task.FromResult(StartupCheckResult.Success));
+        }
+
+        ITopicManager CreateTopicManager()
+        {
+            if (settings.TryGet<MessageMetadataRegistry>(out var messageMetadataRegistry))
+            {
+                return new PolymorphicTopicManager(messageMetadataRegistry);
+            }
+
+            return new BasicTopicManager();
         }
         
         public override Task Start()
@@ -268,7 +280,6 @@ namespace NServiceBus.Transport.SQLServer
         {
 
             return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(subscriptionStore,
-                x => settings.Get<MessageMetadataRegistry>().GetMessageMetadata(x).MessageHierarchy,
                 settings.EndpointName(),
                 localAddress()));
         }
