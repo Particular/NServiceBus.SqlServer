@@ -17,6 +17,11 @@
         public const string SchemaPropertyKey = "Schema";
         public const string CatalogPropertyKey = "Catalog";
 
-        public const string EnableMigrationMode = "NServiceBus.TimeoutManager.EnableMigrationMode";
+        public const string TimeoutManagerMigrationMode = "NServiceBus.TimeoutManager.EnableMigrationMode";
+
+        /// <summary>
+        /// For testing the migration process only
+        /// </summary>
+        public const string DisableNativePubSub = "SqlServer.DisableNativePubSub";
     }
 }

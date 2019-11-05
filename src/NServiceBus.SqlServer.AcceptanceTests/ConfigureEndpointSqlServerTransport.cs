@@ -13,7 +13,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
-
+        doNotCleanNativeSubscriptions = settings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
         if (string.IsNullOrEmpty(connectionString))
         {
@@ -51,7 +51,10 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             foreach (var address in queueAddresses)
             {
                 TryDeleteTable(conn, address);
-                TryDeleteTable(conn, new QueueAddress("SubscriptionRouting", address.Schema, address.Catalog));
+                if (!doNotCleanNativeSubscriptions)
+                {
+                    TryDeleteTable(conn, new QueueAddress("SubscriptionRouting", address.Schema, address.Catalog));
+                }
                 TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog));
             }
         }
@@ -77,6 +80,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
     }
 
+    bool doNotCleanNativeSubscriptions;
     string connectionString;
     QueueBindings queueBindings;
 
