@@ -28,6 +28,15 @@ namespace NServiceBus.Transport.SQLServer
             this.localAddress = localAddress;
             this.logicalAddress = logicalAddress;
 
+            if (settings.HasSetting(SettingsKeys.DisableNativePubSub))
+            {
+                OutboundRoutingPolicy = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
+            }
+            else
+            {
+                OutboundRoutingPolicy = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+            }
+
             settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
 
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
@@ -68,7 +77,7 @@ namespace NServiceBus.Transport.SQLServer
                 delayedDeliverySettings.DisableTimeoutManagerCompatibility();
             }
 
-            settings.Set(SettingsKeys.EnableMigrationMode, delayedDeliverySettings.EnableMigrationMode);
+            settings.Set(SettingsKeys.TimeoutManagerMigrationMode, delayedDeliverySettings.EnableMigrationMode);
         }
 
         SqlConnectionFactory CreateConnectionFactory()
@@ -93,7 +102,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
 
-        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; } = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
+        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; }
 
         public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
         {
