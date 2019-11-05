@@ -4,6 +4,21 @@
 [assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
 namespace NServiceBus
 {
+    public class static MessageDrivenPubSubCompatibility
+    {
+        [System.ObsoleteAttribute("Pub sub can not be disabled in version 5.0 and above. The transport handles pub-s" +
+            "ub natively and does not require a separate subscription persistence. Will be tr" +
+            "eated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        public static void DisablePublishing(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(eventType, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, eventType, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Type eventType, string publisherEndpoint) { }
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string publisherEndpoint) { }
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, namespace, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string @namespace, string publisherEndpoint) { }
+        [System.ObsoleteAttribute(@"Subscription authorization has been moved to message-driven pub-sub migration mode. \r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.SubscriptionAuthorizer(authorizer);. Use `SubscriptionMigrationModeSettings.SubscriptionAuthorizer(transportExtensions, authorizer)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        public static void SubscriptionAuthorizer(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<NServiceBus.Pipeline.IIncomingPhysicalMessageContext, bool> authorizer) { }
+    }
     public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
     {
         public SqlServerTransport() { }
