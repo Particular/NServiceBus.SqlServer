@@ -26,7 +26,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         delayedDeliverySettings.TableSuffix("Delayed");
         settings.Set(delayedDeliverySettings);
 
-        var pubSubSettings = new PubSubSettings();
+        var pubSubSettings = new SubscriptionSettings();
         pubSubSettings.DisableSubscriptionCache();
         settings.Set(pubSubSettings);
 

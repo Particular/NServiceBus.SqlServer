@@ -49,7 +49,7 @@ namespace NServiceBus.Transport.SQLServer
             //Needs to be invoked here and not when configuring the receiving infrastructure because the EnableMigrationMode flag has to be set up before feature component is initialized.
             HandleTimeoutManagerCompatibilityMode();
 
-            var pubSubSettings = settings.GetOrCreate<PubSubSettings>();
+            var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
             subscriptionStore = new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory);
             var timeToCacheSubscriptions = pubSubSettings.GetCacheFor();

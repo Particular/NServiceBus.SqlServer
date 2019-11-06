@@ -41,13 +41,6 @@ namespace NServiceBus.Transport.SQLServer
     {
         public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
     }
-    public class PubSubSettings
-    {
-        public PubSubSettings() { }
-        public void CacheSubscriptionInformationFor(System.TimeSpan timeSpan) { }
-        public void DisableSubscriptionCache() { }
-        public void SubscriptionTableName(string tableName, string schemaName = null, string catalogName = null) { }
-    }
     public class static SendOptionsExtensions
     {
         [System.ObsoleteAttribute("The connection parameter is no longer required. Use `UseCustomSqlTransaction` ins" +
@@ -106,8 +99,8 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         public static NServiceBus.Transport.SQLServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        public static NServiceBus.Transport.SQLServer.PubSubSettings PubSub(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<int> purgeBatchSize) { }
+        public static NServiceBus.Transport.SQLServer.SubscriptionSettings SubscriptionSettings(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> timeout = null, System.Nullable<System.Transactions.IsolationLevel> isolationLevel = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
@@ -116,5 +109,12 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
+    }
+    public class SubscriptionSettings
+    {
+        public SubscriptionSettings() { }
+        public void CacheSubscriptionInformationFor(System.TimeSpan timeSpan) { }
+        public void DisableSubscriptionCache() { }
+        public void SubscriptionTableName(string tableName, string schemaName = null, string catalogName = null) { }
     }
 }

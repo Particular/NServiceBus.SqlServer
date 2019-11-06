@@ -193,11 +193,11 @@
         }
 
         /// <summary>
-        /// Configures publish/subscribe.
+        /// Configures publish/subscribe behavior.
         /// </summary>
-        public static PubSubSettings PubSub(this TransportExtensions<SqlServerTransport> transportExtensions)
+        public static SubscriptionSettings SubscriptionSettings(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
-            return transportExtensions.GetSettings().GetOrCreate<PubSubSettings>();
+            return transportExtensions.GetSettings().GetOrCreate<SubscriptionSettings>();
         }
 
         /// <summary>

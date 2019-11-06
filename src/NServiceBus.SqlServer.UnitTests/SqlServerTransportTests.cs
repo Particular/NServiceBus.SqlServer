@@ -11,7 +11,7 @@
         public void It_rejects_connection_string_without_catalog_property()
         {
             var definition = new SqlServerTransport();
-            var subscriptionSettings = new PubSubSettings();
+            var subscriptionSettings = new SubscriptionSettings();
             subscriptionSettings.DisableSubscriptionCache();
             var settings = new SettingsHolder();
             settings.Set(subscriptionSettings);
@@ -29,7 +29,7 @@
         {
             var definition = new SqlServerTransport();
 
-            var subscriptionSettings = new PubSubSettings();
+            var subscriptionSettings = new SubscriptionSettings();
             subscriptionSettings.DisableSubscriptionCache();
             var settings = new SettingsHolder();
             settings.Set(subscriptionSettings);

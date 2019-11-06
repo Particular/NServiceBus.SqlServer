@@ -32,7 +32,7 @@
             };
             var settings = new SettingsHolder();
             settings.Set(SettingsKeys.ConnectionFactoryOverride, factory);
-            var pubSubSettings = new PubSubSettings();
+            var pubSubSettings = new SubscriptionSettings();
             pubSubSettings.DisableSubscriptionCache();
             settings.Set(pubSubSettings);
             definition.Initialize(settings, "Invalid-connection-string");

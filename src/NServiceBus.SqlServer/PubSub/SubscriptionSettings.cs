@@ -5,7 +5,7 @@
     /// <summary>
     /// Configures the native pub/sub behavior
     /// </summary>
-    public class PubSubSettings
+    public class SubscriptionSettings
     {
         internal SubscriptionTableName SubscriptionTable = new SubscriptionTableName("SubscriptionRouting", null, null);
         TimeSpan? TimeToCacheSubscriptions;

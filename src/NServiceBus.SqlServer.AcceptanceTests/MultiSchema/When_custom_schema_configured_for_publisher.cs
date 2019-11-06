@@ -33,7 +33,7 @@
                 {
                     b.UseTransport<SqlServerTransport>()
                         .DefaultSchema("sender")
-                        .PubSub().SubscriptionTableName("SubscriptionRouting", "dbo");
+                        .SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
                 });
             }
         }
@@ -49,7 +49,7 @@
                     b.UseTransport<SqlServerTransport>()
                         .DefaultSchema("receiver")
                         .UseSchemaForEndpoint(publisherEndpoint, "sender")
-                        .PubSub().SubscriptionTableName("SubscriptionRouting", "dbo");
+                        .SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
 
                     // TODO: Use this for compatibility mode
                     //.Routing().RegisterPublisher(

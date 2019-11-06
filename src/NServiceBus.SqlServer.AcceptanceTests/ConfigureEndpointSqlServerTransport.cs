@@ -22,7 +22,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);
-        transportConfig.PubSub().DisableSubscriptionCache();
+        transportConfig.SubscriptionSettings().DisableSubscriptionCache();
 
 #if !NET452
         transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
