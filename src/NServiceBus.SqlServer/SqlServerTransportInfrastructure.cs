@@ -11,8 +11,6 @@ namespace NServiceBus.Transport.SQLServer
     using Routing;
     using Settings;
     using Transport;
-    using Unicast.Messages;
-
 
     /// <summary>
     /// ConfigureReceiveInfrastructure is called first, before features are started
@@ -250,24 +248,13 @@ namespace NServiceBus.Transport.SQLServer
             return new TransportSendInfrastructure(
                 () =>
                 {
-                    var topicManager = CreateTopicManager();
-                    var multicastToUnicastConverter = new TopicBasedMulticastToUnicastConverter(topicManager, subscriptionStore);
+                    var multicastToUnicastConverter = new MulticastToUnicastConverter(subscriptionStore);
                     var dispatcher = new MessageDispatcher(addressTranslator, multicastToUnicastConverter, tableBasedQueueCache, delayedMessageStore, connectionFactory);
                     return dispatcher;
                 },
                 () => Task.FromResult(StartupCheckResult.Success));
         }
 
-        ITopicManager CreateTopicManager()
-        {
-            if (settings.TryGet<MessageMetadataRegistry>(out var messageMetadataRegistry))
-            {
-                return new PolymorphicTopicManager(messageMetadataRegistry);
-            }
-
-            return new BasicTopicManager();
-        }
-        
         public override Task Start()
         {
             foreach (var diagnosticSection in diagnostics)
