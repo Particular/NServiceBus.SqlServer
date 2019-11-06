@@ -1,4 +1,4 @@
-﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.IntegrationTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.IntegrationTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.TransportTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.SqlServer.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
 [assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
@@ -7,16 +7,16 @@ namespace NServiceBus
     public class static MessageDrivenPubSubCompatibility
     {
         [System.ObsoleteAttribute("Pub sub can not be disabled in version 5.0 and above. The transport handles pub-s" +
-            "ub natively and does not require a separate subscription persistence. Will be tr" +
-            "eated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+            "ub natively and does not require a separate subscription persistence. The member" +
+            " currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void DisablePublishing(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(eventType, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, eventType, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(eventType, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, eventType, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Type eventType, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, namespace, publisherEndpoint)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, namespace, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string @namespace, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Subscription authorization has been moved to message-driven pub-sub migration mode. \r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.SubscriptionAuthorizer(authorizer);. Use `SubscriptionMigrationModeSettings.SubscriptionAuthorizer(transportExtensions, authorizer)` instead. Will be treated as an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
+        [System.ObsoleteAttribute(@"Subscription authorization has been moved to message-driven pub-sub migration mode. \r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.SubscriptionAuthorizer(authorizer);. Use `SubscriptionMigrationModeSettings.SubscriptionAuthorizer(transportExtensions, authorizer)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void SubscriptionAuthorizer(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<NServiceBus.Pipeline.IIncomingPhysicalMessageContext, bool> authorizer) { }
     }
     public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
@@ -51,8 +51,8 @@ namespace NServiceBus.Transport.SQLServer
     public class static SendOptionsExtensions
     {
         [System.ObsoleteAttribute("The connection parameter is no longer required. Use `UseCustomSqlTransaction` ins" +
-            "tead. Will be treated as an error from version 5.0.0. Will be removed in version" +
-            " 6.0.0.", false)]
+            "tead. The member currently throws a NotImplementedException. Will be removed in " +
+            "version 6.0.0.", true)]
         public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
         public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlTransaction transaction) { }
     }
@@ -105,10 +105,6 @@ EXEC sp_releaseapplock @Resource = '{0}_lock'";
     {
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
-        [System.ObsoleteAttribute("Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalo" +
-            "g addressing instead. The member currently throws a NotImplementedException. Wil" +
-            "l be removed in version 5.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> EnableLegacyMultiInstanceMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
         public static NServiceBus.Transport.SQLServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.Transport.SQLServer.PubSubSettings PubSub(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<int> purgeBatchSize) { }

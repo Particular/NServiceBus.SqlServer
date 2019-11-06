@@ -18,6 +18,7 @@ compatMode.SubscriptionAuthorizer(authorizer);",
             RemoveInVersion = "6.0")]
         public static void SubscriptionAuthorizer(this TransportExtensions<SqlServerTransport> transportExtensions, Func<IIncomingPhysicalMessageContext, bool> authorizer)
         {
+            throw new NotImplementedException();
         }
 
         [ObsoleteEx(
@@ -26,6 +27,7 @@ compatMode.SubscriptionAuthorizer(authorizer);",
             RemoveInVersion = "6.0")]
         public static void DisablePublishing(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
+            throw new NotImplementedException();
         }
 
         [ObsoleteEx(
@@ -38,6 +40,7 @@ compatMode.RegisterPublisher(eventType, publisherEndpoint);",
             RemoveInVersion = "6.0")]
         public static void RegisterPublisher(this RoutingSettings<SqlServerTransport> routingSettings, Type eventType, string publisherEndpoint)
         {
+            throw new NotImplementedException();
         }
 
         [ObsoleteEx(
@@ -50,6 +53,7 @@ compatMode.RegisterPublisher(assembly, publisherEndpoint);",
             RemoveInVersion = "6.0")]
         public static void RegisterPublisher(this RoutingSettings<SqlServerTransport> routingSettings, Assembly assembly, string publisherEndpoint)
         {
+            throw new NotImplementedException();
         }
 
         [ObsoleteEx(
@@ -62,6 +66,26 @@ compatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);",
             RemoveInVersion = "6.0")]
         public static void RegisterPublisher(this RoutingSettings<SqlServerTransport> routingSettings, Assembly assembly, string @namespace, string publisherEndpoint)
         {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+namespace NServiceBus.Transport.SQLServer
+{
+    using System;
+    using System.Data.SqlClient;
+
+    public static partial class SendOptionsExtensions
+    {
+        [ObsoleteEx(
+                RemoveInVersion = "6.0",
+                TreatAsErrorFromVersion = "5.0",
+                ReplacementTypeOrMember = "UseCustomSqlTransaction",
+                Message = "The connection parameter is no longer required.")]
+        public static void UseCustomSqlConnectionAndTransaction(this SendOptions options, SqlConnection connection, SqlTransaction transaction)
+        {
+            throw new NotImplementedException();
         }
     }
 }
