@@ -32,6 +32,25 @@
 
             await DispatchDefault(sortedOperations, transportTransaction).ConfigureAwait(false);
             await DispatchIsolated(sortedOperations).ConfigureAwait(false);
+
+            LogSubscribedEvents(operations, context);
+        }
+
+        //We log subscribed events so that we can validate the subscription in the compatibility mode
+        static void LogSubscribedEvents(TransportOperations operations, ContextBag context)
+        {
+            if (!context.TryGet<SubscribeResult>(out var subscribeResult))
+            {
+                return;
+            }
+
+            foreach (var operation in operations.UnicastTransportOperations)
+            {
+                if (operation.Message.Headers.TryGetValue(Headers.SubscriptionMessageType, out var subscribedEvent))
+                {
+                    subscribeResult.InvokedMessageDriven(subscribedEvent);
+                }
+            }
         }
 
         async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)

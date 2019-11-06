@@ -10,6 +10,7 @@
     using Features;
     using NServiceBus.Routing.MessageDrivenSubscriptions;
     using NUnit.Framework;
+    using Transport.SQLServer;
     using Conventions = AcceptanceTesting.Customization.Conventions;
 
     public class When_migrating_publisher_first : NServiceBusAcceptanceTest
@@ -60,7 +61,7 @@
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
                     });
                     b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -97,7 +98,7 @@
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
                     });
                     b.When(c => c.SubscribedMessageDriven && c.SubscribedNative, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -106,8 +107,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
-                        var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
+                        var compatModeSettings = c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
                         compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     });
                     b.When(async (session, ctx) =>

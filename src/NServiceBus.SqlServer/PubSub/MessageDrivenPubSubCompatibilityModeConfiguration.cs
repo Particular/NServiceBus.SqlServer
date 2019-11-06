@@ -15,6 +15,7 @@
         {
             var settings = transportExtensions.GetSettings();
             settings.Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+            settings.Set("SqlServer.Subscriptions.EnableMigrationMode", true);
             return new SubscriptionMigrationModeSettings(settings);
         }
     }

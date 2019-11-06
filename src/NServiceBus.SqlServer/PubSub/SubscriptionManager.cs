@@ -15,6 +15,8 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
+            context.GetOrCreate<SubscribeResult>().InvokedNatively(eventType);
+
             return subscriptionStore.Subscribe(endpointName, localAddress, TopicName.From(eventType));
         }
 
