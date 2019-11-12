@@ -2,20 +2,24 @@
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
+    using Features;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Transport.SQLServer;
 
-    public class When_custom_schema_configured_for_publisher : NServiceBusAcceptanceTest
+    public class When_custom_schema_configured_for_publisher_and_subscriber : NServiceBusAcceptanceTest
     {
         [Test]
         public Task Should_receive_event()
         {
             return Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b => b.When(c => c.EndpointsStarted, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>()
+                .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
+                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
+                {
+                    await s.Subscribe(typeof(Event)).ConfigureAwait(false);
+                    ctx.Subscribed = true;
+                }))
                 .Done(c => c.EventReceived)
                 .Run();
         }
@@ -23,6 +27,7 @@
         class Context : ScenarioContext
         {
             public bool EventReceived { get; set; }
+            public bool Subscribed { get; set; }
         }
 
         class Publisher : EndpointConfigurationBuilder
@@ -31,9 +36,11 @@
             {
                 EndpointSetup<DefaultPublisher>(b =>
                 {
-                    b.UseTransport<SqlServerTransport>()
-                        .DefaultSchema("sender")
-                        .SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
+                    var transport = b.UseTransport<SqlServerTransport>();
+                    transport.DefaultSchema("sender");
+
+                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.SubscriptionSettings().DisableSubscriptionCache();
                 });
             }
         }
@@ -42,19 +49,13 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(b =>
+                EndpointSetup<DefaultServer>(c =>
                 {
-                    var publisherEndpoint = Conventions.EndpointNamingConvention(typeof(Publisher));
+                    var transport = c.UseTransport<SqlServerTransport>();
+                    transport.DefaultSchema("receiver");
 
-                    b.UseTransport<SqlServerTransport>()
-                        .DefaultSchema("receiver")
-                        .UseSchemaForEndpoint(publisherEndpoint, "sender")
-                        .SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
-
-                    // TODO: Use this for compatibility mode
-                    //.Routing().RegisterPublisher(
-                    //    eventType: typeof(Event),
-                    //    publisherEndpoint: publisherEndpoint);
+                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
+                    c.DisableFeature<AutoSubscribe>();
                 });
             }
 

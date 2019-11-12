@@ -15,12 +15,12 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task Subscribe(Type eventType, ContextBag context)
         {
-            return subscriptionStore.Subscribe(endpointName, localAddress, TopicName.From(eventType));
+            return subscriptionStore.Subscribe(endpointName, localAddress, eventType);
         }
 
         public Task Unsubscribe(Type eventType, ContextBag context)
         {
-            return subscriptionStore.Unsubscribe(endpointName, TopicName.From(eventType));
+            return subscriptionStore.Unsubscribe(endpointName, eventType);
         }
 
         ISubscriptionStore subscriptionStore;

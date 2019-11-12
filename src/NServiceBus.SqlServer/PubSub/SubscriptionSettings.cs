@@ -8,7 +8,12 @@
     public class SubscriptionSettings
     {
         internal SubscriptionTableName SubscriptionTable = new SubscriptionTableName("SubscriptionRouting", null, null);
-        TimeSpan? TimeToCacheSubscriptions;
+        /// <summary>
+        /// Default to 5 seconds caching. If a system is under load that prevent doing an extra roundtrip for each Publish operation. If
+        /// a system is not under load, doing an extra roundtrip every 5 seconds is not a problem and 5 seconds is small enough value that
+        /// people accepts as we always say that subscription operation is not instantaneous.  
+        /// </summary>
+        internal TimeSpan? TimeToCacheSubscriptions = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// Overrides the default name for the subscription table. All endpoints in a given system need to agree on that name in order for them to be able
@@ -36,27 +41,7 @@
         /// </summary>
         public void DisableSubscriptionCache()
         {
-            TimeToCacheSubscriptions = TimeSpan.Zero;
-        }
-
-        internal TimeSpan? GetCacheFor()
-        {
-            if (TimeToCacheSubscriptions == TimeSpan.Zero)
-            {
-                return null;
-            }
-
-            if (TimeToCacheSubscriptions.HasValue)
-            {
-                return TimeToCacheSubscriptions.Value;
-            }
-            throw new Exception(@"Subscription caching is a required settings. Access this setting using the following:
-var transport = endpointConfiguration.UseTransport<SqlServerTransport>();
-var pubsub = transport.PuSub();
-subscriptions.CacheSubscriptionInformationFor(TimeSpan.FromMinutes(1));
-// OR
-subscriptions.DisableSubscriptionCache();
-");
+            TimeToCacheSubscriptions = null;
         }
     }
 }

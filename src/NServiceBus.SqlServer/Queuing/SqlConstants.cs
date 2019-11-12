@@ -312,7 +312,7 @@ VALUES
         public static readonly string GetSubscribersText = @"
 SELECT DISTINCT QueueAddress
 FROM {0}
-WHERE Topic = @Topic
+WHERE Topic IN ({1})
 ";
 
         public static readonly string UnsubscribeText = @"

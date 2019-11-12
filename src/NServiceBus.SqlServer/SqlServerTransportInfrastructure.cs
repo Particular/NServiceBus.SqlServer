@@ -51,11 +51,11 @@ namespace NServiceBus.Transport.SQLServer
 
             var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
-            subscriptionStore = new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory);
-            var timeToCacheSubscriptions = pubSubSettings.GetCacheFor();
+            subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
+            var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
             if (timeToCacheSubscriptions.HasValue)
             {
-                subscriptionStore = new SubscriptionCache(subscriptionStore, timeToCacheSubscriptions.Value);
+                subscriptionStore = new CachedSubscriptionStore(subscriptionStore, timeToCacheSubscriptions.Value);
             }
             var subscriptionTableCreator = new SubscriptionTableCreator(subscriptionTableName, connectionFactory);
             settings.Set(subscriptionTableCreator);

@@ -2,24 +2,24 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System.Collections.Generic;
     using System.Data;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class SubscriptionTable : ISubscriptionStore
+    class SubscriptionTable
     {
+        string qualifiedTableName;
         SqlConnectionFactory connectionFactory;
         string subscribeCommand;
         string unsubscribeCommand;
-        string getSubscribersCommand;
 
         public SubscriptionTable(string qualifiedTableName, SqlConnectionFactory connectionFactory)
         {
+            this.qualifiedTableName = qualifiedTableName;
             this.connectionFactory = connectionFactory;
-            // TODO: Be able to change the subscriptions table name and schema
 #pragma warning disable 618
             subscribeCommand = string.Format(SqlConstants.SubscribeText, qualifiedTableName);
             unsubscribeCommand = string.Format(SqlConstants.UnsubscribeText, qualifiedTableName);
-            getSubscribersCommand = string.Format(SqlConstants.GetSubscribersText, qualifiedTableName);
 #pragma warning restore 618
         }
 
@@ -56,16 +56,25 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task<List<string>> GetSubscribersForTopic(string topic)
+        public async Task<List<string>> GetSubscribers(string[] topics)
         {
             var results = new List<string>();
+
+            var argumentsList = string.Join(", ", Enumerable.Range(0, topics.Length).Select(i => $"@Topic_{i}"));
+#pragma warning disable 618
+            var getSubscribersCommand = string.Format(SqlConstants.GetSubscribersText, qualifiedTableName, argumentsList);
+#pragma warning restore 618
+
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = getSubscribersCommand;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
+                    for (var i = 0; i < topics.Length; i++)
+                    {
+                        command.Parameters.Add($"Topic_{i}", SqlDbType.VarChar).Value = topics[i];
+                    }
 
                     using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                     {

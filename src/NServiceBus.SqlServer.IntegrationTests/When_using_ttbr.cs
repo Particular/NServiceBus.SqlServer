@@ -163,7 +163,6 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         const string validAddress = "TTBRTests";
 
-        // TODO: Figure out if this is appropriate in this test
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
             public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
