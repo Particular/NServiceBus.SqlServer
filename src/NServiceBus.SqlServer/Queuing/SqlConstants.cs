@@ -38,7 +38,7 @@ VALUES (
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string StoreDelayedMessageText =
+        public static readonly string StoreDelayedMessageText =
 @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
@@ -90,7 +90,7 @@ OUTPUT
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string MoveDueDelayedMessageText = @"
+        public static readonly string MoveDueDelayedMessageText = @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
@@ -201,7 +201,7 @@ WHERE
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
-        public const string CreateDelayedMessageStoreText = @"
+        public static readonly string CreateDelayedMessageStoreText = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
