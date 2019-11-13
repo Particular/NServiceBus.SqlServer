@@ -34,11 +34,16 @@
             await DispatchIsolated(sortedOperations).ConfigureAwait(false);
         }
 
-        async Task<List<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
+        async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
         {
-            var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert).ToArray();
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-            return tasks.SelectMany(t => t.Result).ToList();
+            if (operations.MulticastTransportOperations.Count == 0)
+            {
+                return emptyUnicastTransportOperationsList;
+            }
+
+            var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert);
+            var result = await Task.WhenAll(tasks).ConfigureAwait(false);
+            return result.SelectMany(x => x);
         }
 
         async Task DispatchIsolated(SortingResult sortedOperations)
@@ -175,7 +180,6 @@
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
-
-
+        static UnicastTransportOperation[] emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }
 }
