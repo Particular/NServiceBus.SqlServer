@@ -24,27 +24,22 @@ namespace NServiceBus.Transport.SQLServer
             {
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 foreach (var sendingAddress in queueBindings.SendingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
-                transaction.Commit();
-            }
-
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
-            {
-                await CreateDelayedMessageQueue(connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+            
+                await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 transaction.Commit();
             }
         }
 
-        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
-            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+            var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -63,34 +58,6 @@ namespace NServiceBus.Transport.SQLServer
                 {
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
-            }
-        }
-
-        async Task CreateDelayedMessageQueue(SqlConnection connection, SqlTransaction transaction, bool createMessageBodyComputedColumn)
-        {
-#pragma warning disable 618
-            var sql = string.Format(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress.QualifiedTableName, delayedQueueAddress.QuotedCatalogName);
-#pragma warning restore 618
-            using (var command = new SqlCommand(sql, connection, transaction)
-            {
-                CommandType = CommandType.Text
-            })
-            {
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-            }
-            if (createMessageBodyComputedColumn)
-            {
-#pragma warning disable 618
-                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, delayedQueueAddress.QualifiedTableName, delayedQueueAddress.QuotedCatalogName);
-#pragma warning restore 618
-                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-                }
-
             }
         }
 
