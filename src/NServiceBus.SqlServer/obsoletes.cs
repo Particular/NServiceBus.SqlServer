@@ -22,7 +22,7 @@ compatMode.SubscriptionAuthorizer(authorizer);",
         }
 
         [ObsoleteEx(
-            Message = "Pub sub can not be disabled in version 5.0 and above. The transport handles pub-sub natively and does not require a separate subscription persistence.",
+            Message = "Publishing can not be disabled in version 5.0 and above. The transport handles publish-subscribe natively and does not require a separate subscription persistence.",
             TreatAsErrorFromVersion = "5.0",
             RemoveInVersion = "6.0")]
         public static void DisablePublishing(this TransportExtensions<SqlServerTransport> transportExtensions)

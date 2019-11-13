@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SQLServer
     {
         public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
         {
-            throw new Exception("Delayed delivery is only supported for non send-only endpoints.");
+            throw new Exception("Delayed delivery is not supported for send-only endpoints.");
         }
     }
 
