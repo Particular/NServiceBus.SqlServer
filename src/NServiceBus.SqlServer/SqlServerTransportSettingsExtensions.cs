@@ -10,7 +10,7 @@
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
-    public static class SqlServerTransportSettingsExtensions
+    public static partial class SqlServerTransportSettingsExtensions
     {
         /// <summary>
         /// Sets a default schema for both input and output queues

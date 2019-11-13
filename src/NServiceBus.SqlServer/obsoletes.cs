@@ -90,4 +90,24 @@ namespace NServiceBus.Transport.SQLServer
     }
 }
 
+namespace NServiceBus.Transport.SQLServer
+{
+    using System;
+
+    public static partial class SqlServerTransportSettingsExtensions
+    {
+        [ObsoleteEx(
+            RemoveInVersion = "6.0",
+            TreatAsErrorFromVersion = "5.0",
+            ReplacementTypeOrMember = "NativeDelayedDelivery",
+            Message = "Starting from version 5 native delayed delivery is always enabled. It can be configured via NativeDelayedDelivery")]
+        public static DelayedDeliverySettings UseNativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+
+
 #pragma warning restore 1591
