@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task<List<string>> GetSubscribers(Type eventType)
         {
-            var topics = GetTopicsFor(eventType);
+            var topics = GetTopics(eventType);
             return subscriptionTable.GetSubscribers(topics.ToArray());
         }
 
@@ -29,14 +29,16 @@ namespace NServiceBus.Transport.SQLServer
             return subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType));
         }
 
-        IEnumerable<string> GetTopicsFor(Type messageType)
+        IEnumerable<string> GetTopics(Type messageType)
         {
-            return GetMessageHierarchy(messageType).Select(TopicName.From);
+            return eventTypeToTopicListMap.GetOrAdd(messageType, GenerateTopics);
         }
 
-        IEnumerable<Type> GetMessageHierarchy(Type messageType)
+        static string[] GenerateTopics(Type messageType)
         {
-            return messageHierarchyCache.GetOrAdd(messageType, t => GenerateMessageHierarchy(t).ToArray());
+            return GenerateMessageHierarchy(messageType)
+                .Select(TopicName.From)
+                .ToArray();
         }
 
         static IEnumerable<Type> GenerateMessageHierarchy(Type messageType)
@@ -53,7 +55,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        ConcurrentDictionary<Type, Type[]> messageHierarchyCache = new ConcurrentDictionary<Type, Type[]>();
+        ConcurrentDictionary<Type, string[]> eventTypeToTopicListMap = new ConcurrentDictionary<Type, string[]>();
         SubscriptionTable subscriptionTable;
     }
 }
