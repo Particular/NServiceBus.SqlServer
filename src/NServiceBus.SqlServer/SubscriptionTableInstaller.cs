@@ -20,7 +20,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public Task Install(string identity)
         {
-            return creator.CreateIfNecessary();
+            return creator?.CreateIfNecessary();
         }
     }
 }
