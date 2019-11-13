@@ -7,9 +7,10 @@ namespace NServiceBus
 {
     public class static MessageDrivenPubSubCompatibility
     {
-        [System.ObsoleteAttribute("Pub sub can not be disabled in version 5.0 and above. The transport handles pub-s" +
-            "ub natively and does not require a separate subscription persistence. The member" +
-            " currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
+        [System.ObsoleteAttribute("Publishing can not be disabled in version 5.0 and above. The transport handles pu" +
+            "blish-subscribe natively and does not require a separate subscription persistenc" +
+            "e. The member currently throws a NotImplementedException. Will be removed in ver" +
+            "sion 6.0.0.", true)]
         public static void DisablePublishing(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(eventType, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, eventType, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
         public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Type eventType, string publisherEndpoint) { }
@@ -56,42 +57,17 @@ namespace NServiceBus.Transport.SQLServer
         public static readonly string AddMessageBodyStringColumn;
         public static readonly string CheckHeadersColumnType;
         public static readonly string CheckIfExpiresIndexIsPresent;
-        public const string CreateDelayedMessageStoreText = @"
-IF EXISTS (
-    SELECT *
-    FROM {1}.sys.objects
-    WHERE object_id = OBJECT_ID(N'{0}')
-        AND type in (N'U'))
-RETURN
-EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
-IF EXISTS (
-    SELECT *
-    FROM {1}.sys.objects
-    WHERE object_id = OBJECT_ID(N'{0}')
-        AND type in (N'U'))
-BEGIN
-    EXEC sp_releaseapplock @Resource = '{0}_lock'
-    RETURN
-END
-CREATE TABLE {0} (
-    Headers nvarchar(max) NOT NULL,
-    Body varbinary(max),
-    Due datetime NOT NULL,
-    RowVersion bigint IDENTITY(1,1) NOT NULL
-);
-CREATE NONCLUSTERED INDEX [Index_Due] ON {0}
-(
-    [Due]
-)
-EXEC sp_releaseapplock @Resource = '{0}_lock'";
+        public static readonly string CreateDelayedMessageStoreText;
         public static readonly string CreateQueueText;
         public static readonly string CreateSubscriptionTableText;
         public static readonly string GetSubscribersText;
+        public static readonly string MoveDueDelayedMessageText;
         public static readonly string PeekText;
         public static readonly string PurgeBatchOfExpiredMessagesText;
         public static readonly string PurgeText;
         public static readonly string ReceiveText;
         public static readonly string SendText;
+        public static readonly string StoreDelayedMessageText;
         public static readonly string SubscribeText;
         public static readonly string UnsubscribeText;
     }
