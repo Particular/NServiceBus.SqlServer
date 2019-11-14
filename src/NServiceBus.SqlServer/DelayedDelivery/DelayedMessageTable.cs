@@ -6,13 +6,26 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading.Tasks;
     using Transport;
 
-    class DelayedMessageTable
+    interface IDelayedMessageStore
+    {
+        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction);
+    }
+
+    class SendOnlyDelayedMessageStore : IDelayedMessageStore
+    {
+        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
+        {
+            throw new Exception("Delayed delivery is not supported for send-only endpoints.");
+        }
+    }
+
+    class DelayedMessageTable : IDelayedMessageStore
     {
         public DelayedMessageTable(string delayedQueueTable, string inputQueueTable)
         {
 #pragma warning disable 618
             storeCommand = string.Format(SqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            moveMaturedCommand = string.Format(SqlConstants.MoveMaturedDelayedMessageText, delayedQueueTable, inputQueueTable);
+            moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
 #pragma warning restore 618
         }
 
@@ -26,9 +39,9 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        public async Task MoveMaturedMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public async Task MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
-            using (var command = new SqlCommand(moveMaturedCommand, connection, transaction))
+            using (var command = new SqlCommand(moveDueCommand, connection, transaction))
             {
                 command.Parameters.AddWithValue("BatchSize", batchSize);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
@@ -36,6 +49,6 @@ namespace NServiceBus.Transport.SQLServer
         }
 
         string storeCommand;
-        string moveMaturedCommand;
+        string moveDueCommand;
     }
 }

@@ -38,7 +38,7 @@ VALUES (
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string StoreDelayedMessageText =
+        public static readonly string StoreDelayedMessageText =
 @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
@@ -90,7 +90,7 @@ OUTPUT
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        internal const string MoveMaturedDelayedMessageText = @"
+        public static readonly string MoveDueDelayedMessageText = @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
@@ -201,7 +201,7 @@ WHERE
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
-        public const string CreateDelayedMessageStoreText = @"
+        public static readonly string CreateDelayedMessageStoreText = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
@@ -254,6 +254,72 @@ FROM sys.columns c
 INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
 WHERE c.object_id = OBJECT_ID('{0}')
     AND c.name = 'Headers'";
+
+        public static readonly string CreateSubscriptionTableText = @"
+
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+CREATE TABLE {0} (
+    QueueAddress NVARCHAR(200) NOT NULL,
+    Endpoint NVARCHAR(200),
+    Topic NVARCHAR(200) NOT NULL,
+    PRIMARY KEY CLUSTERED
+    (
+        Endpoint,
+        Topic
+    )
+)
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
+
+        public static readonly string SubscribeText = @"
+MERGE {0} WITH (HOLDLOCK, TABLOCK) AS target
+USING(SELECT @Endpoint AS Endpoint, @QueueAddress AS QueueAddress, @Topic AS Topic) AS source
+ON target.Endpoint = source.Endpoint
+AND target.Topic = source.Topic
+WHEN MATCHED AND target.QueueAddress <> source.QueueAddress THEN
+UPDATE SET QueueAddress = @QueueAddress
+WHEN NOT MATCHED THEN
+INSERT
+(
+    QueueAddress,
+    Topic,
+    Endpoint
+)
+VALUES
+(
+    @QueueAddress,
+    @Topic,
+    @Endpoint
+);";
+
+        public static readonly string GetSubscribersText = @"
+SELECT DISTINCT QueueAddress
+FROM {0}
+WHERE Topic IN ({1})
+";
+
+        public static readonly string UnsubscribeText = @"
+DELETE FROM {0}
+WHERE
+    Endpoint = @Endpoint and
+    Topic = @Topic";
 
     }
 }

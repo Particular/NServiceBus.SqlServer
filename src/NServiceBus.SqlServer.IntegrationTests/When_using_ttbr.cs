@@ -121,6 +121,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         async Task PrepareAsync()
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
+            var tableCache = new TableBasedQueueCache(addressParser);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
@@ -134,7 +135,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser);
+            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser)
@@ -148,7 +149,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 
@@ -161,5 +162,14 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         SqlConnectionFactory sqlConnectionFactory;
 
         const string validAddress = "TTBRTests";
+
+        class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
+        {
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+            {
+                return Task.FromResult(new List<UnicastTransportOperation>());
+            }
+        }
+
     }
 }

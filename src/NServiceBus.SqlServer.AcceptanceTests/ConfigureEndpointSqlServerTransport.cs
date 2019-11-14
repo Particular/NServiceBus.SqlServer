@@ -5,15 +5,19 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.Settings;
 using NServiceBus.Transport;
+using NServiceBus.Transport.SQLServer;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
-    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings settings, PublisherMetadata publisherMetadata)
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
-
+        settings = configuration.GetSettings();
+        doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+        
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");
@@ -21,26 +25,20 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
         transportConfig.ConnectionString(connectionString);
+        transportConfig.SubscriptionSettings().DisableSubscriptionCache();
 
 #if !NET452
         transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
 #endif
-
-        var routingConfig = transportConfig.Routing();
-
-        foreach (var publisher in publisherMetadata.Publishers)
-        {
-            foreach (var eventType in publisher.Events)
-            {
-                routingConfig.RegisterPublisher(eventType, publisher.PublisherName);
-            }
-        }
-
         return Task.FromResult(0);
     }
 
     public Task Cleanup()
     {
+        var subscriptionSettings = settings.GetOrDefault<SubscriptionSettings>() ?? new SubscriptionSettings();
+        settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
+        var subscriptionTable = subscriptionSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", "nservicebus");
+
         using (var conn = new SqlConnection(connectionString))
         {
             conn.Open();
@@ -48,20 +46,25 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse).ToList();
             foreach (var address in queueAddresses)
             {
-                TryDeleteTable(conn, address);
-                TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog));
+                TryDeleteTable(conn, address.QualifiedTableName);
+                TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName);
+            }
+
+            if (!doNotCleanNativeSubscriptions)
+            {
+                TryDeleteTable(conn, subscriptionTable.QuotedQualifiedName);
             }
         }
         return Task.FromResult(0);
     }
 
-    static void TryDeleteTable(SqlConnection conn, QueueAddress address)
+    static void TryDeleteTable(SqlConnection conn, string address)
     {
         try
         {
             using (var comm = conn.CreateCommand())
             {
-                comm.CommandText = $"IF OBJECT_ID('{address.QualifiedTableName}', 'U') IS NOT NULL DROP TABLE {address.QualifiedTableName}";
+                comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
                 comm.ExecuteNonQuery();
             }
         }
@@ -74,8 +77,10 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
     }
 
+    bool doNotCleanNativeSubscriptions;
     string connectionString;
     QueueBindings queueBindings;
+    SettingsHolder settings;
 
     class QueueAddress
     {

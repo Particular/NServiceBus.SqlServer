@@ -10,7 +10,7 @@
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
-    public static class SqlServerTransportSettingsExtensions
+    public static partial class SqlServerTransportSettingsExtensions
     {
         /// <summary>
         /// Sets a default schema for both input and output queues
@@ -178,18 +178,26 @@
         }
 
         /// <summary>
-        /// Enables native delayed delivery.
+        /// Configures native delayed delivery.
         /// </summary>
-        public static DelayedDeliverySettings UseNativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        public static DelayedDeliverySettings NativeDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
             var sendOnlyEndpoint = transportExtensions.GetSettings().GetOrDefault<bool>("Endpoint.SendOnly");
             if (sendOnlyEndpoint)
             {
-                throw new Exception("Native delayed delivery is only supported for endpoints capable of receiving messages.");
+                throw new Exception("Delayed delivery is only supported for endpoints capable of receiving messages.");
             }
 
             var settings = transportExtensions.GetSettings().GetOrCreate<DelayedDeliverySettings>();
             return settings;
+        }
+
+        /// <summary>
+        /// Configures publish/subscribe behavior.
+        /// </summary>
+        public static SubscriptionSettings SubscriptionSettings(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            return transportExtensions.GetSettings().GetOrCreate<SubscriptionSettings>();
         }
 
         /// <summary>
@@ -216,20 +224,6 @@
             transportExtensions.GetSettings().Set(SettingsKeys.CreateMessageBodyComputedColumn, true);
 
             return transportExtensions;
-        }
-
-        /// <summary>
-        /// Enables multi-instance mode.
-        /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="sqlConnectionFactory">Function that returns opened sql connection based on destination queue name.</param>
-        [ObsoleteEx(
-            RemoveInVersion = "5.0",
-            TreatAsErrorFromVersion = "4.0",
-            Message = "Multi-instance mode has been deprecated. Use Transport Bridge and/or multi-catalog addressing instead.")]
-        public static TransportExtensions<SqlServerTransport> EnableLegacyMultiInstanceMode(this TransportExtensions<SqlServerTransport> transportExtensions, Func<string, Task<SqlConnection>> sqlConnectionFactory)
-        {
-            throw new NotImplementedException();
         }
 
         static ILog Logger = LogManager.GetLogger<SqlServerTransport>();

@@ -7,7 +7,8 @@
 
     class ProcessWithTransactionScope : ReceiveStrategy
     {
-        public ProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage)
+        public ProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
+         : base(tableBasedQueueCache)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;

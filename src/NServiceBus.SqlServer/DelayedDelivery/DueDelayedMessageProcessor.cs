@@ -6,9 +6,9 @@ namespace NServiceBus.Transport.SQLServer
     using System.Threading.Tasks;
     using Logging;
 
-    class DelayedMessageHandler
+    class DueDelayedMessageProcessor
     {
-        public DelayedMessageHandler(DelayedMessageTable table, SqlConnectionFactory connectionFactory, TimeSpan interval, int batchSize)
+        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, TimeSpan interval, int batchSize)
         {
             this.table = table;
             this.connectionFactory = connectionFactory;
@@ -44,7 +44,7 @@ namespace NServiceBus.Transport.SQLServer
                     {
                         using (var transaction = connection.BeginTransaction())
                         {
-                            await table.MoveMaturedMessages(batchSize, connection, transaction, cancellationToken).ConfigureAwait(false);
+                            await table.MoveDueMessages(batchSize, connection, transaction, cancellationToken).ConfigureAwait(false);
                             transaction.Commit();
                         }
                     }
@@ -81,6 +81,6 @@ namespace NServiceBus.Transport.SQLServer
         CancellationTokenSource cancellationTokenSource;
         Task task;
 
-        static ILog Logger = LogManager.GetLogger<DelayedMessageHandler>();
+        static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
     }
 }

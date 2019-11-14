@@ -8,10 +8,12 @@ namespace NServiceBus.Transport.SQLServer
 
     class QueueCreator : ICreateQueues
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator,
+            CanonicalQueueAddress delayedQueueAddress, bool createMessageBodyColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
+            this.delayedQueueAddress = delayedQueueAddress;
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
@@ -22,20 +24,22 @@ namespace NServiceBus.Transport.SQLServer
             {
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 foreach (var sendingAddress in queueBindings.SendingAddresses)
                 {
-                    await CreateQueue(addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
+            
+                await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 transaction.Commit();
             }
         }
 
-        static async Task CreateQueue(CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
-            var sql = string.Format(SqlConstants.CreateQueueText, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+            var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
             using (var command = new SqlCommand(sql, connection, transaction)
             {
                 CommandType = CommandType.Text
@@ -59,6 +63,7 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
+        CanonicalQueueAddress delayedQueueAddress;
         bool createMessageBodyColumn;
     }
 }

@@ -22,18 +22,25 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         this.settings = settings;
         settings.Set(transportTransactionMode);
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
-        settings.Set(LogicalAddress.CreateLocalAddress(settings.EndpointName(), new Dictionary<string, string>()));
         var delayedDeliverySettings = new DelayedDeliverySettings();
         delayedDeliverySettings.TableSuffix("Delayed");
         settings.Set(delayedDeliverySettings);
+
+        var pubSubSettings = new SubscriptionSettings();
+        pubSubSettings.DisableSubscriptionCache();
+        settings.Set(pubSubSettings);
+
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
         if (string.IsNullOrEmpty(connectionString))
         {
             connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
         }
+
+        var logicalAddress = LogicalAddress.CreateLocalAddress(settings.ErrorQueueAddress(), new Dictionary<string, string>());
+        var localAddress = settings.EndpointName();
         return new TransportConfigurationResult
         {
-            TransportInfrastructure = new SqlServerTransport().Initialize(settings, connectionString)
+            TransportInfrastructure = new SqlServerTransportInfrastructure("nservicebus", settings, connectionString, () => localAddress, () => logicalAddress)
         };
     }
 

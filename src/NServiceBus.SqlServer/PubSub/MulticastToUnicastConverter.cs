@@ -1,0 +1,29 @@
+namespace NServiceBus.Transport.SQLServer
+{
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+
+    class MulticastToUnicastConverter : IMulticastToUnicastConverter
+    {
+        ISubscriptionStore subscriptions;
+
+        public MulticastToUnicastConverter(ISubscriptionStore subscriptions)
+        {
+            this.subscriptions = subscriptions;
+        }
+
+        public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+        {
+            var subscribers = await subscriptions.GetSubscribers(transportOperation.MessageType).ConfigureAwait(false);
+
+            return (from subscriber in subscribers
+                select new UnicastTransportOperation(
+                    transportOperation.Message,
+                    subscriber,
+                    transportOperation.RequiredDispatchConsistency,
+                    transportOperation.DeliveryConstraints
+                )).ToList();
+        }
+    }
+}

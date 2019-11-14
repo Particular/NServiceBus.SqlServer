@@ -87,7 +87,7 @@
                 EndpointSetup<DefaultServer>(config =>
                 {
                     config.EnableFeature<TimeoutManager>();
-                    config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    config.UseTransport<SqlServerTransport>().NativeDelayedDelivery();
                 });
             }
         }
@@ -98,7 +98,7 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
-                    var settings = config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    var settings = config.UseTransport<SqlServerTransport>().NativeDelayedDelivery();
                     settings.DisableTimeoutManagerCompatibility();
                 });
             }
@@ -112,7 +112,7 @@
                 {
                     config.EnableFeature<TimeoutManager>();
 
-                    var settings = config.UseTransport<SqlServerTransport>().UseNativeDelayedDelivery();
+                    var settings = config.UseTransport<SqlServerTransport>().NativeDelayedDelivery();
                     settings.DisableTimeoutManagerCompatibility();
                 });
             }

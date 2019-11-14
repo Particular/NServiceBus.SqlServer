@@ -102,12 +102,13 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         async Task PrepareAsync()
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var tableCache = new TableBasedQueueCache(addressParser);
 
             await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
             await PurgeOutputQueue(addressParser);
 
-            dispatcher = new MessageDispatcher(new TableBasedQueueDispatcher(sqlConnectionFactory, new TableBasedQueueOperationsReader(addressParser)), addressParser);
+            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
@@ -121,7 +122,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator,  new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 
@@ -135,6 +136,14 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
         const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
         SqlConnectionFactory sqlConnectionFactory;
+
+        class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
+        {
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+            {
+                return Task.FromResult(new List<UnicastTransportOperation>());
+            }
+        }
 
         interface IContextProvider : IDisposable
         {
