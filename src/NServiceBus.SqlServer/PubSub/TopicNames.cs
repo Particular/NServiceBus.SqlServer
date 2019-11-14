@@ -4,6 +4,6 @@ namespace NServiceBus.Transport.SQLServer
 
     static class TopicName
     {
-        public static string From(Type type) => $"{type.Namespace}.{type.Name}";
+        public static string From(Type type) => type.FullName;
     }
 }
