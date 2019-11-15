@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.TimeToBeReceived
 {
     using System;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;

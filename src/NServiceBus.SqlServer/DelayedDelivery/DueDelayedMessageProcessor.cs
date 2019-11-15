@@ -1,7 +1,7 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;

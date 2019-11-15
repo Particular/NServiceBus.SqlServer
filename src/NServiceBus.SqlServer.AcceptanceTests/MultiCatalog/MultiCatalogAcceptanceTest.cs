@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
 
     public class MultiCatalogAcceptanceTest : NServiceBusAcceptanceTest

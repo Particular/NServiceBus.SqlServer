@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;

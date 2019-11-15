@@ -2,7 +2,7 @@ namespace NServiceBus
 {
     using System;
     using System.Data.Common;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using Settings;
     using Transport;

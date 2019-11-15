@@ -74,7 +74,7 @@ compatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);",
 namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
 
     public static partial class SendOptionsExtensions
     {

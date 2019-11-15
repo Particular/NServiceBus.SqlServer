@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using Extensibility;
 
     /// <summary>

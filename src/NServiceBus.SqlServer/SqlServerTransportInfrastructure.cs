@@ -2,7 +2,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
-    using System.Data.SqlClient;
+    using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
@@ -229,7 +229,7 @@ namespace NServiceBus.Transport.SQLServer
                 }
                 catch (NotSupportedException ex)
                 {
-                    var message = "The version of System.Data.SqlClient in use does not support one of the selected connection string options or " +
+                    var message = "The version of SqlClient in use does not support one of the selected connection string options or " +
                                   "enlisting SQL connections in distributed transactions. Check original error message for details. " +
                                   "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
                                   "specify a different transaction mode via `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions`. " +
