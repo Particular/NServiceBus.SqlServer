@@ -39,7 +39,7 @@
                 {
                     var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                    Logger.InfoFormat("{0:N} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
+                    Logger.InfoFormat("{0} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
                 }
                 catch (Exception ex)
                 {
