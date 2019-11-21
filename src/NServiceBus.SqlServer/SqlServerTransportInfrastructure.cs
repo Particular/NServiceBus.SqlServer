@@ -145,23 +145,27 @@ namespace NServiceBus.Transport.SQLServer
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
             //Create delayed delivery infrastructure
-            var delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
-            settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+            CanonicalQueueAddress delayedQueueCanonicalAddress = null;
+            if (false == settings.GetOrDefault<bool>(SettingsKeys.DisableDelayedDelivery))
             {
-                Native = true,
-                delayedDeliverySettings.Suffix,
-                delayedDeliverySettings.Interval,
-                BatchSize = delayedDeliverySettings.MatureBatchSize,
-                TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
-            });
+                var delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                {
+                    Native = true,
+                    delayedDeliverySettings.Suffix,
+                    delayedDeliverySettings.Interval,
+                    BatchSize = delayedDeliverySettings.MatureBatchSize,
+                    TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
+                });
 
-            var delayedQueueCanonicalAddress = GetDelayedTableAddress(delayedDeliverySettings);
-            var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
-            var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
+                delayedQueueCanonicalAddress = GetDelayedTableAddress(delayedDeliverySettings);
+                var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
+                var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
-            //Allows dispatcher to store messages in the delayed store
-            delayedMessageStore = delayedMessageTable;
-            dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
+                //Allows dispatcher to store messages in the delayed store
+                delayedMessageStore = delayedMessageTable;
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
+            }
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),

@@ -23,5 +23,10 @@
         /// For testing the migration process only
         /// </summary>
         public const string DisableNativePubSub = "SqlServer.DisableNativePubSub";
+
+        /// <summary>
+        /// For endpoints that only consume messages e.g. ServiceControl error
+        /// </summary>
+        public const string DisableDelayedDelivery = "SqlServer.DisableDelayedDelivery";
     }
 }
