@@ -31,8 +31,11 @@ namespace NServiceBus.Transport.SQLServer
                 {
                     await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
-            
-                await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+
+                if (delayedQueueAddress != null)
+                {
+                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                }
                 transaction.Commit();
             }
         }
