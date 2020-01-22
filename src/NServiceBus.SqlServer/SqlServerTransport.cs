@@ -45,11 +45,11 @@ namespace NServiceBus
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
         {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out DbProviderFactory factoryOverride))
             {
-                using (var connection = factoryOverride().GetAwaiter().GetResult())
+                using (var connection = factoryOverride.CreateConnection())
                 {
-                    connectionString = connection.ConnectionString;
+                    connectionString = connection?.ConnectionString;
                 }
             }
             if (string.IsNullOrEmpty(connectionString))

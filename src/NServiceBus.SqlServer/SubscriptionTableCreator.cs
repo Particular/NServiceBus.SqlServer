@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System.Data;
-    using System.Data.SqlClient;
     using System.Threading.Tasks;
 
     class SubscriptionTableCreator
@@ -22,11 +21,13 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning disable 618
                 var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 #pragma warning restore 618
-                using (var command = new SqlCommand(sql, connection, transaction)
+                using (var command = connection.CreateCommand())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = sql;
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+                    
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
                 transaction.Commit();

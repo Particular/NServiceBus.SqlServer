@@ -3,11 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
-    using System.Data.SqlClient;
+    using System.Data.Common;
 
     class StoreDelayedMessageCommand
     {
-        StoreDelayedMessageCommand() { }
+        StoreDelayedMessageCommand()
+        {
+        }
 
         public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, byte[] body, TimeSpan dueAfter, string destination)
         {
@@ -23,20 +25,24 @@
         }
 
 
-        public void PrepareSendCommand(SqlCommand command)
+        public void PrepareSendCommand(DbCommand command)
         {
-            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
-            AddParameter(command, "DueAfterDays", SqlDbType.Int, dueAfter.Days);
-            AddParameter(command, "DueAfterHours", SqlDbType.Int, dueAfter.Hours);
-            AddParameter(command, "DueAfterMinutes", SqlDbType.Int, dueAfter.Minutes);
-            AddParameter(command, "DueAfterSeconds", SqlDbType.Int, dueAfter.Seconds);
-            AddParameter(command, "DueAfterMilliseconds", SqlDbType.Int, dueAfter.Milliseconds);
+            AddParameter(command, "Headers", DbType.String, headers);
+            AddParameter(command, "Body", DbType.Binary, bodyBytes);
+            AddParameter(command, "DueAfterDays", DbType.Int32, dueAfter.Days);
+            AddParameter(command, "DueAfterHours", DbType.Int32, dueAfter.Hours);
+            AddParameter(command, "DueAfterMinutes", DbType.Int32, dueAfter.Minutes);
+            AddParameter(command, "DueAfterSeconds", DbType.Int32, dueAfter.Seconds);
+            AddParameter(command, "DueAfterMilliseconds", DbType.Int32, dueAfter.Milliseconds);
         }
 
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
+        static void AddParameter(DbCommand command, string name, DbType type, object value)
         {
-            command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.DbType = type;
+            parameter.Value = value ?? DBNull.Value;
+            command.Parameters.Add(parameter);
         }
 
         string headers;

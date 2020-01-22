@@ -3,9 +3,9 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NServiceBus.Configuration.AdvancedExtensibility;
     using NUnit.Framework;
     using Transport.SQLServer;
 

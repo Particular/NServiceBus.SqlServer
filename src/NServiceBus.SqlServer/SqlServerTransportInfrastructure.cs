@@ -2,7 +2,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
@@ -10,6 +10,7 @@ namespace NServiceBus.Transport.SQLServer
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
+    using SqlServer.Configuration;
     using Transport;
 
     /// <summary>
@@ -80,12 +81,26 @@ namespace NServiceBus.Transport.SQLServer
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out DbProviderFactory factoryOverride))
             {
-                return new SqlConnectionFactory(factoryOverride);
+                return new SqlConnectionFactory(async () =>
+                {
+                    var conn = factoryOverride.CreateConnection();
+                    await conn.OpenAsync().ConfigureAwait(false);
+                    return conn;
+                });
             }
 
-            return SqlConnectionFactory.Default(connectionString);
+            if (!settings.TryGet(SettingsKeys.ConnectionProviderName, out string providerName))
+            {
+                providerName = AdoNetInvariants.InvariantNameSqlServer;
+            }
+            return new SqlConnectionFactory(async () =>
+            {
+                var conn = DbConnectionFactory.CreateConnection(providerName, connectionString);
+                await conn.OpenAsync().ConfigureAwait(false);
+                return conn;
+            });
         }
 
         public override IEnumerable<Type> DeliveryConstraints

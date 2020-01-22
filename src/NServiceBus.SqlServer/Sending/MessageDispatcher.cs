@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -105,8 +105,8 @@
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations)
         {
-            transportTransaction.TryGet(out SqlConnection sqlTransportConnection);
-            transportTransaction.TryGet(out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(out DbConnection sqlTransportConnection);
+            transportTransaction.TryGet(out DbTransaction sqlTransportTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
@@ -122,7 +122,7 @@
             }
         }
 
-        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction)
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, DbConnection connection, DbTransaction transaction)
         {
             foreach (var operation in operations)
             {
@@ -130,7 +130,7 @@
             }
         }
 
-        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation)
+        Task Dispatch(DbConnection connection, DbTransaction transaction, UnicastTransportOperation operation)
         {
             TryGetConstraint(operation, out DiscardIfNotReceivedBefore discardIfNotReceivedBefore);
             if (TryGetConstraint(operation, out DoNotDeliverBefore doNotDeliverBefore))
@@ -158,7 +158,7 @@
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            transportTransaction.TryGet(out SqlTransaction nativeTransaction);
+            transportTransaction.TryGet(out DbTransaction nativeTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;

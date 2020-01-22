@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.IO;
     using System.Threading.Tasks;
     using Logging;
@@ -13,7 +13,7 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
+        public static async Task<MessageReadResult> Read(DbDataReader dataReader)
         {
             var row = await ReadRow(dataReader).ConfigureAwait(false);
             return row.TryParse();
@@ -33,17 +33,17 @@
         }
 
 
-        public void PrepareSendCommand(SqlCommand command)
+        public void PrepareSendCommand(DbCommand command)
         {
-            AddParameter(command, "Id", SqlDbType.UniqueIdentifier, id);
-            AddParameter(command, "CorrelationId", SqlDbType.VarChar, correlationId);
-            AddParameter(command, "ReplyToAddress", SqlDbType.VarChar, replyToAddress);
-            AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
-            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
+            AddParameter(command, "Id", DbType.Guid, id);
+            AddParameter(command, "CorrelationId", DbType.AnsiString, correlationId);
+            AddParameter(command, "ReplyToAddress", DbType.AnsiString, replyToAddress);
+            AddParameter(command, "TimeToBeReceivedMs", DbType.Int32, timeToBeReceived);
+            AddParameter(command, "Headers", DbType.String, headers);
+            AddParameter(command, "Body", DbType.Binary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader)
         {
             //HINT: we are assuming that dataReader is sequential. Order or reads is important !
             return new MessageRow
@@ -89,7 +89,7 @@
             return default(T);
         }
 
-        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex)
+        static async Task<string> GetHeaders(DbDataReader dataReader, int headersIndex)
         {
             if (await dataReader.IsDBNullAsync(headersIndex).ConfigureAwait(false))
             {
@@ -102,7 +102,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
+        static async Task<byte[]> GetBody(DbDataReader dataReader, int bodyIndex)
         {
             // Null values will be returned as an empty (zero bytes) Stream.
             using (var outStream = new MemoryStream())
@@ -113,7 +113,7 @@
             }
         }
 
-        static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class
+        static async Task<T> GetNullableAsync<T>(DbDataReader dataReader, int index) where T : class
         {
             if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
@@ -123,14 +123,23 @@
             return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
         }
 
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
+        static void AddParameter(DbCommand command, string name, DbType type, object value)
         {
-            command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.DbType = type;
+            parameter.Value = value ?? DBNull.Value;
+            command.Parameters.Add(parameter);
         }
 
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value, int size)
+        static void AddParameter(DbCommand command, string name, DbType type, object value, int size)
         {
-            command.Parameters.Add(name, type, size).Value = value ?? DBNull.Value;
+            var parameter = command.CreateParameter();
+            parameter.Size = size;
+            parameter.ParameterName = name;
+            parameter.DbType = type;
+            parameter.Value = value ?? DBNull.Value;
+            command.Parameters.Add(parameter);
         }
 
         Guid id;

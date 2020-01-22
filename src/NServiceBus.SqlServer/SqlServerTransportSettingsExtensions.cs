@@ -1,8 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
-    using System.Threading.Tasks;
+    using System.Data.Common;
     using System.Transactions;
     using Configuration.AdvancedExtensibility;
     using Logging;
@@ -129,20 +128,37 @@
         }
 
         /// <summary>
-        /// Specifies connection factory to be used by sql transport.
+        /// 
         /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
-        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(this TransportExtensions<SqlServerTransport> transportExtensions, Func<Task<SqlConnection>> sqlConnectionFactory)
+        /// <param name="transportExtensions"></param>
+        /// <param name="providerFactory"></param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCustomProviderFactory(this TransportExtensions<SqlServerTransport> transportExtensions, DbProviderFactory providerFactory)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-            Guard.AgainstNull(nameof(sqlConnectionFactory), sqlConnectionFactory);
+            Guard.AgainstNull(nameof(providerFactory), providerFactory);
 
-            transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, sqlConnectionFactory);
+            transportExtensions.GetSettings().Set(SettingsKeys.ConnectionFactoryOverride, providerFactory);
 
             return transportExtensions;
         }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="transportExtensions"></param>
+        /// <param name="providerName"></param>
+        /// <returns></returns>
+        public static TransportExtensions<SqlServerTransport> UseCustomProviderName(this TransportExtensions<SqlServerTransport> transportExtensions, string providerName)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNull(nameof(providerName), providerName);
 
+            transportExtensions.GetSettings().Set(SettingsKeys.ConnectionProviderName, providerName);
+
+            return transportExtensions;
+        }
+        
         /// <summary>
         /// Allows the <see cref="IsolationLevel"/> and transaction timeout to be changed for the <see cref="TransactionScope"/> used to receive messages.
         /// </summary>

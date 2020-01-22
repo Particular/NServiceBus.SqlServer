@@ -1,45 +1,24 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading.Tasks;
     using Logging;
 
     class SqlConnectionFactory
     {
-        public SqlConnectionFactory(Func<Task<SqlConnection>> factory)
+        public SqlConnectionFactory(Func<Task<DbConnection>> factory)
         {
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection()
+        public async Task<DbConnection> OpenNewConnection()
         {
             var connection = await openNewConnection().ConfigureAwait(false);
 
             ValidateConnectionPool(connection.ConnectionString);
 
             return connection;
-        }
-
-        public static SqlConnectionFactory Default(string connectionString)
-        {
-            return new SqlConnectionFactory(async () =>
-            {
-                ValidateConnectionPool(connectionString);
-
-                var connection = new SqlConnection(connectionString);
-                try
-                {
-                    await connection.OpenAsync().ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    connection.Dispose();
-                    throw;
-                }
-
-                return connection;
-            });
         }
 
         static void ValidateConnectionPool(string connectionString)
@@ -58,7 +37,7 @@
             hasValidated = true;
         }
 
-        Func<Task<SqlConnection>> openNewConnection;
+        Func<Task<DbConnection>> openNewConnection;
         static bool hasValidated;
 
         static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();

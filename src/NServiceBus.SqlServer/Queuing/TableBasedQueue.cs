@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Data;
+    using System.Data.Common;
     using System.Data.SqlClient;
     using System.Threading;
     using System.Threading.Tasks;
@@ -26,13 +27,15 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning restore 618
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
+        public virtual async Task<int> TryPeek(DbConnection connection, DbTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
         {
-            using (var command = new SqlCommand(peekCommand, connection, transaction)
+            using (var command = connection.CreateCommand())
             {
-                CommandTimeout = timeoutInSeconds
-            })
-            {
+                command.CommandTimeout = timeoutInSeconds;
+                command.CommandText = peekCommand;
+                command.Connection = connection;
+                command.Transaction = transaction;
+                
                 var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
                 return numberOfMessages;
             }
@@ -45,27 +48,31 @@ namespace NServiceBus.Transport.SQLServer
 #pragma warning restore 618
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
+        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction)
         {
-            using (var command = new SqlCommand(receiveCommand, connection, transaction))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = receiveCommand;
+                command.Connection = connection;
+                command.Transaction = transaction;
+                
                 return await ReadMessage(command).ConfigureAwait(false);
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction)
+        public Task DeadLetter(MessageRow poisonMessage, DbConnection connection, DbTransaction transaction)
         {
             return SendRawMessage(poisonMessage, connection, transaction);
         }
 
-        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, DbConnection connection, DbTransaction transaction)
         {
             var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction);
         }
 
-        static async Task<MessageReadResult> ReadMessage(SqlCommand command)
+        static async Task<MessageReadResult> ReadMessage(DbCommand command)
         {
             // We need sequential access to not buffer everything into memory
             using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow | CommandBehavior.SequentialAccess).ConfigureAwait(false))
@@ -79,17 +86,22 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
+        async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction)
         {
             try
             {
-                using (var command = new SqlCommand(sendCommand, connection, transaction))
+                using (var command = connection.CreateCommand())
                 {
+                    command.CommandText = sendCommand;
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+                    
                     message.PrepareSendCommand(command);
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
+            // What to do here?
             catch (SqlException ex)
             {
                 if (ex.Number == 208)
@@ -105,7 +117,7 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        void ThrowQueueNotFoundException(SqlException ex)
+        void ThrowQueueNotFoundException(Exception ex)
         {
             throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
         }
@@ -115,36 +127,52 @@ namespace NServiceBus.Transport.SQLServer
             throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
 
-        public async Task<int> Purge(SqlConnection connection)
+        public async Task<int> Purge(DbConnection connection)
         {
-            using (var command = new SqlCommand(purgeCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = purgeCommand;
+                command.Connection = connection;
+
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
-        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
+        public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize)
         {
-            using (var command = new SqlCommand(purgeExpiredCommand, connection))
+            using (var command = connection.CreateCommand())
             {
-                command.Parameters.AddWithValue("@BatchSize", purgeBatchSize);
+                command.Connection = connection;
+                command.CommandText = purgeExpiredCommand;
+
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@BatchSize";
+                parameter.Value = purgeBatchSize;
+                command.Parameters.Add(parameter);
+                    
                 return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
 
-        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
+        public async Task<bool> CheckExpiresIndexPresence(DbConnection connection)
         {
-            using (var command = new SqlCommand(checkIndexCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkIndexCommand;
+                command.Connection = connection;
+
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<string> CheckHeadersColumnType(SqlConnection connection)
+        public async Task<string> CheckHeadersColumnType(DbConnection connection)
         {
-            using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkHeadersColumnTypeCommand;
+                command.Connection = connection;
+                
                 return (string)await command.ExecuteScalarAsync().ConfigureAwait(false);
             }
         }

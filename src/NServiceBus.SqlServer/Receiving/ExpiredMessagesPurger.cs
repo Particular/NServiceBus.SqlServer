@@ -1,14 +1,14 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
 
     class ExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, int? purgeBatchSize, bool enable)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<DbConnection>> openConnection, int? purgeBatchSize, bool enable)
         {
             this.openConnection = openConnection;
             this.enable = enable;
@@ -51,7 +51,7 @@
         }
 
         int purgeBatchSize;
-        Func<TableBasedQueue, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, Task<DbConnection>> openConnection;
         readonly bool enable;
         const int DefaultPurgeBatchSize = 10000;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();

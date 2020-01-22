@@ -1,13 +1,13 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading.Tasks;
     using Logging;
 
     class SchemaInspector
     {
-        public SchemaInspector(Func<TableBasedQueue, Task<SqlConnection>> openConnection)
+        public SchemaInspector(Func<TableBasedQueue, Task<DbConnection>> openConnection)
         {
             this.openConnection = openConnection;
         }
@@ -56,7 +56,7 @@
             }
         }
 
-        Func<TableBasedQueue, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, Task<DbConnection>> openConnection;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
 }

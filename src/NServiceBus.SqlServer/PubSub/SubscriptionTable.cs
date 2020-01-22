@@ -31,10 +31,25 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = queueAddress;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
-
+                    
+                    var endpointParameter = command.CreateParameter();
+                    endpointParameter.ParameterName = "Endpoint";
+                    endpointParameter.DbType = DbType.AnsiString;
+                    endpointParameter.Value = endpointName;
+                    command.Parameters.Add(endpointParameter);
+                    
+                    var queueAddressParameter = command.CreateParameter();
+                    queueAddressParameter.ParameterName = "QueueAddress";
+                    queueAddressParameter.DbType = DbType.AnsiString;
+                    queueAddressParameter.Value = queueAddress;
+                    command.Parameters.Add(queueAddressParameter);
+                    
+                    var topicParameter = command.CreateParameter();
+                    topicParameter.ParameterName = "Topic";
+                    topicParameter.DbType = DbType.AnsiString;
+                    topicParameter.Value = topic;
+                    command.Parameters.Add(topicParameter);
+                    
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
@@ -48,9 +63,19 @@ namespace NServiceBus.Transport.SQLServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = unsubscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
-
+                    
+                    var endpointParameter = command.CreateParameter();
+                    endpointParameter.ParameterName = "Endpoint";
+                    endpointParameter.DbType = DbType.AnsiString;
+                    endpointParameter.Value = endpointName;
+                    command.Parameters.Add(endpointParameter);
+                    
+                    var topicParameter = command.CreateParameter();
+                    topicParameter.ParameterName = "Topic";
+                    topicParameter.DbType = DbType.AnsiString;
+                    topicParameter.Value = topic;
+                    command.Parameters.Add(topicParameter);
+                    
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
@@ -73,7 +98,11 @@ namespace NServiceBus.Transport.SQLServer
                     command.CommandText = getSubscribersCommand;
                     for (var i = 0; i < topics.Length; i++)
                     {
-                        command.Parameters.Add($"Topic_{i}", SqlDbType.VarChar).Value = topics[i];
+                        var parameter = command.CreateParameter();
+                        parameter.ParameterName = $"Topic_{i}";
+                        parameter.DbType = DbType.AnsiString;
+                        parameter.Value = topics[i];
+                        command.Parameters.Add(parameter);
                     }
 
                     using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))

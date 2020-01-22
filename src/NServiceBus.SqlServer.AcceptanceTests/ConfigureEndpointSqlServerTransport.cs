@@ -24,6 +24,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
 
         var transportConfig = configuration.UseTransport<SqlServerTransport>();
+        transportConfig.UseCustomProviderName("Microsoft.Data.SqlClient");
         transportConfig.ConnectionString(connectionString);
         transportConfig.SubscriptionSettings().DisableSubscriptionCache();
 

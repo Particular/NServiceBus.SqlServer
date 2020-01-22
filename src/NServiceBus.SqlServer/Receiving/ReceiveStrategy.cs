@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
@@ -31,7 +31,7 @@
 
         public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
+        protected async Task<Message> TryReceive(DbConnection connection, DbTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
         {
             var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
@@ -90,7 +90,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
+        async Task<bool> TryHandleDelayedMessage(Message message, DbConnection connection, DbTransaction transaction)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {

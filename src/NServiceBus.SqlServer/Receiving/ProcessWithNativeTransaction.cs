@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SQLServer
 {
     using System;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -59,7 +59,7 @@
             }
         }
 
-        TransportTransaction PrepareTransportTransaction(SqlConnection connection, SqlTransaction transaction)
+        TransportTransaction PrepareTransportTransaction(DbConnection connection, DbTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();
 

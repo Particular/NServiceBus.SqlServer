@@ -2,7 +2,7 @@
 namespace NServiceBus.Transport.SQLServer
 {
     using System.Data;
-    using System.Data.SqlClient;
+    using System.Data.Common;
     using System.Threading.Tasks;
     using Transport;
 
@@ -40,25 +40,29 @@ namespace NServiceBus.Transport.SQLServer
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, DbConnection connection, DbTransaction transaction, bool createMessageBodyColumn)
         {
             var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-            using (var command = new SqlCommand(sql, connection, transaction)
+            using (var command = connection.CreateCommand())
             {
-                CommandType = CommandType.Text
-            })
-            {
+                command.CommandType = CommandType.Text;
+                command.Connection = connection;
+                command.Transaction = transaction;
+                command.CommandText = sql;
+                
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
 
             if (createMessageBodyColumn)
             {
                 var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                using (var command = connection.CreateCommand())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
+                    command.CommandType = CommandType.Text;
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+                    command.CommandText = bodyStringSql;
+                    
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
