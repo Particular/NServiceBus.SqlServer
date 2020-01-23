@@ -36,6 +36,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_0", "Compatibility
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_1", "CompatibilityTests\Facade_3.1\Facade_3_1.csproj", "{66D10F43-3859-4F55-B8A8-60E32AD6B813}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.Legacy", "NServiceBus.SqlServer.Legacy\NServiceBus.SqlServer.Legacy.csproj", "{6C5DB312-AD4C-4784-AE4D-CB2F6BFFB8E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.SqlServer.Legacy.AcceptanceTests", "NServiceBus.SqlServer.Legacy.AcceptanceTests\NServiceBus.SqlServer.Legacy.AcceptanceTests.csproj", "{CC1C65FA-2529-4139-83B2-A6E070D56703}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +90,14 @@ Global
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66D10F43-3859-4F55-B8A8-60E32AD6B813}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C5DB312-AD4C-4784-AE4D-CB2F6BFFB8E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C5DB312-AD4C-4784-AE4D-CB2F6BFFB8E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C5DB312-AD4C-4784-AE4D-CB2F6BFFB8E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C5DB312-AD4C-4784-AE4D-CB2F6BFFB8E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC1C65FA-2529-4139-83B2-A6E070D56703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC1C65FA-2529-4139-83B2-A6E070D56703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC1C65FA-2529-4139-83B2-A6E070D56703}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC1C65FA-2529-4139-83B2-A6E070D56703}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

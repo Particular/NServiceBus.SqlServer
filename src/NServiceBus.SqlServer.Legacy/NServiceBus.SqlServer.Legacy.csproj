@@ -2,15 +2,14 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
+    <AssemblyName>NServiceBus.Transport.SqlServer.Legacy</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
-    <DefineConstants>$(DefineConstants);MSSQLCLIENT</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>NServiceBus.SqlServer</PackageId>
+    <PackageId>NServiceBus.SqlServer.Legacy</PackageId>
     <Description>SQL transport support for NServiceBus</Description>
   </PropertyGroup>
 
@@ -21,7 +20,11 @@
     <PackageReference Include="Particular.CodeRules" Version="0.2.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.5.0" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[7.2.0, 8.0.0)" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="[1.0.19249.1, 2.0.0)" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.SqlServer\**\*GitVersionInformation*.g.cs;..\NServiceBus.SqlServer\**\AssemblyInfo_NServiceBus.SqlServer*.g.cs;..\NServiceBus.SqlServer\**\NServiceBus.SqlServer.AssemblyInfo.cs;" />
   </ItemGroup>
 
 </Project>
