@@ -1,3 +1,5 @@
+SET QUOTED_IDENTIFIER  ON
+
 CREATE DATABASE nservicebus
 GO
 USE nservicebus
