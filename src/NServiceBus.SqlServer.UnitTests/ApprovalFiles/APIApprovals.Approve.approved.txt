@@ -48,8 +48,8 @@ namespace NServiceBus.Transport.SQLServer
         [System.ObsoleteAttribute("The connection parameter is no longer required. Use `UseCustomSqlTransaction` ins" +
             "tead. The member currently throws a NotImplementedException. Will be removed in " +
             "version 6.0.0.", true)]
-        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
-        public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlTransaction transaction) { }
+        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlConnection connection, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
+        public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
     [System.ObsoleteAttribute("Not for public use.")]
     public class static SqlConstants
@@ -82,7 +82,7 @@ namespace NServiceBus.Transport.SQLServer
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> timeout = null, System.Nullable<System.Transactions.IsolationLevel> isolationLevel = null) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
         [System.ObsoleteAttribute("Starting from version 5 native delayed delivery is always enabled. It can be conf" +
             "igured via NativeDelayedDelivery. Use `NativeDelayedDelivery` instead. The membe" +
             "r currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
