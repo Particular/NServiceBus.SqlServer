@@ -1,5 +1,9 @@
 ﻿using System;
-using System.Data.SqlClient;
+#if !MSSQLCLIENT
+    using System.Data.SqlClient;
+#else
+using Microsoft.Data.SqlClient;
+#endif
 using System.Linq;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -17,7 +21,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         settings = configuration.GetSettings();
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-        
+
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");

@@ -2,7 +2,11 @@ namespace NServiceBus.Transport.SQLServer
 {
     using System;
     using System.Collections.Generic;
+#if !MSSQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
@@ -14,7 +18,7 @@ namespace NServiceBus.Transport.SQLServer
 
     /// <summary>
     /// ConfigureReceiveInfrastructure is called first, before features are started
-    /// 
+    ///
     /// ConfigureSendInfrastructure is called last, when starting
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure

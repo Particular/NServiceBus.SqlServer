@@ -3,7 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
+#if !MSSQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
 
     class StoreDelayedMessageCommand
     {

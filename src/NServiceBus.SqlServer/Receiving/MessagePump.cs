@@ -2,7 +2,11 @@
 {
     using System;
     using System.Collections.Concurrent;
+#if !MSSQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -132,7 +136,7 @@
                 var loopCancellationTokenSource = new CancellationTokenSource();
 
                 // If the receive circuit breaker is triggered start only one message processing task at a time.
-                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered ? 1 : messageCount; 
+                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered ? 1 : messageCount;
 
                 for (var i = 0; i < maximumConcurrentReceives; i++)
                 {
