@@ -5,22 +5,6 @@
 [assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
 namespace NServiceBus
 {
-    public class static MessageDrivenPubSubCompatibility
-    {
-        [System.ObsoleteAttribute("Publishing can not be disabled in version 5.0 and above. The transport handles pu" +
-            "blish-subscribe natively and does not require a separate subscription persistenc" +
-            "e. The member currently throws a NotImplementedException. Will be removed in ver" +
-            "sion 6.0.0.", true)]
-        public static void DisablePublishing(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(eventType, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, eventType, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
-        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Type eventType, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
-        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Publisher registration has been moved to message-driven pub-sub migration mode.\r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.RegisterPublisher(assembly, namespace, publisherEndpoint);. Use `SubscriptionMigrationModeSettings.RegisterPublisher(routingSettings, assembly, namespace, publisherEndpoint)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
-        public static void RegisterPublisher(this NServiceBus.RoutingSettings<NServiceBus.SqlServerTransport> routingSettings, System.Reflection.Assembly assembly, string @namespace, string publisherEndpoint) { }
-        [System.ObsoleteAttribute(@"Subscription authorization has been moved to message-driven pub-sub migration mode. \r\n\r\nvar compatMode = transport.EnableMessageDrivenPubSubCompatibilityMode();\r\ncompatMode.SubscriptionAuthorizer(authorizer);. Use `SubscriptionMigrationModeSettings.SubscriptionAuthorizer(transportExtensions, authorizer)` instead. The member currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
-        public static void SubscriptionAuthorizer(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<NServiceBus.Pipeline.IIncomingPhysicalMessageContext, bool> authorizer) { }
-    }
     public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
     {
         public SqlServerTransport() { }
@@ -45,31 +29,7 @@ namespace NServiceBus.Transport.SqlServer
     }
     public class static SendOptionsExtensions
     {
-        [System.ObsoleteAttribute("The connection parameter is no longer required. Use `UseCustomSqlTransaction` ins" +
-            "tead. The member currently throws a NotImplementedException. Will be removed in " +
-            "version 6.0.0.", true)]
-        public static void UseCustomSqlConnectionAndTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlConnection connection, System.Data.SqlClient.SqlTransaction transaction) { }
         public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, System.Data.SqlClient.SqlTransaction transaction) { }
-    }
-    [System.ObsoleteAttribute("Not for public use.")]
-    public class static SqlConstants
-    {
-        public static readonly string AddMessageBodyStringColumn;
-        public static readonly string CheckHeadersColumnType;
-        public static readonly string CheckIfExpiresIndexIsPresent;
-        public static readonly string CreateDelayedMessageStoreText;
-        public static readonly string CreateQueueText;
-        public static readonly string CreateSubscriptionTableText;
-        public static readonly string GetSubscribersText;
-        public static readonly string MoveDueDelayedMessageText;
-        public static readonly string PeekText;
-        public static readonly string PurgeBatchOfExpiredMessagesText;
-        public static readonly string PurgeText;
-        public static readonly string ReceiveText;
-        public static readonly string SendText;
-        public static readonly string StoreDelayedMessageText;
-        public static readonly string SubscribeText;
-        public static readonly string UnsubscribeText;
     }
     public class static SqlServerTransportSettingsExtensions
     {
@@ -83,10 +43,6 @@ namespace NServiceBus.Transport.SqlServer
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
-        [System.ObsoleteAttribute("Starting from version 5 native delayed delivery is always enabled. It can be conf" +
-            "igured via NativeDelayedDelivery. Use `NativeDelayedDelivery` instead. The membe" +
-            "r currently throws a NotImplementedException. Will be removed in version 6.0.0.", true)]
-        public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings UseNativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
