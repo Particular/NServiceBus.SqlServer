@@ -6,7 +6,7 @@
     /// <summary>
     /// Adds transport specific settings to SendOptions
     /// </summary>
-    public static partial class SendOptionsExtensions
+    public static class SendOptionsExtensions
     {
         /// <summary>
         /// Enables the use of custom SqlTransaction instances for send operations. The same transaction can be used in more than one send operation.
