@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
 EndProject
@@ -36,9 +36,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_0", "Compatibility
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Facade_3_1", "CompatibilityTests\Facade_3.1\Facade_3_1.csproj", "{66D10F43-3859-4F55-B8A8-60E32AD6B813}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.SqlServer", "NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj", "{F24C4DFD-A8DF-4053-A367-DF80F601230F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer", "NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj", "{F24C4DFD-A8DF-4053-A367-DF80F601230F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.SqlServer.AcceptanceTests", "NServiceBus.Transport.SqlServer.AcceptanceTests\NServiceBus.Transport.SqlServer.AcceptanceTests.csproj", "{1AD1139F-771B-4993-8EFD-62600702DC54}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.AcceptanceTests", "NServiceBus.Transport.SqlServer.AcceptanceTests\NServiceBus.Transport.SqlServer.AcceptanceTests.csproj", "{1AD1139F-771B-4993-8EFD-62600702DC54}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,6 +103,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{531AB217-EFFE-428C-8CA0-A8A70C907992} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
+		{937A1BF0-12F4-442A-B2F0-ACF57DF73C23} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{B5D74165-91F9-46CF-8523-1775598F5EE6} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{EEAE4525-249C-4AEE-BE10-BD338D537594} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
 		{FEC856E8-44EE-4E93-8964-32FD236E9DF7} = {08C78355-DA03-4ED5-B0FC-20229979AE52}
