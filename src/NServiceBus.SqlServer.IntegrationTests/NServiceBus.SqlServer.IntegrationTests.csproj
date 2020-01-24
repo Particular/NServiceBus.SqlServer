@@ -19,4 +19,8 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer.IntegrationTests\**\*.cs" Exclude="**\obj\**" />
+  </ItemGroup>
+
 </Project>
