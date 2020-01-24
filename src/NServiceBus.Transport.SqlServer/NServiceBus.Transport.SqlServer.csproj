@@ -2,13 +2,11 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>NServiceBus.Transport.SqlServer</PackageId>
     <Description>SQL transport support for NServiceBus</Description>
   </PropertyGroup>
 
