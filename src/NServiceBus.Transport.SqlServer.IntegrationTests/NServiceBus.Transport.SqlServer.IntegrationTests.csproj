@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\NServiceBus.SqlServer.AcceptanceTests\AcceptanceTests.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -13,13 +13,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="7.2.0" />
+    <PackageReference Include="NServiceBus" Version="7.2.0" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.SqlServer.AcceptanceTests\**\*.cs" Exclude="**\obj\**" />
+    <Compile Include="..\NServiceBus.SqlServer.IntegrationTests\**\*.cs" Exclude="**\obj\**" />
   </ItemGroup>
 
 </Project>
