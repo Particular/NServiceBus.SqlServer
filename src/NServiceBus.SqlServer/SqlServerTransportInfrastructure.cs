@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.SQLServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.SQLServer
 
     /// <summary>
     /// ConfigureReceiveInfrastructure is called first, before features are started
-    /// 
+    ///
     /// ConfigureSendInfrastructure is called last, when starting
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure

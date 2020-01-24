@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.SqlServer.UnitTests
 {
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     [TestFixture]
     public class NameHelperTests

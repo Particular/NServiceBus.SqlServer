@@ -2,7 +2,7 @@
 {
     using NUnit.Framework;
     using Settings;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     [TestFixture]
     public class SqlServerTransportTests

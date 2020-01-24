@@ -1,5 +1,5 @@
 #pragma warning disable 618
-namespace NServiceBus.Transport.SQLServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System.Data;
     using System.Data.SqlClient;

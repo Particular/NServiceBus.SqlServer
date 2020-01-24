@@ -7,7 +7,7 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
-using NServiceBus.Transport.SQLServer;
+using NServiceBus.Transport.SqlServer;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
@@ -17,7 +17,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         settings = configuration.GetSettings();
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-        
+
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");

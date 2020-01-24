@@ -8,7 +8,7 @@
     using EndpointTemplates;
     using Features;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_subscriber_runs_in_compat_mode : NServiceBusAcceptanceTest
     {

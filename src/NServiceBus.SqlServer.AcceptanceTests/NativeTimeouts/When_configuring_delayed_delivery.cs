@@ -7,7 +7,7 @@
     using Features;
     using Logging;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_configuring_delayed_delivery : NServiceBusAcceptanceTest
     {

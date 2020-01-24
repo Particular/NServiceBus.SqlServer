@@ -11,7 +11,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using NUnit.Framework;
     using Routing;
     using Transport;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
     using Unicast.Queuing;
 
     public class When_dispatching_messages

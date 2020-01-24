@@ -5,7 +5,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_custom_schema_contains_at : NServiceBusAcceptanceTest
     {

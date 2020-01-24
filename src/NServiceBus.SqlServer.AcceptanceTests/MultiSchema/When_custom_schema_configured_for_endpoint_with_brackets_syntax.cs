@@ -4,7 +4,7 @@
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schema_configured_for_endpoint_with_brackets_syntax : When_custom_schema_configured_for_endpoint

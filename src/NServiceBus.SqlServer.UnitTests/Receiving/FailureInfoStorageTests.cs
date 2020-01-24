@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class FailureInfoStorageTests
     {

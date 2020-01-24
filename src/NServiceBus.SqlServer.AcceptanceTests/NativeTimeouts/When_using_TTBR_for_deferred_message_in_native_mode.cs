@@ -5,7 +5,7 @@
     using AcceptanceTesting;
     using EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_using_TTBR_for_deferred_message_in_native_mode : NServiceBusAcceptanceTest
     {

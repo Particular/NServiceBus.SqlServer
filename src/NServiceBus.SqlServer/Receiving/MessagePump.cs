@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SQLServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Concurrent;
@@ -132,7 +132,7 @@
                 var loopCancellationTokenSource = new CancellationTokenSource();
 
                 // If the receive circuit breaker is triggered start only one message processing task at a time.
-                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered ? 1 : messageCount; 
+                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered ? 1 : messageCount;
 
                 for (var i = 0; i < maximumConcurrentReceives; i++)
                 {

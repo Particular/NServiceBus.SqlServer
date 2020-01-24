@@ -4,7 +4,7 @@
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
     {

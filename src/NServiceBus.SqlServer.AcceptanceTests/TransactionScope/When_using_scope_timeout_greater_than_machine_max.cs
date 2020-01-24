@@ -5,7 +5,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_using_scope_timeout_greater_than_machine_max : NServiceBusAcceptanceTest
     {

@@ -1,5 +1,5 @@
 #pragma warning disable 1591
-namespace NServiceBus.Transport.SQLServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
 

@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
     using Transport;
 
     public class When_message_receive_takes_long

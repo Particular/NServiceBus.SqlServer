@@ -12,7 +12,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using Performance.TimeToBeReceived;
     using Routing;
     using Transport;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_using_ttbr
     {

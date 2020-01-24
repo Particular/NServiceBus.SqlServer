@@ -5,7 +5,7 @@
     using AcceptanceTesting;
     using EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_deferring_a_message_to_the_past_in_native_mode : NServiceBusAcceptanceTest
     {

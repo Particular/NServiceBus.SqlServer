@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using NUnit.Framework;
     using Particular.Approvals;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     [TestFixture]
     public class DictionarySerializerTests

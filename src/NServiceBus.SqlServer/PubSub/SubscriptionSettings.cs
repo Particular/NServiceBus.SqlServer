@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SQLServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
 
@@ -11,7 +11,7 @@
         /// <summary>
         /// Default to 5 seconds caching. If a system is under load that prevent doing an extra roundtrip for each Publish operation. If
         /// a system is not under load, doing an extra roundtrip every 5 seconds is not a problem and 5 seconds is small enough value that
-        /// people accepts as we always say that subscription operation is not instantaneous.  
+        /// people accepts as we always say that subscription operation is not instantaneous.
         /// </summary>
         internal TimeSpan? TimeToCacheSubscriptions = TimeSpan.FromSeconds(5);
 

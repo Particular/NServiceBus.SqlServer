@@ -3,7 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
     using Transport;
 
     public class When_checking_schema
@@ -44,7 +44,7 @@
 
         static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, 
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator,
                 new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(QueueTableName);

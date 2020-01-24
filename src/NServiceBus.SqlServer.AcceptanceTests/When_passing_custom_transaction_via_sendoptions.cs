@@ -7,7 +7,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_passing_custom_transaction_via_sendoptions : NServiceBusAcceptanceTest
     {

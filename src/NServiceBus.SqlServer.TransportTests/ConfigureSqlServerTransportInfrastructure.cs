@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
-using NServiceBus.Transport.SQLServer;
+using NServiceBus.Transport.SqlServer;
 using NServiceBus.TransportTests;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure

@@ -10,7 +10,7 @@
     using Features;
     using NServiceBus.Routing.MessageDrivenSubscriptions;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_publisher_runs_in_compat_mode : NServiceBusAcceptanceTest
     {

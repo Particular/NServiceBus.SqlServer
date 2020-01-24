@@ -5,7 +5,7 @@
     using NUnit.Framework;
     using Routing;
     using Transport;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     [TestFixture]
     public class OperationSorterTests

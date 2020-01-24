@@ -5,7 +5,7 @@
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_custom_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
     {

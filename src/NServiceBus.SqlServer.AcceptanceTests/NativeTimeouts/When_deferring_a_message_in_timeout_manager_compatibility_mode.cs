@@ -7,7 +7,7 @@
     using EndpointTemplates;
     using Features;
     using NUnit.Framework;
-    using Transport.SQLServer;
+    using Transport.SqlServer;
 
     public class When_deferring_a_message_in_timeout_manager_compatibility_mode : NServiceBusAcceptanceTest
     {
