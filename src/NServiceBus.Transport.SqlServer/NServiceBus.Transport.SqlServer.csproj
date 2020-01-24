@@ -20,8 +20,4 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\NServiceBus.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.SqlServer\InternalsVisibleTo.cs" />
-  </ItemGroup>
-
 </Project>

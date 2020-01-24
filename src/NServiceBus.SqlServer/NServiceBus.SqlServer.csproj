@@ -24,4 +24,8 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.Transport.SqlServer\InternalsVisibleTo.cs" />
+  </ItemGroup>
+
 </Project>
