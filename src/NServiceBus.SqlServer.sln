@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Scripts\Create-Databases.sql = Scripts\Create-Databases.sql
 		Directory.Build.props = Directory.Build.props
 		..\GitVersion.yml = ..\GitVersion.yml
-		NuGet.Config = NuGet.Config
+		nuget.config = nuget.config
 		Scripts\Reset-Database.sql = Scripts\Reset-Database.sql
 	EndProjectSection
 EndProject
