@@ -31,7 +31,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         transportConfig.ConnectionString(connectionString);
         transportConfig.SubscriptionSettings().DisableSubscriptionCache();
 
-#if !NET452
+#if !NETFRAMEWORK
         transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
 #endif
         return Task.FromResult(0);

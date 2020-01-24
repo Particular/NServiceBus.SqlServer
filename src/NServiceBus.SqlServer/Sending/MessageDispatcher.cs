@@ -57,7 +57,7 @@
                 return;
             }
 
-#if NET452
+#if NETFRAMEWORK
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {

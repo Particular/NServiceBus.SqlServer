@@ -4,7 +4,7 @@ namespace NServiceBus.AcceptanceTests
 
     public partial class TestSuiteConstraints
     {
-#if NET452
+#if NETFRAMEWORK
         public bool SupportsDtc => true;
 #else
         public bool SupportsDtc => false;

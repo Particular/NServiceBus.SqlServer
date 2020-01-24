@@ -26,7 +26,7 @@
             }
         }
 
-#if NET452
+#if NETFRAMEWORK
         [TestCase(TransportTransactionMode.TransactionScope)]
 #endif
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
