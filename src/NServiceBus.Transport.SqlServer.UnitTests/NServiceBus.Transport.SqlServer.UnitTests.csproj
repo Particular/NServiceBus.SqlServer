@@ -20,8 +20,4 @@
     <PackageReference Include="PublicApiGenerator" Version="8.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\NServiceBus.SqlServer.UnitTests\**\*.cs" Exclude="**\obj\**" />
-  </ItemGroup>
-
 </Project>
