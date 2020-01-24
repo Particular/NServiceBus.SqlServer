@@ -2,7 +2,11 @@
 {
     using System;
     using System.Collections.Concurrent;
+#if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;

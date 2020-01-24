@@ -5,6 +5,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>AcceptanceTests.snk</AssemblyOriginatorKeyFile>
+    <DefineConstants>$(DefineConstants);SYSTEMDATASQLCLIENT</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

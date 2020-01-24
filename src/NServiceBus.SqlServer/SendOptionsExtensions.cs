@@ -1,6 +1,10 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+#if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using Extensibility;
 
     /// <summary>

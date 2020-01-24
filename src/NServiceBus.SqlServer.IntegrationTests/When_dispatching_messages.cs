@@ -5,7 +5,11 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
 {
     using System;
     using System.Collections.Generic;
+#if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
