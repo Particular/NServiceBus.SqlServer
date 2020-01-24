@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.SqlServer\**\*GitVersionInformation*.g.cs;..\NServiceBus.SqlServer\**\AssemblyInfo_NServiceBus.SqlServer*.g.cs;..\NServiceBus.SqlServer\**\NServiceBus.SqlServer.AssemblyInfo.cs;" />
+    <Compile Include="..\NServiceBus.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.SqlServer\**\*GitVersionInformation*.g.cs;..\NServiceBus.SqlServer\**\AssemblyInfo_NServiceBus.SqlServer*.g.cs;..\NServiceBus.SqlServer\**\NServiceBus.SqlServer.AssemblyInfo.cs;..\NServiceBus.SqlServer\**\InternalsVisibleTo.cs;" />
   </ItemGroup>
 
 </Project>
