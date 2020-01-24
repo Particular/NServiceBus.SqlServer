@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer.TransportTests\**\*.cs" Exclude="**\obj\**" />
     <Compile Remove="\**\When_modifying_incoming_headers.cs" />
   </ItemGroup>
 </Project>
