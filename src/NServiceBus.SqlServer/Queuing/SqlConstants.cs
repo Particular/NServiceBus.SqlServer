@@ -1,13 +1,6 @@
-#pragma warning disable 1591
 namespace NServiceBus.Transport.SqlServer
 {
-    using System;
-
-    /// <summary>
-    /// Not for public use.
-    /// </summary>
-    [Obsolete("Not for public use.")]
-    public static class SqlConstants
+    static class SqlConstants
     {
         public static readonly string PurgeText = "DELETE FROM {0}";
 
