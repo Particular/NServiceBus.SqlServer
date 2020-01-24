@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.SqlServer.AcceptanceTests\**\*.cs" Exclude="**\obj\**;NServiceBus.SqlServer.AcceptanceTests.AssemblyInfo.cs;"/>
+    <Compile Include="..\NServiceBus.SqlServer.AcceptanceTests\**\*.cs" Exclude="**\obj\**" />
   </ItemGroup>
 
 </Project>
