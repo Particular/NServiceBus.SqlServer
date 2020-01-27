@@ -1,8 +1,8 @@
-﻿namespace NServiceBus.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using NUnit.Framework;
     using Settings;
-    using Transport.SqlServer;
+    using SqlServer;
 
     [TestFixture]
     public class SqlServerTransportTests

@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests.Receiving
 {
     using System;
     using System.Collections.Generic;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class FailureInfoStorageTests
     {

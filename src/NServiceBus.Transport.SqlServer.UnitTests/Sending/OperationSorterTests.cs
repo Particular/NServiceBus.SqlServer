@@ -1,11 +1,11 @@
-﻿namespace NServiceBus.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests.Sending
 {
     using System.Collections.Generic;
     using System.Linq;
     using NUnit.Framework;
     using Routing;
+    using SqlServer;
     using Transport;
-    using Transport.SqlServer;
 
     [TestFixture]
     public class OperationSorterTests

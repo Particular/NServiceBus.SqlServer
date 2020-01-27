@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using System.Collections.Generic;
     using NUnit.Framework;
     using Particular.Approvals;
-    using Transport.SqlServer;
+    using SqlServer;
 
     [TestFixture]
     public class DictionarySerializerTests
