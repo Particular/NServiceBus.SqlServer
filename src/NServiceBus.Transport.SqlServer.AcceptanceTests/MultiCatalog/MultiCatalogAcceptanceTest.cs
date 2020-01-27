@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiCatalog
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System;
 #if SYSTEMDATASQLCLIENT

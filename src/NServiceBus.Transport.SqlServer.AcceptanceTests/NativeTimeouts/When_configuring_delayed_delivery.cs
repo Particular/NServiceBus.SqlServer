@@ -1,13 +1,14 @@
-﻿namespace NServiceBus.AcceptanceTests.NativeTimeouts
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativeTimeouts
 {
     using System.Linq;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using EndpointTemplates;
     using Features;
     using Logging;
+    using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_configuring_delayed_delivery : NServiceBusAcceptanceTest
     {

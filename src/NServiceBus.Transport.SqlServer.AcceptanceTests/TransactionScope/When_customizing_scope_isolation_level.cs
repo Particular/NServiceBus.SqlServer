@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransactionScope
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.TransactionScope
 {
     using System.Threading.Tasks;
     using System.Transactions;
@@ -6,7 +6,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
     {

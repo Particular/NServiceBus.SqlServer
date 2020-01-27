@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;

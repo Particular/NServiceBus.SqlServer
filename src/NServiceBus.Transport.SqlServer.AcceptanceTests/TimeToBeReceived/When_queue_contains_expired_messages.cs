@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TimeToBeReceived
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.TimeToBeReceived
 {
     using System;
 #if SYSTEMDATASQLCLIENT

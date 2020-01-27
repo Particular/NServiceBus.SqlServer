@@ -1,10 +1,10 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiSchema
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
     using static AcceptanceTesting.Customization.Conventions;
 
     public class When_custom_schema_configured_for_endpoint_with_brackets_syntax : When_custom_schema_configured_for_endpoint

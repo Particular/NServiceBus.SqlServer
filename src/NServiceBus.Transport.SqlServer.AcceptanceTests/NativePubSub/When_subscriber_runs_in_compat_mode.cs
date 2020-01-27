@@ -1,14 +1,15 @@
-﻿namespace NServiceBus.AcceptanceTests.NativePubSub
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativePubSub
 {
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using Configuration.AdvancedExtensibility;
-    using EndpointTemplates;
     using Features;
+    using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_subscriber_runs_in_compat_mode : NServiceBusAcceptanceTest
     {

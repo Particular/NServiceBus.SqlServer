@@ -1,11 +1,12 @@
-﻿namespace NServiceBus.AcceptanceTests.NativeTimeouts
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativeTimeouts
 {
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using EndpointTemplates;
+    using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_using_TTBR_for_deferred_message_in_native_mode : NServiceBusAcceptanceTest
     {

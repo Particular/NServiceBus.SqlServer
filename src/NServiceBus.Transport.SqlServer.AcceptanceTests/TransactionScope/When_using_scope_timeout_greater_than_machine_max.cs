@@ -1,11 +1,11 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransactionScope
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.TransactionScope
 {
     using System;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_using_scope_timeout_greater_than_machine_max : NServiceBusAcceptanceTest
     {

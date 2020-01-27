@@ -1,13 +1,14 @@
-﻿namespace NServiceBus.AcceptanceTests.NativeTimeouts
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativeTimeouts
 {
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using EndpointTemplates;
     using Features;
+    using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_deferring_a_message_in_timeout_manager_compatibility_mode : NServiceBusAcceptanceTest
     {

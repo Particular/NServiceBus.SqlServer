@@ -1,11 +1,11 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.MultiCatalog
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_custom_catalog_configured_for_error_queue : MultiCatalogAcceptanceTest
     {
