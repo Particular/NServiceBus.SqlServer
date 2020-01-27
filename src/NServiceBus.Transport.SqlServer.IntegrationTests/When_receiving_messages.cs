@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -11,7 +11,7 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Transport;
-    using Transport.SqlServer;
+    using SqlServer;
 
     public class When_receiving_messages
     {

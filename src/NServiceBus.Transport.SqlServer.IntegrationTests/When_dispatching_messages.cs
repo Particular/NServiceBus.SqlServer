@@ -1,7 +1,7 @@
 ﻿// ReSharper disable RedundantArgumentNameForLiteralExpression
 // ReSharper disable RedundantArgumentName
 
-namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using NUnit.Framework;
     using Routing;
     using Transport;
-    using Transport.SqlServer;
+    using SqlServer;
     using Unicast.Queuing;
 
     public class When_dispatching_messages

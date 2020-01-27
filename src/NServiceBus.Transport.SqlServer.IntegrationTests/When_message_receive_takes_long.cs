@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
     using Transport;
 
     public class When_message_receive_takes_long

@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Transport.SqlServer;
+    using SqlServer;
     using Transport;
 
     public class When_checking_schema

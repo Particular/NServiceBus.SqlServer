@@ -1,7 +1,7 @@
 ﻿// ReSharper disable RedundantArgumentNameForLiteralExpression
 // ReSharper disable RedundantArgumentName
 
-namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -11,8 +11,8 @@ namespace NServiceBus.SqlServer.AcceptanceTests.TransportTransaction
     using NUnit.Framework;
     using Performance.TimeToBeReceived;
     using Routing;
+    using SqlServer;
     using Transport;
-    using Transport.SqlServer;
 
     public class When_using_ttbr
     {
