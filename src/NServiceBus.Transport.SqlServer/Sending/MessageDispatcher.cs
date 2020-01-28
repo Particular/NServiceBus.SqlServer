@@ -109,8 +109,8 @@
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations)
         {
-            transportTransaction.TryGet(out SqlConnection sqlTransportConnection);
-            transportTransaction.TryGet(out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
@@ -162,7 +162,7 @@
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            transportTransaction.TryGet(out SqlTransaction nativeTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction nativeTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;
