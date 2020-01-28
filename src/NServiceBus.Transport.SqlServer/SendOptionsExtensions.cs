@@ -20,9 +20,8 @@
         public static void UseCustomSqlTransaction(this SendOptions options, SqlTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(transaction.Connection);
-            transportTransaction.Set(transaction);
-
+            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, transaction.Connection);
+            transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
             options.GetExtensions().Set(transportTransaction);
         }
     }

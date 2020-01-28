@@ -177,8 +177,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
-                TransportTransaction.Set(sqlConnection);
-                TransportTransaction.Set(sqlTransaction);
+                TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);
+                TransportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, sqlTransaction);
 
                 Context.Set(TransportTransaction);
             }

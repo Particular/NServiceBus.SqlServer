@@ -25,8 +25,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 {
                     var transportTransaction = new TransportTransaction();
 
-                    transportTransaction.Set(connection);
-                    transportTransaction.Set(transaction);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
                     var context = new ContextBag();
                     context.Set(transportTransaction);
@@ -54,8 +54,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 {
                     var transportTransaction = new TransportTransaction();
 
-                    transportTransaction.Set(connection);
-                    transportTransaction.Set(transaction);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
                     var context = new ContextBag();
                     context.Set(transportTransaction);
@@ -87,8 +87,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 {
                     var transportTransaction = new TransportTransaction();
 
-                    transportTransaction.Set(connection);
-                    transportTransaction.Set(transaction);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
                     var context = new ContextBag();
                     context.Set(transportTransaction);

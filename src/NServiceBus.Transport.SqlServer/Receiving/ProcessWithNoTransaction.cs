@@ -30,7 +30,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
 
                 var transportTransaction = new TransportTransaction();
-                transportTransaction.Set(connection);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
                 try
                 {
