@@ -2,6 +2,11 @@
 {
     using System;
     using System.Threading.Tasks;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -11,17 +16,47 @@
         [Test]
         public async Task Error_should_be_sent_to_table_in_configured_catalog()
         {
-            var ctx = await Scenario.Define<Context>()
-                .WithEndpoint<Sender>(b =>
-                {
-                    b.DoNotFailOnErrorMessages();
-                    b.When((bus, c) => bus.SendLocal(new Message()));
-                })
-                .WithEndpoint<ErrorSpy>()
-                .Done(c => c.FailedMessageProcessed)
-                .Run();
+            await PurgeAllQueues().ConfigureAwait(false);
 
-            Assert.True(ctx.FailedMessageProcessed, "Message should be moved to error queue in custom schema");
+            try
+            {
+                var ctx = await Scenario.Define<Context>()
+                    .WithEndpoint<Sender>(b =>
+                    {
+                        b.DoNotFailOnErrorMessages();
+                        b.When((bus, c) => bus.SendLocal(new Message()));
+                    })
+                    .WithEndpoint<ErrorSpy>()
+                    .Done(c => c.FailedMessageProcessed)
+                    .Run();
+
+                Assert.True(ctx.FailedMessageProcessed, "Message should be moved to error queue in custom schema");
+            }
+            finally
+            {
+                await PurgeAllQueues().ConfigureAwait(false);
+            }
+        }
+
+        static Task PurgeAllQueues()
+        {
+            return Task.WhenAll(PurgeQueues(SenderConnectionString), PurgeQueues(SpyConnectionString));
+        }
+
+        static async Task PurgeQueues(string connectionString)
+        {
+            var errorSpyName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(ErrorSpy));
+
+            using (var conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync().ConfigureAwait(false);
+                var command = conn.CreateCommand();
+                command.CommandText = $@"IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{errorSpyName}]') AND type in (N'U'))
+BEGIN
+    DELETE FROM dbo.{errorSpyName}
+END";
+                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
         }
 
         public class Context : ScenarioContext
