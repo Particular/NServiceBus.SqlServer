@@ -20,6 +20,12 @@
 
             try
             {
+                // makes sure error spy queue is available
+                await Scenario.Define<Context>()
+                    .WithEndpoint<ErrorSpy>()
+                    .Done(c => c.EndpointsStarted)
+                    .Run();
+
                 var ctx = await Scenario.Define<Context>()
                     .WithEndpoint<Sender>(b =>
                     {
