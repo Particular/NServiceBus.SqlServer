@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <Optimize>False</Optimize>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -19,6 +18,10 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.2" />
     <PackageReference Include="Particular.Approvals" Version="0.2.0" />
     <PackageReference Include="PublicApiGenerator" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer.UnitTests\**\*.cs" Exclude="**\obj\**" />
   </ItemGroup>
 
 </Project>
