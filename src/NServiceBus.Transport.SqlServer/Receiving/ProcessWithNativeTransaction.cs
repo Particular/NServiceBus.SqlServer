@@ -67,7 +67,7 @@
         {
             var transportTransaction = new TransportTransaction();
 
-            //those resources are meant to be used by anyone except message dispatcher e.g. persister
+            //these resources are meant to be used by anyone except message dispatcher e.g. persister
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
