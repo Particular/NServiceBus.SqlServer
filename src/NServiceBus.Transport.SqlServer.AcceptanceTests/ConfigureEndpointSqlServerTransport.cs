@@ -37,7 +37,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         return Task.FromResult(0);
     }
 
-    public Task Cleanup()
+    public async Task Cleanup()
     {
         var subscriptionSettings = settings.GetOrDefault<SubscriptionSettings>() ?? new SubscriptionSettings();
         settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
@@ -45,31 +45,31 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         using (var conn = new SqlConnection(connectionString))
         {
-            conn.Open();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse).ToList();
-            foreach (var address in queueAddresses)
+            var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse);
+
+            await Task.WhenAll(queueAddresses.Select(async address =>
             {
-                TryDeleteTable(conn, address.QualifiedTableName);
-                TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName);
-            }
+                await TryDeleteTable(conn, address.QualifiedTableName);
+                await TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName);
+            })).ConfigureAwait(false);
 
             if (!doNotCleanNativeSubscriptions)
             {
-                TryDeleteTable(conn, subscriptionTable.QuotedQualifiedName);
+                await TryDeleteTable(conn, subscriptionTable.QuotedQualifiedName).ConfigureAwait(false);
             }
         }
-        return Task.FromResult(0);
     }
 
-    static void TryDeleteTable(SqlConnection conn, string address)
+    static async Task TryDeleteTable(SqlConnection conn, string address)
     {
         try
         {
             using (var comm = conn.CreateCommand())
             {
                 comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
-                comm.ExecuteNonQuery();
+                await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
         catch (Exception e)
