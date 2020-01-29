@@ -5,6 +5,7 @@
     using Microsoft.Data.SqlClient;
 #endif
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
@@ -49,26 +50,32 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
             var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse);
 
-            await Task.WhenAll(queueAddresses.Select(async address =>
+            var commandTextBuilder = new StringBuilder();
+            foreach (var address in queueAddresses)
             {
-                await TryDeleteTable(conn, address.QualifiedTableName);
-                await TryDeleteTable(conn, new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName);
-            })).ConfigureAwait(false);
+                var qualifiedName = address.QualifiedTableName;
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{qualifiedName}', 'U') IS NOT NULL DROP TABLE {qualifiedName}");
+                var delayedAddressQualifiedName = new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName;
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{delayedAddressQualifiedName}', 'U') IS NOT NULL DROP TABLE {delayedAddressQualifiedName}");
+            }
 
             if (!doNotCleanNativeSubscriptions)
             {
-                await TryDeleteTable(conn, subscriptionTable.QuotedQualifiedName).ConfigureAwait(false);
+                var qualifiedName = subscriptionTable.QuotedQualifiedName;
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{qualifiedName}', 'U') IS NOT NULL DROP TABLE {qualifiedName}");
             }
+
+            await TryDeleteTables(conn, commandTextBuilder.ToString());
         }
     }
 
-    static async Task TryDeleteTable(SqlConnection conn, string address)
+    static async Task TryDeleteTables(SqlConnection conn, string commandText)
     {
         try
         {
             using (var comm = conn.CreateCommand())
             {
-                comm.CommandText = $"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}";
+                comm.CommandText = commandText;
                 await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
