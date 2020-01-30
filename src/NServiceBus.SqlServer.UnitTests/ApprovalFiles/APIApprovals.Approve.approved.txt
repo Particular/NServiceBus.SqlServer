@@ -15,11 +15,13 @@ namespace NServiceBus
 }
 namespace NServiceBus.Transport.SqlServer
 {
-    public class DelayedDeliverySettings
+    public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
-        public DelayedDeliverySettings() { }
         public void BatchSize(int batchSize) { }
+        [System.ObsoleteAttribute("Compatibility with the timeout manager is now disabled by default. The member cur" +
+            "rently throws a NotImplementedException. Will be removed in version 7.0.0.", true)]
         public void DisableTimeoutManagerCompatibility() { }
+        public void EnableTimeoutManagerCompatibility() { }
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
     }
