@@ -19,6 +19,10 @@
 
         public const string TimeoutManagerMigrationMode = "NServiceBus.TimeoutManager.EnableMigrationMode";
 
+        public const string DelayedDeliverySuffix = "SqlServer.DelayedDeliverySuffix";
+        public const string DelayedDeliveryInterval = "SqlServer.DelayedDeliveryInterval";
+        public const string DelayedDeliveryMatureBatchSize = "SqlServer.DelayedDeliveryMatureBatchSize";
+
         /// <summary>
         /// For testing the migration process only
         /// </summary>
