@@ -136,12 +136,12 @@ namespace NServiceBus.Transport.SqlServer
                     suffix = "Delayed";
                 }
 
-                if (!settings.TryGet(SettingsKeys.DelayedDeliverySuffix, out TimeSpan interval))
+                if (!settings.TryGet(SettingsKeys.DelayedDeliveryInterval, out TimeSpan interval))
                 {
                     interval = TimeSpan.FromSeconds(1);
                 }
 
-                if (!settings.TryGet(SettingsKeys.DelayedDeliverySuffix, out int matureBatchSize))
+                if (!settings.TryGet(SettingsKeys.DelayedDeliveryMatureBatchSize, out int matureBatchSize))
                 {
                     matureBatchSize = 100;
                 }
