@@ -6,7 +6,6 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using SqlServer;
 
     public class When_using_TTBR_for_deferred_message_in_native_mode : NServiceBusAcceptanceTest
     {
@@ -37,7 +36,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config => config.UseTransport<SqlServerTransport>().NativeDelayedDelivery());
+                EndpointSetup<DefaultServer>(config => config.UseTransport<SqlServerTransport>());
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>

@@ -192,8 +192,7 @@
                 throw new Exception("Delayed delivery is only supported for endpoints capable of receiving messages.");
             }
 
-            var settings = transportExtensions.GetSettings().GetOrCreate<DelayedDeliverySettings>();
-            return settings;
+            return new DelayedDeliverySettings(transportExtensions.GetSettings());
         }
 
         /// <summary>

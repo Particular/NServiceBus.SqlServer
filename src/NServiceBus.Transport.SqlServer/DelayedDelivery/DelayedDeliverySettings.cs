@@ -1,16 +1,15 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using Configuration.AdvancedExtensibility;
+    using Settings;
 
     /// <summary>
     /// Configures native delayed delivery.
     /// </summary>
-    public class DelayedDeliverySettings
+    public partial class DelayedDeliverySettings : ExposeSettings
     {
-        internal string Suffix = "Delayed";
-        internal TimeSpan Interval = TimeSpan.FromSeconds(1);
-        internal bool EnableMigrationMode = true;
-        internal int MatureBatchSize = 100;
+        internal DelayedDeliverySettings(SettingsHolder settings) : base(settings) { }
 
         /// <summary>
         /// Sets the suffix for the table storing delayed messages.
@@ -19,7 +18,8 @@
         public void TableSuffix(string suffix)
         {
             Guard.AgainstNullAndEmpty(nameof(suffix), suffix);
-            Suffix = suffix;
+
+            this.GetSettings().Set(SettingsKeys.DelayedDeliverySuffix, suffix);
         }
 
         /// <summary>
@@ -31,15 +31,16 @@
             {
                 throw new ArgumentException("Batch size has to be a positive number", nameof(batchSize));
             }
-            MatureBatchSize = batchSize;
+
+            this.GetSettings().Set(SettingsKeys.DelayedDeliveryMatureBatchSize, batchSize);
         }
 
         /// <summary>
-        /// Disables the Timeout Manager for the endpoint. Before disabling ensure there all timeouts in the timeout store have been processed or migrated.
+        /// Enables the timeout manager for the endpoint.
         /// </summary>
-        public void DisableTimeoutManagerCompatibility()
+        public void EnableTimeoutManagerCompatibility()
         {
-            EnableMigrationMode = false;
+            this.GetSettings().Set(SettingsKeys.TimeoutManagerMigrationMode, true);
         }
 
         /// <summary>
@@ -48,7 +49,8 @@
         public void ProcessingInterval(TimeSpan interval)
         {
             Guard.AgainstNegativeAndZero(nameof(interval), interval);
-            Interval = interval;
+
+            this.GetSettings().Set(SettingsKeys.DelayedDeliveryInterval, interval);
         }
     }
 }

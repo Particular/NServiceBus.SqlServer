@@ -10,7 +10,6 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
-    using Features;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
@@ -50,9 +49,6 @@ namespace NServiceBus.Transport.SqlServer
             var schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
 
-            //Needs to be invoked here and not when configuring the receiving infrastructure because the EnableMigrationMode flag has to be set up before feature component is initialized.
-            HandleTimeoutManagerCompatibilityMode();
-
             var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
@@ -63,23 +59,6 @@ namespace NServiceBus.Transport.SqlServer
             }
             var subscriptionTableCreator = new SubscriptionTableCreator(subscriptionTableName, connectionFactory);
             settings.Set(subscriptionTableCreator);
-        }
-
-        void HandleTimeoutManagerCompatibilityMode()
-        {
-            var delayedDeliverySettings = settings.GetOrCreate<DelayedDeliverySettings>();
-            var timeoutManagerFeatureDisabled = !settings.IsFeatureEnabled(typeof(TimeoutManager));
-            diagnostics.Add("NServiceBus.Transport.SqlServer.TimeoutManager", new
-            {
-                FeatureEnabled = !timeoutManagerFeatureDisabled
-            });
-
-            if (timeoutManagerFeatureDisabled)
-            {
-                delayedDeliverySettings.DisableTimeoutManagerCompatibility();
-            }
-
-            settings.Set(SettingsKeys.TimeoutManagerMigrationMode, delayedDeliverySettings.EnableMigrationMode);
         }
 
         SqlConnectionFactory CreateConnectionFactory()
@@ -152,23 +131,36 @@ namespace NServiceBus.Transport.SqlServer
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
             if (false == settings.GetOrDefault<bool>(SettingsKeys.DisableDelayedDelivery))
             {
-                var delayedDeliverySettings = settings.GetOrDefault<DelayedDeliverySettings>();
+                if (!settings.TryGet(SettingsKeys.DelayedDeliverySuffix, out string suffix))
+                {
+                    suffix = "Delayed";
+                }
+
+                if (!settings.TryGet(SettingsKeys.DelayedDeliveryInterval, out TimeSpan interval))
+                {
+                    interval = TimeSpan.FromSeconds(1);
+                }
+
+                if (!settings.TryGet(SettingsKeys.DelayedDeliveryMatureBatchSize, out int matureBatchSize))
+                {
+                    matureBatchSize = 100;
+                }
+
                 settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
                 {
                     Native = true,
-                    delayedDeliverySettings.Suffix,
-                    delayedDeliverySettings.Interval,
-                    BatchSize = delayedDeliverySettings.MatureBatchSize,
-                    TimoutManager = delayedDeliverySettings.EnableMigrationMode ? "enabled" : "disabled"
+                    Suffix = suffix,
+                    Interval = interval,
+                    BatchSize = matureBatchSize,
                 });
 
-                delayedQueueCanonicalAddress = GetDelayedTableAddress(delayedDeliverySettings);
+                delayedQueueCanonicalAddress = GetDelayedTableAddress(suffix);
                 var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
-                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDeliverySettings.Interval, delayedDeliverySettings.MatureBatchSize);
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, interval, matureBatchSize);
             }
 
             return new TransportReceiveInfrastructure(
@@ -177,9 +169,9 @@ namespace NServiceBus.Transport.SqlServer
                 () => CheckForAmbientTransactionEnlistmentSupport(scopeOptions.TransactionOptions));
         }
 
-        CanonicalQueueAddress GetDelayedTableAddress(DelayedDeliverySettings delayedDeliverySettings)
+        CanonicalQueueAddress GetDelayedTableAddress(string suffix)
         {
-            var delayedQueueLogicalAddress = logicalAddress().CreateQualifiedAddress(delayedDeliverySettings.Suffix);
+            var delayedQueueLogicalAddress = logicalAddress().CreateQualifiedAddress(suffix);
             var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
             return addressTranslator.GetCanonicalForm(delayedQueueAddress);
         }

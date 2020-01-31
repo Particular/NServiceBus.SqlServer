@@ -26,9 +26,8 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         this.settings = settings;
         settings.Set(transportTransactionMode);
         settings.Set("NServiceBus.SharedQueue", settings.EndpointName());
-        var delayedDeliverySettings = new DelayedDeliverySettings();
+        var delayedDeliverySettings = new DelayedDeliverySettings(settings);
         delayedDeliverySettings.TableSuffix("Delayed");
-        settings.Set(delayedDeliverySettings);
 
         var pubSubSettings = new SubscriptionSettings();
         pubSubSettings.DisableSubscriptionCache();
