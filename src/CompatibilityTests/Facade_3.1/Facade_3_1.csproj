@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="6.*" />
     <PackageReference Include="NServiceBus.Callbacks" Version="2.*" />
-    <PackageReference Include="NServiceBus.SqlServer" Version="3.1.*" />
+    <PackageReference Include="NServiceBus.SqlServer" Version="5.0.*" />
   </ItemGroup>
 
 </Project>
