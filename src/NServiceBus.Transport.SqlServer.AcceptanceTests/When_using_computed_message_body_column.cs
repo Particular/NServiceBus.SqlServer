@@ -5,7 +5,6 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using SqlServer;
 
     public class When_using_computed_message_body_column : NServiceBusAcceptanceTest
     {

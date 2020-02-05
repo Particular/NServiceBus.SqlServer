@@ -11,7 +11,6 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Routing.MessageDrivenSubscriptions;
-    using SqlServer;
 
     public class When_publisher_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
