@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus
 {
     using System;
 #if SYSTEMDATASQLCLIENT
@@ -10,6 +10,7 @@
     using System.Transactions;
     using Configuration.AdvancedExtensibility;
     using Logging;
+    using Transport.SqlServer;
 
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.

@@ -5,7 +5,6 @@
     using Features;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using SqlServer;
 
     public class When_custom_catalog_configured_for_publisher_and_subscriber : MultiCatalogAcceptanceTest
     {

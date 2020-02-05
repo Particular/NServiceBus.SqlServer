@@ -5,7 +5,6 @@
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using SqlServer;
 
     public class When_custom_schema_configured_for_endpoint_with_default_override : When_custom_schema_configured_for_endpoint
     {

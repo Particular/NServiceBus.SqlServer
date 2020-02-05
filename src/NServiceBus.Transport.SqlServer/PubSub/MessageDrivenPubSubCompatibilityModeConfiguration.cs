@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus
 {
     using Configuration.AdvancedExtensibility;
 

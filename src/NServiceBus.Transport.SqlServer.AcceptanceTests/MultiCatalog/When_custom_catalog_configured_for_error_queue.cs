@@ -5,7 +5,6 @@
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using SqlServer;
 
     public class When_custom_catalog_configured_for_error_queue : MultiCatalogAcceptanceTest
     {
