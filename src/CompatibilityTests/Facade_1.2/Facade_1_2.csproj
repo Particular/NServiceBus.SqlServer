@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.*" />
-    <PackageReference Include="NServiceBus" Version="7.*" />
+    <PackageReference Include="NServiceBus" Version="4.*" />
     <PackageReference Include="NServiceBus.Interfaces" Version="4.*" />
     <PackageReference Include="NServiceBus.SqlServer" Version="1.2.*" />
   </ItemGroup>
