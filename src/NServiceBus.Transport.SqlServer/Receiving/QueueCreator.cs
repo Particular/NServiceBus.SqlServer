@@ -1,6 +1,7 @@
 #pragma warning disable 618
 namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using System.Data;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
@@ -46,13 +47,20 @@ namespace NServiceBus.Transport.SqlServer
 
         static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
         {
-            var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-            using (var command = new SqlCommand(sql, connection, transaction)
+            try
             {
-                CommandType = CommandType.Text
-            })
+                var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+                using (var command = new SqlCommand(sql, connection, transaction)
+                {
+                    CommandType = CommandType.Text
+                })
+                {
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+            }
+            catch (Exception e) when (e.Message.StartsWith("There is already an object named") || e.Message.StartsWith("The operation failed because an index or statistics with name"))
             {
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                // ignored because of race when multiple endpoints start
             }
 
             if (createMessageBodyColumn)
