@@ -17,10 +17,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 {
     public TransportConfigurationResult Configure(SettingsHolder settings, TransportTransactionMode transportTransactionMode)
     {
-#if !NET46
+#if !NETFRAMEWORK
         if (transportTransactionMode == TransportTransactionMode.TransactionScope)
         {
-            NUnit.Framework.Assert.Ignore("TransactionScope not supported in net core");
+            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
         }
 #endif
         this.settings = settings;
