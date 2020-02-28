@@ -17,18 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="\**\When_failure_happens_after_isolated_send.cs" />
-    <Compile Remove="\**\When_failure_happens_after_send.cs" />
-    <Compile Remove="\**\When_message_is_available.cs" />
     <Compile Remove="\**\When_modifying_incoming_headers.cs" />
-    <Compile Remove="\**\When_on_error_throws.cs" />
-    <Compile Remove="\**\When_on_message_throws.cs" />
-    <Compile Remove="\**\When_on_message_throws_after_delayed_retry.cs" />
-    <Compile Remove="\**\When_on_message_throws_after_immediate_retry.cs" />
-    <Compile Remove="\**\When_requesting_immediate_retry.cs" />
-    <Compile Remove="\**\When_sending_from_on_error.cs" />
-    <Compile Remove="\**\When_user_aborts_processing.cs" />
-    <Compile Remove="\**\When_using_unicode_characters_in_headers.cs" />
   </ItemGroup>
 
 </Project>
