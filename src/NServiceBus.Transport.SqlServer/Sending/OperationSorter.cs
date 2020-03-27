@@ -29,18 +29,12 @@
 
                 if (operation.RequiredDispatchConsistency == DispatchConsistency.Default)
                 {
-                    if (defaultDispatch == null)
-                    {
-                        defaultDispatch = new Dictionary<DeduplicationKey, UnicastTransportOperation>();
-                    }
+                    defaultDispatch = defaultDispatch ?? new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
                     defaultDispatch[deduplicationKey] = operation;
                 }
                 else if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
-                    if (isolatedDispatch == null)
-                    {
-                        isolatedDispatch = new Dictionary<DeduplicationKey, UnicastTransportOperation>();
-                    }
+                    isolatedDispatch = isolatedDispatch ?? new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
                     isolatedDispatch[deduplicationKey] = operation;
                 }
             }
@@ -48,8 +42,26 @@
             return new SortingResult(defaultDispatch?.Values, isolatedDispatch?.Values);
         }
 
-        class DeduplicationKey
+        struct DeduplicationKey
         {
+            sealed class MessageIdDestinationEqualityComparer : IEqualityComparer<DeduplicationKey>
+            {
+                public bool Equals(DeduplicationKey x, DeduplicationKey y)
+                {
+                    return x.messageId == y.messageId && x.destination == y.destination;
+                }
+
+                public int GetHashCode(DeduplicationKey obj)
+                {
+                    unchecked
+                    {
+                        return (obj.messageId.GetHashCode() * 397) ^ obj.destination.GetHashCode();
+                    }
+                }
+            }
+
+            public static IEqualityComparer<DeduplicationKey> MessageIdDestinationComparer { get; } = new MessageIdDestinationEqualityComparer();
+
             string messageId;
             string destination;
 
@@ -57,36 +69,6 @@
             {
                 this.messageId = messageId;
                 this.destination = destination;
-            }
-
-            bool Equals(DeduplicationKey other)
-            {
-                return string.Equals(messageId, other.messageId) && string.Equals(destination, other.destination);
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (ReferenceEquals(null, obj))
-                {
-                    return false;
-                }
-                if (ReferenceEquals(this, obj))
-                {
-                    return true;
-                }
-                if (obj.GetType() != this.GetType())
-                {
-                    return false;
-                }
-                return Equals((DeduplicationKey)obj);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return (messageId.GetHashCode() * 397) ^ destination.GetHashCode();
-                }
             }
         }
     }
