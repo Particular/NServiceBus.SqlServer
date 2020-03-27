@@ -42,7 +42,7 @@
             return new SortingResult(defaultDispatch?.Values, isolatedDispatch?.Values);
         }
 
-        struct DeduplicationKey
+        readonly struct DeduplicationKey
         {
             sealed class MessageIdDestinationEqualityComparer : IEqualityComparer<DeduplicationKey>
             {
@@ -62,8 +62,8 @@
 
             public static IEqualityComparer<DeduplicationKey> MessageIdDestinationComparer { get; } = new MessageIdDestinationEqualityComparer();
 
-            string messageId;
-            string destination;
+            readonly string messageId;
+            readonly string destination;
 
             public DeduplicationKey(string messageId, string destination)
             {
