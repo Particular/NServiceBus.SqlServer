@@ -18,8 +18,4 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="\**\When_modifying_incoming_headers.cs" />
-  </ItemGroup>
-
 </Project>
