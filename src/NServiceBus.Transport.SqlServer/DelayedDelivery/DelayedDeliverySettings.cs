@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using System.Threading;
     using Configuration.AdvancedExtensibility;
     using Settings;
 
@@ -48,7 +49,10 @@
         /// </summary>
         public void ProcessingInterval(TimeSpan interval)
         {
-            Guard.AgainstNegativeAndZero(nameof(interval), interval);
+            if(interval!=Timeout.InfiniteTimeSpan && interval<TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(interval));
+            }
 
             this.GetSettings().Set(SettingsKeys.DelayedDeliveryInterval, interval);
         }
