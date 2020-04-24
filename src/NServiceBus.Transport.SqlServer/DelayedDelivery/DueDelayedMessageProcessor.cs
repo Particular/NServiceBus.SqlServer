@@ -23,6 +23,13 @@ namespace NServiceBus.Transport.SqlServer
 
         public void Start()
         {
+            if(interval==Timeout.InfiniteTimeSpan)
+            {
+                Logger.Info("Not started, explicitly disabled");
+                task = Task.CompletedTask;
+                return;
+            }
+
             cancellationTokenSource = new CancellationTokenSource();
             cancellationToken = cancellationTokenSource.Token;
 
