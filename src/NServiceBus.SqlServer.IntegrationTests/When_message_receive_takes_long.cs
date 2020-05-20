@@ -53,6 +53,7 @@
         static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue)
         {
             await ExecuteInTransactionScope(async c => {
+                tableBasedQueue.FormatPeekCommand(100);
                 await tableBasedQueue.TryPeek(c, CancellationToken.None, PeekTimeoutInSeconds);
             });
         }
