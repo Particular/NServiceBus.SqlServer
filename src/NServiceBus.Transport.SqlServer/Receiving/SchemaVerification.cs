@@ -19,19 +19,21 @@
         public async Task PerformInspection(TableBasedQueue queue)
         {
             await VerifyExpiredIndex(queue).ConfigureAwait(false);
+            await VerifyIdRowVersionIndex(queue).ConfigureAwait(false);
             await VerifyHeadersColumnType(queue).ConfigureAwait(false);
         }
 
-        async Task VerifyExpiredIndex(TableBasedQueue queue)
+        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, Task<bool>> check, string noIndexMessage)
         {
             try
             {
                 using (var connection = await openConnection(queue).ConfigureAwait(false))
                 {
-                    var indexExists = await queue.CheckExpiresIndexPresence(connection).ConfigureAwait(false);
+                    var indexExists = await check(queue, connection).ConfigureAwait(false);
+                    
                     if (!indexExists)
                     {
-                        Logger.Warn($@"Table {queue.Name} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.");
+                        Logger.Warn(noIndexMessage);
                     }
                 }
             }
@@ -39,6 +41,22 @@
             {
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
+        }
+        Task VerifyIdRowVersionIndex(TableBasedQueue queue)
+        {
+            return VerifyIndex(
+                queue,
+                (q, c) => q.CheckIdRowVersionIndexPresence(c),
+                $"Table {queue.Name} does not contain index 'Index_Id_RowVersion'.{Environment.NewLine}Migrating to this clustered index better performance for send and receive operations.");
+        }
+
+        Task VerifyExpiredIndex(TableBasedQueue queue)
+        {
+            return VerifyIndex(
+                queue,
+                (q, c) => q.CheckExpiresIndexPresence(c),
+                $"Table {queue.Name} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information."
+            );
         }
 
         async Task VerifyHeadersColumnType(TableBasedQueue queue)

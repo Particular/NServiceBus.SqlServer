@@ -247,6 +247,12 @@ FROM sys.indexes
 WHERE name = 'Index_Expires'
     AND object_id = OBJECT_ID('{0}')";
 
+        public static readonly string CheckIfIdRowVersionIndexIsPresent = @"
+SELECT COUNT(*)
+FROM sys.indexes
+WHERE name = 'Index_Id_RowVersion'
+    AND object_id = OBJECT_ID('{0}')";
+
         public static readonly string CheckHeadersColumnType = @"
 SELECT t.name
 FROM sys.columns c
