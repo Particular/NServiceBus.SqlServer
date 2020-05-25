@@ -181,7 +181,7 @@ CREATE CLUSTERED INDEX Index_Id_RowVersion ON {0}
 	[RowVersion] ASC
 )
 
-CREATE NONCLUSTERED INDEX IX_RowVersion ON {0}
+CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
 (
 	[RowVersion] ASC
 )
