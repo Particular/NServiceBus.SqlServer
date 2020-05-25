@@ -175,12 +175,6 @@ CREATE TABLE {0} (
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
 
-CREATE CLUSTERED INDEX Index_Id_RowVersion ON {0}
-(
-	[Id] ASC,
-	[RowVersion] ASC
-)
-
 CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
 (
 	[RowVersion] ASC
@@ -251,7 +245,8 @@ WHERE name = 'Index_Expires'
 SELECT COUNT(*)
 FROM sys.indexes
 WHERE name = 'Index_Id_RowVersion'
-    AND object_id = OBJECT_ID('{0}')";
+    AND object_id = OBJECT_ID('{0}')
+    AND type = 1";
 
         public static readonly string CheckHeadersColumnType = @"
 SELECT t.name
