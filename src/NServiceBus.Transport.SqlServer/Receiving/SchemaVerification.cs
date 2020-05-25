@@ -19,7 +19,7 @@
         public async Task PerformInspection(TableBasedQueue queue)
         {
             await VerifyExpiredIndex(queue).ConfigureAwait(false);
-            await VerifyIdRowVersionIndex(queue).ConfigureAwait(false);
+            await VerifyNonClusteredRowVersionIndex(queue).ConfigureAwait(false);
             await VerifyHeadersColumnType(queue).ConfigureAwait(false);
         }
 
@@ -42,12 +42,12 @@
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
-        Task VerifyIdRowVersionIndex(TableBasedQueue queue)
+        Task VerifyNonClusteredRowVersionIndex(TableBasedQueue queue)
         {
             return VerifyIndex(
                 queue,
-                (q, c) => q.CheckIdRowVersionIndexPresence(c),
-                $"Table {queue.Name} does not contain index 'Index_Id_RowVersion'.{Environment.NewLine}Migrating to this clustered index better performance for send and receive operations.");
+                (q, c) => q.CheckNonClusteredRowVersionIndexPresence(c),
+                $"Table {queue.Name} does not contain non-clustered index 'Index_RowVersion'.{Environment.NewLine}Migrating to this non-clustered index improves performance for send and receive operations.");
         }
 
         Task VerifyExpiredIndex(TableBasedQueue queue)

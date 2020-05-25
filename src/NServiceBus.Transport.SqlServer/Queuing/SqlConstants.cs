@@ -241,12 +241,12 @@ FROM sys.indexes
 WHERE name = 'Index_Expires'
     AND object_id = OBJECT_ID('{0}')";
 
-        public static readonly string CheckIfIdRowVersionIndexIsPresent = @"
+        public static readonly string CheckIfNonClusteredRowVersionIndexIsPresent = @"
 SELECT COUNT(*)
 FROM sys.indexes
-WHERE name = 'Index_Id_RowVersion'
+WHERE name = 'Index_RowVersion'
     AND object_id = OBJECT_ID('{0}')
-    AND type = 1";
+    AND type = 2"; // 2 = non-clustered index
 
         public static readonly string CheckHeadersColumnType = @"
 SELECT t.name

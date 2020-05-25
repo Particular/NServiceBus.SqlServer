@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.SqlServer
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
             checkExpiredIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-            checkIdRowVersionIndexCommand = Format(SqlConstants.CheckIfIdRowVersionIndexIsPresent, this.qualifiedTableName);
+            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
 #pragma warning restore 618
         }
@@ -146,9 +146,9 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public async Task<bool> CheckIdRowVersionIndexPresence(SqlConnection connection)
+        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection)
         {
-            using (var command = new SqlCommand(checkIdRowVersionIndexCommand, connection))
+            using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
@@ -175,7 +175,7 @@ namespace NServiceBus.Transport.SqlServer
         string purgeCommand;
         string purgeExpiredCommand;
         string checkExpiredIndexCommand;
-        string checkIdRowVersionIndexCommand;
+        string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
     }
 }
