@@ -15,6 +15,9 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
+#if SYSTEMDATASQLCLIENT
+    [Obsolete("This package uses `System.Data.SqlClient` which is in maintenance mode. Consider transitioning to `NServiceBus.Transport.SqlServer` which uses `Microsoft.Data.SqlClient`.")]
+#endif
     public class SqlServerTransport : TransportDefinition
     {
         /// <summary>
