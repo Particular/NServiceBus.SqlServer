@@ -7,6 +7,7 @@
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <OutputPath>..\..\binaries\</OutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PackageId>NServiceBus.SqlServer</PackageId>
     <Description>SQL transport support for NServiceBus</Description>
   </PropertyGroup>
 
