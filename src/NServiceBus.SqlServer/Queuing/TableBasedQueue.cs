@@ -21,7 +21,8 @@ namespace NServiceBus.Transport.SQLServer
             sendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-            checkIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+            checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
 #pragma warning restore 618
         }
@@ -134,7 +135,16 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
         {
-            using (var command = new SqlCommand(checkIndexCommand, connection))
+            using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
+            {
+                var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+                return rowsCount > 0;
+            }
+        }
+
+        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection)
+        {
+            using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
@@ -160,7 +170,8 @@ namespace NServiceBus.Transport.SQLServer
         string sendCommand;
         string purgeCommand;
         string purgeExpiredCommand;
-        string checkIndexCommand;
+        string checkExpiresIndexCommand;
+        string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
     }
 }

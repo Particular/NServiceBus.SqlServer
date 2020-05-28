@@ -57,6 +57,7 @@ namespace NServiceBus.Transport.SQLServer
         public static readonly string AddMessageBodyStringColumn;
         public static readonly string CheckHeadersColumnType;
         public static readonly string CheckIfExpiresIndexIsPresent;
+        public static readonly string CheckIfNonClusteredRowVersionIndexIsPresent;
         public static readonly string CreateDelayedMessageStoreText;
         public static readonly string CreateQueueText;
         public static readonly string CreateSubscriptionTableText;
