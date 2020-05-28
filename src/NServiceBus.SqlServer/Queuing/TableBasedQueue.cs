@@ -135,7 +135,7 @@ namespace NServiceBus.Transport.SQLServer
 
         public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
         {
-            using (var command = new SqlCommand(checkExpiredIndexCommand, connection))
+            using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
             {
                 var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
@@ -170,7 +170,7 @@ namespace NServiceBus.Transport.SQLServer
         string sendCommand;
         string purgeCommand;
         string purgeExpiredCommand;
-        string checkExpiredIndexCommand;
+        string checkExpiresIndexCommand;
         string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
     }
