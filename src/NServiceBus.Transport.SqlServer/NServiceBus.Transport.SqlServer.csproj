@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Description>SQL transport support for NServiceBus. This packages uses `Microsoft.Data.SqlClient`. Use package `NServiceBus.Transport.SqlServer` if `System.Data.SqlClient` is needed as reference.</Description>
+    <Description>SQL transport support for NServiceBus. This packages depends on Microsoft.Data.SqlClient. Use the NServiceBus.SqlServer package instead if System.Data.SqlClient support is required.</Description>
   </PropertyGroup>
 
   <ItemGroup>
