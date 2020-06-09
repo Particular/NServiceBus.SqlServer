@@ -107,8 +107,7 @@ IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string PeekText = @"
-SELECT count(*) Id
-FROM (SELECT TOP {1} * FROM {0} WITH (READPAST)) as count_table;";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";
 
         public static readonly string AddMessageBodyStringColumn = @"
 IF NOT EXISTS (
