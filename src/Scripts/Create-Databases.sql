@@ -1,20 +1,26 @@
 SET QUOTED_IDENTIFIER  ON
 
-CREATE DATABASE nservicebus
+IF NOT DB_ID('nservicebus') IS NOT NULL
+  CREATE DATABASE [nservicebus]
 GO
 USE nservicebus
 GO
-CREATE SCHEMA nsb
-GO
-CREATE SCHEMA sender
-GO
-CREATE SCHEMA receiver
-GO
-CREATE SCHEMA db@
-GO
-CREATE SCHEMA src
-GO
-CREATE SCHEMA dest
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'receiver')
+  EXEC('CREATE SCHEMA [receiver]')
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sender')
+  EXEC('CREATE SCHEMA [sender]')
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'source')
+  EXEC('CREATE SCHEMA [source]')
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'src')
+  EXEC('CREATE SCHEMA [src]')
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'db@')
+  EXEC('CREATE SCHEMA [db@]')
+
 GO
 
 /*Create error queue to avoid race conditions*/
@@ -47,36 +53,20 @@ WHERE
     Expires IS NOT NULL
 GO
 
-CREATE DATABASE nservicebus1
-GO
-USE nservicebus1
-GO
-CREATE SCHEMA nsb
-GO
-CREATE SCHEMA sender
-GO
-CREATE SCHEMA receiver
-GO
-CREATE SCHEMA db@
-GO
-CREATE SCHEMA src
-GO
-CREATE SCHEMA dest
+IF NOT DB_ID('nservicebus1') IS NOT NULL
+  CREATE DATABASE [nservicebus1]
 GO
 
-CREATE DATABASE nservicebus2
+USE nservicebus1
 GO
-USE nservicebus2
-GO
-CREATE SCHEMA nsb
-GO
-CREATE SCHEMA sender
-GO
-CREATE SCHEMA receiver
-GO
-CREATE SCHEMA db@
-GO
-CREATE SCHEMA src
-GO
-CREATE SCHEMA dest
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'src')
+  EXEC('CREATE SCHEMA [src]')
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'dest')
+  EXEC('CREATE SCHEMA [dest]')
+
+
+IF NOT DB_ID('nservicebus2') IS NOT NULL
+  CREATE DATABASE [nservicebus2]
 GO
