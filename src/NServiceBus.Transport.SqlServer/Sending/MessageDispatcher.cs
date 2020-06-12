@@ -123,9 +123,16 @@
 
             if (ambientTransaction != null)
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                if (sqlTransportConnection == null)
                 {
-                    await Dispatch(operations, connection, null).ConfigureAwait(false);
+                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        await Dispatch(operations, connection, null).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await Dispatch(operations, sqlTransportConnection, null).ConfigureAwait(false);
                 }
             }
             else

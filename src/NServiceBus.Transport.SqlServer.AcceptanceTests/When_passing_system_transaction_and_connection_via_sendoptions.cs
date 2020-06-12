@@ -20,9 +20,9 @@
         [Test]
         public async Task Should_use_connection_and_not_escalate_to_DTC()
         {
-            Guid? distributedTransactionId = null;
+            Guid? transactionId = null;
 
-            var context = await Scenario.Define<MyContext>()
+            await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
                 {
                     using (var scope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -30,28 +30,41 @@
                         using (var connection = new SqlConnection(ConnectionString))
                         {
                             await connection.OpenAsync().ConfigureAwait(false);
+                        
+                            var sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlConnection(connection);
 
-                            await bus.Send(new Message());
+                            await bus.Send(new Message(), sendOptions);
 
-                            distributedTransactionId = Transaction.Current.TransactionInformation.DistributedIdentifier;
+                            var publishOptions = new PublishOptions();
+                            publishOptions.UseCustomSqlConnection(connection);
+
+                            await bus.Publish(new Event(), publishOptions);
                         }
 
+                        transactionId = Transaction.Current.TransactionInformation.DistributedIdentifier;
+                        
                         scope.Complete();
                     }
                 }))
-                .Done(c => c.MessageReceived)
+                .Done(c => c.MessageReceived && c.EventReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.MessageReceived);
+            Assert.AreEqual(Guid.Empty, transactionId);
         }
 
         class Message : IMessage
         {
         }
 
+        class Event : IEvent
+        {
+        }
+
         class MyContext : ScenarioContext
         {
             public bool MessageReceived { get; set; }
+            public bool EventReceived { get; set; }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
@@ -69,13 +82,20 @@
                 });
             }
 
-            class ReplyHandler : IHandleMessages<Message>
+            class ReplyHandler : IHandleMessages<Message>, IHandleMessages<Event>
             {
                 public MyContext Context { get; set; }
 
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
                     Context.MessageReceived = true;
+
+                    return Task.FromResult(0);
+                }
+
+                public Task Handle(Event message, IMessageHandlerContext context)
+                {
+                    Context.EventReceived = true;
 
                     return Task.FromResult(0);
                 }
