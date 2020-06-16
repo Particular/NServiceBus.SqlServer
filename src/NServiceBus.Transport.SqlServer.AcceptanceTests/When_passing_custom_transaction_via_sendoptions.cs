@@ -11,6 +11,7 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
+    using Pipeline;
 
     public class When_passing_native_transaction_via_options : NServiceBusAcceptanceTest
     {
@@ -60,6 +61,27 @@
             Assert.IsFalse(context.ReceivedFromRolledbackTransaction);
         }
 
+        [Test]
+        public async Task Whatever()
+        {
+            FailingContext context = null;
+#pragma warning disable 219
+            var behaviorFailed = false;
+#pragma warning restore 219
+
+            context = await Scenario.Define<FailingContext>()
+                .WithEndpoint<FailingEndpoint>(c =>
+                {
+                    c.DoNotFailOnErrorMessages();
+                    c.When(async bus => { await bus.SendLocal(new RandomMessage()); });
+                })
+                .Done(c => c.ReceivedMessage)
+                .Run(TimeSpan.FromSeconds(10));
+
+            Assert.IsNotNull(context);
+            Assert.IsTrue(context.ReceivedMessage);
+        }
+
         class FromCommittedTransaction : IMessage
         {
         }
@@ -76,10 +98,69 @@
         {
         }
 
+        class InitiateIncomingMessage : IMessage
+        {
+        }
+
+        class RandomMessage : IMessage
+        { }
+
         class MyContext : ScenarioContext
         {
             public bool ReceivedFromCommittedTransaction { get; set; }
             public bool ReceivedFromRolledbackTransaction { get; set; }
+        }
+
+        class FailingContext : ScenarioContext
+        {
+            public bool ReceivedMessage { get; set; }
+        }
+
+        class FailingEndpoint : EndpointConfigurationBuilder
+        {
+            public FailingEndpoint()
+            {
+                EndpointSetup<DefaultServer>(c =>
+                {
+                    c.LimitMessageProcessingConcurrencyTo(1);
+
+                    var routing = c.ConfigureTransport().Routing();
+                    var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));
+
+                    routing.RouteToEndpoint(typeof(FromCommittedTransaction), anEndpointName);
+                    routing.RouteToEndpoint(typeof(FromRolledbackTransaction), anEndpointName);
+                });
+            }
+
+            class InitiateIncomingBehaviorHandler : IHandleMessages<InitiateIncomingMessage>, IHandleMessages<RandomMessage>
+            {
+                public FailingContext Context { get; set; }
+
+                public Task Handle(InitiateIncomingMessage message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedMessage = true;
+                    return Task.CompletedTask;
+                }
+
+                public async Task Handle(RandomMessage message, IMessageHandlerContext context)
+                {
+                    using (var connection = new SqlConnection(ConnectionString))
+                    {
+                        connection.Open();
+                        using (var transaction = connection.BeginTransaction())
+                        {
+                            var sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlTransaction(transaction);
+                            sendOptions.RouteToThisEndpoint();
+                            await context.Send(new InitiateIncomingMessage(), sendOptions);
+
+                            transaction.Commit();
+                        }
+                    }
+
+                    throw new Exception("Aaaaah");
+                }
+            }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder

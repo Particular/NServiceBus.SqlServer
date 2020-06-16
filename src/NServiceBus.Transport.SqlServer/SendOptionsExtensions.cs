@@ -5,6 +5,7 @@
 #else
     using Microsoft.Data.SqlClient;
 #endif
+    using DeliveryConstraints;
     using Extensibility;
     using Transport;
     using Transport.SqlServer;
@@ -21,6 +22,11 @@
         /// <param name="transaction">SqlTransaction instance that will be used by any operations performed by the transport.</param>
         public static void UseCustomSqlTransaction(this SendOptions options, SqlTransaction transaction)
         {
+            // When dispatching, the TransportTransaction is overwritten.
+            // The only way for a custom transaction to work is by using immediate dispatch and messages should only appear when the user commits the custom transaction.
+            // Which is exactly what will happen after NServiceBus dispatches this message immediately.
+            options.RequireImmediateDispatch();
+
             var transportTransaction = new TransportTransaction();
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, transaction.Connection);
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
