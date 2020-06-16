@@ -11,7 +11,6 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Pipeline;
 
     public class When_passing_native_transaction_via_options : NServiceBusAcceptanceTest
     {
@@ -62,23 +61,17 @@
         }
 
         [Test]
-        public async Task Whatever()
+        public async Task Messages_Should_Be_Dispatched_Immediately()
         {
-            FailingContext context = null;
-#pragma warning disable 219
-            var behaviorFailed = false;
-#pragma warning restore 219
-
-            context = await Scenario.Define<FailingContext>()
-                .WithEndpoint<FailingEndpoint>(c =>
+            var context = await Scenario.Define<MyContext>()
+                .WithEndpoint<AnEndpoint>(c =>
                 {
                     c.DoNotFailOnErrorMessages();
-                    c.When(async bus => { await bus.SendLocal(new RandomMessage()); });
+                    c.When(async bus => { await bus.SendLocal(new InitiatingMessage()); });
                 })
                 .Done(c => c.ReceivedMessage)
                 .Run(TimeSpan.FromSeconds(10));
 
-            Assert.IsNotNull(context);
             Assert.IsTrue(context.ReceivedMessage);
         }
 
@@ -99,26 +92,23 @@
         }
 
         class InitiateIncomingMessage : IMessage
+        class FollowUpMessage : IMessage
         {
         }
 
-        class RandomMessage : IMessage
+        class InitiatingMessage : IMessage
         { }
 
         class MyContext : ScenarioContext
         {
             public bool ReceivedFromCommittedTransaction { get; set; }
             public bool ReceivedFromRolledbackTransaction { get; set; }
-        }
-
-        class FailingContext : ScenarioContext
-        {
             public bool ReceivedMessage { get; set; }
         }
 
-        class FailingEndpoint : EndpointConfigurationBuilder
+        class AnEndpoint : EndpointConfigurationBuilder
         {
-            public FailingEndpoint()
+            public AnEndpoint()
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
@@ -132,17 +122,37 @@
                 });
             }
 
-            class InitiateIncomingBehaviorHandler : IHandleMessages<InitiateIncomingMessage>, IHandleMessages<RandomMessage>
+            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>,
+                IHandleMessages<FromCommittedTransaction>
             {
-                public FailingContext Context { get; set; }
+                public MyContext Context { get; set; }
 
-                public Task Handle(InitiateIncomingMessage message, IMessageHandlerContext context)
+                public Task Handle(FromRolledbackTransaction message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedFromRolledbackTransaction = true;
+
+                    return Task.FromResult(0);
+                }
+
+                public Task Handle(FromCommittedTransaction message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedFromCommittedTransaction = true;
+
+                    return Task.FromResult(0);
+                }
+            }
+
+            class ImmediateDispatchHandlers : IHandleMessages<FollowUpMessage>, IHandleMessages<InitiatingMessage>
+            {
+                public MyContext Context { get; set; }
+
+                public Task Handle(FollowUpMessage message, IMessageHandlerContext context)
                 {
                     Context.ReceivedMessage = true;
                     return Task.CompletedTask;
                 }
 
-                public async Task Handle(RandomMessage message, IMessageHandlerContext context)
+                public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
                     using (var connection = new SqlConnection(ConnectionString))
                     {
@@ -152,24 +162,17 @@
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(transaction);
                             sendOptions.RouteToThisEndpoint();
-                            await context.Send(new InitiateIncomingMessage(), sendOptions);
+                            await context.Send(new FollowUpMessage(), sendOptions);
 
                             transaction.Commit();
                         }
                     }
 
-                    throw new Exception("Aaaaah");
+                    throw new Exception("This should NOT prevent the InitiatingMessage from failing.");
                 }
             }
         }
 
-        class AnEndpoint : EndpointConfigurationBuilder
-        {
-            public AnEndpoint()
-            {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.LimitMessageProcessingConcurrencyTo(1);
 
                     var routing = c.ConfigureTransport().Routing();
                     var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));

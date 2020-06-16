@@ -5,7 +5,6 @@
 #else
     using Microsoft.Data.SqlClient;
 #endif
-    using DeliveryConstraints;
     using Extensibility;
     using Transport;
     using Transport.SqlServer;
