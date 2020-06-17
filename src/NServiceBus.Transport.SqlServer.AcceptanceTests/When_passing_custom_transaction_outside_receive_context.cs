@@ -17,7 +17,7 @@
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
-        public async Task Should_be_used_outside_receive_context()
+        public async Task Should_use_transaction_in_transport_operations()
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
