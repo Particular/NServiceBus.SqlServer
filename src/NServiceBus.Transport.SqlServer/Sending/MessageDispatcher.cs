@@ -66,12 +66,12 @@
 
 #if NETFRAMEWORK
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                {
-                    await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            {
+                await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
 
-                    scope.Complete();
-                }
+                scope.Complete();
+            }
 #else
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
