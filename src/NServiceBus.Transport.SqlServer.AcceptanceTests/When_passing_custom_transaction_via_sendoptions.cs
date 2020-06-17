@@ -7,6 +7,7 @@
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
+    using System.Transactions;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -17,7 +18,7 @@
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
-        public async Task Should_be_used_by_send_operations()
+        public async Task Should_be_used_outside_receivecontext()
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
@@ -61,7 +62,7 @@
         }
 
         [Test]
-        public async Task Messages_Should_Be_Dispatched_Immediately()
+        public async Task Should_be_used_inside_receivecontext()
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c =>
@@ -154,18 +155,22 @@
 
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
+                    using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                     {
-                        connection.Open();
-                        using (var transaction = connection.BeginTransaction())
+                        using (var connection = new SqlConnection(ConnectionString))
                         {
-                            var sendOptions = new SendOptions();
-                            sendOptions.UseCustomSqlTransaction(transaction);
-                            sendOptions.RouteToThisEndpoint();
-                            await context.Send(new FollowUpMessage(), sendOptions);
+                            connection.Open();
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                var sendOptions = new SendOptions();
+                                sendOptions.UseCustomSqlTransaction(transaction);
+                                sendOptions.RouteToThisEndpoint();
+                                await context.Send(new FollowUpMessage(), sendOptions);
 
-                            transaction.Commit();
+                                transaction.Commit();
+                            }
                         }
+                        scope.Complete();
                     }
 
                     throw new Exception("This should NOT prevent the InitiatingMessage from failing.");

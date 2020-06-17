@@ -27,7 +27,6 @@
             options.RequireImmediateDispatch();
 
             var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, transaction.Connection);
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
             options.GetExtensions().Set(transportTransaction);
         }

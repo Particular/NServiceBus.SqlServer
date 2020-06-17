@@ -35,7 +35,7 @@
                 .SortAndDeduplicate(addressTranslator);
 
             await DispatchDefault(sortedOperations, transportTransaction).ConfigureAwait(false);
-            await DispatchIsolated(sortedOperations).ConfigureAwait(false);
+            await DispatchIsolated(sortedOperations, transportTransaction).ConfigureAwait(false);
         }
 
         async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
@@ -50,21 +50,28 @@
             return result.SelectMany(x => x);
         }
 
-        async Task DispatchIsolated(SortingResult sortedOperations)
+        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction)
         {
             if (sortedOperations.IsolatedDispatch == null)
             {
                 return;
             }
+            
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+            if (sqlTransportTransaction != null)
+            {
+                await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
+                return;
+            }
 
 #if NETFRAMEWORK
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                    await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
 
-                scope.Complete();
-            }
+                    scope.Complete();
+                }
 #else
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
