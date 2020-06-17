@@ -12,7 +12,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_passing_custom_transaction_via_sendoptions : NServiceBusAcceptanceTest
+    public class When_passing_native_transaction_via_options : NServiceBusAcceptanceTest
     {
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
@@ -28,11 +28,13 @@
 
                         using (var rolledbackTransaction = connection.BeginTransaction())
                         {
-                            var options = new SendOptions();
+                            var sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlTransaction(rolledbackTransaction);
+                            await bus.Send(new FromRolledbackTransaction(), sendOptions);
 
-                            options.UseCustomSqlTransaction(rolledbackTransaction);
-
-                            await bus.Send(new FromRolledbackTransaction(), options);
+                            var publishOptions = new PublishOptions();
+                            publishOptions.UseCustomSqlTransaction(rolledbackTransaction);
+                            await bus.Publish(new EventFromRollbackedTransaction(), publishOptions);
 
                             rolledbackTransaction.Rollback();
                         }
@@ -40,10 +42,12 @@
                         using (var committedTransaction = connection.BeginTransaction())
                         {
                             var options = new SendOptions();
-
                             options.UseCustomSqlTransaction(committedTransaction);
-
                             await bus.Send(new FromCommittedTransaction(), options);
+
+                            var publishOptions = new PublishOptions();
+                            publishOptions.UseCustomSqlTransaction(committedTransaction);
+                            await bus.Publish(new EventFromCommittedTransaction(), publishOptions);
 
                             committedTransaction.Commit();
                         }
@@ -61,6 +65,14 @@
         }
 
         class FromRolledbackTransaction : IMessage
+        {
+        }
+
+        class EventFromRollbackedTransaction : IEvent
+        {
+        }
+
+        class  EventFromCommittedTransaction : IEvent
         {
         }
 
@@ -87,7 +99,9 @@
             }
 
             class ReplyHandler : IHandleMessages<FromRolledbackTransaction>,
-                IHandleMessages<FromCommittedTransaction>
+                IHandleMessages<FromCommittedTransaction>,
+                IHandleMessages<EventFromRollbackedTransaction>,
+                IHandleMessages<EventFromCommittedTransaction>
             {
                 public MyContext Context { get; set; }
 
@@ -104,9 +118,21 @@
 
                     return Task.FromResult(0);
                 }
+
+                public Task Handle(EventFromRollbackedTransaction message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedFromRolledbackTransaction = true;
+
+                    return Task.CompletedTask;
+                }
+
+                public Task Handle(EventFromCommittedTransaction message, IMessageHandlerContext context)
+                {
+                    Context.ReceivedFromCommittedTransaction = true;
+
+                    return Task.CompletedTask;
+                }
             }
         }
-
-
     }
 }
