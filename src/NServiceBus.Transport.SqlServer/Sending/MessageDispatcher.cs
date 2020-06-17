@@ -58,7 +58,8 @@
             }
             
             transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
-            if (sqlTransportTransaction != null)
+            transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
+            if (userProvidedTransaction && sqlTransportTransaction != null)
             {
                 await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
                 return;
