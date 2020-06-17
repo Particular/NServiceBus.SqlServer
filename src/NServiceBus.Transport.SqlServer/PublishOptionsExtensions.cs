@@ -20,8 +20,13 @@
         /// <param name="transaction">SqlTransaction instance that will be used by any operations performed by the transport.</param>
         public static void UseCustomSqlTransaction(this PublishOptions options, SqlTransaction transaction)
         {
+            // When dispatching, the TransportTransaction is overwritten.
+            // The only way for a custom transaction to work is by using immediate dispatch and messages should only appear when the user commits the custom transaction.
+            // Which is exactly what will happen after NServiceBus dispatches this message immediately.
+            options.RequireImmediateDispatch();
+
             var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, transaction.Connection);
+            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
             options.GetExtensions().Set(transportTransaction);
         }

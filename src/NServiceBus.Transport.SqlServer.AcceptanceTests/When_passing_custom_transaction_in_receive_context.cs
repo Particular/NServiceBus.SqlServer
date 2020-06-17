@@ -24,25 +24,33 @@
                 .WithEndpoint<AnEndpoint>(c =>
                 {
                     c.DoNotFailOnErrorMessages();
-                    c.When(async bus => { await bus.SendLocal(new InitiatingMessage()); });
+                    c.When(async bus =>
+                    {
+                        await bus.SendLocal(new InitiatingMessage());
+                    });
                 })
-                .Done(c => c.FollowUpMessageReceived)
+                .Done(c => c.FollowUpCommandReceived)
                 .Run(TimeSpan.FromSeconds(10));
 
-            Assert.IsTrue(context.FollowUpMessageReceived);
+            Assert.IsTrue(context.FollowUpCommandReceived);
         }
 
         class InitiatingMessage : IMessage
         {
         }
         
-        class FollowUpMessage : IMessage
+        class FollowUpCommand : IMessage
+        {
+        }
+
+        class FollowUpEvent : IEvent
         {
         }
 
         class MyContext : ScenarioContext
         {
-            public bool FollowUpMessageReceived { get; set; }
+            public bool FollowUpCommandReceived { get; set; }
+            public bool FollowUpEventReceived { get; set; }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
@@ -55,13 +63,15 @@
                 });
             }
 
-            class ImmediateDispatchHandlers : IHandleMessages<FollowUpMessage>, IHandleMessages<InitiatingMessage>
+            class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
+                IHandleMessages<FollowUpCommand>, 
+                IHandleMessages<FollowUpEvent>
             {
                 public MyContext Context { get; set; }
 
-                public Task Handle(FollowUpMessage message, IMessageHandlerContext context)
+                public Task Handle(FollowUpCommand command, IMessageHandlerContext context)
                 {
-                    Context.FollowUpMessageReceived = true;
+                    Context.FollowUpCommandReceived = true;
                     return Task.CompletedTask;
                 }
 
@@ -77,7 +87,11 @@
                                 var sendOptions = new SendOptions();
                                 sendOptions.UseCustomSqlTransaction(transaction);
                                 sendOptions.RouteToThisEndpoint();
-                                await context.Send(new FollowUpMessage(), sendOptions);
+                                await context.Send(new FollowUpCommand(), sendOptions);
+
+                                var publishOptions = new PublishOptions();
+                                publishOptions.UseCustomSqlTransaction(transaction);
+                                await context.Publish(new FollowUpEvent(), publishOptions);
 
                                 transaction.Commit();
                             }
@@ -86,6 +100,13 @@
                     }
 
                     throw new Exception("This should NOT prevent the InitiatingMessage from failing.");
+                }
+
+                public Task Handle(FollowUpEvent message, IMessageHandlerContext context)
+                {
+                    Context.FollowUpEventReceived = true;
+
+                    return Task.CompletedTask;
                 }
             }
         }
