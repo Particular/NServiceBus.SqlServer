@@ -52,7 +52,7 @@ namespace NServiceBus.Transport.SqlServer
     }
     public class static PublishOptionsExtensions
     {
-        public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection = null) { }
+        public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
         public static void UseCustomSqlTransaction(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
     public class SubscriptionSettings
