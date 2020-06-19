@@ -78,15 +78,6 @@
                 throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.")
             }
 
-#if NETFRAMEWORK
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
-
-                scope.Complete();
-            }
-#else
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             using (var tx = connection.BeginTransaction())
@@ -95,8 +86,6 @@
                 tx.Commit();
                 scope.Complete();
             }
-#endif
-
         }
 
         async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction)
