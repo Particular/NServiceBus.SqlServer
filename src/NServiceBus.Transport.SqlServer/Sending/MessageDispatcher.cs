@@ -75,8 +75,8 @@
                     return;
                 }
 
+                throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.")
             }
-            
 
 #if NETFRAMEWORK
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
