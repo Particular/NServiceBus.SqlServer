@@ -57,13 +57,26 @@
                 return;
             }
             
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
             transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
-            if (userProvidedTransaction && sqlTransportTransaction != null)
+            
+            if (userProvidedTransaction)
             {
-                await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
-                return;
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+                if (sqlTransportTransaction != null)
+                {
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
+                    return;
+                }
+
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
+                if (sqlTransportConnection != null)
+                {
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null).ConfigureAwait(false);
+                    return;
+                }
+
             }
+            
 
 #if NETFRAMEWORK
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))

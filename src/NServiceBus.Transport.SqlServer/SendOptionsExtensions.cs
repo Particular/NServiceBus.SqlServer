@@ -46,15 +46,10 @@
                 throw new ArgumentException(nameof(connection));
             }
 
-            var transaction = System.Transactions.Transaction.Current;
-            
-            if (transaction == null)
-            {
-                throw new Exception("No ambient System.Transactions.Transaction detected.");
-            }
-            
+            options.RequireImmediateDispatch();
+
             var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(transaction);
+            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
             options.GetExtensions().Set(transportTransaction);
