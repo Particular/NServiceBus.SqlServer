@@ -12,12 +12,12 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_passing_native_transaction_via_options : NServiceBusAcceptanceTest
+    public class When_passing_custom_transaction_outside_receive_context : NServiceBusAcceptanceTest
     {
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
-        public async Task Should_be_used_by_send_operations()
+        public async Task Should_use_transaction_in_transport_operations()
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
@@ -26,13 +26,16 @@
                     {
                         connection.Open();
 
+                        SendOptions sendOptions;
+                        PublishOptions publishOptions;
+
                         using (var rolledbackTransaction = connection.BeginTransaction())
                         {
-                            var sendOptions = new SendOptions();
+                            sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(rolledbackTransaction);
-                            await bus.Send(new FromRolledbackTransaction(), sendOptions);
+                            await bus.Send(new CommandFromRolledbackTransaction(), sendOptions);
 
-                            var publishOptions = new PublishOptions();
+                            publishOptions = new PublishOptions();
                             publishOptions.UseCustomSqlTransaction(rolledbackTransaction);
                             await bus.Publish(new EventFromRollbackedTransaction(), publishOptions);
 
@@ -41,11 +44,11 @@
 
                         using (var committedTransaction = connection.BeginTransaction())
                         {
-                            var options = new SendOptions();
-                            options.UseCustomSqlTransaction(committedTransaction);
-                            await bus.Send(new FromCommittedTransaction(), options);
+                            sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlTransaction(committedTransaction);
+                            await bus.Send(new CommandFromCommittedTransaction(), sendOptions);
 
-                            var publishOptions = new PublishOptions();
+                            publishOptions = new PublishOptions();
                             publishOptions.UseCustomSqlTransaction(committedTransaction);
                             await bus.Publish(new EventFromCommittedTransaction(), publishOptions);
 
@@ -54,17 +57,18 @@
                     }
 
                 }))
-                .Done(c => c.ReceivedFromCommittedTransaction)
+                .Done(c => c.SendFromCommittedTransactionReceived && c.PublishFromCommittedTransactionReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.ReceivedFromRolledbackTransaction);
+            Assert.IsFalse(context.SendFromRolledbackTransactionReceived);
+            Assert.IsFalse(context.PublishFromRolledbackTransactionReceived);
         }
 
-        class FromCommittedTransaction : IMessage
+        class CommandFromCommittedTransaction : IMessage
         {
         }
 
-        class FromRolledbackTransaction : IMessage
+        class CommandFromRolledbackTransaction : IMessage
         {
         }
 
@@ -78,8 +82,10 @@
 
         class MyContext : ScenarioContext
         {
-            public bool ReceivedFromCommittedTransaction { get; set; }
-            public bool ReceivedFromRolledbackTransaction { get; set; }
+            public bool SendFromCommittedTransactionReceived { get; set; }
+            public bool PublishFromCommittedTransactionReceived { get; set; }
+            public bool SendFromRolledbackTransactionReceived { get; set; }
+            public bool PublishFromRolledbackTransactionReceived { get; set; }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
@@ -93,42 +99,42 @@
                     var routing = c.ConfigureTransport().Routing();
                     var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));
 
-                    routing.RouteToEndpoint(typeof(FromCommittedTransaction), anEndpointName);
-                    routing.RouteToEndpoint(typeof(FromRolledbackTransaction), anEndpointName);
+                    routing.RouteToEndpoint(typeof(CommandFromCommittedTransaction), anEndpointName);
+                    routing.RouteToEndpoint(typeof(CommandFromRolledbackTransaction), anEndpointName);
                 });
             }
 
-            class ReplyHandler : IHandleMessages<FromRolledbackTransaction>,
-                IHandleMessages<FromCommittedTransaction>,
+            class ReplyHandler : IHandleMessages<CommandFromRolledbackTransaction>,
+                IHandleMessages<CommandFromCommittedTransaction>,
                 IHandleMessages<EventFromRollbackedTransaction>,
                 IHandleMessages<EventFromCommittedTransaction>
             {
                 public MyContext Context { get; set; }
 
-                public Task Handle(FromRolledbackTransaction message, IMessageHandlerContext context)
+                public Task Handle(CommandFromRolledbackTransaction message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedFromRolledbackTransaction = true;
+                    Context.SendFromRolledbackTransactionReceived = true;
 
-                    return Task.FromResult(0);
+                    return Task.CompletedTask;
                 }
 
-                public Task Handle(FromCommittedTransaction message, IMessageHandlerContext context)
+                public Task Handle(CommandFromCommittedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedFromCommittedTransaction = true;
+                    Context.SendFromCommittedTransactionReceived = true;
 
-                    return Task.FromResult(0);
+                    return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromRollbackedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedFromRolledbackTransaction = true;
+                    Context.PublishFromRolledbackTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromCommittedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.ReceivedFromCommittedTransaction = true;
+                    Context.PublishFromCommittedTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }

@@ -35,7 +35,7 @@
                 .SortAndDeduplicate(addressTranslator);
 
             await DispatchDefault(sortedOperations, transportTransaction).ConfigureAwait(false);
-            await DispatchIsolated(sortedOperations).ConfigureAwait(false);
+            await DispatchIsolated(sortedOperations, transportTransaction).ConfigureAwait(false);
         }
 
         async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
@@ -50,10 +50,18 @@
             return result.SelectMany(x => x);
         }
 
-        async Task DispatchIsolated(SortingResult sortedOperations)
+        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction)
         {
             if (sortedOperations.IsolatedDispatch == null)
             {
+                return;
+            }
+            
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
+            if (userProvidedTransaction && sqlTransportTransaction != null)
+            {
+                await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
                 return;
             }
 
