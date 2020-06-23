@@ -13,12 +13,12 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    public class When_passing_custom_transaction_in_receive_context : NServiceBusAcceptanceTest
+    public class When_passing_custom_connection_in_receive_context : NServiceBusAcceptanceTest
     {
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
-        public async Task Should_use_transaction_in_transport_operations()
+        public async Task Should_use_connection_in_transport_operations()
         {
             var context = await Scenario.Define<MyContext>()
                 .WithEndpoint<AnEndpoint>(c =>
@@ -29,22 +29,23 @@
                         await bus.SendLocal(new InitiatingMessage());
                     });
                 })
-                .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
+                .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedCommandReceived)
                 .Run(TimeSpan.FromSeconds(10));
 
             Assert.IsFalse(context.FollowUpRolledbackCommandReceived);
             Assert.IsFalse(context.FollowUpRolledbackEventReceived);
+            Assert.IsFalse(context.InHandlerTransactionEscalatedToDTC);
         }
 
         class InitiatingMessage : IMessage
         {
         }
         
-        class FollowUpCommittedCommand : IMessage
+        class FollowUpCompletedCommand : IMessage
         {
         }
 
-        class FollowUpCommittedEvent : IEvent
+        class FollowUpCompletedEvent : IEvent
         {
         }
 
@@ -62,6 +63,8 @@
             public bool FollowUpCommittedEventReceived { get; set; }
             public bool FollowUpRolledbackCommandReceived { get; set; }
             public bool FollowUpRolledbackEventReceived { get; set; }
+
+            public bool InHandlerTransactionEscalatedToDTC { get; set; }
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
@@ -75,63 +78,65 @@
             }
 
             class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
-                IHandleMessages<FollowUpCommittedCommand>, 
-                IHandleMessages<FollowUpCommittedEvent>,
+                IHandleMessages<FollowUpCompletedCommand>, 
+                IHandleMessages<FollowUpCompletedEvent>,
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
                 public MyContext Context { get; set; }
 
+
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
+                    //HINT: this scope is never completed
+                    using (new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+                    {
+                        using (var connection = new SqlConnection(ConnectionString))
+                        {
+                            connection.Open();
+
+                            var sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlConnection(connection);
+                            sendOptions.RouteToThisEndpoint();
+                            await context.Send(new FollowUpRolledbackCommand(), sendOptions);
+
+                            var publishOptions = new PublishOptions();
+                            publishOptions.UseCustomSqlConnection(connection);
+                            await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
+                        }
+                    }
+
                     using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                     {
                         using (var connection = new SqlConnection(ConnectionString))
                         {
                             connection.Open();
 
-                            using (var rollbackedTransaction = connection.BeginTransaction())
-                            {
-                                var sendOptions = new SendOptions();
-                                sendOptions.UseCustomSqlTransaction(rollbackedTransaction);
-                                sendOptions.RouteToThisEndpoint();
-                                await context.Send(new FollowUpRolledbackCommand(), sendOptions);
+                            var sendOptions = new SendOptions();
+                            sendOptions.UseCustomSqlConnection(connection);
+                            sendOptions.RouteToThisEndpoint();
+                            await context.Send(new FollowUpCompletedCommand(), sendOptions);
 
-                                var publishOptions = new PublishOptions();
-                                publishOptions.UseCustomSqlTransaction(rollbackedTransaction);
-                                await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
+                            var publishOptions = new PublishOptions();
+                            publishOptions.UseCustomSqlConnection(connection);
+                            await context.Publish(new FollowUpCompletedEvent(), publishOptions);
 
-                                rollbackedTransaction.Rollback();
-                            }
-
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                var sendOptions = new SendOptions();
-                                sendOptions.UseCustomSqlTransaction(transaction);
-                                sendOptions.RouteToThisEndpoint();
-                                await context.Send(new FollowUpCommittedCommand(), sendOptions);
-
-                                var publishOptions = new PublishOptions();
-                                publishOptions.UseCustomSqlTransaction(transaction);
-                                await context.Publish(new FollowUpCommittedEvent(), publishOptions);
-
-                                transaction.Commit();
-                            }
+                            Context.InHandlerTransactionEscalatedToDTC = Transaction.Current.TransactionInformation.DistributedIdentifier != Guid.Empty;
                         }
+
                         scope.Complete();
                     }
 
-                    throw new Exception("This should NOT prevent follow-up messages from being sent.");
+                    throw new Exception("This should NOT prevent the InitiatingMessage from failing.");
                 }
 
-                public Task Handle(FollowUpCommittedEvent message, IMessageHandlerContext context)
+                public Task Handle(FollowUpCompletedEvent message, IMessageHandlerContext context)
                 {
                     Context.FollowUpCommittedEventReceived = true;
-
                     return Task.CompletedTask;
                 }
 
-                public Task Handle(FollowUpCommittedCommand message, IMessageHandlerContext context)
+                public Task Handle(FollowUpCompletedCommand completedCommand, IMessageHandlerContext context)
                 {
                     Context.FollowUpCommittedCommandReceived = true;
                     return Task.CompletedTask;

@@ -5,6 +5,7 @@
 #else
     using Microsoft.Data.SqlClient;
 #endif
+    using System;
     using Extensibility;
     using Transport;
     using Transport.SqlServer;
@@ -32,5 +33,28 @@
             transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
             options.GetExtensions().Set(transportTransaction);
         }
+
+        /// <summary>
+        /// Enables the use of custom SqlConnection for send operations.
+        /// </summary>
+        /// <param name="options">The <see cref="SendOptions" /> to extend.</param>
+        /// <param name="connection">SqlConnection instance that will be used by any operations performed by the transport.</param>
+        public static void UseCustomSqlConnection(this SendOptions options, SqlConnection connection)
+        {
+            if (connection == null)
+            {
+                throw new ArgumentException(nameof(connection));
+            }
+
+            options.RequireImmediateDispatch();
+
+            var transportTransaction = new TransportTransaction();
+            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
+            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+
+            options.GetExtensions().Set(transportTransaction);
+        }
+
+
     }
 }

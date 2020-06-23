@@ -11,6 +11,7 @@ namespace NServiceBus
     }
     public class static SendOptionsExtensions
     {
+        public static void UseCustomSqlConnection(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
         public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
     public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
@@ -51,6 +52,7 @@ namespace NServiceBus.Transport.SqlServer
     }
     public class static PublishOptionsExtensions
     {
+        public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
         public static void UseCustomSqlTransaction(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
     public class SubscriptionSettings

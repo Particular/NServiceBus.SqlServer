@@ -57,23 +57,27 @@
                 return;
             }
             
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
             transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
-            if (userProvidedTransaction && sqlTransportTransaction != null)
+            
+            if (userProvidedTransaction)
             {
-                await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
-                return;
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+                if (sqlTransportTransaction != null)
+                {
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
+                    return;
+                }
+
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
+                if (sqlTransportConnection != null)
+                {
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null).ConfigureAwait(false);
+                    return;
+                }
+
+                throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
             }
 
-#if NETFRAMEWORK
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            {
-                await Dispatch(sortedOperations.IsolatedDispatch, connection, null).ConfigureAwait(false);
-
-                scope.Complete();
-            }
-#else
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             using (var tx = connection.BeginTransaction())
@@ -82,8 +86,6 @@
                 tx.Commit();
                 scope.Complete();
             }
-#endif
-
         }
 
         async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction)
@@ -123,9 +125,16 @@
 
             if (ambientTransaction != null)
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                if (sqlTransportConnection == null)
                 {
-                    await Dispatch(operations, connection, null).ConfigureAwait(false);
+                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        await Dispatch(operations, connection, null).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await Dispatch(operations, sqlTransportConnection, null).ConfigureAwait(false);
                 }
             }
             else
