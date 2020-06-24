@@ -9,6 +9,11 @@ namespace NServiceBus
     {
         public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
     }
+    public class static PublishOptionsExtensions
+    {
+        public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
+        public static void UseCustomSqlTransaction(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
+    }
     public class static SendOptionsExtensions
     {
         public static void UseCustomSqlConnection(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
@@ -49,11 +54,6 @@ namespace NServiceBus.Transport.SqlServer
         public void EnableTimeoutManagerCompatibility() { }
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
-    }
-    public class static PublishOptionsExtensions
-    {
-        public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
-        public static void UseCustomSqlTransaction(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
     public class SubscriptionSettings
     {

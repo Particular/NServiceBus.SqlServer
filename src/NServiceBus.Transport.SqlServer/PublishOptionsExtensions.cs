@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus
 {
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
@@ -8,6 +8,7 @@
     using System;
     using Extensibility;
     using Transport;
+    using Transport.SqlServer;
 
     /// <summary>
     /// Adds transport specific settings to PublishOptions
