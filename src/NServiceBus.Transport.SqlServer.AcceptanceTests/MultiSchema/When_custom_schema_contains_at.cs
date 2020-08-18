@@ -34,13 +34,17 @@
                 });
             }
 
-            class Handler : IHandleMessages<Message>
+            class EventHandler : IHandleMessages<Message>
             {
-                public Context Context { get; set; }
+                private readonly Context scenarioContext;
+                public EventHandler(Context scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
-                    Context.MessageReceived = true;
+                    scenarioContext.MessageReceived = true;
 
                     return Task.FromResult(0);
                 }

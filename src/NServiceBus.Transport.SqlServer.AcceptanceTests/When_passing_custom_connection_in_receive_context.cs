@@ -83,8 +83,11 @@
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
-                public MyContext Context { get; set; }
-
+                private readonly MyContext scenarioContext;
+                public ImmediateDispatchHandlers(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
@@ -121,7 +124,7 @@
                             publishOptions.UseCustomSqlConnection(connection);
                             await context.Publish(new FollowUpCompletedEvent(), publishOptions);
 
-                            Context.InHandlerTransactionEscalatedToDTC = Transaction.Current.TransactionInformation.DistributedIdentifier != Guid.Empty;
+                            scenarioContext.InHandlerTransactionEscalatedToDTC = Transaction.Current.TransactionInformation.DistributedIdentifier != Guid.Empty;
                         }
 
                         scope.Complete();
@@ -132,25 +135,25 @@
 
                 public Task Handle(FollowUpCompletedEvent message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpCommittedEventReceived = true;
+                    scenarioContext.FollowUpCommittedEventReceived = true;
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpCompletedCommand completedCommand, IMessageHandlerContext context)
                 {
-                    Context.FollowUpCommittedCommandReceived = true;
+                    scenarioContext.FollowUpCommittedCommandReceived = true;
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackCommand message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpRolledbackCommandReceived = true;
+                    scenarioContext.FollowUpRolledbackCommandReceived = true;
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackEvent message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpRolledbackEventReceived = true;
+                    scenarioContext.FollowUpRolledbackEventReceived = true;
                     return Task.CompletedTask;
                 }
             }

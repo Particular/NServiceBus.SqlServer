@@ -28,11 +28,15 @@
 
             class Handler : IHandleMessages<Message>
             {
-                public Context Context { get; set; }
+                private readonly Context scenarioContext;
+                public Handler(Context scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
-                    Context.MessageReceived = true;
+                    scenarioContext.MessageReceived = true;
 
                     return Task.FromResult(0);
                 }

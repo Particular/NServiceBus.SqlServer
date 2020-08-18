@@ -80,7 +80,11 @@
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
-                public MyContext Context { get; set; }
+                private readonly MyContext scenarioContext;
+                public ImmediateDispatchHandlers(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
@@ -126,26 +130,26 @@
 
                 public Task Handle(FollowUpCommittedEvent message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpCommittedEventReceived = true;
+                    scenarioContext.FollowUpCommittedEventReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpCommittedCommand message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpCommittedCommandReceived = true;
+                    scenarioContext.FollowUpCommittedCommandReceived = true;
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackCommand message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpRolledbackCommandReceived = true;
+                    scenarioContext.FollowUpRolledbackCommandReceived = true;
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackEvent message, IMessageHandlerContext context)
                 {
-                    Context.FollowUpRolledbackEventReceived = true;
+                    scenarioContext.FollowUpRolledbackEventReceived = true;
                     return Task.CompletedTask;
                 }
             }

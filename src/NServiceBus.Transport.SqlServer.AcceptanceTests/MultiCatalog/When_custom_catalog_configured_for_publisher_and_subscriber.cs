@@ -63,11 +63,15 @@
 
             class EventHandler : IHandleMessages<Event>
             {
-                public Context Context { get; set; }
+                private readonly Context scenarioContext;
+                public EventHandler(Context scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
-                    Context.EventReceived = true;
+                    scenarioContext.EventReceived = true;
                     return Task.FromResult(0);
                 }
             }

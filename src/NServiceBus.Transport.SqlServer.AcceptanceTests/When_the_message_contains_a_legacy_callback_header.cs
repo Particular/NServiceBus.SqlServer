@@ -57,12 +57,16 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                public MyContext Context { get; set; }
+                private readonly MyContext scenarioContext;
+                public ReplyHandler(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    Context.RepliedToWrongQueue = true;
-                    Context.Done = true;
+                    scenarioContext.RepliedToWrongQueue = true;
+                    scenarioContext.Done = true;
                     return Task.FromResult(0);
                 }
             }
@@ -77,12 +81,16 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                public MyContext Context { get; set; }
+                private readonly MyContext scenarioContext;
+                public ReplyHandler(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    Context.RepliedToCorrectQueue = true;
-                    Context.Done = true;
+                    scenarioContext.RepliedToCorrectQueue = true;
+                    scenarioContext.Done = true;
                     return Task.FromResult(0);
                 }
             }
