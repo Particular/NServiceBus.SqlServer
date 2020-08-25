@@ -18,9 +18,4 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Until Core 7.4 is out -->
-    <Compile Remove="\**\NServiceBusTransportTest.cs" />
-  </ItemGroup>
-
 </Project>
