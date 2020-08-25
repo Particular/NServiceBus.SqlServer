@@ -21,8 +21,5 @@
 
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.TransportTests\**\*.cs" Exclude="**\obj\**" />
-    <Compile Remove="\**\When_modifying_incoming_headers.cs" />
-    <!-- Until Core 7.4 is out -->
-    <Compile Remove="\**\NServiceBusTransportTest.cs" />
   </ItemGroup>
 </Project>
