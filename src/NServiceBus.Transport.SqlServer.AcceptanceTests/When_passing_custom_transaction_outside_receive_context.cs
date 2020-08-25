@@ -109,32 +109,36 @@
                 IHandleMessages<EventFromRollbackedTransaction>,
                 IHandleMessages<EventFromCommittedTransaction>
             {
-                public MyContext Context { get; set; }
+                private readonly MyContext scenarioContext;
+                public ReplyHandler(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(CommandFromRolledbackTransaction message, IMessageHandlerContext context)
                 {
-                    Context.SendFromRolledbackTransactionReceived = true;
+                    scenarioContext.SendFromRolledbackTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(CommandFromCommittedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.SendFromCommittedTransactionReceived = true;
+                    scenarioContext.SendFromCommittedTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromRollbackedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.PublishFromRolledbackTransactionReceived = true;
+                    scenarioContext.PublishFromRolledbackTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromCommittedTransaction message, IMessageHandlerContext context)
                 {
-                    Context.PublishFromCommittedTransactionReceived = true;
+                    scenarioContext.PublishFromCommittedTransactionReceived = true;
 
                     return Task.CompletedTask;
                 }

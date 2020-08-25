@@ -134,39 +134,43 @@
                 IHandleMessages<EventFromRollbackedScope>,
                 IHandleMessages<MarkerMessage>
             {
-                public MyContext Context { get; set; }
+                private readonly MyContext scenarioContext;
+                public ReplyHandler(MyContext scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(CommandFromCompletedScope commandFromCompletedScope, IMessageHandlerContext context)
                 {
-                    Context.SendFromCompletedScopeReceived = true;
+                    scenarioContext.SendFromCompletedScopeReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromCompletedScope message, IMessageHandlerContext context)
                 {
-                    Context.PublishFromCompletedScopeReceived = true;
+                    scenarioContext.PublishFromCompletedScopeReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(CommandFromRollbackedScope message, IMessageHandlerContext context)
                 {
-                    Context.SendFromRollbackedScopeReceived = true;
+                    scenarioContext.SendFromRollbackedScopeReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromRollbackedScope message, IMessageHandlerContext context)
                 {
-                    Context.PublishFromRollbackedScopeReceived = true;
+                    scenarioContext.PublishFromRollbackedScopeReceived = true;
 
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(MarkerMessage message, IMessageHandlerContext context)
                 {
-                    Context.MarkerMessageReceived = true;
+                    scenarioContext.MarkerMessageReceived = true;
 
                     return Task.CompletedTask;
                 }

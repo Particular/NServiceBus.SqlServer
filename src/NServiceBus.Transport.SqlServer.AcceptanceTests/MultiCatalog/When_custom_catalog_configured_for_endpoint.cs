@@ -40,11 +40,15 @@
 
             class Handler : IHandleMessages<Reply>
             {
-                public Context Context { get; set; }
+                private readonly Context scenarioContext;
+                public Handler(Context scenarioContext)
+                {
+                    this.scenarioContext = scenarioContext;
+                }
 
                 public Task Handle(Reply message, IMessageHandlerContext context)
                 {
-                    Context.ReplyReceived = true;
+                    scenarioContext.ReplyReceived = true;
 
                     return Task.FromResult(0);
                 }
@@ -63,8 +67,6 @@
 
             class Handler : IHandleMessages<Message>
             {
-                public Context Context { get; set; }
-
                 public Task Handle(Message message, IMessageHandlerContext context)
                 {
                     return context.Reply(new Reply());
