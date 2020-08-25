@@ -11,7 +11,6 @@
     using System.IO;
     using System.Threading.Tasks;
     using Logging;
-    using static System.String;
 
     class MessageRow
     {
@@ -65,17 +64,7 @@
         {
             try
             {
-                var parsedHeaders = IsNullOrEmpty(headers)
-                    ? new Dictionary<string, string>()
-                    : DictionarySerializer.DeSerialize(headers);
-
-                if (!IsNullOrEmpty(replyToAddress))
-                {
-                    parsedHeaders[Headers.ReplyToAddress] = replyToAddress;
-                }
-
-                LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
-                return MessageReadResult.Success(new Message(id.ToString(), parsedHeaders, bodyBytes, expired));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired));
             }
             catch (Exception ex)
             {

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
-    using System.Collections.Generic;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
@@ -93,7 +92,7 @@
                 NumberOfReceives ++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", new Dictionary<string, string>(), new byte[0], false))
+                    ? MessageReadResult.Success(new Message("1", string.Empty, null, new byte[0], false))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
