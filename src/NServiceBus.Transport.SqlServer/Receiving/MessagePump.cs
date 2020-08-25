@@ -14,7 +14,7 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, ExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
@@ -216,7 +216,7 @@
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
         Func<string, TableBasedQueue> queueFactory;
-        ExpiredMessagesPurger expiredMessagesPurger;
+        IExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
         SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;

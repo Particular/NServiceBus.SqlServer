@@ -36,7 +36,7 @@
                 m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
                 qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
-                new ExpiredMessagesPurger(_ => sqlConnectionFactory.OpenNewConnection(), 0, false),
+                new NoOpExpiredMessagesPurger(),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
                 new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection()),
                 TimeSpan.MaxValue);
