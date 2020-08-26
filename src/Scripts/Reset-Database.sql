@@ -1,3 +1,5 @@
+SET QUOTED_IDENTIFIER  ON
+
 /* Drop all non-system stored procs */
 DECLARE @name VARCHAR(128)
 DECLARE @SQL VARCHAR(254)
