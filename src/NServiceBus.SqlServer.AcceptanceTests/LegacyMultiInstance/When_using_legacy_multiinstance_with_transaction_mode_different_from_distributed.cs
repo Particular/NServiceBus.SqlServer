@@ -38,8 +38,7 @@
                         });
                         b.When((bus, c) =>
                         {
-                            bus.Send(new Message());
-                            return Task.FromResult(0);
+                            return bus.Send(new Message());
                         });
                     })
                     .WithEndpoint<Receiver>()
