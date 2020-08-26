@@ -12,7 +12,6 @@ using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Settings;
 using NServiceBus.Transport;
-using NServiceBus.Transport.SqlServer;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
@@ -20,6 +19,8 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
         settings = configuration.GetSettings();
+        settings.Set("SqlServer.SubscriptionTableQuotedQualifiedNameSetter", (Action<string>) SetSubscriptionTableName);
+
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
@@ -38,12 +39,13 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         return Task.FromResult(0);
     }
 
+    void SetSubscriptionTableName(string tableQuotedQualifiedName)
+    {
+        subscriptionTableQuotedQualifiedName = tableQuotedQualifiedName;
+    }
+
     public async Task Cleanup()
     {
-        var subscriptionSettings = settings.GetOrDefault<SubscriptionSettings>() ?? new SubscriptionSettings();
-        settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
-        var subscriptionTable = subscriptionSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", "nservicebus");
-
         using (var conn = new SqlConnection(connectionString))
         {
             await conn.OpenAsync().ConfigureAwait(false);
@@ -61,8 +63,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
             if (!doNotCleanNativeSubscriptions)
             {
-                var qualifiedName = subscriptionTable.QuotedQualifiedName;
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{qualifiedName}', 'U') IS NOT NULL DROP TABLE {qualifiedName}");
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableQuotedQualifiedName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableQuotedQualifiedName}");
             }
 
             await TryDeleteTables(conn, commandTextBuilder.ToString());
@@ -92,6 +93,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     string connectionString;
     QueueBindings queueBindings;
     SettingsHolder settings;
+    string subscriptionTableQuotedQualifiedName;
 
     class QueueAddress
     {
