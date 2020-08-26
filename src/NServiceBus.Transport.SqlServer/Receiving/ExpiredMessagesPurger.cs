@@ -10,23 +10,16 @@
     using System.Threading.Tasks;
     using Logging;
 
-    class ExpiredMessagesPurger
+    class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, int? purgeBatchSize, bool enable)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, int? purgeBatchSize)
         {
             this.openConnection = openConnection;
-            this.enable = enable;
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
 
         public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
         {
-            if (!enable)
-            {
-                Logger.DebugFormat("Purging expired messages on startup is not enabled for {0}.", queue);
-                return;
-            }
-
             Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
             var totalPurgedRowsCount = 0;
 
@@ -56,7 +49,6 @@
 
         int purgeBatchSize;
         Func<TableBasedQueue, Task<SqlConnection>> openConnection;
-        readonly bool enable;
         const int DefaultPurgeBatchSize = 10000;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

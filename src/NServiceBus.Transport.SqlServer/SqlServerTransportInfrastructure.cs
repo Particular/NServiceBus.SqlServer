@@ -122,8 +122,32 @@ namespace NServiceBus.Transport.SqlServer
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
-            var expiredMessagesPurger = CreateExpiredMessagesPurger();
-            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection());
+            IExpiredMessagesPurger expiredMessagesPurger;
+            bool validateExpiredIndex;
+            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
+            {
+                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                {
+                    Enabled = false,
+                });
+                expiredMessagesPurger = new NoOpExpiredMessagesPurger();
+                validateExpiredIndex = false;
+            }
+            else
+            {
+                var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+
+                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                {
+                    Enabled = true,
+                    BatchSize = purgeBatchSize
+                });
+
+                expiredMessagesPurger = new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
+                validateExpiredIndex = true;
+            }
+
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
@@ -196,18 +220,26 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        ExpiredMessagesPurger CreateExpiredMessagesPurger()
+        IExpiredMessagesPurger CreateExpiredMessagesPurger()
         {
+            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
+            {
+                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                {
+                    Enabled = false,
+                });
+                return new NoOpExpiredMessagesPurger();
+            }
+
             var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
-            var enable = settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey);
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
             {
-                FeatureEnabled = enable,
+                Enabled = true,
                 BatchSize = purgeBatchSize
             });
 
-            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize, enable);
+            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
         }
 
         async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(TransactionOptions transactionOptions)
