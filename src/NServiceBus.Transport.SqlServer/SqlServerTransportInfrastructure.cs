@@ -122,8 +122,34 @@ namespace NServiceBus.Transport.SqlServer
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
-            var expiredMessagesPurger = CreateExpiredMessagesPurger();
-            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection());
+            IExpiredMessagesPurger messagesPurger;
+            bool validateExpiredIndex;
+
+            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
+            {
+                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                {
+                    Enabled = false,
+                });
+                messagesPurger = new NoOpExpiredMessagesPurger();
+                validateExpiredIndex = false;
+            }
+            else
+            {
+                var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+
+                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                {
+                    Enabled = true,
+                    BatchSize = purgeBatchSize
+                });
+
+                messagesPurger = new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
+                validateExpiredIndex = true;
+            }
+
+            var expiredMessagesPurger = messagesPurger;
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
             Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
 
