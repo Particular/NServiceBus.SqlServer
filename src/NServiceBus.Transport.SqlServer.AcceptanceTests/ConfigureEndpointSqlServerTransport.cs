@@ -61,12 +61,16 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
                 commandTextBuilder.AppendLine($"IF OBJECT_ID('{delayedAddressQualifiedName}', 'U') IS NOT NULL DROP TABLE {delayedAddressQualifiedName}");
             }
 
-            if (!doNotCleanNativeSubscriptions)
+            if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableQuotedQualifiedName))
             {
                 commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableQuotedQualifiedName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableQuotedQualifiedName}");
             }
 
-            await TryDeleteTables(conn, commandTextBuilder.ToString());
+            var commandText = commandTextBuilder.ToString();
+            if (!string.IsNullOrEmpty(commandText))
+            {
+                await TryDeleteTables(conn, commandText);
+            }
         }
     }
 
