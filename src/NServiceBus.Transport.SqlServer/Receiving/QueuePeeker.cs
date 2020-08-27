@@ -45,18 +45,8 @@
                     scope.Complete();
                 }
 #endif
-                
+
                 circuitBreaker.Success();
-
-                if (messageCount == 0)
-                {
-                    if (Logger.IsDebugEnabled)
-                    {
-                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
-                    }
-
-                    await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
-                }
             }
             catch (OperationCanceledException)
             {
@@ -70,6 +60,17 @@
             {
                 Logger.Warn("Sql peek operation failed", ex);
                 await circuitBreaker.Failure(ex).ConfigureAwait(false);
+            }
+
+            if (messageCount == 0)
+            {
+                if (Logger.IsDebugEnabled)
+                {
+                    Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+                }
+
+                // This doesn't require a try/catch (OperationCanceledException) because the upper layers handle the shutdown case gracefully
+                await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
             }
 
             return messageCount;
