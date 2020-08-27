@@ -27,6 +27,7 @@
         /// For testing the migration process only
         /// </summary>
         public const string DisableNativePubSub = "SqlServer.DisableNativePubSub";
+        public const string SubscriptionTableQuotedQualifiedNameSetter = "SqlServer.SubscriptionTableQuotedQualifiedNameSetter";
 
         /// <summary>
         /// For endpoints that only consume messages e.g. ServiceControl error
