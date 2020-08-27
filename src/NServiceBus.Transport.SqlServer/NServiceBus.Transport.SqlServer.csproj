@@ -17,7 +17,7 @@
     <PackageReference Include="Particular.CodeRules" Version="0.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="0.9.0" PrivateAssets="All" />
     <PackageReference Include="NServiceBus" Version="[8.0.0-alpha.541,)" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.0.1" />
   </ItemGroup>
 
 </Project>
