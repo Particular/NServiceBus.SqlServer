@@ -78,7 +78,8 @@
         }
 
         protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts)
-        {
+        { 
+            message.ResetHeaders();
             try
             {
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts);
@@ -91,6 +92,10 @@
                 criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
 
                 return ErrorHandleResult.RetryRequired;
+            }
+            finally
+            {
+                message.ResetHeaders();
             }
         }
 
