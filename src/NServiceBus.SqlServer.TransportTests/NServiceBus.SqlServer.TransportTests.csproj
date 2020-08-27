@@ -22,4 +22,10 @@
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.TransportTests\**\*.cs" Exclude="**\obj\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Until Core 7.4.1 is out -->
+    <Compile Remove="\**\NSB.TransportTests\TransportTestLoggerFactory.cs" />
+  </ItemGroup>
+
 </Project>
