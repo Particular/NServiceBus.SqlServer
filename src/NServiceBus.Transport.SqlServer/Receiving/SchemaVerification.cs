@@ -11,14 +11,19 @@
 
     class SchemaInspector
     {
-        public SchemaInspector(Func<TableBasedQueue, Task<SqlConnection>> openConnection)
+        public SchemaInspector(Func<TableBasedQueue, Task<SqlConnection>> openConnection, bool validateExpiredIndex)
         {
             this.openConnection = openConnection;
+            this.validateExpiredIndex = validateExpiredIndex;
         }
 
         public async Task PerformInspection(TableBasedQueue queue)
         {
-            await VerifyExpiredIndex(queue).ConfigureAwait(false);
+            if (validateExpiredIndex)
+            {
+                await VerifyExpiredIndex(queue).ConfigureAwait(false);
+            }
+
             await VerifyNonClusteredRowVersionIndex(queue).ConfigureAwait(false);
             await VerifyHeadersColumnType(queue).ConfigureAwait(false);
         }
@@ -79,6 +84,7 @@
         }
 
         Func<TableBasedQueue, Task<SqlConnection>> openConnection;
+        readonly bool validateExpiredIndex;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
 }
