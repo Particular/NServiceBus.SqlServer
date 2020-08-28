@@ -51,6 +51,12 @@ namespace NServiceBus.Transport.SqlServer
 
             var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
+            // necessary evil for acceptance tests
+            if(settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
+            {
+                action(subscriptionTableName.QuotedQualifiedName);
+            }
+
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
             var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
             if (timeToCacheSubscriptions.HasValue)
