@@ -135,8 +135,8 @@
                 // We cannot dispose this token source because of potential race conditions of concurrent receives
                 var loopCancellationTokenSource = new CancellationTokenSource();
 
-                // If the receive circuit breaker is triggered start only one message processing task at a time.
-                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered ? 1 : messageCount;
+                // If the receive or peek circuit breaker is triggered start only one message processing task at a time.
+                var maximumConcurrentReceives = receiveCircuitBreaker.Triggered || peekCircuitBreaker.Triggered ? 1 : messageCount;
 
                 for (var i = 0; i < maximumConcurrentReceives; i++)
                 {
