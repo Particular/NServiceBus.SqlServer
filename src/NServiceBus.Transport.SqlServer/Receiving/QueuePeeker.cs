@@ -31,17 +31,9 @@
                 {
                     messageCount = await inputQueue.TryPeek(connection, null, cancellationToken).ConfigureAwait(false);
 
-                    circuitBreaker.Success();
-
-                    if (messageCount == 0)
-                    {
-                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
-
-                        await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
-                    }
-
                     scope.Complete();
                 }
+
 #else
                 using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
@@ -49,18 +41,12 @@
                 {
                     messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken).ConfigureAwait(false);
 
-                    circuitBreaker.Success();
-
-                    if (messageCount == 0)
-                    {
-                        Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
-
-                        await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
-                    }
                     tx.Commit();
                     scope.Complete();
                 }
 #endif
+
+                circuitBreaker.Success();
             }
             catch (OperationCanceledException)
             {
@@ -74,6 +60,17 @@
             {
                 Logger.Warn("Sql peek operation failed", ex);
                 await circuitBreaker.Failure(ex).ConfigureAwait(false);
+            }
+
+            if (messageCount == 0)
+            {
+                if (Logger.IsDebugEnabled)
+                {
+                    Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+                }
+
+                // This doesn't require a try/catch (OperationCanceledException) because the upper layers handle the shutdown case gracefully
+                await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
             }
 
             return messageCount;
