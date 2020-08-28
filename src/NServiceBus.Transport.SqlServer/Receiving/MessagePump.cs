@@ -1,13 +1,11 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using System.Collections.Concurrent;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
     using Microsoft.Data.SqlClient;
 #endif
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -59,7 +57,7 @@
         public void Start(PushRuntimeSettings limitations)
         {
             inputQueue.FormatPeekCommand(Math.Min(100, 10 * limitations.MaxConcurrency));
-            runningReceiveTasks = new ConcurrentDictionary<Task, Task>();
+            maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
             cancellationTokenSource = new CancellationTokenSource();
 
@@ -73,23 +71,25 @@
             const int timeoutDurationInSeconds = 30;
             cancellationTokenSource.Cancel();
 
-            // ReSharper disable once MethodSupportsCancellation
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutDurationInSeconds));
-            var allTasks = runningReceiveTasks.Values.Concat(new[]
-            {
-                messagePumpTask
-            });
-            var finishedTask = await Task.WhenAny(Task.WhenAll(allTasks), timeoutTask).ConfigureAwait(false);
+            await messagePumpTask.ConfigureAwait(false);
 
-            if (finishedTask.Equals(timeoutTask))
+            try
+            {
+                using (var shutdownCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutDurationInSeconds)))
+                {
+                    while (concurrencyLimiter.CurrentCount != maxConcurrency)
+                    {
+                        await Task.Delay(50, shutdownCancellationTokenSource.Token).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
             {
                 Logger.ErrorFormat("The message pump failed to stop within the time allowed ({0}s)", timeoutDurationInSeconds);
             }
 
             concurrencyLimiter.Dispose();
             cancellationTokenSource.Dispose();
-
-            runningReceiveTasks.Clear();
         }
 
         async Task ProcessMessages()
@@ -147,15 +147,7 @@
 
                     await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                    var receiveTask = InnerReceive(loopCancellationTokenSource);
-                    runningReceiveTasks.TryAdd(receiveTask, receiveTask);
-
-                    receiveTask.ContinueWith((t, state) =>
-                    {
-                        var receiveTasks = (ConcurrentDictionary<Task, Task>)state;
-                        receiveTasks.TryRemove(t, out _);
-                    }, runningReceiveTasks, TaskContinuationOptions.ExecuteSynchronously)
-                    .Ignore();
+                    _ = InnerReceive(loopCancellationTokenSource);
                 }
             }
         }
@@ -220,10 +212,10 @@
         IPeekMessagesInQueue queuePeeker;
         SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
-        ConcurrentDictionary<Task, Task> runningReceiveTasks;
         SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource cancellationTokenSource;
         CancellationToken cancellationToken;
+        int maxConcurrency;
         RepeatedFailuresOverTimeCircuitBreaker peekCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker receiveCircuitBreaker;
         Task messagePumpTask;
