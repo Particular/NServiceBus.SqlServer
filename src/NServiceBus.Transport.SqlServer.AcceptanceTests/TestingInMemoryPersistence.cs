@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NServiceBus;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Extensibility;
@@ -38,7 +39,7 @@ public class TestingInMemorySubscriptionPersistence : Feature
     protected override void Setup(FeatureConfigurationContext context)
     {
         var storageInstance = context.Settings.GetOrDefault<TestingInMemorySubscriptionStorage>("InMemoryPersistence.StorageInstance");
-        context.Container.RegisterSingleton<ISubscriptionStorage>(storageInstance ?? new TestingInMemorySubscriptionStorage());
+        context.Services.AddSingleton<ISubscriptionStorage>(storageInstance ?? new TestingInMemorySubscriptionStorage());
     }
 }
 
