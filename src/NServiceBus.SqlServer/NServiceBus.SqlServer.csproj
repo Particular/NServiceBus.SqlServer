@@ -28,8 +28,4 @@
     <Compile Include="..\NServiceBus.Transport.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.Transport.SqlServer\InternalsVisibleTo.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="..\NServiceBus.Transport.SqlServer\Resharper.Annotations.g.cs" />
-  </ItemGroup>
-
 </Project>
