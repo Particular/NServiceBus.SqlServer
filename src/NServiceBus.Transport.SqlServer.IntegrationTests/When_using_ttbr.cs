@@ -1,7 +1,4 @@
-﻿// ReSharper disable RedundantArgumentNameForLiteralExpression
-// ReSharper disable RedundantArgumentName
-
-namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
