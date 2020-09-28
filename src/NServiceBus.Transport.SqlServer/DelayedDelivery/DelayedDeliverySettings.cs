@@ -14,7 +14,7 @@
         /// <summary>
         /// Sets the suffix for the table storing delayed messages.
         /// </summary>
-        /// <param name="suffix"></param>
+        /// <param name="suffix">The suffix to be appended</param>
         public void TableSuffix(string suffix)
         {
             Guard.AgainstNullAndEmpty(nameof(suffix), suffix);

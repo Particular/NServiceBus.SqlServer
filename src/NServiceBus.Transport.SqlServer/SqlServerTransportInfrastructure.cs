@@ -52,7 +52,7 @@ namespace NServiceBus.Transport.SqlServer
             var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
             // necessary evil for acceptance tests
-            if(settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
+            if (settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
             {
                 action(subscriptionTableName.QuotedQualifiedName);
             }
@@ -159,7 +159,7 @@ namespace NServiceBus.Transport.SqlServer
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
-            if (false == settings.GetOrDefault<bool>(SettingsKeys.DisableDelayedDelivery))
+            if (settings.GetOrDefault<bool>(SettingsKeys.DisableDelayedDelivery) == false)
             {
                 if (!settings.TryGet(SettingsKeys.DelayedDeliverySuffix, out string suffix))
                 {

@@ -8,6 +8,7 @@
     public class SubscriptionSettings
     {
         internal SubscriptionTableName SubscriptionTable = new SubscriptionTableName("SubscriptionRouting", null, null);
+
         /// <summary>
         /// Default to 5 seconds caching. If a system is under load that prevent doing an extra roundtrip for each Publish operation. If
         /// a system is not under load, doing an extra roundtrip every 5 seconds is not a problem and 5 seconds is small enough value that

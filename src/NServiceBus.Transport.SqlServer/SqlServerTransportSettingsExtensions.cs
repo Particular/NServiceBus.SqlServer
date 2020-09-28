@@ -74,7 +74,6 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
@@ -98,7 +97,6 @@
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        /// <returns></returns>
         public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
