@@ -14,6 +14,6 @@ namespace NServiceBus.AcceptanceTests
         public bool SupportsNativeDeferral => true;
         public bool SupportsOutbox => true;
         public IConfigureEndpointTestExecution CreateTransportConfiguration() => new ConfigureEndpointSqlServerTransport();
-        public IConfigureEndpointTestExecution CreatePersistenceConfiguration() => new ConfigureEndpointInMemoryPersistence();
+        public IConfigureEndpointTestExecution CreatePersistenceConfiguration() => new ConfigureEndpointAcceptanceTestingPersistence();
     }
 }
