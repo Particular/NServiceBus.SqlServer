@@ -22,8 +22,7 @@
                     var options = new SendOptions();
 
                     options.SetHeader("NServiceBus.Timeout.RouteExpiredTimeoutTo", Conventions.EndpointNamingConvention(typeof(SenderEndpoint)));
-                    options.SetHeader("NServiceBus.Timeout.Expire", DateTimeExtensions.ToWireFormattedString(DateTimeOffset.UtcNow + delay));
-
+                    options.SetHeader("NServiceBus.Timeout.Expire", DateTimeOffsetHelper.ToWireFormattedString(DateTimeOffset.UtcNow + delay));
                     options.SetDestination(Conventions.EndpointNamingConvention(typeof(CompatibilityModeEndpoint)) + ".Timeouts");
 
                     c.SentAt = DateTimeOffset.UtcNow;
