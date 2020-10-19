@@ -12,9 +12,6 @@
     public class When_deferring_a_message_in_timeout_manager_compatibility_mode : NServiceBusAcceptanceTest
     {
         [Test]
-#if SYSTEMDATASQLCLIENT
-        [Ignore("Allow a build for downstreams", Until = "2020-11-01")]
-#endif
         public async Task Should_delay_delivery()
         {
             var delay = TimeSpan.FromSeconds(5);
