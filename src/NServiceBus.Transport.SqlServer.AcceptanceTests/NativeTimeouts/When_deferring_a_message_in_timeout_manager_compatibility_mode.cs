@@ -22,11 +22,10 @@
                     var options = new SendOptions();
 
                     options.SetHeader("NServiceBus.Timeout.RouteExpiredTimeoutTo", Conventions.EndpointNamingConvention(typeof(SenderEndpoint)));
-                    options.SetHeader("NServiceBus.Timeout.Expire", DateTimeExtensions.ToWireFormattedString(DateTime.UtcNow + delay));
-
+                    options.SetHeader("NServiceBus.Timeout.Expire", DateTimeOffsetHelper.ToWireFormattedString(DateTimeOffset.UtcNow + delay));
                     options.SetDestination(Conventions.EndpointNamingConvention(typeof(CompatibilityModeEndpoint)) + ".Timeouts");
 
-                    c.SentAt = DateTime.UtcNow;
+                    c.SentAt = DateTimeOffset.UtcNow;
 
                     return session.Send(new MyMessage(), options);
                 }))
@@ -40,8 +39,8 @@
         public class Context : ScenarioContext
         {
             public bool WasCalled { get; set; }
-            public DateTime SentAt { get; set; }
-            public DateTime ReceivedAt { get; set; }
+            public DateTimeOffset SentAt { get; set; }
+            public DateTimeOffset ReceivedAt { get; set; }
         }
 
         public class SenderEndpoint : EndpointConfigurationBuilder
@@ -61,7 +60,7 @@
 
                 public Task Handle(MyMessage message, IMessageHandlerContext context)
                 {
-                    scenarioContext.ReceivedAt = DateTime.UtcNow;
+                    scenarioContext.ReceivedAt = DateTimeOffset.UtcNow;
                     scenarioContext.WasCalled = true;
                     return Task.FromResult(0);
                 }
@@ -79,7 +78,6 @@
                 });
             }
         }
-
 
         public class MyMessage : IMessage
         {

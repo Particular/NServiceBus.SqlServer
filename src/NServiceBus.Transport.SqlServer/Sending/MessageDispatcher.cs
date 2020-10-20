@@ -161,7 +161,7 @@
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTime.UtcNow, operation.Destination, connection, transaction);
+                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction);
             }
             if (TryGetConstraint(operation, out DelayDeliveryWith delayDeliveryWith))
             {

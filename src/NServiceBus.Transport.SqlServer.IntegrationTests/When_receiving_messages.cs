@@ -58,7 +58,7 @@
 
         static async Task WaitUntil(Func<bool> condition, int timeoutInSeconds = 5)
         {
-            var startTime = DateTime.UtcNow;
+            var startTime = DateTime.UtcNow; //Local usage only
 
             while (DateTime.UtcNow.Subtract(startTime) < TimeSpan.FromSeconds(timeoutInSeconds))
             {

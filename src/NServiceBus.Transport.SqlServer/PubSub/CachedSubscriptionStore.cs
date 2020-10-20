@@ -19,15 +19,15 @@ namespace NServiceBus.Transport.SqlServer
             var cacheItem = Cache.GetOrAdd(CacheKey(eventType),
                 _ => new CacheItem
                 {
-                    Stored = DateTime.UtcNow,
+                    StoredUtc = DateTime.UtcNow,
                     Subscribers = inner.GetSubscribers(eventType)
                 });
 
-            var age = DateTime.UtcNow - cacheItem.Stored;
+            var age = DateTime.UtcNow - cacheItem.StoredUtc;
             if (age >= cacheFor)
             {
                 cacheItem.Subscribers = inner.GetSubscribers(eventType);
-                cacheItem.Stored = DateTime.UtcNow;
+                cacheItem.StoredUtc = DateTime.UtcNow;
             }
 
             return cacheItem.Subscribers;
@@ -61,7 +61,7 @@ namespace NServiceBus.Transport.SqlServer
 
         class CacheItem
         {
-            public DateTime Stored { get; set; }
+            public DateTime StoredUtc { get; set; } // Internal usage, only set/get using private
             public Task<List<string>> Subscribers { get; set; }
         }
     }
