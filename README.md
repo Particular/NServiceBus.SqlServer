@@ -16,6 +16,10 @@ Before doing anything else, make sure you have SQL Server up and running in your
 </connectionStrings>
 ````
 
+## Performance
+
+Consider creating a RAM drive or using the temporaty drive when running in a cloud vm and hosting your databases on it to reduce the time required to run acceptance tests.
+
 ## Samples
 
 See http://docs.particular.net/samples/
