@@ -7,7 +7,7 @@
     /// <summary>
     /// Configures native delayed delivery.
     /// </summary>
-    public class DelayedDeliverySettings : ExposeSettings
+    public partial class DelayedDeliverySettings : ExposeSettings
     {
         internal DelayedDeliverySettings(SettingsHolder settings) : base(settings) { }
 
@@ -34,15 +34,7 @@
 
             this.GetSettings().Set(SettingsKeys.DelayedDeliveryMatureBatchSize, batchSize);
         }
-
-        /// <summary>
-        /// Enables the timeout manager for the endpoint.
-        /// </summary>
-        public void EnableTimeoutManagerCompatibility()
-        {
-            this.GetSettings().Set(SettingsKeys.TimeoutManagerMigrationMode, true);
-        }
-
+        
         /// <summary>
         /// Configures how often delayed messages are processed (every 5 seconds by default).
         /// </summary>

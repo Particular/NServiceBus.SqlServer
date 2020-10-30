@@ -48,6 +48,8 @@ namespace NServiceBus.Transport.SqlServer
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
         public void BatchSize(int batchSize) { }
+        [System.ObsoleteAttribute("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
+            " details. Will be removed in version 8.0.0.", true)]
         public void EnableTimeoutManagerCompatibility() { }
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
