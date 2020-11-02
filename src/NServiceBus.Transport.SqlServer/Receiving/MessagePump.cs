@@ -12,13 +12,14 @@
 
     class MessagePump : IPushMessages
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
         {
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
             this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
+            this.queuePeekerOptions = queuePeekerOptions;
             this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
         }
@@ -56,7 +57,7 @@
 
         public void Start(PushRuntimeSettings limitations)
         {
-            inputQueue.FormatPeekCommand(Math.Min(100, 10 * limitations.MaxConcurrency));
+            inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
             cancellationTokenSource = new CancellationTokenSource();
@@ -210,6 +211,7 @@
         Func<string, TableBasedQueue> queueFactory;
         IExpiredMessagesPurger expiredMessagesPurger;
         IPeekMessagesInQueue queuePeeker;
+        QueuePeekerOptions queuePeekerOptions;
         SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
         SemaphoreSlim concurrencyLimiter;
