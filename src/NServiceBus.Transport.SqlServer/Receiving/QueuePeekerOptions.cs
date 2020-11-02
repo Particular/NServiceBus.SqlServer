@@ -34,6 +34,7 @@
         }
 
         public TimeSpan Delay { get; }
+        public int? MaxRecordsToPeek { get; }
         static TimeSpan DefaultDelay = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }
