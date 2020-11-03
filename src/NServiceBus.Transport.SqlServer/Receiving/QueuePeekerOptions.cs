@@ -16,7 +16,18 @@
             }
 
             Delay = delay;
+
+            Validate(maxRecordsToPeek);
             MaxRecordsToPeek = maxRecordsToPeek;
+        }
+
+        static void Validate(int? maxRecordsToPeek)
+        {
+            if (maxRecordsToPeek.HasValue && maxRecordsToPeek < 1)
+            {
+                var message = "Peek batch size is invalid. THe value must be greater than zero.";
+                throw new Exception(message);
+            }
         }
 
         static void Validate(TimeSpan delay)
