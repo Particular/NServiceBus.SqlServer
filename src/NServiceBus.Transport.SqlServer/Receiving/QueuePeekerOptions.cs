@@ -5,7 +5,7 @@
 
     class QueuePeekerOptions
     {
-        public QueuePeekerOptions(TimeSpan? delayTime = null)
+        public QueuePeekerOptions(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
         {
             var delay = DefaultDelay;
 
@@ -16,6 +16,7 @@
             }
 
             Delay = delay;
+            MaxRecordsToPeek = maxRecordsToPeek;
         }
 
         static void Validate(TimeSpan delay)
