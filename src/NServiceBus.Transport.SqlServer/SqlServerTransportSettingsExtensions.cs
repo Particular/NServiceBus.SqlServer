@@ -168,7 +168,7 @@
         }
 
         /// <summary>
-        /// Allows changing the queue peek delay, and the paeek batch size.
+        /// Allows changing the queue peek delay, and the peek batch size.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="delay">The delay value</param>
