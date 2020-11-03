@@ -37,5 +37,7 @@
         public const string TransportTransactionSqlTransactionKey = "System.Data.SqlClient.SqlTransaction";
 
         public const string IsUserProvidedTransactionKey = "SqlServer.Transaction.IsUserProvided";
+
+        public const string IsNonDtcTransactionModeAllowed = "SqlServer.Transaction.NonDtcTransactionModeAllowed";
     }
 }
