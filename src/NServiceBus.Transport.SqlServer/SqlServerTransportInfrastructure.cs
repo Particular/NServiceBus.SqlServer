@@ -10,6 +10,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
+    using NServiceBus.Logging;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
@@ -196,7 +197,7 @@ namespace NServiceBus.Transport.SqlServer
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),
                 () => new QueueCreator(connectionFactory, addressTranslator, delayedQueueCanonicalAddress, createMessageBodyComputedColumn),
-                () => CheckForAmbientTransactionEnlistmentSupport(scopeOptions.TransactionOptions));
+                () => ValidateDatabaseAccess(scopeOptions.TransactionOptions));
         }
 
         CanonicalQueueAddress GetDelayedTableAddress(string suffix)
@@ -249,6 +250,36 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(TransactionOptions transactionOptions)
+        async Task<StartupCheckResult> ValidateDatabaseAccess(TransactionOptions transactionOptions)
+        {
+            var isDatabaseAccessible = await TryOpenDatabaseConnection().ConfigureAwait(false);
+
+            if (!isDatabaseAccessible.Succeeded)
+            {
+                return isDatabaseAccessible;
+            }
+
+            return await TryEscalateToDistributedTransactions(transactionOptions).ConfigureAwait(false);
+        }
+
+        async Task<StartupCheckResult> TryOpenDatabaseConnection()
+        {
+            try
+            {
+                using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                }
+
+                return StartupCheckResult.Success;
+            }
+            catch (Exception ex)
+            {
+                var message = "Could not open connection to the SQL instance. Check the original error message for details. Original error message: " + ex.Message;
+                return StartupCheckResult.Failed(message);
+            }
+        }
+
+        async Task<StartupCheckResult> TryEscalateToDistributedTransactions(TransactionOptions transactionOptions)
         {
             if (!settings.TryGet(out TransportTransactionMode requestedTransportTransactionMode))
             {
@@ -353,5 +384,6 @@ namespace NServiceBus.Transport.SqlServer
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
         TableBasedQueueCache tableBasedQueueCache;
+        static ILog Logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
 }
