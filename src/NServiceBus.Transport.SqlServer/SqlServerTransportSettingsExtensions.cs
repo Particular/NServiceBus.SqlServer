@@ -174,7 +174,7 @@
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="delay">The delay value</param>
-        [ObsoleteEx(Message = "WithPeekDelay has been obsoleted.", ReplacementTypeOrMember = "QueuePeekerOptions", RemoveInVersion = "9.0", TreatAsErrorFromVersion = "8.0")]
+        [ObsoleteEx(Message = "WithPeekDelay has been obsoleted.", ReplacementTypeOrMember = "QueuePeekerOptions", RemoveInVersion = "8.0", TreatAsErrorFromVersion = "7.0")]
         public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
