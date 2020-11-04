@@ -14,12 +14,14 @@ namespace NServiceBus.Transport.SqlServer
     class QueueCreator : ICreateQueues
     {
         public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator,
-            CanonicalQueueAddress delayedQueueAddress, bool createMessageBodyColumn = false)
+            CanonicalQueueAddress delayedQueueAddress, bool createMessageBodyColumn = false,
+            bool useLeaseBasedReceive = true)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
             this.delayedQueueAddress = delayedQueueAddress;
             this.createMessageBodyColumn = createMessageBodyColumn;
+            this.useLeaseBasedReceive = useLeaseBasedReceive;
         }
 
         public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
@@ -27,14 +29,16 @@ namespace NServiceBus.Transport.SqlServer
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             using (var transaction = connection.BeginTransaction())
             {
+                var queueCreationText = useLeaseBasedReceive ? SqlConstants.LeaseBasedCreateQueueText : SqlConstants.CreateQueueText;
+
                 foreach (var receivingAddress in queueBindings.ReceivingAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(queueCreationText, addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 foreach (var sendingAddress in queueBindings.SendingAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(queueCreationText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 if (delayedQueueAddress != null)
@@ -80,6 +84,7 @@ namespace NServiceBus.Transport.SqlServer
         QueueAddressTranslator addressTranslator;
         CanonicalQueueAddress delayedQueueAddress;
         bool createMessageBodyColumn;
+        readonly bool useLeaseBasedReceive;
     }
 }
 #pragma warning restore 618

@@ -61,13 +61,12 @@ DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
 
-WITH message AS (
-    SELECT TOP(1) *
-    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
-    ORDER BY RowVersion)
-DELETE FROM message
+UPDATE [test]
+SET LeaseExpiration = GETUTCDATE() + '00:00:30',
+    LeaseId = NEWID(),
+    DequeueCount = DequeueCount+1 
 OUTPUT
-    deleted.Id,
+	deleted.Id,
     deleted.CorrelationId,
     deleted.ReplyToAddress,
     CASE WHEN deleted.Expires IS NULL
@@ -78,7 +77,9 @@ OUTPUT
         END
     END,
     deleted.Headers,
-    deleted.Body;
+    deleted.Body,
+	inserted.LeaseId
+WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM [test] WHERE [LeaseExpiration] = NULL OR [LeaseExpiration] < GETUTCDATE());
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
@@ -138,7 +139,7 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";
 
         public static readonly string LeaseBasedPeekText = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WHERE LeaseExpiration = NULL OR LeaseExpiration < UTCDATE()  WITH (nolock)";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock) WHERE [LeaseExpiration] = NULL OR [LeaseExpiration] < GETUTCDATE()  ";
 
 
         public static readonly string AddMessageBodyStringColumn = @"
@@ -174,6 +175,65 @@ ALTER TABLE {0}
 ADD BodyString as cast(Body as nvarchar(max));
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
+
+        public static readonly string LeaseBasedCreateQueueText = @"
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+CREATE TABLE {0} (
+    Id uniqueidentifier NOT NULL,
+    CorrelationId varchar(255),
+    ReplyToAddress varchar(255),
+    Recoverable bit NOT NULL,
+    Expires datetime,
+    Headers nvarchar(max) NOT NULL,
+    Body varbinary(max),
+	LeaseExpiration datetime,
+	LeaseId uniqueidentifier,
+	DequeueCount int,
+    RowVersion bigint IDENTITY(1,1) NOT NULL
+);
+
+CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
+(
+	[RowVersion] ASC
+)
+
+CREATE NONCLUSTERED INDEX Index_Expires ON {0}
+(
+    Expires
+)
+INCLUDE
+(
+    Id,
+    RowVersion
+)
+WHERE
+    Expires IS NOT NULL
+
+CREATE NONCLUSTERED INDEX Index_LeaseExpiration ON {0}
+(
+	[LeaseExpiration] ASC
+)
+
+EXEC sp_releaseapplock @Resource = '{0}_lock'
+";
 
         public static readonly string CreateQueueText = @"
 IF EXISTS (

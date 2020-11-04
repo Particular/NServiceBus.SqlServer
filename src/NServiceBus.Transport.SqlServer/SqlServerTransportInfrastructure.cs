@@ -197,7 +197,7 @@ namespace NServiceBus.Transport.SqlServer
 
             return new TransportReceiveInfrastructure(
                 () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, schemaVerification, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressTranslator, delayedQueueCanonicalAddress, createMessageBodyComputedColumn),
+                () => new QueueCreator(connectionFactory, addressTranslator, delayedQueueCanonicalAddress, createMessageBodyComputedColumn, useLeaseBasedReceive),
                 () => CheckForAmbientTransactionEnlistmentSupport(scopeOptions.TransactionOptions));
         }
 
