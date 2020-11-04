@@ -22,6 +22,8 @@ namespace NServiceBus.Transport.SqlServer
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
+        bool useLeaseBasedReceive = true;
+
         internal SqlServerTransportInfrastructure(string catalog, SettingsHolder settings, string connectionString, Func<string> localAddress, Func<LogicalAddress> logicalAddress)
         {
             this.settings = settings;
@@ -42,7 +44,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
             addressTranslator = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
-            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator);
+            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, useLeaseBasedReceive);
             connectionFactory = CreateConnectionFactory();
 
             //Configure the schema and catalog for logical endpoint-based routing
@@ -155,7 +157,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
-            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
+            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, useLeaseBasedReceive);
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;

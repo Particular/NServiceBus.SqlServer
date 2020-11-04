@@ -16,18 +16,20 @@ namespace NServiceBus.Transport.SqlServer
     {
         public string Name { get; }
 
-        public TableBasedQueue(string qualifiedTableName, string queueName)
+        public TableBasedQueue(string qualifiedTableName, string queueName, bool useLeaseBasedReceive = true)
         {
 #pragma warning disable 618
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
-            receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
+            receiveCommand = Format(useLeaseBasedReceive ? SqlConstants.LeaseBasedReceiveText : SqlConstants.ReceiveText, this.qualifiedTableName);
             sendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
             checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
             checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+
+            peekTextTemplate = useLeaseBasedReceive ? SqlConstants.LeaseBasedPeekText : SqlConstants.PeekText;
 #pragma warning restore 618
         }
 
@@ -46,7 +48,7 @@ namespace NServiceBus.Transport.SqlServer
         public void FormatPeekCommand(int maxRecordsToPeek)
         {
 #pragma warning disable 618
-            peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
+            peekCommand = Format(peekTextTemplate, qualifiedTableName, maxRecordsToPeek);
 #pragma warning restore 618
         }
 
@@ -177,5 +179,6 @@ namespace NServiceBus.Transport.SqlServer
         string checkExpiresIndexCommand;
         string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
+        string peekTextTemplate;
     }
 }
