@@ -319,15 +319,8 @@ namespace NServiceBus.Transport.SqlServer
 
                 if (!string.IsNullOrWhiteSpace(message))
                 {
-                    settings.TryGet(SettingsKeys.IsNonDtcTransactionModeAllowed, out bool nonDtcTransactionModeAllowed);
-
-                    if (nonDtcTransactionModeAllowed)
-                    {
-                        Logger.Warn(message);
-                        return StartupCheckResult.Success;
-                    }
-
-                    return StartupCheckResult.Failed(message);
+                    Logger.Warn(message);
+                    return StartupCheckResult.Success;
                 }
             }
 
