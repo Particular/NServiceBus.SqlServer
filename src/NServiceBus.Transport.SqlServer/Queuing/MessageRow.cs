@@ -48,7 +48,6 @@
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
         {
-            //HINT: we are assuming that dataReader is sequential. Order or reads is important !
             return new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false),
@@ -95,15 +94,9 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
+        static Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
         {
-            // Null values will be returned as an empty (zero bytes) Stream.
-            using (var outStream = new MemoryStream())
-            using (var stream = dataReader.GetStream(bodyIndex))
-            {
-                await stream.CopyToAsync(outStream).ConfigureAwait(false);
-                return outStream.ToArray();
-            }
+            return Task.FromResult((byte[])dataReader[bodyIndex]);
         }
 
         static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class

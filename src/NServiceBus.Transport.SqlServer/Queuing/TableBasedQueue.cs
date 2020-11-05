@@ -72,8 +72,7 @@ namespace NServiceBus.Transport.SqlServer
 
         static async Task<MessageReadResult> ReadMessage(SqlCommand command)
         {
-            // We need sequential access to not buffer everything into memory
-            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow | CommandBehavior.SequentialAccess).ConfigureAwait(false))
+            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow).ConfigureAwait(false))
             {
                 if (!await dataReader.ReadAsync().ConfigureAwait(false))
                 {
