@@ -150,7 +150,7 @@
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        public static TransportExtensions<SqlServerTransport> AllowNonDtcTransactionMode(this TransportExtensions<SqlServerTransport> transportExtensions)
+        public static TransportExtensions<SqlServerTransport> AllowNonDtcTransactionScopeMode(this TransportExtensions<SqlServerTransport> transportExtensions)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
