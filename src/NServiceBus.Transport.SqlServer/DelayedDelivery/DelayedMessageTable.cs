@@ -25,11 +25,11 @@ namespace NServiceBus.Transport.SqlServer
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        public DelayedMessageTable(string delayedQueueTable, string inputQueueTable)
+        public DelayedMessageTable(string delayedQueueTable, string inputQueueTable, bool useLeaseBasedReceive = true)
         {
 #pragma warning disable 618
             storeCommand = string.Format(SqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
+            moveDueCommand = string.Format(useLeaseBasedReceive ? SqlConstants.LeaseBasedMoveDueDelayedMessageText : SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
 #pragma warning restore 618
         }
 

@@ -56,12 +56,37 @@ VALUES (
 IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
+        public static readonly string TryDeleteLeasedRow = @"
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
+SET NOCOUNT ON;
+
+DELETE FROM {0} WHERE LeaseId = @LeaseId
+
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;
+";
+
+        public static readonly string ReleaseLease = @"
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
+SET NOCOUNT ON;
+
+UPDATE {0}
+SET LeaseExpiration = NULL,
+    LeaseId = NULL,
+WHERE LeaseId = @LeaseId;
+
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;
+";
+
         public static readonly string LeaseBasedReceiveText = @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
 
-UPDATE [test]
+UPDATE {0}
 SET LeaseExpiration = GETUTCDATE() + '00:00:30',
     LeaseId = NEWID(),
     DequeueCount = DequeueCount+1 
@@ -79,7 +104,7 @@ OUTPUT
     deleted.Headers,
     deleted.Body,
 	inserted.LeaseId
-WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM [test] WHERE [LeaseExpiration] = NULL OR [LeaseExpiration] < GETUTCDATE());
+WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM {0} WHERE [LeaseExpiration] IS NULL OR [LeaseExpiration] < GETUTCDATE());
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
@@ -135,11 +160,37 @@ INTO {1};
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
+        public static readonly string LeaseBasedMoveDueDelayedMessageText = @"
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
+SET NOCOUNT ON;
+
+WITH message AS (
+    SELECT TOP(@BatchSize) *
+    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+    WHERE Due < GETUTCDATE())
+DELETE FROM message
+OUTPUT
+    NEWID(),
+    NULL,
+    NULL,
+    1,
+    NULL,
+    deleted.Headers,
+    deleted.Body,
+    NULL,
+    NULL,
+    NULL
+INTO {1};
+
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
         public static readonly string PeekText = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";
 
         public static readonly string LeaseBasedPeekText = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock) WHERE [LeaseExpiration] = NULL OR [LeaseExpiration] < GETUTCDATE()  ";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock) WHERE [LeaseExpiration] IS NULL OR [LeaseExpiration] < GETUTCDATE()  ";
 
 
         public static readonly string AddMessageBodyStringColumn = @"

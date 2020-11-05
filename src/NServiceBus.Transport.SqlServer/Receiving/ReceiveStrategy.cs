@@ -35,6 +35,16 @@
 
         public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
 
+        protected Task ReleaseLease(Guid leaseId, SqlConnection connection, SqlTransaction transaction)
+        {
+            return InputQueue.ReleaseLease(leaseId, connection, transaction);
+        }
+
+        protected Task<bool> TryDeleteLeasedRow(Guid leaseId, SqlConnection connection, SqlTransaction transaction)
+        {
+            return InputQueue.TryDeleteLeasedRow(leaseId, connection, transaction);
+        }
+
         protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
         {
             var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);

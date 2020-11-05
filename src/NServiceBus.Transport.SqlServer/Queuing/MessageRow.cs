@@ -16,9 +16,9 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
+        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool useLeaseBasedReceive)
         {
-            var row = await ReadRow(dataReader).ConfigureAwait(false);
+            var row = await ReadRow(dataReader, useLeaseBasedReceive).ConfigureAwait(false);
             return row.TryParse();
         }
 
@@ -46,7 +46,7 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool readLeaseId)
         {
             //HINT: we are assuming that dataReader is sequential. Order or reads is important !
             return new MessageRow
@@ -56,7 +56,8 @@
                 replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(3).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false)
+                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false),
+                leaseId = readLeaseId ? await dataReader.GetFieldValueAsync<Guid>(6).ConfigureAwait(false) : (Guid?)null
             };
         }
 
@@ -64,7 +65,7 @@
         {
             try
             {
-                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired, leaseId));
             }
             catch (Exception ex)
             {
@@ -133,6 +134,7 @@
         int? timeToBeReceived;
         string headers;
         byte[] bodyBytes;
+        Guid? leaseId;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

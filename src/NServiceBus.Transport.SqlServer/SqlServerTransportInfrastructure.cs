@@ -125,7 +125,9 @@ namespace NServiceBus.Transport.SqlServer
             var createMessageBodyComputedColumn = settings.GetOrDefault<bool>(SettingsKeys.CreateMessageBodyComputedColumn);
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
-                guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
+                guarantee => useLeaseBasedReceive 
+                    ? SelectLeaseBasedReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory)
+                    : SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
@@ -188,7 +190,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 delayedQueueCanonicalAddress = GetDelayedTableAddress(suffix);
                 var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
-                var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
+                var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable, useLeaseBasedReceive);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
@@ -223,6 +225,26 @@ namespace NServiceBus.Transport.SqlServer
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
                 return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, transactionForReceiveOnly: true);
+            }
+
+            return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
+        }
+
+        ReceiveStrategy SelectLeaseBasedReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        {
+            if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
+            {
+                return new LeaseBasedProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+            }
+
+            if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
+            {
+                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+            }
+
+            if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
+            {
+                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, transactionForReceiveOnly: true);
             }
 
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
