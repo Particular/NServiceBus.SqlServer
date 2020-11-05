@@ -149,19 +149,6 @@
         }
 
         /// <summary>
-        /// Specifies connection factory to be used by sql transport.
-        /// </summary>
-        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
-        public static TransportExtensions<SqlServerTransport> AllowNonDtcTransactionScopeMode(this TransportExtensions<SqlServerTransport> transportExtensions)
-        {
-            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
-
-            transportExtensions.GetSettings().Set(SettingsKeys.IsNonDtcTransactionModeAllowed, true);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Allows the <see cref="IsolationLevel"/> and transaction timeout to be changed for the <see cref="TransactionScope"/> used to receive messages.
         /// </summary>
         /// <remarks>
