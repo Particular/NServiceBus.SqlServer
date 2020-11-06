@@ -28,7 +28,6 @@ namespace NServiceBus
     }
     public class static SqlServerTransportSettingsExtensions
     {
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> AllowNonDtcTransactionMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
