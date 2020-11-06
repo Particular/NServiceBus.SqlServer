@@ -320,7 +320,6 @@ namespace NServiceBus.Transport.SqlServer
                 if (!string.IsNullOrWhiteSpace(message))
                 {
                     Logger.Warn(message);
-                    return StartupCheckResult.Success;
                 }
             }
 
