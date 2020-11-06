@@ -43,8 +43,9 @@ namespace NServiceBus
         public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var catalog = GetDefaultCatalog(settings, connectionString);
+            var isEncrypted = IsEncrypted(connectionString);
 
-            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress);
+            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
         }
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
@@ -70,6 +71,21 @@ namespace NServiceBus
                 return (string)catalog;
             }
             throw new Exception("Initial Catalog property is mandatory in the connection string.");
+        }
+
+        static bool IsEncrypted(string connectionString)
+        {
+            var parser = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionString
+            };
+
+            if (parser.TryGetValue("Column Encryption Setting", out var enabled))
+            {
+                return ((string)enabled).Equals("enabled", StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            return false;
         }
     }
 }
