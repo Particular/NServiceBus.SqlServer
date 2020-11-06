@@ -96,6 +96,7 @@
 
         static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
         {
+            // Null values will be returned as an empty (zero bytes) Stream.
             using (var outStream = new MemoryStream())
             using (var stream = dataReader.GetStream(bodyIndex))
             {
