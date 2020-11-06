@@ -22,12 +22,13 @@ namespace NServiceBus.Transport.SqlServer
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(string catalog, SettingsHolder settings, string connectionString, Func<string> localAddress, Func<LogicalAddress> logicalAddress)
+        internal SqlServerTransportInfrastructure(string catalog, SettingsHolder settings, string connectionString, Func<string> localAddress, Func<LogicalAddress> logicalAddress, bool isEncrypted)
         {
             this.settings = settings;
             this.connectionString = connectionString;
             this.localAddress = localAddress;
             this.logicalAddress = logicalAddress;
+            this.isEncrypted = isEncrypted;
 
             if (settings.HasSetting(SettingsKeys.DisableNativePubSub))
             {
@@ -42,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
             addressTranslator = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
-            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator);
+            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !isEncrypted);
             connectionFactory = CreateConnectionFactory();
 
             //Configure the schema and catalog for logical endpoint-based routing
@@ -155,7 +156,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
-            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName);
+            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted);
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -353,5 +354,6 @@ namespace NServiceBus.Transport.SqlServer
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
         TableBasedQueueCache tableBasedQueueCache;
+        bool isEncrypted;
     }
 }

@@ -16,9 +16,9 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
+        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported)
         {
-            var row = await ReadRow(dataReader).ConfigureAwait(false);
+            var row = await ReadRow(dataReader, isStreamSupported).ConfigureAwait(false);
             return row.TryParse();
         }
 
@@ -46,7 +46,7 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported)
         {
             return new MessageRow
             {
@@ -55,7 +55,7 @@
                 replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(3).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false)
+                bodyBytes = isStreamSupported ? await GetBody(dataReader, 5).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5).ConfigureAwait(false)
             };
         }
 
@@ -94,7 +94,17 @@
             }
         }
 
-        static Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
+        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex)
+        {
+            using (var outStream = new MemoryStream())
+            using (var stream = dataReader.GetStream(bodyIndex))
+            {
+                await stream.CopyToAsync(outStream).ConfigureAwait(false);
+                return outStream.ToArray();
+            }
+        }
+
+        static Task<byte[]> GetNonStreamBody(SqlDataReader dataReader, int bodyIndex)
         {
             return Task.FromResult((byte[])dataReader[bodyIndex]);
         }
