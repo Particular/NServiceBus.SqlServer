@@ -55,7 +55,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(receiveCommand, connection, transaction))
             {
-                return await ReadMessage(command, isStreamSupported).ConfigureAwait(false);
+                return await ReadMessage(command).ConfigureAwait(false);
             }
         }
 
@@ -71,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
             return SendRawMessage(messageRow, connection, transaction);
         }
 
-        static async Task<MessageReadResult> ReadMessage(SqlCommand command, bool isStreamSupported)
+        async Task<MessageReadResult> ReadMessage(SqlCommand command)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
