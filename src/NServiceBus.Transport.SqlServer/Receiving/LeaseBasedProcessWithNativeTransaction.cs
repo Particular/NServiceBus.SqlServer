@@ -76,6 +76,8 @@
                     using (var transaction = connection.BeginTransaction(isolationLevel))
                     {
                         await ReleaseLease(message.LeaseId.Value, connection, transaction).ConfigureAwait(false);
+
+                        transaction.Commit();
                     }
                 }
 

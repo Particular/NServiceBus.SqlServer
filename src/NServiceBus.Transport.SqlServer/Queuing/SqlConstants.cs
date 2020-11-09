@@ -74,7 +74,7 @@ SET NOCOUNT ON;
 
 UPDATE {0}
 SET LeaseExpiration = NULL,
-    LeaseId = NULL,
+    LeaseId = NULL
 WHERE LeaseId = @LeaseId;
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;

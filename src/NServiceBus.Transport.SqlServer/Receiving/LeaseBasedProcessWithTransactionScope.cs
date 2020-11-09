@@ -44,9 +44,12 @@
                 {
                     if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
                     {
+                        using (var releaseScope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                         using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                         {
                             await ReleaseLease(message.LeaseId.Value, connection, null).ConfigureAwait(false);
+
+                            releaseScope.Complete();
                         }
 
                         return;
