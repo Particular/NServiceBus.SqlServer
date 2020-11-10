@@ -239,12 +239,12 @@ namespace NServiceBus.Transport.SqlServer
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, tableBasedQueueCache);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, transactionForReceiveOnly: true);
+                return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, tableBasedQueueCache, transactionForReceiveOnly: true);
             }
 
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);

@@ -89,7 +89,7 @@ SET NOCOUNT ON;
 UPDATE {0} WITH (READPAST)
 SET LeaseExpiration = GETUTCDATE() + '00:00:30',
     LeaseId = NEWID(),
-    DequeueCount = DequeueCount+1 
+    DequeueCount = IIF(DequeueCount IS NULL, 1, DequeueCount + 1) 
 OUTPUT
 	deleted.Id,
     deleted.CorrelationId,
@@ -103,7 +103,8 @@ OUTPUT
     END,
     deleted.Headers,
     deleted.Body,
-	inserted.LeaseId
+	inserted.LeaseId,
+    inserted.DequeueCount
 WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM {0} WHERE [LeaseExpiration] IS NULL OR [LeaseExpiration] < GETUTCDATE());
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;

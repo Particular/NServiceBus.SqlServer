@@ -46,7 +46,7 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool readLeaseId)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isLeaseBased)
         {
             //HINT: we are assuming that dataReader is sequential. Order or reads is important !
             return new MessageRow
@@ -57,7 +57,8 @@
                 expired = await dataReader.GetFieldValueAsync<int>(3).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
                 bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false),
-                leaseId = readLeaseId ? await dataReader.GetFieldValueAsync<Guid>(6).ConfigureAwait(false) : (Guid?)null
+                leaseId = isLeaseBased ? await dataReader.GetFieldValueAsync<Guid>(6).ConfigureAwait(false) : (Guid?)null,
+                dequeueCount = isLeaseBased ? await dataReader.GetFieldValueAsync<int>(7).ConfigureAwait(false) : 0
             };
         }
 
@@ -65,7 +66,7 @@
         {
             try
             {
-                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired, leaseId));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired, leaseId, dequeueCount));
             }
             catch (Exception ex)
             {
@@ -135,6 +136,7 @@
         string headers;
         byte[] bodyBytes;
         Guid? leaseId;
+        int dequeueCount;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

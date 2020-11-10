@@ -5,12 +5,13 @@
 
     class Message
     {
-        public Message(string transportId, string originalHeaders, string replyToAddress, byte[] body, bool expired, Guid? leaseId = null)
+        public Message(string transportId, string originalHeaders, string replyToAddress, byte[] body, bool expired, Guid? leaseId = null, int dequeueCount = 0)
         {
             TransportId = transportId;
             Body = body;
             Expired = expired;
             LeaseId = leaseId;
+            DequeueCount = dequeueCount;
 
             this.originalHeaders = originalHeaders;
             this.replyToAddress = replyToAddress;
@@ -23,6 +24,7 @@
         public byte[] Body { get; }
         public Dictionary<string, string> Headers { get; private set; }
         public Guid? LeaseId { get; private set; }
+        public int DequeueCount { get; private set; }
 
         void InitializeHeaders()
         {

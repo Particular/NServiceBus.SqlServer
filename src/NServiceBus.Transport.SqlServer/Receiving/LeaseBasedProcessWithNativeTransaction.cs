@@ -9,15 +9,15 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Logging;
     using IsolationLevel = System.Data.IsolationLevel;
 
     class LeaseBasedProcessWithNativeTransaction : ReceiveStrategy
     {
-        public LeaseBasedProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
+        public LeaseBasedProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
         : base(tableBasedQueueCache)
         {
             this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
             this.transactionForReceiveOnly = transactionForReceiveOnly;
 
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
@@ -43,18 +43,27 @@
                         return;
                     }
                 }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn("Message receive query failed.", exception);
+            }
 
-                var processingSuccessful = false;
+            var processed = false;
 
+            try
+            {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    if (await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
+                    var transportTransaction = PrepareTransportTransaction(connection, transaction);
+
+                    if (await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false))
                     {
                         if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, transaction).ConfigureAwait(false))
                         {
-                            processingSuccessful = true;
                             transaction.Commit();
+                            processed = true;
                         }
                         else
                         {
@@ -62,33 +71,66 @@
                         }
                     }
                     else
-                    { 
+                    {
                         transaction.Rollback();
                     }
                 }
-
-                if (!processingSuccessful)
+            }
+            catch (Exception processingException)
+            {
+                try
                 {
                     using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                     using (var transaction = connection.BeginTransaction(isolationLevel))
                     {
-                        await ReleaseLease(message.LeaseId.Value, connection, transaction).ConfigureAwait(false);
+                        var transportTransaction = PrepareTransportTransaction(connection, transaction);
 
-                        transaction.Commit();
+                        var errorHandlingResult = await HandleError(processingException, message, transportTransaction, message.DequeueCount).ConfigureAwait(false);
+
+                        if (errorHandlingResult == ErrorHandleResult.Handled)
+                        {
+                            if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, transaction).ConfigureAwait(false))
+                            {
+                                transaction.Commit();
+                                processed = true;
+                            }
+                            else
+                            {
+                                transaction.Rollback();
+                            }
+                        }
                     }
                 }
-                else
+                catch (Exception errorHandlingException)
                 {
-                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                    Logger.Warn($"Error handling failed for message {message.TransportId}", errorHandlingException);
                 }
             }
-            catch (Exception exception)
+            finally
             {
-                if (message == null)
+                if (processed == false)
                 {
-                    throw;
+                    await TryReleaseLease(message).ConfigureAwait(false);
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+            }
+        }
+
+        async Task TryReleaseLease(Message message)
+        {
+            try
+            {
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var transaction = connection.BeginTransaction(isolationLevel))
+                {
+                    await ReleaseLease(message.LeaseId.Value, connection, transaction).ConfigureAwait(false);
+
+                    transaction.Commit();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Warn($"Failed to release message lock {message.TransportId}", e);
+                throw;
             }
         }
 
@@ -109,33 +151,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
-        {
-            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
-            {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
-
-                if (errorHandlingResult == ErrorHandleResult.Handled)
-                {
-                    return true;
-                }
-            }
-
-            try
-            {
-                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
-                return false;
-            }
-        }
-
         IsolationLevel isolationLevel;
         SqlConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
         bool transactionForReceiveOnly;
         internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
+
+        static ILog Logger = LogManager.GetLogger<LeaseBasedProcessWithNativeTransaction>();
     }
 }
