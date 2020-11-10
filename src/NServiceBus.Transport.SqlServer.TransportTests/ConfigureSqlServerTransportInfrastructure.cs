@@ -20,7 +20,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 #if !NETFRAMEWORK
         if (transportTransactionMode == TransportTransactionMode.TransactionScope)
         {
-            //NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
+            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
         }
 #endif
         this.settings = settings;
