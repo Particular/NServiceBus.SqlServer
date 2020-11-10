@@ -4,85 +4,109 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Logging;
 
     class LeaseBasedProcessWithTransactionScope : ReceiveStrategy
     {
-        public LeaseBasedProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
+        public LeaseBasedProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
          : base(tableBasedQueueCache)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
         }
 
         public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
-            Message message = null;
+            Message message;
+
+            try
+            {
+                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                {
+                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+
+                    scope.Complete();
+
+                    if (message == null)
+                    {
+                        // The message was received but is not fit for processing (e.g. was DLQd).
+                        // In such a case we still need to commit the transport tx to remove message
+                        // from the queue table.
+                        return;
+                    }
+
+                    connection.Close();
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Warn("Message receive query failed.", exception);
+                return;
+            }
+
+            var processed = false;
+
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    {
-                        message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
-
-                        scope.Complete();
-
-                        if (message == null)
-                        {
-                            // The message was received but is not fit for processing (e.g. was DLQd).
-                            // In such a case we still need to commit the transport tx to remove message
-                            // from the queue table.
-                            return;
-                        }
-
-                        connection.Close();
-                    }
-                }
-
-                var processingSuccessful = false;
-
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    if (await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (await TryProcessingMessage(message, PrepareTransportTransaction()).ConfigureAwait(false))
                     {
                         using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                         {
                             if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
                             {
-                                processingSuccessful = true;
+                                scope.Complete();
+                                processed = true;
                             }
                         }
+                    }
+                }
+            }
+            catch (Exception processingException)
+            {
+                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    var errorHandlingResult = await HandleError(processingException, message, PrepareTransportTransaction(), message.DequeueCount).ConfigureAwait(false);
 
-                        if (processingSuccessful)
+                    if (errorHandlingResult == ErrorHandleResult.Handled)
+                    {
+                        using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                         {
-                            scope.Complete();
+                            if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
+                            {
+                                scope.Complete();
+                                processed = true;
+                            }
                         }
                     }
                 }
-
-                if(processingSuccessful == false)
-                { 
-                    using (var releaseScope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    {
-                        await ReleaseLease(message.LeaseId.Value, connection, null).ConfigureAwait(false);
-
-                        releaseScope.Complete();
-                    }
-                }
-                else
+            }
+            finally
+            {
+                if (processed == false)
                 {
-                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                    await TryReleaseLease(message).ConfigureAwait(false);
                 }
             }
-            catch (Exception exception)
+        }
+
+        async Task TryReleaseLease(Message message)
+        {
+            try
             {
-                if (message == null)
+                using (var releaseScope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    throw;
+                    await ReleaseLease(message.LeaseId.Value, connection, null).ConfigureAwait(false);
+
+                    releaseScope.Complete();
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+            }
+            catch (Exception e)
+            {
+                Logger.Warn($"Failed to release message lock {message.TransportId}", e);
             }
         }
 
@@ -96,31 +120,9 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
-        {
-            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
-            {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
-
-                if (errorHandlingResult == ErrorHandleResult.Handled)
-                {
-                    return true;
-                }
-            }
-
-            try
-            {
-                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
-                return false;
-            }
-        }
-
         TransactionOptions transactionOptions;
         SqlConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
+
+        static ILog Logger = LogManager.GetLogger<LeaseBasedProcessWithTransactionScope>();
     }
 }

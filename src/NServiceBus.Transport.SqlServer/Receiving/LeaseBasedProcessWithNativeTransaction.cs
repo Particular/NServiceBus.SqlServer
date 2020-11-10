@@ -25,7 +25,7 @@
 
         public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
-            Message message = null;
+            Message message;
             try
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
@@ -47,6 +47,7 @@
             catch (Exception exception)
             {
                 Logger.Warn("Message receive query failed.", exception);
+                return;
             }
 
             var processed = false;
@@ -130,7 +131,6 @@
             catch (Exception e)
             {
                 Logger.Warn($"Failed to release message lock {message.TransportId}", e);
-                throw;
             }
         }
 

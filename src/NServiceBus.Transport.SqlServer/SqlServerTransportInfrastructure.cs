@@ -234,7 +234,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new LeaseBasedProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+                return new LeaseBasedProcessWithTransactionScope(options, connectionFactory, tableBasedQueueCache);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
