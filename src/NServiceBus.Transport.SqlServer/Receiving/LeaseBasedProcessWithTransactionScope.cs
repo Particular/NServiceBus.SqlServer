@@ -40,34 +40,41 @@
                     }
                 }
 
+                var processingSuccessful = false;
+
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
                     {
-                        using (var releaseScope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                         using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                         {
-                            await ReleaseLease(message.LeaseId.Value, connection, null).ConfigureAwait(false);
-
-                            releaseScope.Complete();
+                            if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
+                            {
+                                processingSuccessful = true;
+                            }
                         }
 
-                        return;
-                    }
-
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    {
-                        if (!await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
+                        if (processingSuccessful)
                         {
-                            return;
+                            scope.Complete();
                         }
                     }
-
-                    scope.Complete();
-                    
                 }
 
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                if(processingSuccessful == false)
+                { 
+                    using (var releaseScope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    {
+                        await ReleaseLease(message.LeaseId.Value, connection, null).ConfigureAwait(false);
+
+                        releaseScope.Complete();
+                    }
+                }
+                else
+                {
+                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                }
             }
             catch (Exception exception)
             {

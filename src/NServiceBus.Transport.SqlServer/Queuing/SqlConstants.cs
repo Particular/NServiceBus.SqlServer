@@ -59,7 +59,7 @@ IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
         public static readonly string TryDeleteLeasedRow = @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
-SET NOCOUNT ON;
+SET NOCOUNT OFF;
 
 DELETE FROM {0} WHERE LeaseId = @LeaseId
 
@@ -86,7 +86,7 @@ DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
 
-UPDATE {0}
+UPDATE {0} WITH (READPAST)
 SET LeaseExpiration = GETUTCDATE() + '00:00:30',
     LeaseId = NEWID(),
     DequeueCount = DequeueCount+1 

@@ -44,33 +44,30 @@
                     }
                 }
 
-                var isRolledback = false;
+                var processingSuccessful = false;
 
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
+                    if (await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
                     {
-                        isRolledback = true;
-                        transaction.Rollback();
-                    }
-                    else
-                    {
-                        //Row lease has expired and was picked up by other thread or process
-                        if (!await TryDeleteLeasedRow(message.LeaseId.Value, connection, transaction).ConfigureAwait(false))
+                        if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, transaction).ConfigureAwait(false))
                         {
-                            isRolledback = true;
+                            processingSuccessful = true;
+                            transaction.Commit();
+                        }
+                        else
+                        {
                             transaction.Rollback();
                         }
                     }
-
-                    if (!isRolledback)
-                    {
-                        transaction.Commit();
+                    else
+                    { 
+                        transaction.Rollback();
                     }
                 }
 
-                if (isRolledback)
+                if (!processingSuccessful)
                 {
                     using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                     using (var transaction = connection.BeginTransaction(isolationLevel))
@@ -80,8 +77,10 @@
                         transaction.Commit();
                     }
                 }
-
-                failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                else
+                {
+                    failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                }
             }
             catch (Exception exception)
             {
