@@ -5,7 +5,7 @@
 
     class QueuePeekerOptions
     {
-        public QueuePeekerOptions(TimeSpan? delayTime = null)
+        public QueuePeekerOptions(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
         {
             var delay = DefaultDelay;
 
@@ -16,6 +16,18 @@
             }
 
             Delay = delay;
+
+            Validate(maxRecordsToPeek);
+            MaxRecordsToPeek = maxRecordsToPeek;
+        }
+
+        static void Validate(int? maxRecordsToPeek)
+        {
+            if (maxRecordsToPeek.HasValue && maxRecordsToPeek < 1)
+            {
+                var message = "Peek batch size is invalid. THe value must be greater than zero.";
+                throw new Exception(message);
+            }
         }
 
         static void Validate(TimeSpan delay)
@@ -34,6 +46,7 @@
         }
 
         public TimeSpan Delay { get; }
+        public int? MaxRecordsToPeek { get; }
         static TimeSpan DefaultDelay = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }

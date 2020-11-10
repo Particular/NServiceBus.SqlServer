@@ -15,7 +15,7 @@
     /// <summary>
     /// Adds extra configuration for the Sql Server transport.
     /// </summary>
-    public static class SqlServerTransportSettingsExtensions
+    public static partial class SqlServerTransportSettingsExtensions
     {
         /// <summary>
         /// Sets a default schema for both input and output queues
@@ -168,15 +168,16 @@
         }
 
         /// <summary>
-        /// Allows changing the queue peek delay.
+        /// Allows changing the queue peek delay, and the peek batch size.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="delay">The delay value</param>
-        public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
+        /// <param name="peekBatchSize">The peek batch size</param>
+        public static TransportExtensions<SqlServerTransport> QueuePeekerOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null, int? peekBatchSize = null)
         {
             Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
 
-            transportExtensions.GetSettings().Set(new QueuePeekerOptions(delay));
+            transportExtensions.GetSettings().Set(new QueuePeekerOptions(delay, peekBatchSize));
             return transportExtensions;
         }
 
