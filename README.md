@@ -22,7 +22,7 @@ Consider creating a RAM drive or using the temporaty drive when running in a clo
 
 ## How to run tests
 
-Tests expect a Sql Server instance (default: `.\SqlExpress`) to be availble, and by default use the following connection string: `Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True`. It is possible to configure a different connection string by setting it as the value of the `SqlServerTransportConnectionString` environment variable. The initial catalog, `nservicebus`, is hardcoded in some tests and cannot be changed.
+Tests expect a Sql Server instance (default: `.\SqlExpress`) to be available, and by default use the following connection string: `Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True`. It is possible to configure a different connection string by setting it as the value of the `SqlServerTransportConnectionString` environment variable. The initial catalog, `nservicebus`, is hardcoded in some tests and cannot be changed.
 
 ### Requirements
 
