@@ -248,7 +248,7 @@ namespace NServiceBus.Transport.SqlServer
                 return new LeaseBasedProcessWithNativeTransaction(options, connectionFactory, tableBasedQueueCache, transactionForReceiveOnly: true);
             }
 
-            return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
+            return new LeaseBasedProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
         IExpiredMessagesPurger CreateExpiredMessagesPurger()
