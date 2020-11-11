@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using System.Transactions;
     using DelayedDelivery;
-    using NServiceBus.Logging;
+    using Logging;
     using Performance.TimeToBeReceived;
     using Routing;
     using Settings;
@@ -126,7 +126,7 @@ namespace NServiceBus.Transport.SqlServer
             var createMessageBodyComputedColumn = settings.GetOrDefault<bool>(SettingsKeys.CreateMessageBodyComputedColumn);
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
-                guarantee => useLeaseBasedReceive 
+                guarantee => useLeaseBasedReceive
                     ? SelectLeaseBasedReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory)
                     : SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
 
