@@ -68,6 +68,42 @@
             return null;
         }
 
+        protected async Task<bool> TryLeaseBasedMessagePreHandling(MessageReadResult receiveResult, SqlConnection connection, SqlTransaction transaction)
+        {
+            if (receiveResult.IsPoison)
+            {
+                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage,  connection, transaction).ConfigureAwait(false);
+                return true;
+            }
+
+            if (receiveResult.Message.Expired) //Do not process expired messages
+            {
+                return true;
+            }
+
+            if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        protected async Task<bool> TryLeasedBasedProcessingMessage(Message message, TransportTransaction transportTransaction)
+        {
+            using (var pushCancellationTokenSource = new CancellationTokenSource())
+            {
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, pushCancellationTokenSource, new ContextBag());
+                await onMessage(messageContext).ConfigureAwait(false);
+
+                // Cancellation is requested when message processing is aborted.
+                // We return the opposite value:
+                //  - true when message processing completed successfully,
+                //  - false when message processing was aborted.
+                return !pushCancellationTokenSource.Token.IsCancellationRequested;
+            }
+        }
+
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {
             if (message.Expired) //Do not process expired messages

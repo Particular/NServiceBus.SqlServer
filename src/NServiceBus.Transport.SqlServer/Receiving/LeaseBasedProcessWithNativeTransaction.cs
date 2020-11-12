@@ -25,23 +25,22 @@
 
         public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
-            Message message;
+            MessageReadResult readResult;
             try
             {
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
+                    readResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
-                    transaction.Commit();
-
-                    if (message == null)
+                    if (readResult.Successful == false)
                     {
-                        // The message was received but is not fit for processing (e.g. was DLQd).
-                        // In such a case we still need to commit the transport tx to remove message
-                        // from the queue table.
+                        //There is no message in the input queue that can be delivered.
+                        //Either there are not messages or all of the have valid leases
                         return;
                     }
+
+                    transaction.Commit();
                 }
             }
             catch (Exception exception)
@@ -50,7 +49,23 @@
                 return;
             }
 
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
+            {
+                if (await TryLeaseBasedMessagePreHandling(readResult, connection, transaction).ConfigureAwait(false))
+                {
+                    var leaseId = readResult.Message?.LeaseId ?? readResult.PoisonMessage.LeaseId.Value;
+
+                    if (await TryDeleteLeasedRow(leaseId, connection, null).ConfigureAwait(false))
+                    {
+                        transaction.Commit();
+                        return;
+                    }
+                }
+            }
+
             var processed = false;
+            var message = readResult.Message;
 
             try
             {
@@ -59,7 +74,7 @@
                 {
                     var transportTransaction = PrepareTransportTransaction(connection, transaction);
 
-                    if (await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false))
+                    if (await TryLeasedBasedProcessingMessage(message, transportTransaction).ConfigureAwait(false))
                     {
                         if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, transaction).ConfigureAwait(false))
                         {

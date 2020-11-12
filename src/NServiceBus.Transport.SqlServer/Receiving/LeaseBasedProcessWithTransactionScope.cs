@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Threading;
@@ -17,26 +17,23 @@
 
         public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
         {
-            Message message;
+            MessageReadResult readResult;
 
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                    readResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
 
-                    scope.Complete();
-
-                    if (message == null)
+                    if (readResult.Successful == false)
                     {
-                        // The message was received but is not fit for processing (e.g. was DLQd).
-                        // In such a case we still need to commit the transport tx to remove message
-                        // from the queue table.
+                        //There is no message in the input queue that can be delivered.
+                        //Either there are not messages or all of the have valid leases
                         return;
                     }
 
-                    connection.Close();
+                    scope.Complete();
                 }
             }
             catch (Exception exception)
@@ -45,13 +42,29 @@
                 return;
             }
 
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            {
+                if (await TryLeaseBasedMessagePreHandling(readResult, connection, null).ConfigureAwait(false))
+                {
+                    var leaseId = readResult.Message?.LeaseId ?? readResult.PoisonMessage.LeaseId.Value;
+
+                    if (await TryDeleteLeasedRow(leaseId, connection, null).ConfigureAwait(false))
+                    {
+                        scope.Complete();
+                        return;
+                    }
+                }
+            }
+
             var processed = false;
+            var message = readResult.Message;
 
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    if (await TryProcessingMessage(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (await TryLeasedBasedProcessingMessage(message, PrepareTransportTransaction()).ConfigureAwait(false))
                     {
                         using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                         {

@@ -57,7 +57,7 @@
                 expired = await dataReader.GetFieldValueAsync<int>(3).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
                 bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false),
-                leaseId = isLeaseBased ? await dataReader.GetFieldValueAsync<Guid>(6).ConfigureAwait(false) : (Guid?)null,
+                LeaseId = isLeaseBased ? await dataReader.GetFieldValueAsync<Guid>(6).ConfigureAwait(false) : (Guid?)null,
                 dequeueCount = isLeaseBased ? await dataReader.GetFieldValueAsync<int>(7).ConfigureAwait(false) : 0
             };
         }
@@ -66,7 +66,7 @@
         {
             try
             {
-                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired, leaseId, dequeueCount));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, replyToAddress, bodyBytes, expired, LeaseId, dequeueCount));
             }
             catch (Exception ex)
             {
@@ -135,7 +135,7 @@
         int? timeToBeReceived;
         string headers;
         byte[] bodyBytes;
-        Guid? leaseId;
+        internal Guid? LeaseId;
         int dequeueCount;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
