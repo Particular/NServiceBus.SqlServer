@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     readResult = await InputQueue.TryReceive(connection, null).ConfigureAwait(false);
 
-                    if (readResult.Successful == false)
+                    if (readResult.Successful == false && readResult.IsPoison == false)
                     {
                         //There is no message in the input queue that can be delivered.
                         //Either there are not messages or all of the have valid leases
