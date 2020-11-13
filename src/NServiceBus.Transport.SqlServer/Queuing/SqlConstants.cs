@@ -105,7 +105,7 @@ OUTPUT
     deleted.Body,
 	inserted.LeaseId,
     inserted.DequeueCount
-WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM {0} WHERE [LeaseExpiration] IS NULL OR [LeaseExpiration] < GETUTCDATE());
+WHERE [RowVersion] = (SELECT TOP (1) [RowVersion] FROM {0} WHERE [LeaseExpiration] IS NULL OR [LeaseExpiration] < GETUTCDATE() ORDER BY [RowVersion]);
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
@@ -266,6 +266,10 @@ CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
 (
 	[RowVersion] ASC
 )
+INCLUDE 
+(
+    LeaseExpiration
+)
 
 CREATE NONCLUSTERED INDEX Index_Expires ON {0}
 (
@@ -282,6 +286,11 @@ WHERE
 CREATE NONCLUSTERED INDEX Index_LeaseExpiration ON {0}
 (
 	[LeaseExpiration] ASC
+)
+
+CREATE NONCLUSTERED INDEX Index_LeaseId ON {0}
+(
+	[LeaseId] ASC
 )
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'
