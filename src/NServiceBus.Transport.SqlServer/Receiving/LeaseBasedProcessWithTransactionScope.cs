@@ -58,6 +58,7 @@ namespace NServiceBus.Transport.SqlServer
             }
 
             var processed = false;
+            Exception processingException = null;
             var message = readResult.Message;
 
             try
@@ -77,31 +78,43 @@ namespace NServiceBus.Transport.SqlServer
                     }
                 }
             }
-            catch (Exception processingException)
+            catch (Exception e)
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    var errorHandlingResult = await HandleError(processingException, message, PrepareTransportTransaction(), message.DequeueCount).ConfigureAwait(false);
+                processed = false;
+                processingException = e;
+            }
 
-                    if (errorHandlingResult == ErrorHandleResult.Handled)
+            if (processingException != null)
+            {
+                try
+                {
+                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                     {
-                        using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                        var errorHandlingResult = await HandleError(processingException, message, PrepareTransportTransaction(), message.DequeueCount).ConfigureAwait(false);
+
+                        if (errorHandlingResult == ErrorHandleResult.Handled)
                         {
-                            if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
+                            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                             {
-                                scope.Complete();
-                                processed = true;
+                                if (await TryDeleteLeasedRow(message.LeaseId.Value, connection, null).ConfigureAwait(false))
+                                {
+                                    scope.Complete();
+                                    processed = true;
+                                }
                             }
                         }
                     }
                 }
-            }
-            finally
-            {
-                if (processed == false)
+                catch (Exception errorHandlingException)
                 {
-                    await TryReleaseLease(message).ConfigureAwait(false);
+                    processed = false;
+                    Logger.Warn($"Error executing recoverability action for message: {message.TransportId}", errorHandlingException);
                 }
+            }
+
+            if (processed == false)
+            {
+                await TryReleaseLease(message).ConfigureAwait(false);
             }
         }
 
