@@ -229,6 +229,16 @@
             return transportExtensions;
         }
 
+        /// <summary>
+        /// Disables delayed delivery. Calling this results in the delayed delivery queues not being created.
+        /// </summary>
+        public static TransportExtensions<SqlServerTransport> DisableDelayedDelivery(this TransportExtensions<SqlServerTransport> transportExtensions)
+        {
+            transportExtensions.GetSettings().Set(SettingsKeys.DisableDelayedDelivery, true);
+
+            return transportExtensions;
+        }
+
         static ILog Logger = LogManager.GetLogger<SqlServerTransport>();
     }
 }
