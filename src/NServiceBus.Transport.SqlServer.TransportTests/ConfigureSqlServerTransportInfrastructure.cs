@@ -43,7 +43,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         var localAddress = settings.EndpointName();
         return new TransportConfigurationResult
         {
-            TransportInfrastructure = new SqlServerTransportInfrastructure("nservicebus", settings, connectionString, () => localAddress, () => logicalAddress)
+            TransportInfrastructure = new SqlServerTransportInfrastructure("nservicebus", settings, connectionString, () => localAddress, () => logicalAddress, false)
         };
     }
 

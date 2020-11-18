@@ -118,7 +118,7 @@
         async Task PrepareAsync()
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
-            var tableCache = new TableBasedQueueCache(addressParser);
+            var tableCache = new TableBasedQueueCache(addressParser, true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
@@ -139,7 +139,7 @@
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressParser.Parse(validAddress);
-            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address);
+            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
 
             return purger.Purge(queue);
         }

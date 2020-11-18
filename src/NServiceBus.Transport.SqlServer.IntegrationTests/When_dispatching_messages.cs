@@ -103,7 +103,7 @@
         async Task PrepareAsync()
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-            var tableCache = new TableBasedQueueCache(addressParser);
+            var tableCache = new TableBasedQueueCache(addressParser, true);
 
             await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
@@ -116,8 +116,8 @@
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressTranslator.Parse(validAddress).QualifiedTableName;
-            queue = new TableBasedQueue(queueAddress, validAddress);
-
+            queue = new TableBasedQueue(queueAddress, validAddress, true);
+            
             return purger.Purge(queue);
         }
 

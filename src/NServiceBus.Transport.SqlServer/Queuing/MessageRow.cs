@@ -16,9 +16,9 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader)
+        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported)
         {
-            var row = await ReadRow(dataReader).ConfigureAwait(false);
+            var row = await ReadRow(dataReader, isStreamSupported).ConfigureAwait(false);
             return row.TryParse();
         }
 
@@ -46,9 +46,8 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported)
         {
-            //HINT: we are assuming that dataReader is sequential. Order or reads is important !
             return new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0).ConfigureAwait(false),
@@ -56,7 +55,7 @@
                 replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(3).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 5).ConfigureAwait(false)
+                bodyBytes = isStreamSupported ? await GetBody(dataReader, 5).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5).ConfigureAwait(false)
             };
         }
 
@@ -104,6 +103,11 @@
                 await stream.CopyToAsync(outStream).ConfigureAwait(false);
                 return outStream.ToArray();
             }
+        }
+
+        static Task<byte[]> GetNonStreamBody(SqlDataReader dataReader, int bodyIndex)
+        {
+            return Task.FromResult((byte[])dataReader[bodyIndex]);
         }
 
         static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class
