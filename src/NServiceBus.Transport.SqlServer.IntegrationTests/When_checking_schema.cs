@@ -27,7 +27,7 @@
 
             await ResetQueue(addressParser, sqlConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName);
+            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
         }
 
         [Test]

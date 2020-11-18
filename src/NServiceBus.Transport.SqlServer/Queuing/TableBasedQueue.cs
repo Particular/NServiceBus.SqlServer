@@ -16,7 +16,7 @@ namespace NServiceBus.Transport.SqlServer
     {
         public string Name { get; }
 
-        public TableBasedQueue(string qualifiedTableName, string queueName)
+        public TableBasedQueue(string qualifiedTableName, string queueName, bool isStreamSupported)
         {
 #pragma warning disable 618
             this.qualifiedTableName = qualifiedTableName;
@@ -28,6 +28,7 @@ namespace NServiceBus.Transport.SqlServer
             checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
             checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+            this.isStreamSupported = isStreamSupported;
 #pragma warning restore 618
         }
 
@@ -70,17 +71,22 @@ namespace NServiceBus.Transport.SqlServer
             return SendRawMessage(messageRow, connection, transaction);
         }
 
-        static async Task<MessageReadResult> ReadMessage(SqlCommand command)
+        async Task<MessageReadResult> ReadMessage(SqlCommand command)
         {
-            // We need sequential access to not buffer everything into memory
-            using (var dataReader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow | CommandBehavior.SequentialAccess).ConfigureAwait(false))
+            var behavior = CommandBehavior.SingleRow;
+            if (isStreamSupported)
+            {
+                behavior |= CommandBehavior.SequentialAccess;
+            }
+
+            using (var dataReader = await command.ExecuteReaderAsync(behavior).ConfigureAwait(false))
             {
                 if (!await dataReader.ReadAsync().ConfigureAwait(false))
                 {
                     return MessageReadResult.NoMessage;
                 }
 
-                return await MessageRow.Read(dataReader).ConfigureAwait(false);
+                return await MessageRow.Read(dataReader, isStreamSupported).ConfigureAwait(false);
             }
         }
 
@@ -177,5 +183,6 @@ namespace NServiceBus.Transport.SqlServer
         string checkExpiresIndexCommand;
         string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
+        bool isStreamSupported;
     }
 }

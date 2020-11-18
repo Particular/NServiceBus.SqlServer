@@ -43,8 +43,9 @@ namespace NServiceBus
         public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
         {
             var catalog = GetDefaultCatalog(settings, connectionString);
+            var isEncrypted = IsEncrypted(settings, connectionString);
 
-            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress);
+            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
         }
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
@@ -70,6 +71,29 @@ namespace NServiceBus
                 return (string)catalog;
             }
             throw new Exception("Initial Catalog property is mandatory in the connection string.");
+        }
+
+        static bool IsEncrypted(SettingsHolder settings, string connectionString)
+        {
+            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
+            {
+                using (var connection = factoryOverride().GetAwaiter().GetResult())
+                {
+                    connectionString = connection.ConnectionString;
+                }
+            }
+
+            var parser = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionString
+            };
+
+            if (parser.TryGetValue("Column Encryption Setting", out var enabled))
+            {
+                return ((string)enabled).Equals("enabled", StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            return false;
         }
     }
 }

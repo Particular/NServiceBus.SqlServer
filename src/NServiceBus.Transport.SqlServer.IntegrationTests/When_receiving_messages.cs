@@ -34,7 +34,7 @@
 
             var pump = new MessagePump(
                 m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
-                qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
+                qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true),
                 new QueuePurger(sqlConnectionFactory),
                 new NoOpExpiredMessagesPurger(),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
@@ -82,7 +82,7 @@
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "")
+            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;
