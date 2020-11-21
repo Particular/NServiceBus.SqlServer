@@ -25,7 +25,7 @@
         {
             if (maxRecordsToPeek.HasValue && maxRecordsToPeek < 1)
             {
-                var message = "Peek batch size is invalid. THe value must be greater than zero.";
+                var message = "Peek batch size is invalid. The value must be greater than zero.";
                 throw new Exception(message);
             }
         }
