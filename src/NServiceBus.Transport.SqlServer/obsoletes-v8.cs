@@ -14,7 +14,7 @@
             TreatAsErrorFromVersion = "7.0")]
         public static TransportExtensions<SqlServerTransport> WithPeekDelay(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? delay = null)
         {
-            throw new InvalidOperationException();
+            throw new NotImplementedException();
         }
     }
 }
