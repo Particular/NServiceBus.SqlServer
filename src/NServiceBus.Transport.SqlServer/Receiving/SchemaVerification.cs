@@ -52,7 +52,7 @@
             return VerifyIndex(
                 queue,
                 (q, c) => q.CheckNonClusteredRowVersionIndexPresence(c),
-                $"Table {queue.Name} does not contain non-clustered index 'Index_RowVersion'.{Environment.NewLine}Migrating to this non-clustered index improves performance for send and receive operations.");
+                $"Table {queue.Name} does not contain non-clustered index for column 'RowVersion'.{Environment.NewLine}Migrating to this non-clustered index improves performance for send and receive operations.");
         }
 
         Task VerifyExpiredIndex(TableBasedQueue queue)
@@ -60,7 +60,7 @@
             return VerifyIndex(
                 queue,
                 (q, c) => q.CheckExpiresIndexPresence(c),
-                $"Table {queue.Name} does not contain index 'Index_Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information."
+                $"Table {queue.Name} does not contain index for column 'Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information."
             );
         }
 
