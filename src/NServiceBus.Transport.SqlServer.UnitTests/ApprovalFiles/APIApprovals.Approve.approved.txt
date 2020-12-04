@@ -1,19 +1,19 @@
-[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Transport.SqlServer.IntegrationTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Transport.SqlServer.TransportTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(@"NServiceBus.Transport.SqlServer.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
-[assembly: System.Runtime.InteropServices.ComVisibleAttribute(false)]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"NServiceBus.Transport.SqlServer.IntegrationTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"NServiceBus.Transport.SqlServer.TransportTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"NServiceBus.Transport.SqlServer.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100dde965e6172e019ac82c2639ffe494dd2e7dd16347c34762a05732b492e110f2e4e2e1b5ef2d85c848ccfb671ee20a47c8d1376276708dc30a90ff1121b647ba3b7259a6bc383b2034938ef0e275b58b920375ac605076178123693c6c4f1331661a62eba28c249386855637780e3ff5f23a6d854700eaa6803ef48907513b92")]
+[assembly: System.Runtime.InteropServices.ComVisible(false)]
 namespace NServiceBus
 {
-    public class static MessageDrivenPubSubCompatibilityModeConfiguration
+    public static class MessageDrivenPubSubCompatibilityModeConfiguration
     {
         public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
     }
-    public class static PublishOptionsExtensions
+    public static class PublishOptionsExtensions
     {
         public static void UseCustomSqlConnection(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
         public static void UseCustomSqlTransaction(this NServiceBus.PublishOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
     }
-    public class static SendOptionsExtensions
+    public static class SendOptionsExtensions
     {
         public static void UseCustomSqlConnection(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlConnection connection) { }
         public static void UseCustomSqlTransaction(this NServiceBus.SendOptions options, Microsoft.Data.SqlClient.SqlTransaction transaction) { }
@@ -25,24 +25,24 @@ namespace NServiceBus
         public override bool RequiresConnectionString { get; }
         public override NServiceBus.Transport.TransportInfrastructure Initialize(NServiceBus.Settings.SettingsHolder settings, string connectionString) { }
     }
-    public class static SqlServerTransportSettingsExtensions
+    public static class SqlServerTransportSettingsExtensions
     {
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
         public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<int> purgeBatchSize) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> QueuePeekerOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null, System.Nullable<int> peekBatchSize = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int? purgeBatchSize) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> QueuePeekerOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default, int? peekBatchSize = default) { }
         public static NServiceBus.Transport.SqlServer.SubscriptionSettings SubscriptionSettings(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> timeout = null, System.Nullable<System.Transactions.IsolationLevel> isolationLevel = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? timeout = default, System.Transactions.IsolationLevel? isolationLevel = default) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
-        [System.ObsoleteAttribute("WithPeekDelay has been obsoleted. Use `QueuePeekerOptions` instead. The member cu" +
+        [System.Obsolete("WithPeekDelay has been obsoleted. Use `QueuePeekerOptions` instead. The member cu" +
             "rrently throws a NotImplementedException. Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Nullable<System.TimeSpan> delay = null) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default) { }
     }
 }
 namespace NServiceBus.Transport.SqlServer
@@ -50,7 +50,7 @@ namespace NServiceBus.Transport.SqlServer
     public class DelayedDeliverySettings : NServiceBus.Configuration.AdvancedExtensibility.ExposeSettings
     {
         public void BatchSize(int batchSize) { }
-        [System.ObsoleteAttribute("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
+        [System.Obsolete("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
             " details. Will be removed in version 8.0.0.", true)]
         public void EnableTimeoutManagerCompatibility() { }
         public void ProcessingInterval(System.TimeSpan interval) { }
