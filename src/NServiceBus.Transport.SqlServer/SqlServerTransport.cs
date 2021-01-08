@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Threading;
+using NServiceBus.Routing;
+
 namespace NServiceBus
 {
     using System;
@@ -17,76 +21,38 @@ namespace NServiceBus
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
-        /// <summary>
-        /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
-        /// </summary>
-        public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        string connectionString;
+        Func<Task<SqlConnection>> connectionFactory;
 
-        /// <summary>
-        /// <see cref="TransportDefinition.RequiresConnectionString" />
-        /// </summary>
-        public override bool RequiresConnectionString => false;
-
-        static bool LegacyMultiInstanceModeTurnedOn(SettingsHolder settings)
+        DbConnectionStringBuilder GetConnectionStringBuilder()
         {
-            var legacyMode = settings.TryGet(SettingsKeys.LegacyMultiInstanceConnectionFactory, out Func<string, Task<SqlConnection>> _);
-            if (legacyMode && settings.HasSetting(SettingsKeys.MultiCatalogEnabled))
+            if (connectionFactory != null)
             {
-                throw new Exception("Multi-catalog configuration is not supported in legacy multi instance mode. Please configure each catalog using a separate connection string.");
-            }
-            return legacyMode;
-        }
-
-        /// <summary>
-        /// <see cref="TransportDefinition.Initialize" />
-        /// </summary>
-        public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
-        {
-            var catalog = GetDefaultCatalog(settings, connectionString);
-            var isEncrypted = IsEncrypted(settings, connectionString);
-
-            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
-        }
-
-        static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
-        {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
-            {
-                using (var connection = factoryOverride().GetAwaiter().GetResult())
+                using (var connection = connectionFactory().GetAwaiter().GetResult())
                 {
-                    connectionString = connection.ConnectionString;
+                    return new DbConnectionStringBuilder {ConnectionString = connection.ConnectionString};
                 }
             }
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception("Either connection string or connection factory has to be specified in the SQL Server transport configuration.");
-            }
-            var parser = new DbConnectionStringBuilder
-            {
-                ConnectionString = connectionString
-            };
+
+            return new DbConnectionStringBuilder {ConnectionString = connectionString};
+        }
+
+        string GetDefaultCatalog()
+        {
+            var parser = GetConnectionStringBuilder();
+
             if (parser.TryGetValue("Initial Catalog", out var catalog) ||
                 parser.TryGetValue("database", out catalog))
             {
                 return (string)catalog;
             }
+
             throw new Exception("Initial Catalog property is mandatory in the connection string.");
         }
 
-        static bool IsEncrypted(SettingsHolder settings, string connectionString)
+        bool IsEncrypted()
         {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
-            {
-                using (var connection = factoryOverride().GetAwaiter().GetResult())
-                {
-                    connectionString = connection.ConnectionString;
-                }
-            }
-
-            var parser = new DbConnectionStringBuilder
-            {
-                ConnectionString = connectionString
-            };
+            var parser = GetConnectionStringBuilder();
 
             if (parser.TryGetValue("Column Encryption Setting", out var enabled))
             {
@@ -94,6 +60,107 @@ namespace NServiceBus
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Creates and instance of <see cref="SqlServerTransport"/>
+        /// </summary>
+        public SqlServerTransport(TransportTransactionMode defaultTransactionMode) : base(defaultTransactionMode)
+        {
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.Initialize"/>
+        /// </summary>
+        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                throw new Exception(
+                    $"Either {nameof(ConnectionString)} or {nameof(ConnectionFactory)} property has to be specified in the SQL Server transport configuration.");
+            }
+
+            var catalog = GetDefaultCatalog();
+            var isEncrypted = IsEncrypted();
+
+            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
+        }
+
+        /// <summary>
+        /// Translates a <see cref="QueueAddress"/> object into a transport specific queue address-string.
+        /// </summary>
+        public override string ToTransportAddress(Transport.QueueAddress address)
+        {
+            //TODO: remove dependency on the logical address
+            var logicalAddress = LogicalAddress.CreateRemoteAddress(
+                new EndpointInstance(address.BaseAddress, address.Discriminator, address.Properties));
+            var fullAddress = logicalAddress.CreateQualifiedAddress(address.Qualifier);
+
+            return QueueAddressTranslator.TranslateLogicalAddress(fullAddress).Value;
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.GetSupportedTransactionModes"/>
+        /// </summary>
+        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes()
+        {
+            return new[]
+            {
+                TransportTransactionMode.None,
+                TransportTransactionMode.ReceiveOnly,
+                TransportTransactionMode.SendsAtomicWithReceive,
+                TransportTransactionMode.TransactionScope
+            };
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.SupportsDelayedDelivery"/>
+        /// </summary>
+        public override bool SupportsDelayedDelivery { get; } = true;
+
+        /// <summary>
+        /// <see cref="TransportDefinition.SupportsPublishSubscribe"/>
+        /// </summary>
+        public override bool SupportsPublishSubscribe { get; } = true;
+
+        /// <summary>
+        /// <see cref="TransportDefinition.SupportsTTBR"/>
+        /// </summary>
+        public override bool SupportsTTBR { get; } = true;
+
+        /// <summary>
+        /// Connection string to be used by the transport.
+        /// </summary>
+        public string ConnectionString
+        {
+            get => connectionString;
+            set
+            {
+                if (ConnectionFactory != null)
+                {
+                    throw new ArgumentException($"{nameof(ConnectionFactory)} has already been set. {nameof(ConnectionString)} and {nameof(ConnectionFactory)} cannot be used at the same time.");
+                }
+
+                connectionString = value;
+            }
+        }
+
+
+        /// <summary>
+        /// Connection string factory.
+        /// </summary>
+        public Func<Task<SqlConnection>> ConnectionFactory {
+            get => connectionFactory;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(ConnectionString) == false)
+                {
+                    throw new ArgumentException($"{nameof(ConnectionString)} has already been set. {nameof(ConnectionString)} and {nameof(ConnectionFactory)} cannot be used at the same time.");
+                }
+
+                connectionFactory = value;
+            } 
         }
     }
 }
