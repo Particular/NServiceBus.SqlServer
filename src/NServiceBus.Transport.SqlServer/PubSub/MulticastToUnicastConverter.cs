@@ -21,8 +21,8 @@ namespace NServiceBus.Transport.SqlServer
                 select new UnicastTransportOperation(
                     transportOperation.Message,
                     subscriber,
-                    transportOperation.RequiredDispatchConsistency,
-                    transportOperation.DeliveryConstraints
+                    transportOperation.Properties,
+                    transportOperation.RequiredDispatchConsistency
                 )).ToList();
         }
     }

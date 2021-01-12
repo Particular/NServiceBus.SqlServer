@@ -1,48 +1,58 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using Configuration.AdvancedExtensibility;
-    using Settings;
 
     /// <summary>
     /// Configures native delayed delivery.
     /// </summary>
-    public partial class DelayedDeliverySettings : ExposeSettings
+    public partial class DelayedDeliverySettings
     {
-        internal DelayedDeliverySettings(SettingsHolder settings) : base(settings) { }
+        string tableSuffix = "Delayed";
+        int batchSize = 100;
+        TimeSpan interval = TimeSpan.FromSeconds(1);
 
         /// <summary>
-        /// Sets the suffix for the table storing delayed messages.
+        /// Suffix to be appended to the table name storing delayed messages.
         /// </summary>
-        /// <param name="suffix">The suffix to be appended</param>
-        public void TableSuffix(string suffix)
+        public string TableSuffix
         {
-            Guard.AgainstNullAndEmpty(nameof(suffix), suffix);
-
-            this.GetSettings().Set(SettingsKeys.DelayedDeliverySuffix, suffix);
-        }
-
-        /// <summary>
-        /// Sets the size of the batch when moving matured timeouts to the input queue.
-        /// </summary>
-        public void BatchSize(int batchSize)
-        {
-            if (batchSize <= 0)
+            get => tableSuffix;
+            set
             {
-                throw new ArgumentException("Batch size has to be a positive number", nameof(batchSize));
+                Guard.AgainstNullAndEmpty(nameof(tableSuffix), value);
+                tableSuffix = value;
             }
-
-            this.GetSettings().Set(SettingsKeys.DelayedDeliveryMatureBatchSize, batchSize);
         }
-        
+
+        /// <summary>
+        /// Size of the batch when moving matured timeouts to the input queue.
+        /// </summary>
+        public int BatchSize
+        {
+            get => batchSize;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentException("Batch size has to be a positive number", nameof(batchSize));
+                }
+
+                batchSize = value;
+            }
+        }
+
         /// <summary>
         /// Configures how often delayed messages are processed (every 5 seconds by default).
         /// </summary>
-        public void ProcessingInterval(TimeSpan interval)
+        public TimeSpan ProcessingInterval
         {
-            Guard.AgainstNegativeAndZero(nameof(interval), interval);
+            get => interval;
+            set
+            {
+                Guard.AgainstNegativeAndZero(nameof(interval), value);
 
-            this.GetSettings().Set(SettingsKeys.DelayedDeliveryInterval, interval);
+                interval = value;
+            }
         }
     }
 }

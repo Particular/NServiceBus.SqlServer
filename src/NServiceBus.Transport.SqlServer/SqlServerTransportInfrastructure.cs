@@ -1,3 +1,6 @@
+using System.Collections.ObjectModel;
+using System.Linq;
+
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
@@ -9,11 +12,7 @@ namespace NServiceBus.Transport.SqlServer
 #endif
     using System.Threading.Tasks;
     using System.Transactions;
-    using DelayedDelivery;
-    using NServiceBus.Logging;
-    using Performance.TimeToBeReceived;
-    using Routing;
-    using Settings;
+    using Logging;
     using Transport;
 
     /// <summary>
@@ -23,41 +22,32 @@ namespace NServiceBus.Transport.SqlServer
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(string catalog, SettingsHolder settings, string connectionString, Func<string> localAddress, Func<LogicalAddress> logicalAddress, bool isEncrypted)
+        internal SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, string catalog, bool isEncrypted)
         {
-            this.settings = settings;
-            this.connectionString = connectionString;
-            this.localAddress = localAddress;
-            this.logicalAddress = logicalAddress;
+            this.transport = transport;
+            this.hostSettings = hostSettings;
             this.isEncrypted = isEncrypted;
 
-            if (settings.HasSetting(SettingsKeys.DisableNativePubSub))
-            {
-                OutboundRoutingPolicy = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Unicast, OutboundRoutingType.Unicast);
-            }
-            else
-            {
-                OutboundRoutingPolicy = new OutboundRoutingPolicy(OutboundRoutingType.Unicast, OutboundRoutingType.Multicast, OutboundRoutingType.Unicast);
-            }
+            var defaultSchemaOverride = transport.DefaultSchema;
 
-            settings.TryGet(SettingsKeys.DefaultSchemaSettingsKey, out string defaultSchemaOverride);
-
-            var queueSchemaSettings = settings.GetOrDefault<QueueSchemaAndCatalogSettings>();
+            var queueSchemaSettings = transport.QueueSchemaAndCatalogSettings;
             addressTranslator = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
             tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !isEncrypted);
             connectionFactory = CreateConnectionFactory();
 
-            //Configure the schema and catalog for logical endpoint-based routing
-            var schemaAndCatalogSettings = settings.GetOrCreate<EndpointSchemaAndCatalogSettings>();
-            settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
+            /*
+             TODO: check if this is not needed and can be safely deleted
+             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
+            */
+        }
 
-            var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
-            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
+        public Task ConfigureSubscriptions(HostSettings hostSettings, string catalog)
+        {
+            var pubSubSettings = transport.Subscriptions;
+            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(transport.DefaultSchema ?? "dbo", catalog);
+            
             // necessary evil for acceptance tests
-            if (settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
-            {
-                action(subscriptionTableName.QuotedQualifiedName);
-            }
+            transport.SubscriptionTableQuotedQualifiedNameSetter(subscriptionTableName.QuotedQualifiedName);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
             var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
@@ -65,64 +55,47 @@ namespace NServiceBus.Transport.SqlServer
             {
                 subscriptionStore = new CachedSubscriptionStore(subscriptionStore, timeToCacheSubscriptions.Value);
             }
-            var subscriptionTableCreator = new SubscriptionTableCreator(subscriptionTableName, connectionFactory);
-            settings.Set(subscriptionTableCreator);
+
+            if (hostSettings.SetupInfrastructure)
+            {
+                return new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary();
+            }
+
+            return Task.CompletedTask;
         }
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
+            if (transport.ConnectionFactory != null)
             {
-                return new SqlConnectionFactory(factoryOverride);
+                return new SqlConnectionFactory(transport.ConnectionFactory);
             }
 
-            return SqlConnectionFactory.Default(connectionString);
+            return SqlConnectionFactory.Default(transport.ConnectionString);
         }
 
-        public override IEnumerable<Type> DeliveryConstraints
+        public TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
+
+
+        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
-            get
-            {
-                yield return typeof(DiscardIfNotReceivedBefore);
-                yield return typeof(DoNotDeliverBefore);
-                yield return typeof(DelayDeliveryWith);
-            }
-        }
+            var scopeOptions = transport.ScopeOptions;
 
-        public override TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
-
-        public override OutboundRoutingPolicy OutboundRoutingPolicy { get; }
-
-        public override TransportReceiveInfrastructure ConfigureReceiveInfrastructure()
-        {
-            if (!settings.TryGet(out SqlScopeOptions scopeOptions))
-            {
-                scopeOptions = new SqlScopeOptions();
-            }
-
-            settings.TryGet(out TransportTransactionMode transactionMode);
             diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
             {
-                TransactionMode = transactionMode,
+                TransactionMode = transport.TransportTransactionMode,
                 scopeOptions.TransactionOptions.IsolationLevel,
                 scopeOptions.TransactionOptions.Timeout
             });
 
-            if (!settings.TryGet(SettingsKeys.TimeToWaitBeforeTriggering, out TimeSpan waitTimeCircuitBreaker))
-            {
-                waitTimeCircuitBreaker = TimeSpan.FromSeconds(30);
-            }
             diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
             {
-                TimeToWaitBeforeTriggering = waitTimeCircuitBreaker
+                 transport.TimeToWaitBeforeTriggering
             });
 
-            if (!settings.TryGet(out QueuePeekerOptions queuePeekerOptions))
-            {
-                queuePeekerOptions = new QueuePeekerOptions();
-            }
+            var queuePeekerOptions = transport.QueuePeekerOptions;
 
-            var createMessageBodyComputedColumn = settings.GetOrDefault<bool>(SettingsKeys.CreateMessageBodyComputedColumn);
+            var createMessageBodyComputedColumn = transport.CreateMessageBodyComputedColumn;
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
                 guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
@@ -132,7 +105,7 @@ namespace NServiceBus.Transport.SqlServer
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
-            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
+            if (transport.PurgeExpiredMessagesOnStartup == false)
             {
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
@@ -143,7 +116,7 @@ namespace NServiceBus.Transport.SqlServer
             }
             else
             {
-                var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
+                var purgeBatchSize = transport.PurgeExpiredMessagesBatchSize;
 
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
@@ -161,51 +134,54 @@ namespace NServiceBus.Transport.SqlServer
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
-            if (settings.GetOrDefault<bool>(SettingsKeys.DisableDelayedDelivery) == false)
+            if (transport.DisableDelayedDelivery == false)
             {
-                if (!settings.TryGet(SettingsKeys.DelayedDeliverySuffix, out string suffix))
-                {
-                    suffix = "Delayed";
-                }
+                var delayedDelivery = transport.DelayedDelivery;
 
-                if (!settings.TryGet(SettingsKeys.DelayedDeliveryInterval, out TimeSpan interval))
-                {
-                    interval = TimeSpan.FromSeconds(1);
-                }
-
-                if (!settings.TryGet(SettingsKeys.DelayedDeliveryMatureBatchSize, out int matureBatchSize))
-                {
-                    matureBatchSize = 100;
-                }
-
-                settings.AddStartupDiagnosticsSection("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                diagnostics.Add("NServiceBus.Transport.SqlServer.DelayedDelivery", new
                 {
                     Native = true,
-                    Suffix = suffix,
-                    Interval = interval,
-                    BatchSize = matureBatchSize,
+                    Suffix = delayedDelivery.TableSuffix,
+                    Interval = delayedDelivery.ProcessingInterval,
+                    BatchSize = delayedDelivery.BatchSize,
                 });
 
-                delayedQueueCanonicalAddress = GetDelayedTableAddress(suffix);
-                var inputQueueTable = addressTranslator.Parse(ToTransportAddress(logicalAddress())).QualifiedTableName;
+                var queueAddress = LogicalAddress.CreateLocalAddress(hostSettings.Name, new Dictionary<string, string>());
+
+                queueAddress.CreateQualifiedAddress(delayedDelivery.TableSuffix);
+                delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
+
+                //TODO: MainReceiverId should be public
+                var mainReceiverInputQueueAddress = receiveSettings.First(r => r.Id == "Main").ReceiveAddress;
+                var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
-                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, interval, matureBatchSize);
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDelivery.ProcessingInterval, delayedDelivery.BatchSize);
             }
 
-            return new TransportReceiveInfrastructure(
-                () => new MessagePump(receiveStrategyFactory, queueFactory, queuePurger, expiredMessagesPurger, queuePeeker, queuePeekerOptions, schemaVerification, waitTimeCircuitBreaker),
-                () => new QueueCreator(connectionFactory, addressTranslator, delayedQueueCanonicalAddress, createMessageBodyComputedColumn),
-                () => ValidateDatabaseAccess(scopeOptions.TransactionOptions));
-        }
+            Receivers = receiveSettings.Select(s =>
+            {
+                var subscriptionManager = new SubscriptionManager(subscriptionStore,
+                    hostSettings.Name,
+                    s.ReceiveAddress);
 
-        CanonicalQueueAddress GetDelayedTableAddress(string suffix)
-        {
-            var delayedQueueLogicalAddress = logicalAddress().CreateQualifiedAddress(suffix);
-            var delayedQueueAddress = addressTranslator.Generate(delayedQueueLogicalAddress);
-            return addressTranslator.GetCanonicalForm(delayedQueueAddress);
+                return new MessagePump(transport, s, hostSettings, receiveStrategyFactory, queueFactory, queuePurger,
+                    expiredMessagesPurger,
+                    queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggering, subscriptionManager);
+                
+            }).ToList<IMessageReceiver>().AsReadOnly();
+
+            await ValidateDatabaseAccess(scopeOptions.TransactionOptions).ConfigureAwait(false);
+
+            var queueCreator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
+
+            dueDelayedMessageProcessor?.Start();
+
+            await queueCreator.CreateQueueIfNecessary(
+                receiveSettings.Select(r => r.ReceiveAddress).ToArray(),
+                delayedQueueCanonicalAddress).ConfigureAwait(false);
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
@@ -228,66 +204,32 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        IExpiredMessagesPurger CreateExpiredMessagesPurger()
+        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions)
         {
-            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
-            {
-                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-                {
-                    Enabled = false,
-                });
-                return new NoOpExpiredMessagesPurger();
-            }
+            await TryOpenDatabaseConnection().ConfigureAwait(false);
 
-            var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
-
-            diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-            {
-                Enabled = true,
-                BatchSize = purgeBatchSize
-            });
-
-            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
+            await TryEscalateToDistributedTransactions(transactionOptions).ConfigureAwait(false);
         }
 
-        async Task<StartupCheckResult> ValidateDatabaseAccess(TransactionOptions transactionOptions)
-        {
-            var isDatabaseAccessible = await TryOpenDatabaseConnection().ConfigureAwait(false);
-
-            if (!isDatabaseAccessible.Succeeded)
-            {
-                return isDatabaseAccessible;
-            }
-
-            return await TryEscalateToDistributedTransactions(transactionOptions).ConfigureAwait(false);
-        }
-
-        async Task<StartupCheckResult> TryOpenDatabaseConnection()
+        async Task TryOpenDatabaseConnection()
         {
             try
             {
                 using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
                 }
-
-                return StartupCheckResult.Success;
             }
             catch (Exception ex)
             {
                 var message = "Could not open connection to the SQL instance. Check the original error message for details. Original error message: " + ex.Message;
-                return StartupCheckResult.Failed(message);
+
+                throw new Exception(message, ex);
             }
         }
 
-        async Task<StartupCheckResult> TryEscalateToDistributedTransactions(TransactionOptions transactionOptions)
+        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions)
         {
-            if (!settings.TryGet(out TransportTransactionMode requestedTransportTransactionMode))
-            {
-                requestedTransportTransactionMode = TransactionMode;
-            }
-
-
-            if (requestedTransportTransactionMode == TransportTransactionMode.TransactionScope)
+            if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
             {
                 var message = string.Empty;
 
@@ -323,76 +265,26 @@ namespace NServiceBus.Transport.SqlServer
                     Logger.Warn(message);
                 }
             }
-
-            return StartupCheckResult.Success;
         }
 
-        public override TransportSendInfrastructure ConfigureSendInfrastructure()
+        public void ConfigureSendInfrastructure()
         {
-            return new TransportSendInfrastructure(
-                () =>
-                {
-                    var multicastToUnicastConverter = new MulticastToUnicastConverter(subscriptionStore);
-                    var dispatcher = new MessageDispatcher(addressTranslator, multicastToUnicastConverter, tableBasedQueueCache, delayedMessageStore, connectionFactory);
-                    return dispatcher;
-                },
-                () => Task.FromResult(StartupCheckResult.Success));
+            Dispatcher = new MessageDispatcher(
+                addressTranslator,
+                new MulticastToUnicastConverter(subscriptionStore),
+                tableBasedQueueCache,
+                delayedMessageStore,
+                connectionFactory);
         }
 
-        public override Task Start()
-        {
-            foreach (var diagnosticSection in diagnostics)
-            {
-                settings.AddStartupDiagnosticsSection(diagnosticSection.Key, diagnosticSection.Value);
-            }
-
-            dueDelayedMessageProcessor?.Start();
-            return Task.FromResult(0);
-        }
-
-        public override Task Stop()
+        public override Task DisposeAsync()
         {
             return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
         }
 
-        public override TransportSubscriptionInfrastructure ConfigureSubscriptionInfrastructure()
-        {
-            return new TransportSubscriptionInfrastructure(() => new SubscriptionManager(subscriptionStore,
-                settings.EndpointName(),
-                localAddress()));
-        }
-
-        public override EndpointInstance BindToLocalEndpoint(EndpointInstance instance)
-        {
-            var schemaSettings = settings.Get<EndpointSchemaAndCatalogSettings>();
-
-            if (schemaSettings.TryGet(instance.Endpoint, out var schema) == false)
-            {
-                schema = addressTranslator.DefaultSchema;
-            }
-            var result = instance.SetProperty(SettingsKeys.SchemaPropertyKey, schema);
-            if (addressTranslator.DefaultCatalog != null)
-            {
-                result = result.SetProperty(SettingsKeys.CatalogPropertyKey, addressTranslator.DefaultCatalog);
-            }
-            return result;
-        }
-
-        public override string ToTransportAddress(LogicalAddress logicalAddress)
-        {
-            return addressTranslator.Generate(logicalAddress).Value;
-        }
-
-        public override string MakeCanonicalForm(string transportAddress)
-        {
-            return addressTranslator.Parse(transportAddress).Address;
-        }
-
         QueueAddressTranslator addressTranslator;
-        string connectionString;
-        Func<string> localAddress;
-        Func<LogicalAddress> logicalAddress;
-        SettingsHolder settings;
+        readonly SqlServerTransport transport;
+        readonly HostSettings hostSettings;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
         SqlConnectionFactory connectionFactory;
@@ -402,5 +294,6 @@ namespace NServiceBus.Transport.SqlServer
         bool isEncrypted;
 
         static ILog Logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
+       
     }
 }

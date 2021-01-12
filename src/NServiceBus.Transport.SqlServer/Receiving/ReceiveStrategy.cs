@@ -23,7 +23,7 @@
             this.tableBasedQueueCache = tableBasedQueueCache;
         }
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, Action<string, Exception> criticalError)
         {
             InputQueue = inputQueue;
             ErrorQueue = errorQueue;
@@ -89,7 +89,7 @@
             }
             catch (Exception ex)
             {
-                criticalError.Raise($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
+                criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
 
                 return ErrorHandleResult.RetryRequired;
             }
@@ -125,6 +125,6 @@
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
-        CriticalError criticalError;
+        Action<string, Exception> criticalError;
     }
 }

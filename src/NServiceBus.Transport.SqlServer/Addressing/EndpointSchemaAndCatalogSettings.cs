@@ -4,24 +4,36 @@
     using System.Linq;
     using Routing;
 
-    class EndpointSchemaAndCatalogSettings
+    /// <summary>
+    /// Catalog and schema configuration for NServiceBus endpoints.
+    /// </summary>
+    public class EndpointSchemaAndCatalogSettings
     {
+        /// <summary>
+        /// Enables specifying schema for a given endpoint.
+        /// </summary>
         public void SpecifySchema(string endpointName, string schema)
         {
             schemas[endpointName] = schema;
         }
 
+        /// <summary>
+        /// Enables specifying catalog for a given endpoint.
+        /// </summary>
         public void SpecifyCatalog(string endpointName, string catalog)
         {
             catalogs[endpointName] = catalog;
         }
 
+        /// <summary>
+        /// Returns schema configuration for a given endpoint.
+        /// </summary>
         public bool TryGet(string endpointName, out string schema)
         {
             return schemas.TryGetValue(endpointName, out schema);
         }
 
-        public List<EndpointInstance> ToEndpointInstances()
+        internal List<EndpointInstance> ToEndpointInstances()
         {
             return schemas.Keys.Concat(catalogs.Keys).Distinct()
                 .Select(endpoint => new EndpointInstance(endpoint, null, GetProperties(endpoint)))
