@@ -64,16 +64,15 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        public SqlServerTransport(TransportTransactionMode defaultTransactionMode) 
-            : base(defaultTransactionMode, true, true, true)
+        public SqlServerTransport() 
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
         {
         }
 
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
-        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses,
-            CancellationToken cancellationToken = new CancellationToken())
+        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
         {
             if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
             {
@@ -225,6 +224,6 @@ namespace NServiceBus
         /// <summary>
         /// For testing the migration process only
         /// </summary>
-        internal Action<string> SubscriptionTableQuotedQualifiedNameSetter { get; set; }
+        internal Action<string> SubscriptionTableQuotedQualifiedNameSetter { get; set; } = _ => { };
     }
 }

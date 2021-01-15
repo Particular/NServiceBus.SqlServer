@@ -1,23 +1,31 @@
-﻿namespace NServiceBus.Transport.SqlServer.UnitTests
+﻿using System.Threading.Tasks;
+
+namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using NUnit.Framework;
-    using Settings;
-    using SqlServer;
 
     [TestFixture]
     public class SqlServerTransportTests
     {
+        HostSettings settings;
+
+        [SetUp]
+        public void SetUp()
+        {
+            settings = new HostSettings(string.Empty, string.Empty, new StartupDiagnosticEntries(),
+                (s, exception) => { }, true);
+        }
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
         {
-            var definition = new SqlServerTransport();
-            var subscriptionSettings = new SubscriptionSettings();
-            subscriptionSettings.DisableSubscriptionCache();
-            var settings = new SettingsHolder();
-            settings.Set(subscriptionSettings);
-
-            Assert.That( () => definition.Initialize(settings, @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
-                Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
+            var definition = new SqlServerTransport
+            {
+                ConnectionString = @"Data Source=.\SQLEXPRESS;Integrated Security=True"
+            };
+            
+            Assert.ThrowsAsync(
+                Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."),
+                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false));
         }
 
         [Test]
@@ -25,16 +33,15 @@
         [TestCase("Initial Catalog=my.catalog")]
         [TestCase("Database=my.catalog")]
         [TestCase("database=my.catalog")]
-        public void It_accepts_connection_string_with_catalog_property(string connectionString)
+        public async Task It_accepts_connection_string_with_catalog_property(string connectionString)
         {
-            var definition = new SqlServerTransport();
+            var definition = new SqlServerTransport
+            {
+                ConnectionString = connectionString
+            };
 
-            var subscriptionSettings = new SubscriptionSettings();
-            subscriptionSettings.DisableSubscriptionCache();
-            var settings = new SettingsHolder();
-            settings.Set(subscriptionSettings);
+            await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false);
 
-            definition.Initialize(settings, connectionString);
             Assert.Pass();
         }
     }

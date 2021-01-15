@@ -31,8 +31,7 @@ namespace NServiceBus.Transport.SqlServer
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, IReadOnlyCollection<MessageMetadata> events,
-            CancellationToken cancellationToken = new CancellationToken())
+        public async Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, IReadOnlyCollection<MessageMetadata> events)
         {
             this.limitations = limitations;
 
@@ -65,7 +64,7 @@ namespace NServiceBus.Transport.SqlServer
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
-        public Task StartReceive(CancellationToken cancellationToken = new CancellationToken())
+        public Task StartReceive()
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
@@ -79,7 +78,7 @@ namespace NServiceBus.Transport.SqlServer
             return Task.CompletedTask;
         }
 
-        public async Task StopReceive(CancellationToken cancellationToken = new CancellationToken())
+        public async Task StopReceive()
         {
             const int timeoutDurationInSeconds = 30;
             cancellationTokenSource.Cancel();

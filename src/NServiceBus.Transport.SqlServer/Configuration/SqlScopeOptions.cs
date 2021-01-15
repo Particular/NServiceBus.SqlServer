@@ -36,6 +36,9 @@ namespace NServiceBus.Transport.SqlServer
             };
         }
 
-        internal TransactionOptions TransactionOptions { get; private set; }
+        internal TransactionOptions TransactionOptions { get; private set; } = new TransactionOptions
+        {
+            IsolationLevel = IsolationLevel.ReadCommitted
+        };
     }
 }

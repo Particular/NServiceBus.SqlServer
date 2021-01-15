@@ -15,14 +15,12 @@ namespace NServiceBus.Transport.SqlServer
             this.localAddress = localAddress;
         }
 
-        public Task Subscribe(MessageMetadata eventType, ContextBag context,
-            CancellationToken cancellationToken = new CancellationToken())
+        public Task Subscribe(MessageMetadata eventType, ContextBag context)
         {
             return subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType);
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context,
-            CancellationToken cancellationToken = new CancellationToken())
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
         {
             return subscriptionStore.Unsubscribe(endpointName, eventType.MessageType);
         }
