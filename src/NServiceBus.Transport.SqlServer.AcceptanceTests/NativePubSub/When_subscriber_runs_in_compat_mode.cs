@@ -56,7 +56,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var compatMode = c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
+                    var compatMode = c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     compatMode.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     c.DisableFeature<AutoSubscribe>();
                 });

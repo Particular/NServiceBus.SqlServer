@@ -29,13 +29,15 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");
         }
 
-        var transportConfig = configuration.UseTransport<SqlServerTransport>();
-        transportConfig.ConnectionString(connectionString);
-        transportConfig.SubscriptionSettings().DisableSubscriptionCache();
+        var transport = new SqlServerTransport {ConnectionString = connectionString};
+        transport.Subscriptions.DisableSubscriptionCache();
 
 #if !NETFRAMEWORK
-        transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+        transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
 #endif
+
+        configuration.UseTransport(transport);
+
         return Task.FromResult(0);
     }
 

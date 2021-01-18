@@ -120,7 +120,7 @@
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
 
-                    var routing = c.ConfigureTransport().Routing();
+                    var routing = c.ConfigureRouting();
                     var anEndpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(AnEndpoint));
 
                     routing.RouteToEndpoint(typeof(CommandFromCompletedScope), anEndpointName);

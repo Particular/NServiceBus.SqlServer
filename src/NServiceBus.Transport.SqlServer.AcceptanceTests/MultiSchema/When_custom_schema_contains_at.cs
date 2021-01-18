@@ -30,7 +30,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>().DefaultSchema("db@");
+                    c.ConfigureSqlServerTransport().DefaultSchema = "db@";
                 });
             }
 

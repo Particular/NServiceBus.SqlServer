@@ -6,10 +6,7 @@
 #else
     using Microsoft.Data.SqlClient;
 #endif
-    using System.Threading.Tasks;
     using NUnit.Framework;
-    using Settings;
-    using SqlServer;
 
     [TestFixture]
     public class SqlServerTransportTests
@@ -27,19 +24,18 @@
         [Test]
         public void It_reads_catalog_from_open_connection()
         {
-            var definition = new SqlServerTransport();
-            Func<Task<SqlConnection>> factory = async () =>
+            var definition = new SqlServerTransport
             {
-                var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync().ConfigureAwait(false);
-                return connection;
+                ConnectionFactory = async () =>
+                {
+                    var connection = new SqlConnection(connectionString);
+                    await connection.OpenAsync().ConfigureAwait(false);
+                    return connection;
+                },
+                ConnectionString = "Invalid-connection-string"
             };
-            var settings = new SettingsHolder();
-            settings.Set(SettingsKeys.ConnectionFactoryOverride, factory);
-            var pubSubSettings = new SubscriptionSettings();
-            pubSubSettings.DisableSubscriptionCache();
-            settings.Set(pubSubSettings);
-            definition.Initialize(settings, "Invalid-connection-string");
+            definition.Subscriptions.DisableSubscriptionCache();
+
             Assert.Pass();
         }
 

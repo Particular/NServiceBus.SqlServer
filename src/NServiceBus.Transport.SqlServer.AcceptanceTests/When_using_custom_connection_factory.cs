@@ -43,16 +43,16 @@
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString("this-will-not-work")
-                        .UseCustomSqlConnectionFactory(async () =>
-                        {
-                            var connection = new SqlConnection(GetConnectionString());
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.ConnectionString = "this-will-not-work";
+                    transport.ConnectionFactory = async () =>
+                    {
+                        var connection = new SqlConnection(GetConnectionString());
 
-                            await connection.OpenAsync();
+                        await connection.OpenAsync();
 
-                            return connection;
-                        });
+                        return connection;
+                    };
                 });
             }
 

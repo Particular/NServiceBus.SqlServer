@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace NServiceBus.Transport.SqlServer
@@ -74,9 +73,6 @@ namespace NServiceBus.Transport.SqlServer
             return SqlConnectionFactory.Default(transport.ConnectionString);
         }
 
-        public TransportTransactionMode TransactionMode { get; } = TransportTransactionMode.TransactionScope;
-
-
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
             var scopeOptions = transport.ScopeOptions;
@@ -130,7 +126,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
-            Func<string, TableBasedQueue> queueFactory = queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted);
+            var queueFactory = transport.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;

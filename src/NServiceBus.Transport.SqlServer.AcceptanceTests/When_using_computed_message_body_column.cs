@@ -29,8 +29,8 @@
             {
                 EndpointSetup<DefaultServer>(config =>
                 {
-                    var transportConfig = config.UseTransport<SqlServerTransport>();
-                    transportConfig.CreateMessageBodyComputedColumn();
+                    var transportConfig = config.ConfigureSqlServerTransport();
+                    transportConfig.CreateMessageBodyComputedColumn = true;
                 });
             }
 

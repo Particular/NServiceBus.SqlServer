@@ -46,9 +46,11 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SenderConnectionString)
-                        .UseCatalogForQueue(errorSpyName, "nservicebus2");
+                    var transport = new SqlServerTransport();
+                    transport.ConnectionString = SenderConnectionString;
+                    transport.QueueSchemaAndCatalogSettings.SpecifyCatalog(errorSpyName, "nservicebus2");
+
+                    c.UseTransport(transport);
                 });
             }
 
@@ -67,8 +69,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SpyConnectionString);
+                    c.UseTransport(new SqlServerTransport
+                        {
+                            ConnectionString = SpyConnectionString
+                        });
                 });
             }
 

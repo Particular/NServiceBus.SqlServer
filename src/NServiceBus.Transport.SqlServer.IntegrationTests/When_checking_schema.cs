@@ -44,10 +44,7 @@
 
         static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator,
-                new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
-            var queueBindings = new QueueBindings();
-            queueBindings.BindReceiving(QueueTableName);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
             using (var connection = await sqlConnectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
@@ -57,7 +54,7 @@
                     comm.ExecuteNonQuery();
                 }
             }
-            await queueCreator.CreateQueueIfNecessary(queueBindings, "").ConfigureAwait(false);
+            await queueCreator.CreateQueueIfNecessary(new[] {QueueTableName}, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus")).ConfigureAwait(false);
         }
     }
 }

@@ -37,7 +37,7 @@
                 EndpointSetup<DefaultServer>(b =>
                 {
                     b.OverridePublicReturnAddress("error] VALUES(NEWID(), NULL, NULL, 1, NULL, '', NULL); DROP TABLE [Victim]; INSERT INTO [error");
-                    var routing = b.ConfigureTransport().Routing();
+                    var routing = b.ConfigureRouting();
                     routing.RouteToEndpoint(typeof(AttackCommand), Conventions.EndpointNamingConvention(typeof(Victim)));
                 });
             }

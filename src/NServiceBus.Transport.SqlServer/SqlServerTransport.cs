@@ -225,5 +225,10 @@ namespace NServiceBus
         /// For testing the migration process only
         /// </summary>
         internal Action<string> SubscriptionTableQuotedQualifiedNameSetter { get; set; } = _ => { };
+
+        /// <summary>
+        /// For the integration tests only
+        /// </summary>
+        internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
     }
 }

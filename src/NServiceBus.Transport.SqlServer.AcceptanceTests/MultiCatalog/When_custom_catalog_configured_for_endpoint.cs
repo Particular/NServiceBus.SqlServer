@@ -28,12 +28,15 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var routing = c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SenderConnectionString)
-                        .UseCatalogForEndpoint(ReceiverEndpoint, "nservicebus2")
-                        .Routing();
+                    var transport = new SqlServerTransport
+                    {
+                        ConnectionString = SenderConnectionString
+                    };
+                    transport.EndpointSchemaAndCatalogSettings.SpecifyCatalog(ReceiverEndpoint, "nservicebus2");
+                    c.UseTransport(transport);
 
-                    routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                    c.ConfigureRouting().RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+
                 });
             }
 
@@ -61,7 +64,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>().ConnectionString(ReceiverConnectionString);
+                    c.UseTransport(new SqlServerTransport {ConnectionString = ReceiverConnectionString});
                 });
             }
 

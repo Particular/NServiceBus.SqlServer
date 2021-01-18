@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
@@ -35,13 +34,13 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    var transport = c.UseTransport<SqlServerTransport>();
-                    transport.ConnectionString(PublisherConnectionString);
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.ConnectionString = PublisherConnectionString;
 
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                    transport.SubscriptionSettings().DisableSubscriptionCache();
+                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                    transport.Subscriptions.DisableSubscriptionCache();
+                    transport.DisableNativePubSub = true;
 
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
@@ -59,13 +58,13 @@
             {
                 EndpointSetup<DefaultServer>(b =>
                 {
-                    var transport = b.UseTransport<SqlServerTransport>();
-                    transport.ConnectionString(SubscriberConnectionString);
+                    var transport = b.ConfigureSqlServerTransport();
+                    transport.ConnectionString = SubscriberConnectionString;
 
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
 
-                    transport.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");
-                    transport.EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), PublisherEndpoint);
+                    transport.EndpointSchemaAndCatalogSettings.SpecifyCatalog(PublisherEndpoint, "nservicebus1");
+                    b.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), PublisherEndpoint);
                 });
             }
 
