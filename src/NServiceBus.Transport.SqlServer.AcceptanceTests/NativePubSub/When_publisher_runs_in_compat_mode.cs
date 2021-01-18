@@ -40,7 +40,7 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))

@@ -17,7 +17,7 @@ namespace NServiceBus
     /// <summary>
     /// Configuration extensions for Message-Driven Pub-Sub compatibility mode
     /// </summary>
-    public static class MessageDrivenPubSubCompatibilityModeConfiguration
+    public static partial class MessageDrivenPubSubCompatibilityModeConfiguration
     {
         /// <summary>
         /// Enables compatibility with endpoints running on message-driven pub-sub
