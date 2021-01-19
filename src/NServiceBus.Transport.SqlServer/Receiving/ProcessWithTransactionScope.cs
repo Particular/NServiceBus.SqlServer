@@ -25,15 +25,15 @@
                     using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                     {
                         message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                    }
 
-                        if (message == null)
-                        {
-                            // The message was received but is not fit for processing (e.g. was DLQd).
-                            // In such a case we still need to commit the transport tx to remove message
-                            // from the queue table.
-                            scope.Complete();
-                            return;
-                        }
+                    if (message == null)
+                    {
+                        // The message was received but is not fit for processing (e.g. was DLQd).
+                        // In such a case we still need to commit the transport tx to remove message
+                        // from the queue table.
+                        scope.Complete();
+                        return;
                     }
 
                     if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
