@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Threading;
 using NServiceBus.Routing;
 
 namespace NServiceBus
@@ -22,6 +21,8 @@ namespace NServiceBus
     {
         string connectionString;
         Func<Task<SqlConnection>> connectionFactory;
+        QueueAddressTranslator addressTranslator;
+        string catalog;
 
         DbConnectionStringBuilder GetConnectionStringBuilder()
         {
@@ -80,16 +81,15 @@ namespace NServiceBus
                     $"Either {nameof(ConnectionString)} or {nameof(ConnectionFactory)} property has to be specified in the SQL Server transport configuration.");
             }
 
-            var catalog = GetDefaultCatalog();
             var isEncrypted = IsEncrypted();
 
-            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, catalog, isEncrypted);
+            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, isEncrypted);
 
             await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
 
-            infrastructure.ConfigureSendInfrastructure();
-
             await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
+
+            infrastructure.ConfigureSendInfrastructure();
 
             return infrastructure;
         }
@@ -99,12 +99,23 @@ namespace NServiceBus
         /// </summary>
         public override string ToTransportAddress(Transport.QueueAddress address)
         {
+            if (addressTranslator == null)
+            {
+                catalog = GetDefaultCatalog();
+
+                addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, QueueSchemaAndCatalogSettings);
+
+            }
             //TODO: remove dependency on the logical address
             var logicalAddress = LogicalAddress.CreateRemoteAddress(
                 new EndpointInstance(address.BaseAddress, address.Discriminator, address.Properties));
-            var fullAddress = logicalAddress.CreateQualifiedAddress(address.Qualifier);
 
-            return QueueAddressTranslator.TranslateLogicalAddress(fullAddress).Value;
+
+            var fullAddress = string.IsNullOrWhiteSpace(address.Qualifier) ? logicalAddress : logicalAddress.CreateQualifiedAddress(address.Qualifier);
+
+            var queueAddress = addressTranslator.Generate(fullAddress);
+
+            return addressTranslator.GetCanonicalForm(queueAddress).Address;
         }
 
         /// <summary>
@@ -165,11 +176,6 @@ namespace NServiceBus
         /// Catalog and schema configuration for SQL Transport queues.
         /// </summary>
         public QueueSchemaAndCatalogSettings QueueSchemaAndCatalogSettings { get; } = new QueueSchemaAndCatalogSettings();
-
-        /// <summary>
-        /// Catalog and schema configuration for NServiceBus endpoints
-        /// </summary>
-        public EndpointSchemaAndCatalogSettings EndpointSchemaAndCatalogSettings { get; } = new EndpointSchemaAndCatalogSettings();
 
         /// <summary>
         /// Subscription infrastructure settings.

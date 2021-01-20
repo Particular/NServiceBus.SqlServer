@@ -133,7 +133,6 @@ END";
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport(new SqlServerTransport());
                     c.SendFailedMessagesTo(errorQueueName);
                 });
             }

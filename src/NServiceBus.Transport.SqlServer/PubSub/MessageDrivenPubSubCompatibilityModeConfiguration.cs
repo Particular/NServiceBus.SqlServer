@@ -3,7 +3,7 @@
 namespace NServiceBus
 {
     /// <summary>
-    ///     Configuration extensions for Message-Driven Pub-Sub compatibility mode
+    /// Configuration extensions for Message-Driven Pub-Sub compatibility mode
     /// </summary>
     public static partial class MessageDrivenPubSubCompatibilityModeConfiguration
     {

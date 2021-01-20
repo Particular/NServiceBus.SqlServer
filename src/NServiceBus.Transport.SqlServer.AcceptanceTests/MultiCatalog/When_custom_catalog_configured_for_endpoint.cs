@@ -28,15 +28,15 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var transport = new SqlServerTransport
+                    c.UseTransport(new SqlServerTransport
                     {
                         ConnectionString = SenderConnectionString
-                    };
-                    transport.EndpointSchemaAndCatalogSettings.SpecifyCatalog(ReceiverEndpoint, "nservicebus2");
-                    c.UseTransport(transport);
+                    });
 
-                    c.ConfigureRouting().RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                    var routing = c.ConfigureRouting();
 
+                    routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                    routing.UseCatalogForEndpoint(ReceiverEndpoint, "nservicebus2");
                 });
             }
 

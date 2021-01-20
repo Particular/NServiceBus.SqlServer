@@ -39,10 +39,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.UseTransport(new SqlServerTransport
-                        {
-                            TransportTransactionMode = transactionMode
-                        });
+                        c.ConfigureSqlServerTransport().TransportTransactionMode = transactionMode;
                     });
                     b.When(async (bus, c) =>
                     {

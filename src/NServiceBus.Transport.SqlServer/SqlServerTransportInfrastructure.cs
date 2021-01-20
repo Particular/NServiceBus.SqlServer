@@ -21,23 +21,15 @@ namespace NServiceBus.Transport.SqlServer
     /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, string catalog, bool isEncrypted)
+        internal SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, QueueAddressTranslator addressTranslator, bool isEncrypted)
         {
             this.transport = transport;
             this.hostSettings = hostSettings;
             this.isEncrypted = isEncrypted;
+            this.addressTranslator = addressTranslator;
 
-            var defaultSchemaOverride = transport.DefaultSchema;
-
-            var queueSchemaSettings = transport.QueueSchemaAndCatalogSettings;
-            addressTranslator = new QueueAddressTranslator(catalog, "dbo", defaultSchemaOverride, queueSchemaSettings);
             tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !isEncrypted);
             connectionFactory = CreateConnectionFactory();
-
-            /*
-             TODO: check if this is not needed and can be safely deleted
-             settings.GetOrCreate<EndpointInstances>().AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
-            */
         }
 
         public Task ConfigureSubscriptions(HostSettings hostSettings, string catalog)
@@ -174,9 +166,10 @@ namespace NServiceBus.Transport.SqlServer
 
             dueDelayedMessageProcessor?.Start();
 
-            await queueCreator.CreateQueueIfNecessary(
-                receiveSettings.Select(r => r.ReceiveAddress).ToArray(),
-                delayedQueueCanonicalAddress).ConfigureAwait(false);
+            var queuesToCreate = receiveSettings.Select(r => r.ReceiveAddress).ToList();
+            queuesToCreate.AddRange(sendingAddresses);
+
+            await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress).ConfigureAwait(false);
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
@@ -277,7 +270,7 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
         }
 
-        QueueAddressTranslator addressTranslator;
+        internal QueueAddressTranslator addressTranslator;
         readonly SqlServerTransport transport;
         readonly HostSettings hostSettings;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;

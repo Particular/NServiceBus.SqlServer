@@ -60,11 +60,11 @@
 
                     var transport = new SqlServerTransport();
                     transport.DefaultSchema = "receiver";
-                    transport.EndpointSchemaAndCatalogSettings.SpecifySchema(publisherEndpoint, "sender");
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
                     b.UseTransport(transport);
 
                     b.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
+                    b.ConfigureRouting().UseSchemaForEndpoint(publisherEndpoint, "sender");
                 });
             }
 
