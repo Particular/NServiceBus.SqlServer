@@ -58,7 +58,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
-        [ObsoleteEx(Message = "UseSchemaForEndpoint has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.EndpointSchemaAndCatalogSettings", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "UseSchemaForEndpoint has been obsoleted.", ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
@@ -73,7 +73,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
-        [ObsoleteEx(Message = "UseSchemaForEndpoint has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.EndpointSchemaAndCatalogSettings", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "UseSchemaForQueue has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.EndpointSchemaAndCatalogSettings", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
@@ -88,7 +88,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        [ObsoleteEx(Message = "UseCatalogForEndpoint has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.EndpointSchemaAndCatalogSettings", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "UseCatalogForEndpoint has been obsoleted.", ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)

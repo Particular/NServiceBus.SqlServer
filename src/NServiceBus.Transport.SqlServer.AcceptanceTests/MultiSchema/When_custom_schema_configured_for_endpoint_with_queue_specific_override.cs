@@ -29,11 +29,8 @@
                 {
                     var receiverEndpoint = EndpointNamingConvention(typeof(Receiver));
 
-                    var transport = new SqlServerTransport();
-                    transport.EndpointSchemaAndCatalogSettings.SpecifySchema(receiverEndpoint, ReceiverSchema);
-
-                    c.UseTransport(transport);
                     c.ConfigureRouting().RouteToEndpoint(typeof(Message), receiverEndpoint);
+                    c.ConfigureRouting().UseSchemaForEndpoint(receiverEndpoint, ReceiverSchema);
                 });
             }
         }

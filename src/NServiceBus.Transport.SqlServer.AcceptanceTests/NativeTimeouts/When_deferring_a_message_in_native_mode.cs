@@ -43,7 +43,7 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(config => config.UseTransport(new SqlServerTransport()));
+                EndpointSetup<DefaultServer>();
             }
 
             public class MyMessageHandler : IHandleMessages<MyMessage>

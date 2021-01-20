@@ -63,8 +63,9 @@
 
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
 
-                    transport.EndpointSchemaAndCatalogSettings.SpecifyCatalog(PublisherEndpoint, "nservicebus1");
-                    b.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), PublisherEndpoint);
+                    var routing = b.ConfigureRouting();
+                    routing.EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), PublisherEndpoint);
+                    routing.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");
                 });
             }
 
