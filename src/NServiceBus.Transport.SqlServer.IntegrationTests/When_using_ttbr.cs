@@ -92,10 +92,10 @@
                     var operation = new TransportOperation(
                         new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]),
                         new UnicastAddressTag(validAddress),
-                        new OperationProperties
+                        new DispatchProperties
                         {
                             DiscardIfNotReceivedBefore = new DiscardIfNotReceivedBefore(TimeSpan.FromMinutes(-1)) //Discard immediately
-                        }.ToDictionary()
+                        }
                     );
 
                     await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);

@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
+﻿using System;
+
+namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -11,6 +13,8 @@
         static string PublisherConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
         static string SubscriberConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
+
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public Task Should_receive_event()
@@ -34,12 +38,15 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    var transport = c.ConfigureSqlServerTransport();
-                    transport.ConnectionString = PublisherConnectionString;
+                    var transport = new SqlServerTransport(supportsPublishSubscribe: false)
+                    {
+                        ConnectionString = PublisherConnectionString
+                    };
 
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
                     transport.Subscriptions.DisableSubscriptionCache();
-                    transport.DisableNativePubSub = true;
+
+                    c.UseTransport(transport);
 
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {

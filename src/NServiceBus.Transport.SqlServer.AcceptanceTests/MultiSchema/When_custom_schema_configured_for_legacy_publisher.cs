@@ -31,11 +31,10 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    var transport = new SqlServerTransport();
+                    var transport = new SqlServerTransport(supportsPublishSubscribe: false);
                     transport.DefaultSchema = "sender";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
                     transport.Subscriptions.DisableSubscriptionCache();
-                    transport.DisableNativePubSub = true;
 
                     c.UseTransport(transport);
 

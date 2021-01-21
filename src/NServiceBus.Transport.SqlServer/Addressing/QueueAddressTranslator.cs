@@ -18,9 +18,9 @@
 
         public string DefaultSchema { get; }
 
-        public QueueAddress Generate(LogicalAddress logicalAddress)
+        public QueueAddress Generate(Transport.QueueAddress queueAddress)
         {
-            return logicalAddressCache.GetOrAdd(logicalAddress, TranslateLogicalAddress);
+            return logicalAddressCache.GetOrAdd(queueAddress, TranslateLogicalAddress);
         }
 
         public CanonicalQueueAddress Parse(string address)
@@ -50,26 +50,32 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        public static QueueAddress TranslateLogicalAddress(LogicalAddress logicalAddress)
+        public static QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
         {
             var nonEmptyParts = new[]
             {
-                logicalAddress.EndpointInstance.Endpoint,
-                logicalAddress.Qualifier,
-                logicalAddress.EndpointInstance.Discriminator
+                queueAddress.BaseAddress,
+                queueAddress.Qualifier,
+                queueAddress.Discriminator
             }.Where(p => !string.IsNullOrEmpty(p));
 
             var tableName = string.Join(".", nonEmptyParts);
 
 
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out var schemaName);
-            logicalAddress.EndpointInstance.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out var catalogName);
+            string schemaName = null;
+            string catalogName = null;
+
+            if (queueAddress.Properties != null)
+            {
+                queueAddress?.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
+                queueAddress?.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
+            }
 
             return new QueueAddress(tableName, schemaName, catalogName);
         }
 
         QueueSchemaAndCatalogSettings queueSettings;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
-        ConcurrentDictionary<LogicalAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<LogicalAddress, QueueAddress>();
+        ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
     }
 }

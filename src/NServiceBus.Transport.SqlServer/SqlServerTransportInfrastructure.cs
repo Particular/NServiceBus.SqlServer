@@ -1,4 +1,5 @@
 using System.Linq;
+using NServiceBus.Transport.SqlServer.PubSub;
 
 namespace NServiceBus.Transport.SqlServer
 {
@@ -14,11 +15,6 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using Transport;
 
-    /// <summary>
-    /// ConfigureReceiveInfrastructure is called first, before features are started
-    ///
-    /// ConfigureSendInfrastructure is called last, when starting
-    /// </summary>
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
         internal SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, QueueAddressTranslator addressTranslator, bool isEncrypted)
@@ -134,9 +130,8 @@ namespace NServiceBus.Transport.SqlServer
                     BatchSize = delayedDelivery.BatchSize,
                 });
 
-                var queueAddress = LogicalAddress.CreateLocalAddress(hostSettings.Name, new Dictionary<string, string>());
+                var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(), delayedDelivery.TableSuffix);
 
-                queueAddress = queueAddress.CreateQualifiedAddress(delayedDelivery.TableSuffix);
                 delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
 
                 var mainReceiverInputQueueAddress = hostSettings.Name;
@@ -150,9 +145,9 @@ namespace NServiceBus.Transport.SqlServer
 
             Receivers = receiveSettings.Select(s =>
             {
-                var subscriptionManager = new SubscriptionManager(subscriptionStore,
-                    hostSettings.Name,
-                    s.ReceiveAddress);
+                ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
+                    ? (ISubscriptionManager) new SubscriptionManager(subscriptionStore, hostSettings.Name, s.ReceiveAddress)
+                    : new NoOpSubscriptionManager();
 
                 return new MessagePump(transport, s, hostSettings, receiveStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
