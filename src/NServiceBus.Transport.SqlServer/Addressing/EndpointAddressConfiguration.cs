@@ -1,4 +1,5 @@
-﻿using NServiceBus.Configuration.AdvancedExtensibility;
+﻿using System;
+using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Routing;
 
 namespace NServiceBus.Transport.SqlServer
@@ -16,6 +17,15 @@ namespace NServiceBus.Transport.SqlServer
         /// <param name="schema">Custom schema value.</param>
         public static void UseSchemaForEndpoint(this RoutingSettings settings, string endpointName, string schema)
         {
+            Guard.AgainstNull(nameof(endpointName), endpointName);
+
+            var localEndpointName = settings.GetSettings().EndpointName();
+
+            if (endpointName.Equals(localEndpointName))
+            {
+                throw new ArgumentException("Custom schema cannot be specified for the local endpoint.");
+            }
+
             var schemaAndCatalogSettings = settings.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemaAndCatalogSettings.SpecifySchema(endpointName, schema);
@@ -33,6 +43,15 @@ namespace NServiceBus.Transport.SqlServer
         /// <param name="catalog">Custom catalog value.</param>
         public static void UseCatalogForEndpoint(this RoutingSettings settings, string endpointName, string catalog)
         {
+            Guard.AgainstNull(nameof(endpointName), endpointName);
+
+            var localEndpointName = settings.GetSettings().EndpointName();
+
+            if (endpointName.Equals(localEndpointName))
+            {
+                throw new ArgumentException("Custom catalog cannot be specified for the local endpoint.");
+            }
+
             var schemaAndCatalogSettings = settings.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
 
             schemaAndCatalogSettings.SpecifyCatalog(endpointName, catalog);

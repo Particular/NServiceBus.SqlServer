@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
+﻿using System;
+
+namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
@@ -9,6 +11,8 @@
 
     public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcceptanceTest
     {
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+
         [Test]
         public Task Should_receive_event()
         {
@@ -32,6 +36,7 @@
                 EndpointSetup<DefaultPublisher>(c =>
                 {
                     var transport = new SqlServerTransport(supportsPublishSubscribe: false);
+                    transport.ConnectionString = ConnectionString;
                     transport.DefaultSchema = "sender";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
                     transport.Subscriptions.DisableSubscriptionCache();
@@ -58,6 +63,7 @@
                     var publisherEndpoint = Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
 
                     var transport = new SqlServerTransport();
+                    transport.ConnectionString = ConnectionString;
                     transport.DefaultSchema = "receiver";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
                     b.UseTransport(transport);

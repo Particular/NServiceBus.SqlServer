@@ -35,14 +35,10 @@
             {
                 EndpointSetup<DefaultPublisher>(b =>
                 {
-                    var transport = new SqlServerTransport
-                    {
-                        DefaultSchema = "sender"
-                    };
+                    var transport = b.ConfigureSqlServerTransport();
+                    transport.DefaultSchema = "sender";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
                     transport.Subscriptions.DisableSubscriptionCache();
-
-                    b.UseTransport(transport);
                 });
             }
         }
@@ -53,13 +49,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var transport = new SqlServerTransport
-                    {
-                        DefaultSchema = "receiver",
-                    };
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.DefaultSchema = "receiver";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
 
-                    c.UseTransport(transport);
                     c.DisableFeature<AutoSubscribe>();
                 });
             }
