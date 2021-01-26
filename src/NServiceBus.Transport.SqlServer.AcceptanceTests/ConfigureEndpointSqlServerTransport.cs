@@ -11,18 +11,14 @@ using NServiceBus.AcceptanceTesting.Support;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
-    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
+    public ConfigureEndpointSqlServerTransport(SqlServerTransport transport)
     {
-        this.configuration = configuration;
+        this.transport = transport;
+    }
 
-        doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-
-        configuration.Pipeline.OnReceivePipelineCompleted( _ =>
-        {
-            CaptureTransport();
-            return Task.CompletedTask;
-        });
+    public ConfigureEndpointSqlServerTransport()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         if (string.IsNullOrEmpty(connectionString))
         {
@@ -35,6 +31,11 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 #if !NETFRAMEWORK
         transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
 #endif
+    }
+
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
+    {
+        doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
 
         configuration.UseTransport(transport);
 
@@ -43,6 +44,16 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public async Task Cleanup()
     {
+        var connectionString = transport.ConnectionString;
+
+        if (connectionString == null)
+        {
+            using (var connection = await transport.ConnectionFactory().ConfigureAwait(false))
+            {
+                connectionString = connection.ConnectionString;
+            }
+        }
+
         using (var conn = new SqlConnection(connectionString))
         {
             await conn.OpenAsync().ConfigureAwait(false);
@@ -94,13 +105,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
     }
 
-    void CaptureTransport()
-    {
-        transport = configuration.ConfigureSqlServerTransport();
-    }
-
     bool doNotCleanNativeSubscriptions;
-    string connectionString;
-    EndpointConfiguration configuration;
     SqlServerTransport transport;
 }

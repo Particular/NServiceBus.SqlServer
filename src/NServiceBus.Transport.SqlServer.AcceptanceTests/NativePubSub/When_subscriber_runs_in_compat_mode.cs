@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
     using Features;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -37,12 +36,8 @@
         {
             public LegacyPublisher()
             {
-                EndpointSetup<DefaultPublisher>(c =>
+                EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
-                    c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
-                    {
-                        ConnectionString = ConnectionString
-                    });
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(MigratedSubscriber))))

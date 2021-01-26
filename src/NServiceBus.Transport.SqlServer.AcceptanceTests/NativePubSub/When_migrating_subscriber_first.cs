@@ -25,27 +25,19 @@
 
             //Before migration begins
             var beforeMigration = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(ConnectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
-                        {
-                            ConnectionString = ConnectionString
-                        });
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
 
-                .WithEndpoint<Subscriber>(b =>
+                .WithEndpoint(new Subscriber(ConnectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
-                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
-                        {
-                            ConnectionString = ConnectionString
-                        });
                         c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                         {
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
@@ -68,15 +60,11 @@
             };
             subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var subscriberMigrated = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(ConnectionString, false),b =>
                 {
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
-                        {
-                            ConnectionString = ConnectionString
-                        });
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -108,7 +96,7 @@
             };
             publisherMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var publisherMigrated = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(ConnectionString, true),b =>
                 {
                     b.CustomConfig(c =>
                     {
@@ -139,7 +127,7 @@
 
             //Compatibility mode disabled in both publisher and subscriber
             var compatModeDisabled = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(ConnectionString, true), b =>
                 {
                     b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -159,9 +147,9 @@
 
         public class Publisher : EndpointConfigurationBuilder
         {
-            public Publisher()
+            public Publisher(string connectionString, bool supportsPublishSubscribe)
             {
-                EndpointSetup<DefaultPublisher>(c =>
+                EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
                 {
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
@@ -176,9 +164,13 @@
 
         public class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber()
+            public Subscriber() : this(ConnectionString, true)
             {
-                EndpointSetup<DefaultServer>(c =>
+            }
+
+            public Subscriber(string connectionString, bool supportsPublishSubscribe)
+            {
+                EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
                     {
                         c.DisableFeature<AutoSubscribe>();
                     },

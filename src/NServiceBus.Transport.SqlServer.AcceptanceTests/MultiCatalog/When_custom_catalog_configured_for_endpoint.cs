@@ -26,13 +26,8 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(SenderConnectionString), (c, sd) =>
                 {
-                    c.UseTransport(new SqlServerTransport
-                    {
-                        ConnectionString = SenderConnectionString
-                    });
-
                     var routing = c.ConfigureRouting();
 
                     routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
@@ -62,10 +57,7 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport(new SqlServerTransport {ConnectionString = ReceiverConnectionString});
-                });
+                EndpointSetup(new CustomizedServer(ReceiverConnectionString), (c, sd) => {});
             }
 
             class Handler : IHandleMessages<Message>

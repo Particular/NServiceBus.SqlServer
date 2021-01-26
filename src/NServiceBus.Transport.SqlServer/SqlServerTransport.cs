@@ -87,14 +87,14 @@ namespace NServiceBus
             
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
             
-            infrastructure.ConfigureSendInfrastructure();
+            await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
 
             if (receivers.Length > 0)
             {
-                await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
-
                 await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
             }
+
+            infrastructure.ConfigureSendInfrastructure();
 
             return infrastructure;
         }
