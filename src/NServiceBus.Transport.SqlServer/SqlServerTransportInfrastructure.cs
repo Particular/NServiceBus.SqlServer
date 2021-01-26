@@ -33,9 +33,6 @@ namespace NServiceBus.Transport.SqlServer
             var pubSubSettings = transport.Subscriptions;
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema, catalog);
             
-            // necessary evil for acceptance tests
-            transport.SubscriptionTableQuotedQualifiedNameSetter(subscriptionTableName.QuotedQualifiedName);
-
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
             var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
             if (timeToCacheSubscriptions.HasValue)
@@ -47,6 +44,8 @@ namespace NServiceBus.Transport.SqlServer
             {
                 return new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary();
             }
+
+            transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
 
             return Task.CompletedTask;
         }
@@ -114,7 +113,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
 
-            var queueFactory = transport.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
+            var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -161,10 +160,17 @@ namespace NServiceBus.Transport.SqlServer
 
             dueDelayedMessageProcessor?.Start();
 
-            var queuesToCreate = receiveSettings.Select(r => r.ReceiveAddress).ToList();
+            var receiveAddresses = receiveSettings.Select(r => r.ReceiveAddress).ToList();
+            
+            var queuesToCreate = new List<string>();
             queuesToCreate.AddRange(sendingAddresses);
+            queuesToCreate.AddRange(receiveAddresses);
 
             await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress).ConfigureAwait(false);
+
+            transport.Testing.SendingAddresses = sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
+            transport.Testing.ReceiveAddresses = receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
+            transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
         }
 
         ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
