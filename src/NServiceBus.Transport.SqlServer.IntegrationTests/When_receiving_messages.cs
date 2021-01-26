@@ -25,7 +25,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
+            var inputQueueAddress = parser.Parse("input").Address;
+            var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
@@ -41,9 +42,9 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             };
 
             transport.Testing.QueueFactoryOverride = qa =>
-                qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
+                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
-            var receiver = new ReceiveSettings("receiver", parser.Parse("input").Address, true, false, "error");
+            var receiver = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
                 (_, __) => { },
                 true);
@@ -63,7 +64,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.StartReceive();
+            await pump.StopReceive();
 
             await infrastructure.DisposeAsync();
 

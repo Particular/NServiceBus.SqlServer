@@ -133,7 +133,10 @@ namespace NServiceBus.Transport.SqlServer
 
                 delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
 
-                var mainReceiverInputQueueAddress = hostSettings.Name;
+                //For backwards-compatibility with previous version of the seam and endpoints that have delayed
+                //delivery infrastructure, we assume that the first receiver address matches main input queue address
+                //from version 7 of Core
+                var mainReceiverInputQueueAddress = receiveSettings[0].ReceiveAddress;
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
