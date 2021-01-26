@@ -156,17 +156,21 @@ namespace NServiceBus.Transport.SqlServer
 
             await ValidateDatabaseAccess(scopeOptions.TransactionOptions).ConfigureAwait(false);
 
-            var queueCreator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
-
             dueDelayedMessageProcessor?.Start();
 
             var receiveAddresses = receiveSettings.Select(r => r.ReceiveAddress).ToList();
-            
-            var queuesToCreate = new List<string>();
-            queuesToCreate.AddRange(sendingAddresses);
-            queuesToCreate.AddRange(receiveAddresses);
 
-            await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress).ConfigureAwait(false);
+            if (hostSettings.SetupInfrastructure)
+            {
+                var queuesToCreate = new List<string>();
+                queuesToCreate.AddRange(sendingAddresses);
+                queuesToCreate.AddRange(receiveAddresses);
+
+                var queueCreator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
+
+                await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress)
+                    .ConfigureAwait(false);
+            }
 
             transport.Testing.SendingAddresses = sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
             transport.Testing.ReceiveAddresses = receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();

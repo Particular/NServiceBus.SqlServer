@@ -23,9 +23,9 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
                 ConnectionString = @"Data Source=.\SQLEXPRESS;Integrated Security=True"
             };
             
-            Assert.ThrowsAsync(
-                Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."),
-                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false));
+            Assert.That(
+                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false),
+                Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
         }
 
         [Test]

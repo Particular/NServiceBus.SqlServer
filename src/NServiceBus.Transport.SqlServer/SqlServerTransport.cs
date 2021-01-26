@@ -85,15 +85,16 @@ namespace NServiceBus
         {
             FinalizeConfiguration();
             
-            var isEncrypted = IsEncrypted();
-
-            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, isEncrypted);
+            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
             
-            await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
-
-            await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
-
             infrastructure.ConfigureSendInfrastructure();
+
+            if (receivers.Length > 0)
+            {
+                await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
+
+                await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
+            }
 
             return infrastructure;
         }
