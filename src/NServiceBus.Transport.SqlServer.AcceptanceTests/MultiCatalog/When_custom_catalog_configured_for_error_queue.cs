@@ -36,7 +36,7 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(SenderConnectionString), (c, sd) =>
                 {
                     var errorSpyName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(ErrorSpy));
 
@@ -46,11 +46,7 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    var transport = new SqlServerTransport();
-                    transport.ConnectionString = SenderConnectionString;
-                    transport.QueueSchemaAndCatalogSettings.SpecifyCatalog(errorSpyName, "nservicebus2");
-
-                    c.UseTransport(transport);
+                    c.ConfigureSqlServerTransport().QueueSchemaAndCatalogSettings.SpecifyCatalog(errorSpyName, "nservicebus2");
                 });
             }
 
@@ -67,13 +63,7 @@
         {
             public ErrorSpy()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport(new SqlServerTransport
-                        {
-                            ConnectionString = SpyConnectionString
-                        });
-                });
+                EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => {});
             }
 
             class Handler : IHandleMessages<Message>

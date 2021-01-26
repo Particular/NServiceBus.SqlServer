@@ -66,10 +66,7 @@
         {
             public ErrorSpy()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport(new SqlServerTransport{ConnectionString = SpyConnectionString});
-                });
+                EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => { });
             }
 
             class Handler : IHandleMessages<Message>

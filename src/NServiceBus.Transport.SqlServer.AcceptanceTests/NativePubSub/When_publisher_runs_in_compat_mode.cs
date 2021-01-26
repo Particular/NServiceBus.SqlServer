@@ -57,12 +57,8 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
-                    c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
-                    {
-                        ConnectionString = ConnectionString
-                    });
                     //SqlServerTransport no longer implements message-driven pub sub interface so we need to configure Publishers "manually"
                     c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                     {

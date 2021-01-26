@@ -31,15 +31,11 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(busConfiguration =>
+                EndpointSetup<DefaultServer>(c =>
                 {
-                    var transport = new SqlServerTransport
-                    {
-                        TransportTransactionMode = TransportTransactionMode.TransactionScope
-                    };
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
                     transport.ScopeOptions.Configure(TimeSpan.FromHours(1));
-
-                    busConfiguration.UseTransport(transport);
                 });
             }
         }

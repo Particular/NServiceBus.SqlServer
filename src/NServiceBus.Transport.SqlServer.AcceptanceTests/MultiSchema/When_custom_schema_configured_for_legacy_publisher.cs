@@ -1,14 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
+using NServiceBus.AcceptanceTesting;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
 
 namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-
     public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcceptanceTest
     {
         static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
@@ -33,24 +31,25 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
         {
             public LegacyPublisher()
             {
-                EndpointSetup<DefaultPublisher>(c =>
-                {
-                    var transport = new SqlServerTransport(supportsPublishSubscribe: false);
-                    transport.ConnectionString = ConnectionString;
-                    transport.DefaultSchema = "sender";
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
-                    transport.Subscriptions.DisableSubscriptionCache();
-
-                    c.UseTransport(transport);
-
-                    c.OnEndpointSubscribed<Context>((s, context) =>
+                EndpointSetup(new CustomizedServer(ConnectionString, false),
+                    (c, rd) =>
                     {
-                        if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
+                        var transport = c.ConfigureSqlServerTransport();
+
+                        transport.DefaultSchema = "sender";
+                        transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
+                        transport.Subscriptions.DisableSubscriptionCache();
+
+                        c.OnEndpointSubscribed<Context>((s, context) =>
                         {
-                            context.Subscribed = true;
-                        }
+                            if (s.SubscriberEndpoint.Contains(
+                                AcceptanceTesting.Customization.Conventions
+                                    .EndpointNamingConvention(typeof(Subscriber))))
+                            {
+                                context.Subscribed = true;
+                            }
+                        });
                     });
-                });
             }
         }
 
@@ -58,24 +57,25 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(b =>
+                EndpointSetup(new CustomizedServer(ConnectionString), (c, sd) =>
                 {
-                    var publisherEndpoint = Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
+                    var publisherEndpoint =
+                        AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
 
-                    var transport = new SqlServerTransport();
-                    transport.ConnectionString = ConnectionString;
+                    var transport = c.ConfigureSqlServerTransport();
                     transport.DefaultSchema = "receiver";
                     transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
-                    b.UseTransport(transport);
 
-                    b.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
-                    b.ConfigureRouting().UseSchemaForEndpoint(publisherEndpoint, "sender");
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event),
+                        AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
+                    c.ConfigureRouting().UseSchemaForEndpoint(publisherEndpoint, "sender");
                 });
             }
 
             class EventHandler : IHandleMessages<Event>
             {
                 readonly Context scenarioContext;
+
                 public EventHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;
