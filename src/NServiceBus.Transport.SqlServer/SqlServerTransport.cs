@@ -224,14 +224,19 @@ namespace NServiceBus
         /// </summary>
         public bool DisableDelayedDelivery { get; set; } = false;
 
-        /// <summary>
-        /// For testing the migration process only
-        /// </summary>
-        internal Action<string> SubscriptionTableQuotedQualifiedNameSetter { get; set; } = _ => { };
+        internal TestingInformation Testing { get; } = new TestingInformation(); 
 
-        /// <summary>
-        /// For the integration tests only
-        /// </summary>
-        internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
+        internal class TestingInformation
+        {
+            internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
+
+            internal string[] ReceiveAddresses { get;  set; }
+
+            internal string[] SendingAddresses { get; set; }
+
+            internal string DelayedDeliveryQueue { get; set; }
+
+            internal string SubscriptionTable { get; set; }
+        }
     }
 }

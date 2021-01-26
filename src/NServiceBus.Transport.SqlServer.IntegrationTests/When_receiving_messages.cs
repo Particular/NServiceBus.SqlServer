@@ -37,10 +37,11 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             {
                 TransportTransactionMode = TransportTransactionMode.None,
                 TimeToWaitBeforeTriggering = TimeSpan.MaxValue,
-                ConnectionFactory = SqlConnectionFactory.Default(connectionString).OpenNewConnection,
-                
-                QueueFactoryOverride = qa => qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true),
+                ConnectionFactory = SqlConnectionFactory.Default(connectionString).OpenNewConnection
             };
+
+            transport.Testing.QueueFactoryOverride = qa =>
+                qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
             var receiver = new ReceiveSettings("receiver", parser.Parse("input").Address, true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
