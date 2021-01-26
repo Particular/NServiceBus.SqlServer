@@ -44,7 +44,6 @@
                 {
                     c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
                     var transport = c.ConfigureSqlServerTransport();
-                    transport.ConnectionString = "this-will-not-work";
                     transport.ConnectionFactory = async () =>
                     {
                         var connection = new SqlConnection(GetConnectionString());
