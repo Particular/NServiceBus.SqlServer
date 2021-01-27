@@ -42,7 +42,7 @@
 
             var receiveTask = ReceiveWithLongHandling(queue, sqlConnectionFactory);
 
-            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue, sqlConnectionFactory);});
+            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue, sqlConnectionFactory); });
 
             await receiveTask;
         }

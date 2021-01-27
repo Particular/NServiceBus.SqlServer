@@ -40,7 +40,7 @@
         class InitiatingMessage : IMessage
         {
         }
-        
+
         class FollowUpCompletedCommand : IMessage
         {
         }
@@ -78,7 +78,7 @@
             }
 
             class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
-                IHandleMessages<FollowUpCompletedCommand>, 
+                IHandleMessages<FollowUpCompletedCommand>,
                 IHandleMessages<FollowUpCompletedEvent>,
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>

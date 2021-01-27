@@ -52,7 +52,7 @@ namespace NServiceBus.Transport.SqlServer
             var pubSubSettings = settings.GetOrCreate<SubscriptionSettings>();
             var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(defaultSchemaOverride ?? "dbo", catalog);
             // necessary evil for acceptance tests
-            if(settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
+            if (settings.TryGet<Action<string>>(SettingsKeys.SubscriptionTableQuotedQualifiedNameSetter, out var action))
             {
                 action(subscriptionTableName.QuotedQualifiedName);
             }
@@ -224,28 +224,6 @@ namespace NServiceBus.Transport.SqlServer
             }
 
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
-        }
-
-        IExpiredMessagesPurger CreateExpiredMessagesPurger()
-        {
-            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
-            {
-                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-                {
-                    Enabled = false,
-                });
-                return new NoOpExpiredMessagesPurger();
-            }
-
-            var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
-
-            diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-            {
-                Enabled = true,
-                BatchSize = purgeBatchSize
-            });
-
-            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
         }
 
         async Task<StartupCheckResult> CheckForAmbientTransactionEnlistmentSupport(TransactionOptions transactionOptions)

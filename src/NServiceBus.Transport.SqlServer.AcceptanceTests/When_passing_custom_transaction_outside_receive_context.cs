@@ -76,7 +76,7 @@
         {
         }
 
-        class  EventFromCommittedTransaction : IEvent
+        class EventFromCommittedTransaction : IEvent
         {
         }
 
