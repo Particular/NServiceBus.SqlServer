@@ -33,14 +33,14 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
         [TestCase("Initial Catalog=my.catalog")]
         [TestCase("Database=my.catalog")]
         [TestCase("database=my.catalog")]
-        public async Task It_accepts_connection_string_with_catalog_property(string connectionString)
+        public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
             var definition = new SqlServerTransport
             {
                 ConnectionString = connectionString
             };
 
-            await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false);
+            definition.GetDefaultCatalog();
 
             Assert.Pass();
         }

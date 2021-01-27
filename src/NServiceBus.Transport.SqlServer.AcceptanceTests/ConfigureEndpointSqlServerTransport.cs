@@ -44,20 +44,21 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public async Task Cleanup()
     {
-        var connectionString = transport.ConnectionString;
 
-        if (connectionString == null)
+        Func<Task<SqlConnection>> factory = async () =>
         {
-            using (var connection = await transport.ConnectionFactory().ConfigureAwait(false))
+            if (transport.ConnectionString != null)
             {
-                connectionString = connection.ConnectionString;
+                var connection = new SqlConnection(transport.ConnectionString);
+                await connection.OpenAsync().ConfigureAwait(false);
+                return connection;
             }
-        }
 
-        using (var conn = new SqlConnection(connectionString))
+            return await transport.ConnectionFactory().ConfigureAwait(false);
+        };
+
+        using (var conn = await factory().ConfigureAwait(false))
         {
-            await conn.OpenAsync().ConfigureAwait(false);
-
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
 

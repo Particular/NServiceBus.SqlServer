@@ -37,7 +37,7 @@ namespace NServiceBus
             return new DbConnectionStringBuilder {ConnectionString = connectionString};
         }
 
-        string GetDefaultCatalog()
+        internal string GetDefaultCatalog()
         {
             var parser = GetConnectionStringBuilder();
 

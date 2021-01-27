@@ -40,18 +40,21 @@
         {
             public Endpoint()
             {
-                EndpointSetup<DefaultServer>(c =>
+                var transport = new SqlServerTransport
                 {
-                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
-                    var transport = c.ConfigureSqlServerTransport();
-                    transport.ConnectionFactory = async () =>
+                    ConnectionFactory = async () =>
                     {
                         var connection = new SqlConnection(GetConnectionString());
 
                         await connection.OpenAsync();
 
                         return connection;
-                    };
+                    }
+                };
+
+                EndpointSetup(new CustomizedServer(transport), (c, sd) => 
+                {
+                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
                 });
             }
 
