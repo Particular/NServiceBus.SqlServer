@@ -15,8 +15,5 @@
             {
             }
         }
-
-        public static readonly Task<bool> TrueTask = Task.FromResult(true);
-        public static readonly Task<bool> FalseTask = Task.FromResult(false);
     }
 }

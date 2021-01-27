@@ -62,8 +62,11 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
 
-            //TODO: this needs to be fixed
-            if (queueAddresses == null) return;
+            //No clean-up for send-only endpoints
+            if (queueAddresses == null)
+            {
+                return;
+            }
 
             var commandTextBuilder = new StringBuilder();
             foreach (var address in queueAddresses)

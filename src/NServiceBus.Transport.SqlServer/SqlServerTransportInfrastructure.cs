@@ -28,12 +28,14 @@ namespace NServiceBus.Transport.SqlServer
             connectionFactory = CreateConnectionFactory();
         }
 
-        public Task ConfigureSubscriptions(HostSettings hostSettings, string catalog)
+        public async Task ConfigureSubscriptions(string catalog)
         {
             var pubSubSettings = transport.Subscriptions;
-            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema, catalog);
+            var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
+            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(subscriptionStoreSchema, catalog);
             
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
+            
             var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
             if (timeToCacheSubscriptions.HasValue)
             {
@@ -42,12 +44,10 @@ namespace NServiceBus.Transport.SqlServer
 
             if (hostSettings.SetupInfrastructure)
             {
-                return new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary();
+                await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary().ConfigureAwait(false);
             }
 
             transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
-
-            return Task.CompletedTask;
         }
 
         SqlConnectionFactory CreateConnectionFactory()
@@ -62,13 +62,13 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
-            var scopeOptions = transport.ScopeOptions;
+            var transactionOptions = transport.ScopeOptions.TransactionOptions;
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
             {
                 TransactionMode = transport.TransportTransactionMode,
-                scopeOptions.TransactionOptions.IsolationLevel,
-                scopeOptions.TransactionOptions.Timeout
+                transactionOptions.IsolationLevel,
+                transactionOptions.Timeout
             });
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
@@ -81,7 +81,7 @@ namespace NServiceBus.Transport.SqlServer
             var createMessageBodyComputedColumn = transport.CreateMessageBodyComputedColumn;
 
             Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
-                guarantee => SelectReceiveStrategy(guarantee, scopeOptions.TransactionOptions, connectionFactory);
+                guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
@@ -135,7 +135,8 @@ namespace NServiceBus.Transport.SqlServer
 
                 //For backwards-compatibility with previous version of the seam and endpoints that have delayed
                 //delivery infrastructure, we assume that the first receiver address matches main input queue address
-                //from version 7 of Core
+                //from version 7 of Core. For raw usages this will still work but delayed-delivery messages
+                //might be moved to arbitrary picked receiver
                 var mainReceiverInputQueueAddress = receiveSettings[0].ReceiveAddress;
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
@@ -157,7 +158,7 @@ namespace NServiceBus.Transport.SqlServer
                 
             }).ToList<IMessageReceiver>().AsReadOnly();
 
-            await ValidateDatabaseAccess(scopeOptions.TransactionOptions).ConfigureAwait(false);
+            await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
 
             dueDelayedMessageProcessor?.Start();
 

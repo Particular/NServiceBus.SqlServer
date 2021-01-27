@@ -87,7 +87,7 @@ namespace NServiceBus
             
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
             
-            await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
+            await infrastructure.ConfigureSubscriptions(catalog).ConfigureAwait(false);
 
             if (receivers.Length > 0)
             {
