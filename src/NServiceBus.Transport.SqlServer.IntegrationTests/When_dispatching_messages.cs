@@ -117,13 +117,13 @@
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressTranslator.Parse(validAddress).QualifiedTableName;
             queue = new TableBasedQueue(queueAddress, validAddress, true);
-            
+
             return purger.Purge(queue);
         }
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator,  new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
             var queueBindings = new QueueBindings();
             queueBindings.BindReceiving(validAddress);
 

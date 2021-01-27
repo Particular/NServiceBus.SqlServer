@@ -30,7 +30,7 @@
 
             class Handler : IHandleMessages<Message>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public Handler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

@@ -36,7 +36,7 @@
 
             class EventHandler : IHandleMessages<Message>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public EventHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

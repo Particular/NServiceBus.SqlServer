@@ -22,13 +22,13 @@
                 {
                     var endpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Receiver));
 
-                    c.UseTransport<SqlServerTransport>().UseSchemaForEndpoint(endpointName,ReceiverSchema);
+                    c.UseTransport<SqlServerTransport>().UseSchemaForEndpoint(endpointName, ReceiverSchema);
                 });
             }
 
             class Handler : IHandleMessages<Message>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public Handler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

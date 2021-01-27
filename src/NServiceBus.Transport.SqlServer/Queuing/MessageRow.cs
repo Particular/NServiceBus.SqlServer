@@ -78,7 +78,7 @@
             {
                 return conversion(text);
             }
-            return default(T);
+            return default;
         }
 
         static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex)
@@ -114,7 +114,7 @@
         {
             if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
             {
-                return default(T);
+                return default;
             }
 
             return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
