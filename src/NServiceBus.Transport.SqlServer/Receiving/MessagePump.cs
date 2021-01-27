@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using NServiceBus.Unicast.Messages;
-
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
 #if SYSTEMDATASQLCLIENT
@@ -31,7 +28,7 @@ namespace NServiceBus.Transport.SqlServer
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, IReadOnlyCollection<MessageMetadata> events)
+        public async Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError)
         {
             this.limitations = limitations;
 
@@ -44,11 +41,6 @@ namespace NServiceBus.Transport.SqlServer
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
 
             receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
-
-            foreach (var messageMetadata in events)
-            {
-                await Subscriptions.Subscribe(messageMetadata, null).ConfigureAwait(false);
-            }
 
             if (transport.PurgeExpiredMessagesOnStartup)
             {

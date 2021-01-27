@@ -56,8 +56,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             await pump.Initialize(
                 new PushRuntimeSettings(1),
                 _ => Task.CompletedTask,
-                _ => Task.FromResult(ErrorHandleResult.Handled),
-                new List<MessageMetadata>()
+                _ => Task.FromResult(ErrorHandleResult.Handled)
             );
 
             await pump.StartReceive();

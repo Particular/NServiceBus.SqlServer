@@ -11,6 +11,11 @@ namespace NServiceBus.Transport.SqlServer.PubSub
             return Task.CompletedTask;
         }
 
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
+        {
+            return Task.CompletedTask;
+        }
+
         public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
         {
             return Task.CompletedTask;

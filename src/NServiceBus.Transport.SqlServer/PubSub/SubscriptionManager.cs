@@ -1,3 +1,4 @@
+using System.Linq;
 using NServiceBus.Unicast.Messages;
 
 namespace NServiceBus.Transport.SqlServer
@@ -17,6 +18,11 @@ namespace NServiceBus.Transport.SqlServer
         public Task Subscribe(MessageMetadata eventType, ContextBag context)
         {
             return subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType);
+        }
+
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
+        {
+            return Task.WhenAll(eventTypes.Select(et => Subscribe(et, context)));
         }
 
         public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
