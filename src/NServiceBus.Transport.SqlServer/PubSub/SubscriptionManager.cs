@@ -1,4 +1,3 @@
-using System.Threading;
 using NServiceBus.Unicast.Messages;
 
 namespace NServiceBus.Transport.SqlServer

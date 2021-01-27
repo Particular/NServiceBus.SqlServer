@@ -13,6 +13,7 @@
     public class When_subscriber_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task It_can_subscribe_for_event_published_by_legacy_publisher()
@@ -38,7 +39,10 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
+                    c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
+                    {
+                        ConnectionString = ConnectionString
+                    });
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(MigratedSubscriber))))

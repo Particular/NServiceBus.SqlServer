@@ -45,6 +45,11 @@ namespace NServiceBus.Transport.SqlServer
 
             receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
 
+            foreach (var messageMetadata in events)
+            {
+                await Subscriptions.Subscribe(messageMetadata, null).ConfigureAwait(false);
+            }
+
             if (transport.PurgeExpiredMessagesOnStartup)
             {
                 try
@@ -241,7 +246,7 @@ namespace NServiceBus.Transport.SqlServer
         PushRuntimeSettings limitations;
 
 
-        public ISubscriptionManager Subscriptions { get; private set; }
+        public ISubscriptionManager Subscriptions { get; }
         public string Id => receiveSettings.Id;
     }
 }

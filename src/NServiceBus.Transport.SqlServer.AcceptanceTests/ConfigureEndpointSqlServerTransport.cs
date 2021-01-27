@@ -52,7 +52,8 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         {
             await conn.OpenAsync().ConfigureAwait(false);
 
-            var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse);
+            //TODO: we need to handle the receive addresses as well
+            var queueAddresses = queueBindings.SendingAddresses.Select(QueueAddress.Parse);
 
             var commandTextBuilder = new StringBuilder();
             foreach (var address in queueAddresses)

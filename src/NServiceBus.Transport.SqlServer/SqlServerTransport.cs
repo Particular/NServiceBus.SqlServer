@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using NServiceBus.Routing;
 
 namespace NServiceBus
 {
@@ -21,6 +20,7 @@ namespace NServiceBus
     {
         string connectionString;
         Func<Task<SqlConnection>> connectionFactory;
+
         QueueAddressTranslator addressTranslator;
         string catalog;
 
@@ -71,20 +71,24 @@ namespace NServiceBus
         }
 
         /// <summary>
+        /// For the pub-sub migration tests only
+        /// </summary>
+        internal SqlServerTransport(bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
+            : base(TransportTransactionMode.TransactionScope, supportsDelayedDelivery, supportsPublishSubscribe, true)
+        {
+        }
+
+        /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
         {
-            if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
-            {
-                throw new Exception(
-                    $"Either {nameof(ConnectionString)} or {nameof(ConnectionFactory)} property has to be specified in the SQL Server transport configuration.");
-            }
-
+            FinalizeConfiguration();
+            
             var isEncrypted = IsEncrypted();
 
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, isEncrypted);
-
+            
             await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
 
             await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
@@ -99,23 +103,21 @@ namespace NServiceBus
         /// </summary>
         public override string ToTransportAddress(Transport.QueueAddress address)
         {
+            FinalizeConfiguration();
+
+            var tableQueueAddress = addressTranslator.Generate(address);
+
+            return addressTranslator.GetCanonicalForm(tableQueueAddress).Address;
+        }
+
+        void FinalizeConfiguration()
+        {
             if (addressTranslator == null)
             {
                 catalog = GetDefaultCatalog();
 
                 addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, QueueSchemaAndCatalogSettings);
-
             }
-            //TODO: remove dependency on the logical address
-            var logicalAddress = LogicalAddress.CreateRemoteAddress(
-                new EndpointInstance(address.BaseAddress, address.Discriminator, address.Properties));
-
-
-            var fullAddress = string.IsNullOrWhiteSpace(address.Qualifier) ? logicalAddress : logicalAddress.CreateQualifiedAddress(address.Qualifier);
-
-            var queueAddress = addressTranslator.Generate(fullAddress);
-
-            return addressTranslator.GetCanonicalForm(queueAddress).Address;
         }
 
         /// <summary>
@@ -221,11 +223,6 @@ namespace NServiceBus
         /// Disable native delayed delivery infrastructure
         /// </summary>
         public bool DisableDelayedDelivery { get; set; } = false;
-
-        /// <summary>
-        /// For testing the migration process only
-        /// </summary>
-        internal bool DisableNativePubSub { get; set; } = false;
 
         /// <summary>
         /// For testing the migration process only

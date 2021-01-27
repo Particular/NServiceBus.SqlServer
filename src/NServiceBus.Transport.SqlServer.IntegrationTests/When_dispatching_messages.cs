@@ -77,8 +77,7 @@
             return new TransportOperation(
                 new OutgoingMessage(id, new Dictionary<string, string>(), new byte[0]),
                 new UnicastAddressTag(destination),
-                new Dictionary<string, string>(),
-                consistency
+                requiredDispatchConsistency: consistency
                 );
         }
 

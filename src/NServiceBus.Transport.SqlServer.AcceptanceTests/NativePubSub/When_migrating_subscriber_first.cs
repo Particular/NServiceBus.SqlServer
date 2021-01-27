@@ -16,6 +16,7 @@
     public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task Should_not_lose_any_events()
@@ -29,7 +30,10 @@
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
+                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
+                        {
+                            ConnectionString = ConnectionString
+                        });
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -38,7 +42,10 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
+                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
+                        {
+                            ConnectionString = ConnectionString
+                        });
                         c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                         {
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
@@ -66,7 +73,10 @@
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
+                        c.UseTransport(new SqlServerTransport(supportsPublishSubscribe: false)
+                        {
+                            ConnectionString = ConnectionString
+                        });
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -75,7 +85,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                         var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
                         compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     });
@@ -103,7 +113,7 @@
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     });
                     b.When(c => c.SubscribedMessageDriven && c.SubscribedNative, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -112,7 +122,7 @@
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                         var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
                         compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     });
