@@ -73,7 +73,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
-        [ObsoleteEx(Message = "UseSchemaForQueue has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.EndpointSchemaAndCatalogSettings", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "UseSchemaForQueue has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
@@ -103,7 +103,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        [ObsoleteEx(Message = "UseCatalogForQueue has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.QueueSchemaAndCatalogSettings", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "UseCatalogForQueue has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)

@@ -45,7 +45,7 @@
                         .Delayed(d => d.NumberOfRetries(0));
 
                     var transport = c.ConfigureSqlServerTransport();
-                    transport.QueueSchemaAndCatalogSettings.SpecifySchema(errorSpyName, ErrorSpySchema);
+                    transport.SchemaAndCatalog.UseSchemaForQueue(errorSpyName, ErrorSpySchema);
                 });
             }
 

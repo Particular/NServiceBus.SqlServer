@@ -46,7 +46,7 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    c.ConfigureSqlServerTransport().QueueSchemaAndCatalogSettings.SpecifyCatalog(errorSpyName, "nservicebus2");
+                    c.ConfigureSqlServerTransport().SchemaAndCatalog.UseCatalogForQueue(errorSpyName, "nservicebus2");
                 });
             }
 

@@ -10,7 +10,7 @@
         /// <summary>
         /// Enables specifying schema for a given queue.
         /// </summary>
-        public void SpecifySchema(string queueName, string schema)
+        public void UseSchemaForQueue(string queueName, string schema)
         {
             schemas[queueName] = schema;
         }
@@ -18,15 +18,12 @@
         /// <summary>
         /// Enables specifying catalog for a given queue.
         /// </summary>
-        public void SpecifyCatalog(string queueName, string catalog)
+        public void UseCatalogForQueue(string queueName, string catalog)
         {
             catalogs[queueName] = catalog;
         }
 
-        /// <summary>
-        /// Returns schema catalog settings for a given queue.
-        /// </summary>
-        public void TryGet(string queueName, out string schema, out string catalog)
+        internal void TryGet(string queueName, out string schema, out string catalog)
         {
             schemas.TryGetValue(queueName, out schema);
             catalogs.TryGetValue(queueName, out catalog);

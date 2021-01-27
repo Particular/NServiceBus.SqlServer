@@ -130,7 +130,7 @@ namespace NServiceBus
             {
                 catalog = GetDefaultCatalog();
 
-                addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, QueueSchemaAndCatalogSettings);
+                addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, SchemaAndCatalog);
             }
         }
 
@@ -151,12 +151,12 @@ namespace NServiceBus
         /// <summary>
         /// Connection string to be used by the transport.
         /// </summary>
-        public string ConnectionString { get; private set; }
+        public string ConnectionString { get; }
 
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<Task<SqlConnection>> ConnectionFactory { get; private set; } 
+        public Func<Task<SqlConnection>> ConnectionFactory { get; } 
 
         /// <summary>
         /// Default address schema.
@@ -166,7 +166,7 @@ namespace NServiceBus
         /// <summary>
         /// Catalog and schema configuration for SQL Transport queues.
         /// </summary>
-        public QueueSchemaAndCatalogSettings QueueSchemaAndCatalogSettings { get; } = new QueueSchemaAndCatalogSettings();
+        public QueueSchemaAndCatalogSettings SchemaAndCatalog { get; } = new QueueSchemaAndCatalogSettings();
 
         /// <summary>
         /// Subscription infrastructure settings.
