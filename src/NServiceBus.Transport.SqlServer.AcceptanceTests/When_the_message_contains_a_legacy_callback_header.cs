@@ -50,7 +50,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var routing = c.ConfigureTransport().Routing();
+                    var routing = c.ConfigureRouting();
                     routing.RouteToEndpoint(typeof(Request), Conventions.EndpointNamingConvention(typeof(ReceivingEndpoint)));
                 });
             }

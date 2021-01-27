@@ -49,8 +49,7 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SenderConnectionString);
+                    c.ConfigureSqlServerTransport().ConnectionString = SenderConnectionString;
                 });
             }
 
@@ -69,8 +68,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SpyConnectionString);
+                    c.UseTransport(new SqlServerTransport{ConnectionString = SpyConnectionString});
                 });
             }
 

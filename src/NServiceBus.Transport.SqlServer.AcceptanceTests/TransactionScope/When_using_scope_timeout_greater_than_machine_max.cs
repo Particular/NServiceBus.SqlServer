@@ -33,9 +33,13 @@
             {
                 EndpointSetup<DefaultServer>(busConfiguration =>
                 {
-                    busConfiguration.UseTransport<SqlServerTransport>()
-                        .Transactions(TransportTransactionMode.TransactionScope)
-                        .TransactionScopeOptions(TimeSpan.FromHours(1));
+                    var transport = new SqlServerTransport
+                    {
+                        TransportTransactionMode = TransportTransactionMode.TransactionScope
+                    };
+                    transport.ScopeOptions.Configure(TimeSpan.FromHours(1));
+
+                    busConfiguration.UseTransport(transport);
                 });
             }
         }

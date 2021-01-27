@@ -26,7 +26,9 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var routing = c.UseTransport<SqlServerTransport>().DefaultSchema(ReceiverSchema).Routing();
+                    var transport = new SqlServerTransport {DefaultSchema = ReceiverSchema};
+
+                    var routing = c.UseTransport(transport);
                     routing.RouteToEndpoint(typeof(Message), Conventions.EndpointNamingConvention(typeof(Receiver)));
                 });
             }

@@ -22,7 +22,7 @@
                 {
                     var endpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Receiver));
 
-                    c.UseTransport<SqlServerTransport>().UseSchemaForEndpoint(endpointName, ReceiverSchema);
+                    c.ConfigureSqlServerTransport().EndpointSchemaAndCatalogSettings.SpecifySchema(endpointName,ReceiverSchema);
                 });
             }
 

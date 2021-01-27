@@ -95,11 +95,9 @@
 
         static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
-            var queueBindings = new QueueBindings();
-            queueBindings.BindReceiving(QueueTableName);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, false);
 
-            return queueCreator.CreateQueueIfNecessary(queueBindings, "");
+            return queueCreator.CreateQueueIfNecessary(new[] {QueueTableName}, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
     }
 }

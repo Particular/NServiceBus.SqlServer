@@ -40,9 +40,12 @@
             {
                 EndpointSetup<DefaultServer>(busConfiguration =>
                 {
-                    busConfiguration.UseTransport<SqlServerTransport>()
-                        .Transactions(TransportTransactionMode.TransactionScope)
-                        .TransactionScopeOptions(isolationLevel: IsolationLevel.RepeatableRead);
+                    var transport = new SqlServerTransport
+                    {
+                        TransportTransactionMode = TransportTransactionMode.TransactionScope
+                    };
+                    transport.ScopeOptions.Configure(requestedIsolationLevel: IsolationLevel.RepeatableRead);
+                    busConfiguration.UseTransport(transport);
                 });
             }
 

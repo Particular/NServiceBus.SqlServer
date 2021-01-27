@@ -1,4 +1,7 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿using System.Collections.Generic;
+using NServiceBus.Unicast.Messages;
+
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
 #if SYSTEMDATASQLCLIENT
@@ -29,30 +32,39 @@
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
             }
+            
+            var transport = new SqlServerTransport
+            {
+                TransportTransactionMode = TransportTransactionMode.None,
+                TimeToWaitBeforeTriggering = TimeSpan.MaxValue,
+                ConnectionFactory = SqlConnectionFactory.Default(connectionString).OpenNewConnection,
+                
+                QueueFactoryOverride = qa => qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true),
+            };
 
-            var sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            var receiver = new ReceiveSettings("receiver", parser.Parse("input").Address, true, false, "error");
+            var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
+                (_, __) => { },
+                true);
 
-            var pump = new MessagePump(
-                m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
-                qa => qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true),
-                new QueuePurger(sqlConnectionFactory),
-                new NoOpExpiredMessagesPurger(),
-                new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
-                new QueuePeekerOptions(),
-                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection(), false),
-                TimeSpan.MaxValue);
+            var infrastructure = await transport.Initialize(hostSettings, new[] {receiver},new string[0]);
 
-            await pump.Init(
-                _ => Task.FromResult(0),
+            var pump = infrastructure.Receivers[0];
+
+            await pump.Initialize(
+                new PushRuntimeSettings(1),
+                _ => Task.CompletedTask,
                 _ => Task.FromResult(ErrorHandleResult.Handled),
-                new CriticalError(_ => Task.FromResult(0)),
-                new PushSettings("input", "error", false, TransportTransactionMode.None));
+                new List<MessageMetadata>()
+            );
 
-            pump.Start(new PushRuntimeSettings(1));
+            await pump.StartReceive();
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.Stop();
+            await pump.StartReceive();
+
+            await infrastructure.DisposeAsync();
 
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }

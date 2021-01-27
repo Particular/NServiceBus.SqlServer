@@ -71,7 +71,7 @@
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
                     c.Pipeline.Register(typeof(ParticipatingInTransportTransactionBehavior), "Behavior interested in the transport transaction");
-                    c.UseTransport<SqlServerTransport>().Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+                    c.ConfigureSqlServerTransport().TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
                 });
             }
         }

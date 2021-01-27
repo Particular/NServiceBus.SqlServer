@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -32,12 +31,14 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    var transport = c.UseTransport<SqlServerTransport>();
-                    transport.DefaultSchema("sender");
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
-                    transport.SubscriptionSettings().DisableSubscriptionCache();
+                    var transport = new SqlServerTransport();
+                    transport.DefaultSchema = "sender";
+                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.DisableSubscriptionCache();
+                    transport.DisableNativePubSub = true;
 
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
+                    c.UseTransport(transport);
+
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
@@ -57,11 +58,13 @@
                 {
                     var publisherEndpoint = Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
 
-                    var transport = b.UseTransport<SqlServerTransport>();
-                    transport.DefaultSchema("receiver").UseSchemaForEndpoint(publisherEndpoint, "sender");
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
+                    var transport = new SqlServerTransport();
+                    transport.DefaultSchema = "receiver";
+                    transport.EndpointSchemaAndCatalogSettings.SpecifySchema(publisherEndpoint, "sender");
+                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
+                    b.UseTransport(transport);
 
-                    transport.EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
+                    b.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
                 });
             }
 
