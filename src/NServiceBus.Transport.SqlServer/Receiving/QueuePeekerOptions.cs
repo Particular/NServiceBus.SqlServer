@@ -3,9 +3,17 @@
     using System;
     using Logging;
 
-    class QueuePeekerOptions
+    /// <summary>
+    /// SQL Transport queue peeker settings.
+    /// </summary>
+    public class QueuePeekerOptions
     {
-        public QueuePeekerOptions(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
+        /// <summary>
+        /// Configures queue peeker options.
+        /// </summary>
+        /// <param name="delayTime">Time delay between peeks.</param>
+        /// <param name="maxRecordsToPeek">Maximal number of records to peek.</param>
+        public void Configure(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
         {
             var delay = DefaultDelay;
 
@@ -45,8 +53,16 @@
             }
         }
 
-        public TimeSpan Delay { get; }
-        public int? MaxRecordsToPeek { get; }
+        /// <summary>
+        /// Peek delay.
+        /// </summary>
+        public TimeSpan Delay { get; private set; }
+
+        /// <summary>
+        /// Maximal number of records to peek.
+        /// </summary>
+        public int? MaxRecordsToPeek { get; private set; }
+
         static TimeSpan DefaultDelay = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }

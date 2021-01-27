@@ -3,9 +3,17 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Transactions;
 
-    class SqlScopeOptions
+    /// <summary>
+    /// SQL Transport TransactionScope options.
+    /// </summary>
+    public class SqlScopeOptions
     {
-        public SqlScopeOptions(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
+        /// <summary>
+        /// Configures transaction scope options.
+        /// </summary>
+        /// <param name="requestedTimeout">Transaction timeout.</param>
+        /// <param name="requestedIsolationLevel">Transaction isolation level.</param>
+        public void Configure(TimeSpan? requestedTimeout = null, IsolationLevel? requestedIsolationLevel = null)
         {
             var timeout = TransactionManager.DefaultTimeout;
 
@@ -28,6 +36,6 @@ namespace NServiceBus.Transport.SqlServer
             };
         }
 
-        public TransactionOptions TransactionOptions { get; }
+        internal TransactionOptions TransactionOptions { get; private set; }
     }
 }

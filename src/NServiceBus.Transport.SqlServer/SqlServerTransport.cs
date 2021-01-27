@@ -12,7 +12,6 @@ namespace NServiceBus
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
-    using Settings;
     using Transport;
     using Transport.SqlServer;
 
@@ -65,14 +64,15 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        public SqlServerTransport(TransportTransactionMode defaultTransactionMode) : base(defaultTransactionMode)
+        public SqlServerTransport(TransportTransactionMode defaultTransactionMode) 
+            : base(defaultTransactionMode, true, true, true)
         {
         }
 
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
-        public override Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses,
+        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses,
             CancellationToken cancellationToken = new CancellationToken())
         {
             if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
@@ -84,7 +84,15 @@ namespace NServiceBus
             var catalog = GetDefaultCatalog();
             var isEncrypted = IsEncrypted();
 
-            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
+            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, catalog, isEncrypted);
+
+            await infrastructure.ConfigureSubscriptions(hostSettings, catalog).ConfigureAwait(false);
+
+            infrastructure.ConfigureSendInfrastructure();
+
+            await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
+
+            return infrastructure;
         }
 
         /// <summary>
@@ -115,21 +123,6 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// <see cref="TransportDefinition.SupportsDelayedDelivery"/>
-        /// </summary>
-        public override bool SupportsDelayedDelivery { get; } = true;
-
-        /// <summary>
-        /// <see cref="TransportDefinition.SupportsPublishSubscribe"/>
-        /// </summary>
-        public override bool SupportsPublishSubscribe { get; } = true;
-
-        /// <summary>
-        /// <see cref="TransportDefinition.SupportsTTBR"/>
-        /// </summary>
-        public override bool SupportsTTBR { get; } = true;
-
-        /// <summary>
         /// Connection string to be used by the transport.
         /// </summary>
         public string ConnectionString
@@ -150,7 +143,8 @@ namespace NServiceBus
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<Task<SqlConnection>> ConnectionFactory {
+        public Func<Task<SqlConnection>> ConnectionFactory 
+        {
             get => connectionFactory;
             set
             {
@@ -162,5 +156,75 @@ namespace NServiceBus
                 connectionFactory = value;
             } 
         }
+
+        /// <summary>
+        /// Default address schema.
+        /// </summary>
+        public string DefaultSchema { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Catalog and schema configuration for SQL Transport queues.
+        /// </summary>
+        public QueueSchemaAndCatalogSettings QueueSchemaAndCatalogSettings { get; } = new QueueSchemaAndCatalogSettings();
+
+        /// <summary>
+        /// Catalog and schema configuration for NServiceBus endpoints
+        /// </summary>
+        public EndpointSchemaAndCatalogSettings EndpointSchemaAndCatalogSettings { get; } = new EndpointSchemaAndCatalogSettings();
+
+        /// <summary>
+        /// Subscription infrastructure settings.
+        /// </summary>
+        public SubscriptionSettings Subscriptions { get; } = new SubscriptionSettings();
+
+        /// <summary>
+        /// Transaction scope options settings.
+        /// </summary>
+        public SqlScopeOptions ScopeOptions { get; } = new SqlScopeOptions();
+
+        /// <summary>
+        /// Time to wait before triggering the circuit breaker.
+        /// </summary>
+        public TimeSpan TimeToWaitBeforeTriggering { get; set; } = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Queue peeker settings.
+        /// </summary>
+        public QueuePeekerOptions QueuePeekerOptions { get; set; } = new QueuePeekerOptions();
+
+        /// <summary>
+        /// Instructs the transport to create a computed column for inspecting message body contents.
+        /// </summary>
+        public bool CreateMessageBodyComputedColumn { get; set; } = false;
+
+        /// <summary>
+        /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
+        /// </summary>
+        public bool PurgeExpiredMessagesOnStartup { get; set; } = false;
+
+        /// <summary>
+        /// Maximum number of messages used in each delete batch when message purging on startup is enabled.
+        /// </summary>
+        public int? PurgeExpiredMessagesBatchSize { get; set; } = null;
+
+        /// <summary>
+        /// Delayed delivery infrastructure configuration
+        /// </summary>
+        public DelayedDeliverySettings DelayedDelivery { get; set; } = new DelayedDeliverySettings();
+
+        /// <summary>
+        /// Disable native delayed delivery infrastructure
+        /// </summary>
+        public bool DisableDelayedDelivery { get; set; } = false;
+
+        /// <summary>
+        /// For testing the migration process only
+        /// </summary>
+        internal bool DisableNativePubSub { get; set; } = false;
+
+        /// <summary>
+        /// For testing the migration process only
+        /// </summary>
+        internal Action<string> SubscriptionTableQuotedQualifiedNameSetter { get; set; }
     }
 }

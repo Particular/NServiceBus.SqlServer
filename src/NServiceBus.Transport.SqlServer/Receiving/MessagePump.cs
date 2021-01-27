@@ -1,4 +1,7 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿using System.Collections.Generic;
+using NServiceBus.Unicast.Messages;
+
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
 #if SYSTEMDATASQLCLIENT
@@ -10,10 +13,13 @@
     using System.Threading.Tasks;
     using Logging;
 
-    class MessagePump : IPushMessages
+    class MessagePump : IMessageReceiver
     {
-        public MessagePump(Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker)
+        public MessagePump(SqlServerTransport transport, ReceiveSettings receiveSettings, HostSettings hostSettings, Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
         {
+            this.transport = transport;
+            this.receiveSettings = receiveSettings;
+            this.hostSettings = hostSettings;
             this.receiveStrategyFactory = receiveStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
@@ -22,27 +28,31 @@
             this.queuePeekerOptions = queuePeekerOptions;
             this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
+            Subscriptions = subscriptionManager;
         }
 
-        public async Task Init(Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, CriticalError criticalError, PushSettings settings)
+        public async Task Initialize(PushRuntimeSettings limitations, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, IReadOnlyCollection<MessageMetadata> events,
+            CancellationToken cancellationToken = new CancellationToken())
         {
-            receiveStrategy = receiveStrategyFactory(settings.RequiredTransactionMode);
+            this.limitations = limitations;
 
-            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to peek " + settings.InputQueue, ex));
-            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalError.Raise("Failed to receive from " + settings.InputQueue, ex));
+            receiveStrategy = receiveStrategyFactory(transport.TransportTransactionMode);
 
-            inputQueue = queueFactory(settings.InputQueue);
-            errorQueue = queueFactory(settings.ErrorQueue);
+            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex));
+            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex));
 
-            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalError);
+            inputQueue = queueFactory(receiveSettings.ReceiveAddress);
+            errorQueue = queueFactory(receiveSettings.ErrorQueue);
 
-            if (settings.PurgeOnStartup)
+            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
+
+            if (transport.PurgeExpiredMessagesOnStartup)
             {
                 try
                 {
                     var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
 
-                    Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, settings.InputQueue);
+                    Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, receiveSettings.ReceiveAddress);
                 }
                 catch (Exception ex)
                 {
@@ -55,7 +65,7 @@
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
-        public void Start(PushRuntimeSettings limitations)
+        public Task StartReceive(CancellationToken cancellationToken = new CancellationToken())
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
@@ -65,9 +75,11 @@
             cancellationToken = cancellationTokenSource.Token;
 
             messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
+
+            return Task.CompletedTask;
         }
 
-        public async Task Stop()
+        public async Task StopReceive(CancellationToken cancellationToken = new CancellationToken())
         {
             const int timeoutDurationInSeconds = 30;
             cancellationTokenSource.Cancel();
@@ -206,6 +218,9 @@
 
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
+        readonly SqlServerTransport transport;
+        readonly ReceiveSettings receiveSettings;
+        readonly HostSettings hostSettings;
         Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory;
         IPurgeQueues queuePurger;
         Func<string, TableBasedQueue> queueFactory;
@@ -224,5 +239,10 @@
         ReceiveStrategy receiveStrategy;
 
         static ILog Logger = LogManager.GetLogger<MessagePump>();
+        PushRuntimeSettings limitations;
+
+
+        public ISubscriptionManager Subscriptions { get; private set; }
+        public string Id => receiveSettings.Id;
     }
 }
