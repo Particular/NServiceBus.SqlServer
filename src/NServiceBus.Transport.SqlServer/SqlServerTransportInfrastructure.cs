@@ -44,7 +44,7 @@ namespace NServiceBus.Transport.SqlServer
         public Task ConfigureSubscriptions(HostSettings hostSettings, string catalog)
         {
             var pubSubSettings = transport.Subscriptions;
-            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(transport.DefaultSchema ?? "dbo", catalog);
+            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema, catalog);
             
             // necessary evil for acceptance tests
             transport.SubscriptionTableQuotedQualifiedNameSetter(subscriptionTableName.QuotedQualifiedName);
@@ -148,11 +148,10 @@ namespace NServiceBus.Transport.SqlServer
 
                 var queueAddress = LogicalAddress.CreateLocalAddress(hostSettings.Name, new Dictionary<string, string>());
 
-                queueAddress.CreateQualifiedAddress(delayedDelivery.TableSuffix);
+                queueAddress = queueAddress.CreateQualifiedAddress(delayedDelivery.TableSuffix);
                 delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
 
-                //TODO: MainReceiverId should be public
-                var mainReceiverInputQueueAddress = receiveSettings.First(r => r.Id == "Main").ReceiveAddress;
+                var mainReceiverInputQueueAddress = hostSettings.Name;
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 

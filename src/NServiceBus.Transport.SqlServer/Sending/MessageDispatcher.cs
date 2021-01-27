@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = new CancellationToken())
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction)
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))

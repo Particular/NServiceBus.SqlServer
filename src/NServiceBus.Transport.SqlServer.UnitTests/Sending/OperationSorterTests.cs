@@ -75,7 +75,7 @@
 
         static TransportOperation CreateTransportOperations(string messageId, string destination, DispatchConsistency dispatchConsistency = DispatchConsistency.Default)
         {
-            return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination), dispatchConsistency);
+            return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination), requiredDispatchConsistency: dispatchConsistency);
         }
     }
 }
