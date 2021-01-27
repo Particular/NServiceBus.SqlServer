@@ -176,7 +176,7 @@ namespace NServiceBus
         /// <summary>
         /// Transaction scope options settings.
         /// </summary>
-        public SqlScopeOptions ScopeOptions { get; } = new SqlScopeOptions();
+        public TransactionScopeOptions TransactionScopeOptions { get; } = new TransactionScopeOptions();
 
         /// <summary>
         /// Time to wait before triggering the circuit breaker.

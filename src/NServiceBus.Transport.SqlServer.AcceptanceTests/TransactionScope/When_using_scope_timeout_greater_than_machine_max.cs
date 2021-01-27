@@ -35,7 +35,7 @@
                 {
                     var transport = c.ConfigureSqlServerTransport();
                     transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
-                    transport.ScopeOptions.Configure(TimeSpan.FromHours(1));
+                    transport.TransactionScopeOptions.Timeout = TimeSpan.FromHours(1);
                 });
             }
         }

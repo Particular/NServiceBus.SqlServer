@@ -42,7 +42,7 @@
                 {
                     var transport = c.ConfigureSqlServerTransport();
                     transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
-                    transport.ScopeOptions.Configure(requestedIsolationLevel: IsolationLevel.RepeatableRead);
+                    transport.TransactionScopeOptions.IsolationLevel = IsolationLevel.RepeatableRead;
                 });
             }
 

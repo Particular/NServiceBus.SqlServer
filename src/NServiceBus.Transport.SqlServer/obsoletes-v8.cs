@@ -149,7 +149,7 @@ namespace NServiceBus
         /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to
         /// <see cref="IsolationLevel.ReadCommitted"/>.
         /// </remarks>
-        [ObsoleteEx(Message = "TransactionScopeOptions has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.ScopeOptions", RemoveInVersion = "9.0",
+        [ObsoleteEx(Message = "TransactionScopeOptions has been obsoleted.", ReplacementTypeOrMember = "SqlServerTransport.TransactionScopeOptions", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan? timeout = null, IsolationLevel? isolationLevel = null)

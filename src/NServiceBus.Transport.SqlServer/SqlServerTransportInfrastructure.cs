@@ -62,7 +62,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
-            var transactionOptions = transport.ScopeOptions.TransactionOptions;
+            var transactionOptions = transport.TransactionScopeOptions.TransactionOptions;
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
             {
