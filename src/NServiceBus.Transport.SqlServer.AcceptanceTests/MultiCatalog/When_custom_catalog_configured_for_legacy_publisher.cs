@@ -42,9 +42,8 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 
                         c.OnEndpointSubscribed<Context>((s, context) =>
                         {
-                            if (s.SubscriberEndpoint.Contains(
-                                AcceptanceTesting.Customization.Conventions
-                                    .EndpointNamingConvention(typeof(Subscriber))))
+                            var subscriberName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Subscriber));
+                            if (s.SubscriberEndpoint.Contains(subscriberName))
                             {
                                 context.Subscribed = true;
                             }
@@ -57,14 +56,12 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(b =>
+                var transport = new SqlServerTransport(SubscriberConnectionString);
+                transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+
+                EndpointSetup(new CustomizedServer(transport), (c, rd) =>
                 {
-                    var transport = b.ConfigureSqlServerTransport();
-                    transport.ConnectionString = SubscriberConnectionString;
-
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-
-                    var routing = b.ConfigureRouting();
+                    var routing = c.ConfigureRouting();
                     routing.EnableMessageDrivenPubSubCompatibilityMode()
                         .RegisterPublisher(typeof(Event), PublisherEndpoint);
                     routing.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");

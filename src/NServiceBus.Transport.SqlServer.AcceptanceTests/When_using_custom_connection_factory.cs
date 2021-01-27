@@ -10,7 +10,6 @@
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
@@ -40,18 +39,15 @@
         {
             public Endpoint()
             {
-                var transport = new SqlServerTransport
+                var transport = new SqlServerTransport(async () =>
                 {
-                    ConnectionFactory = async () =>
-                    {
-                        var connection = new SqlConnection(GetConnectionString());
+                    var connection = new SqlConnection(GetConnectionString());
 
-                        await connection.OpenAsync();
+                    await connection.OpenAsync();
 
-                        return connection;
-                    }
-                };
-
+                    return connection;
+                });
+                
                 EndpointSetup(new CustomizedServer(transport), (c, sd) => 
                 {
                     c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");

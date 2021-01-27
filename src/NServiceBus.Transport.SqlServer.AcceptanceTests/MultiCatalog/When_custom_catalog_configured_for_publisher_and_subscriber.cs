@@ -35,14 +35,11 @@
         {
             public Publisher()
             {
-                EndpointSetup<DefaultPublisher>(b =>
-                {
-                    var transport = b.ConfigureSqlServerTransport();
-                    transport.ConnectionString = PublisherConnectionString;
-
-                    transport.Subscriptions.DisableSubscriptionCache();
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                });
+                var transport = new SqlServerTransport(PublisherConnectionString);
+                transport.Subscriptions.DisableSubscriptionCache();
+                transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                
+                EndpointSetup(new CustomizedServer(transport), (c, rd) => { });
             }
         }
 
@@ -50,13 +47,11 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(c =>
+                var transport = new SqlServerTransport(SubscriberConnectionString);
+                transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+
+                EndpointSetup(new CustomizedServer(transport), (c, rd) =>
                 {
-                    var transport = c.ConfigureSqlServerTransport();
-
-                    transport.ConnectionString = SubscriberConnectionString;
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-
                     c.DisableFeature<AutoSubscribe>();
                 });
             }

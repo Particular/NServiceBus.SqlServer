@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using NServiceBus.Unicast.Messages;
-
-namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
 #if SYSTEMDATASQLCLIENT
@@ -34,11 +31,10 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
             }
             
-            var transport = new SqlServerTransport
+            var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
             {
                 TransportTransactionMode = TransportTransactionMode.None,
                 TimeToWaitBeforeTriggering = TimeSpan.MaxValue,
-                ConnectionFactory = SqlConnectionFactory.Default(connectionString).OpenNewConnection
             };
 
             transport.Testing.QueueFactoryOverride = qa =>

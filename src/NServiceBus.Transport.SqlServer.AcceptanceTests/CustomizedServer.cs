@@ -11,10 +11,7 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests
 
         public CustomizedServer(string connectionString, bool supportsPublishSubscribe = true, bool supportsDelayedDelivery = true)
         {
-            var transport = new SqlServerTransport(supportsDelayedDelivery, supportsPublishSubscribe)
-            {
-                ConnectionString = connectionString
-            };
+            var transport = new SqlServerTransport(connectionString, supportsDelayedDelivery, supportsPublishSubscribe);
 
             TransportConfiguration = new ConfigureEndpointSqlServerTransport(transport);
         }

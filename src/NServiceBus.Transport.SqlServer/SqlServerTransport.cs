@@ -18,23 +18,20 @@ namespace NServiceBus
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
-        string connectionString;
-        Func<Task<SqlConnection>> connectionFactory;
-
         QueueAddressTranslator addressTranslator;
         string catalog;
 
         DbConnectionStringBuilder GetConnectionStringBuilder()
         {
-            if (connectionFactory != null)
+            if (ConnectionFactory != null)
             {
-                using (var connection = connectionFactory().GetAwaiter().GetResult())
+                using (var connection = ConnectionFactory().GetAwaiter().GetResult())
                 {
                     return new DbConnectionStringBuilder {ConnectionString = connection.ConnectionString};
                 }
             }
 
-            return new DbConnectionStringBuilder {ConnectionString = connectionString};
+            return new DbConnectionStringBuilder {ConnectionString = ConnectionString};
         }
 
         internal string GetDefaultCatalog()
@@ -65,17 +62,33 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        public SqlServerTransport() 
+        public SqlServerTransport(string connectionString) 
             : base(TransportTransactionMode.TransactionScope, true, true, true)
         {
+            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+            ConnectionString = connectionString;
+        }
+
+        /// <summary>
+        /// Creates and instance of <see cref="SqlServerTransport"/>
+        /// </summary>
+        /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
+        public SqlServerTransport(Func<Task<SqlConnection>> connectionFactory)
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
+        {
+            Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+
+            ConnectionFactory = connectionFactory;
         }
 
         /// <summary>
         /// For the pub-sub migration tests only
         /// </summary>
-        internal SqlServerTransport(bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
+        internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
             : base(TransportTransactionMode.TransactionScope, supportsDelayedDelivery, supportsPublishSubscribe, true)
         {
+            ConnectionString = connectionString;
         }
 
         /// <summary>
@@ -138,37 +151,12 @@ namespace NServiceBus
         /// <summary>
         /// Connection string to be used by the transport.
         /// </summary>
-        public string ConnectionString
-        {
-            get => connectionString;
-            set
-            {
-                if (ConnectionFactory != null)
-                {
-                    throw new ArgumentException($"{nameof(ConnectionFactory)} has already been set. {nameof(ConnectionString)} and {nameof(ConnectionFactory)} cannot be used at the same time.");
-                }
-
-                connectionString = value;
-            }
-        }
-
+        public string ConnectionString { get; private set; }
 
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<Task<SqlConnection>> ConnectionFactory 
-        {
-            get => connectionFactory;
-            set
-            {
-                if (string.IsNullOrWhiteSpace(ConnectionString) == false)
-                {
-                    throw new ArgumentException($"{nameof(ConnectionString)} has already been set. {nameof(ConnectionString)} and {nameof(ConnectionFactory)} cannot be used at the same time.");
-                }
-
-                connectionFactory = value;
-            } 
-        }
+        public Func<Task<SqlConnection>> ConnectionFactory { get; private set; } 
 
         /// <summary>
         /// Default address schema.
@@ -223,6 +211,7 @@ namespace NServiceBus
         /// <summary>
         /// Disable native delayed delivery infrastructure
         /// </summary>
+        ///TODO: this is for SC usage only. It should not be public
         public bool DisableDelayedDelivery { get; set; } = false;
 
         internal TestingInformation Testing { get; } = new TestingInformation(); 

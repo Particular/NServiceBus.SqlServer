@@ -14,11 +14,17 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 {
     public TransportDefinition CreateTransportDefinition()
     {
-        return new SqlServerTransport();
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        }
+
+        return new SqlServerTransport(connectionString);
     }
 
-    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName,
-        string errorQueueName)
+    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName)
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
@@ -35,14 +41,6 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableSubscriptionCache();
         
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-        }
-
-        sqlServerTransport.ConnectionString = connectionString;
-
         var receivers = new[]
         {
             new ReceiveSettings(

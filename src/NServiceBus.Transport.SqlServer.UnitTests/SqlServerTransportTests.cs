@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace NServiceBus.Transport.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using NUnit.Framework;
 
@@ -18,11 +16,8 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
         {
-            var definition = new SqlServerTransport
-            {
-                ConnectionString = @"Data Source=.\SQLEXPRESS;Integrated Security=True"
-            };
-            
+            var definition = new SqlServerTransport(@"Data Source=.\SQLEXPRESS;Integrated Security=True");
+
             Assert.That(
                 async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false),
                 Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
@@ -35,12 +30,7 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
         [TestCase("database=my.catalog")]
         public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
-            var definition = new SqlServerTransport
-            {
-                ConnectionString = connectionString
-            };
-
-            definition.GetDefaultCatalog();
+            new SqlServerTransport(connectionString).GetDefaultCatalog();
 
             Assert.Pass();
         }
