@@ -50,7 +50,7 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        static QueueAddress TranslateLogicalAddress(LogicalAddress logicalAddress)
+        public static QueueAddress TranslateLogicalAddress(LogicalAddress logicalAddress)
         {
             var nonEmptyParts = new[]
             {
