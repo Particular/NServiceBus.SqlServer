@@ -16,7 +16,7 @@
             var settings = new SettingsHolder();
             settings.Set(subscriptionSettings);
 
-            Assert.That( () => definition.Initialize(settings, @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
+            Assert.That(() => definition.Initialize(settings, @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
                 Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
         }
 

@@ -17,7 +17,7 @@
                 .Run();
 
             Assert.IsTrue(context.WasCalled);
-      }
+        }
         class Context : ScenarioContext
         {
             public bool WasCalled { get; set; }

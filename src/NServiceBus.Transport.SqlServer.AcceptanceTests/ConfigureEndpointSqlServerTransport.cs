@@ -1,8 +1,8 @@
 ﻿using System;
 #if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
+using System.Data.SqlClient;
 #else
-    using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 #endif
 using System.Linq;
 using System.Text;
@@ -19,7 +19,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
         settings = configuration.GetSettings();
-        settings.Set("SqlServer.SubscriptionTableQuotedQualifiedNameSetter", (Action<string>) SetSubscriptionTableName);
+        settings.Set("SqlServer.SubscriptionTableQuotedQualifiedNameSetter", (Action<string>)SetSubscriptionTableName);
 
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");

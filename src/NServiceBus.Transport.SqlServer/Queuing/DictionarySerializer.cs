@@ -22,7 +22,7 @@
             var serializer = BuildSerializer();
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
             {
-                return (Dictionary<string, string>) serializer.ReadObject(stream);
+                return (Dictionary<string, string>)serializer.ReadObject(stream);
             }
         }
 
