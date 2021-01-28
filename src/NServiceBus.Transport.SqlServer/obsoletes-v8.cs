@@ -260,25 +260,3 @@ namespace NServiceBus
         }
     }
 }
-
-namespace NServiceBus.Transport.SqlServer
-{
-    /// <summary>
-    /// SQL Transport queue peeker settings.
-    /// </summary>
-    public partial class QueuePeekerOptions
-    {
-        /// <summary>
-        /// Configures queue peeker options.
-        /// </summary>
-        /// <param name="delayTime">Time delay between peeks.</param>
-        /// <param name="maxRecordsToPeek">Maximal number of records to peek.</param>
-        [ObsoleteEx(Message = "Configure has been obsoleted.",
-            ReplacementTypeOrMember = "QueuePeekerOptions.Delay or QueuePeekerOptions.MaxRecordsToPeek", RemoveInVersion = "9.0",
-            TreatAsErrorFromVersion = "8.0")]
-        public void Configure(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
-        {
-            throw new NotImplementedException();
-        }
-    }
-}
