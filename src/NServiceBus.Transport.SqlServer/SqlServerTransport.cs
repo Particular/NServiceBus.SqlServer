@@ -186,7 +186,7 @@ namespace NServiceBus
         /// <summary>
         /// Queue peeker settings.
         /// </summary>
-        public QueuePeekerOptions QueuePeekerOptions { get; set; } = new QueuePeekerOptions();
+        public QueuePeekerOptions QueuePeeker { get; set; } = new QueuePeekerOptions();
 
         /// <summary>
         /// Instructs the transport to create a computed column for inspecting message body contents.

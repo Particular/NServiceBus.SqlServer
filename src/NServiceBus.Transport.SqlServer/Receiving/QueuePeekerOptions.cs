@@ -6,64 +6,53 @@
     /// <summary>
     /// SQL Transport queue peeker settings.
     /// </summary>
-    public class QueuePeekerOptions
+    public partial class QueuePeekerOptions
     {
         /// <summary>
-        /// Configures queue peeker options.
+        /// Time delay between peeks.
         /// </summary>
-        /// <param name="delayTime">Time delay between peeks.</param>
-        /// <param name="maxRecordsToPeek">Maximal number of records to peek.</param>
-        public void Configure(TimeSpan? delayTime = null, int? maxRecordsToPeek = null)
+        public TimeSpan Delay
         {
-            var delay = DefaultDelay;
-
-            if (delayTime.HasValue)
+            get => delay;
+            set
             {
-                Validate(delayTime.Value);
-                delay = delayTime.Value;
-            }
+                if (value < TimeSpan.FromMilliseconds(100))
+                {
+                    var message = "Delay requested is invalid. The value should be greater than 100 ms and less than 10 seconds.";
+                    throw new Exception(message);
+                }
 
-            Delay = delay;
+                if (value > TimeSpan.FromSeconds(10))
+                {
+                    var message = $"Delay requested of {value} is not recommended. The recommended delay value is between 100 milliseconds to 10 seconds.";
+                    Logger.Warn(message);
+                }
 
-            Validate(maxRecordsToPeek);
-            MaxRecordsToPeek = maxRecordsToPeek;
-        }
-
-        static void Validate(int? maxRecordsToPeek)
-        {
-            if (maxRecordsToPeek.HasValue && maxRecordsToPeek < 1)
-            {
-                var message = "Peek batch size is invalid. The value must be greater than zero.";
-                throw new Exception(message);
+                delay = value;
             }
         }
-
-        static void Validate(TimeSpan delay)
-        {
-            if (delay < TimeSpan.FromMilliseconds(100))
-            {
-                var message = "Delay requested is invalid. The value should be greater than 100 ms and less than 10 seconds.";
-                throw new Exception(message);
-            }
-
-            if (delay > TimeSpan.FromSeconds(10))
-            {
-                var message = $"Delay requested of {delay} is not recommended. The recommended delay value is between 100 milliseconds to 10 seconds.";
-                Logger.Warn(message);
-            }
-        }
-
-        /// <summary>
-        /// Peek delay.
-        /// </summary>
-        public TimeSpan Delay { get; private set; }
 
         /// <summary>
         /// Maximal number of records to peek.
         /// </summary>
-        public int? MaxRecordsToPeek { get; private set; }
+        public int? MaxRecordsToPeek
+        {
+            get => maxRecordsToPeek;
+            set
+            {
+                if (value.HasValue && value < 1)
+                {
+                    var message = "Peek batch size is invalid. The value must be greater than zero.";
+                    throw new Exception(message);
+                }
 
-        static TimeSpan DefaultDelay = TimeSpan.FromSeconds(1);
+                maxRecordsToPeek = value;
+            }
+        }
+
+        TimeSpan delay = TimeSpan.FromSeconds(1);
+        int? maxRecordsToPeek;
+
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }
 }

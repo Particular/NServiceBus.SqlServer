@@ -76,7 +76,7 @@ namespace NServiceBus.Transport.SqlServer
                  transport.TimeToWaitBeforeTriggering
             });
 
-            var queuePeekerOptions = transport.QueuePeekerOptions;
+            var queuePeekerOptions = transport.QueuePeeker;
 
             var createMessageBodyComputedColumn = transport.CreateMessageBodyComputedColumn;
 
