@@ -115,7 +115,7 @@
 
         async Task PrepareAsync()
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
             var tableCache = new TableBasedQueueCache(addressParser, true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");

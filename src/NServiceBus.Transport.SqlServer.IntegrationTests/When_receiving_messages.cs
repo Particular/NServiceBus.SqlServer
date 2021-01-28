@@ -34,7 +34,7 @@
             var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
             {
                 TransportTransactionMode = TransportTransactionMode.None,
-                TimeToWaitBeforeTriggering = TimeSpan.MaxValue,
+                TimeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.MaxValue,
             };
 
             transport.Testing.QueueFactoryOverride = qa =>

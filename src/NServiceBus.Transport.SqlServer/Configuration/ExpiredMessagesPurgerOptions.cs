@@ -1,10 +1,12 @@
-﻿namespace NServiceBus
+namespace NServiceBus
 {
     /// <summary>
     /// Expired messages purger options.
     /// </summary>
     public class ExpiredMessagesPurgerOptions
     {
+        internal ExpiredMessagesPurgerOptions() { }
+
         /// <summary>
         /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
         /// </summary>

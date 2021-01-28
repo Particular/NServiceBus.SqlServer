@@ -8,6 +8,8 @@ namespace NServiceBus
     /// </summary>
     public class TransactionScopeOptions
     {
+        internal TransactionScopeOptions() { }
+
         /// <summary>
         /// Transaction timeout.
         /// </summary>

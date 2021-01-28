@@ -39,7 +39,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 #endif
         
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
-        sqlServerTransport.Subscriptions.DisableSubscriptionCache();
+        sqlServerTransport.Subscriptions.DisableCaching = true;
         
         var receivers = new[]
         {

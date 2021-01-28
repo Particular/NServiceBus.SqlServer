@@ -37,8 +37,8 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
                     (c, rd) =>
                     {
                         var transport = c.ConfigureSqlServerTransport();
-                        transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                        transport.Subscriptions.DisableSubscriptionCache();
+                        transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                        transport.Subscriptions.DisableCaching = true;
 
                         c.OnEndpointSubscribed<Context>((s, context) =>
                         {
@@ -57,7 +57,7 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
             public Subscriber()
             {
                 var transport = new SqlServerTransport(SubscriberConnectionString);
-                transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
 
                 EndpointSetup(new CustomizedServer(transport), (c, rd) =>
                 {

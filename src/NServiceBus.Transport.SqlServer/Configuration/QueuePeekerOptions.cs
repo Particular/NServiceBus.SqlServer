@@ -1,4 +1,4 @@
-﻿namespace NServiceBus
+namespace NServiceBus
 {
     using System;
     using Logging;
@@ -8,6 +8,8 @@
     /// </summary>
     public class QueuePeekerOptions
     {
+        internal QueuePeekerOptions() { }
+
         /// <summary>
         /// Time delay between peeks.
         /// </summary>

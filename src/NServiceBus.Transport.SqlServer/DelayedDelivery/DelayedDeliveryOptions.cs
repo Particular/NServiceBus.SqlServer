@@ -5,11 +5,13 @@
     /// <summary>
     /// Configures native delayed delivery.
     /// </summary>
-    public partial class DelayedDeliverySettings
+    public class DelayedDeliveryOptions
     {
         string tableSuffix = "Delayed";
         int batchSize = 100;
         TimeSpan interval = TimeSpan.FromSeconds(1);
+
+        internal DelayedDeliveryOptions() { }
 
         /// <summary>
         /// Suffix to be appended to the table name storing delayed messages.

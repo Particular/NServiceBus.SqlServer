@@ -5,13 +5,13 @@
 
     class QueueAddressTranslator
     {
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogSettings queueSettings)
+        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             DefaultCatalog = defaultCatalog;
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
-            this.queueSettings = queueSettings ?? new QueueSchemaAndCatalogSettings();
+            this.queueOptions = queueOptions ?? new QueueSchemaAndCatalogOptions();
         }
 
         public string DefaultCatalog { get; }
@@ -37,7 +37,7 @@
 
         public CanonicalQueueAddress GetCanonicalForm(QueueAddress transportAddress)
         {
-            queueSettings.TryGet(transportAddress.Table, out var specifiedSchema, out var specifiedCatalog);
+            queueOptions.TryGet(transportAddress.Table, out var specifiedSchema, out var specifiedCatalog);
 
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
             var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
@@ -74,7 +74,7 @@
             return new QueueAddress(tableName, schemaName, catalogName);
         }
 
-        QueueSchemaAndCatalogSettings queueSettings;
+        QueueSchemaAndCatalogOptions queueOptions;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
     }

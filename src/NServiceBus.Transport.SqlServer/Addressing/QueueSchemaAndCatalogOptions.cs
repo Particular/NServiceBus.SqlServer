@@ -5,8 +5,10 @@
     /// <summary>
     /// Queue and schema settings for SQL Transport queues.
     /// </summary>
-    public class QueueSchemaAndCatalogSettings
+    public class QueueSchemaAndCatalogOptions
     {
+        internal QueueSchemaAndCatalogOptions() { }
+
         /// <summary>
         /// Enables specifying schema for a given queue.
         /// </summary>

@@ -32,14 +32,13 @@ namespace NServiceBus.Transport.SqlServer
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
-            var subscriptionTableName = pubSubSettings.SubscriptionTable.Qualify(subscriptionStoreSchema, catalog);
+            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, catalog);
             
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
             
-            var timeToCacheSubscriptions = pubSubSettings.TimeToCacheSubscriptions;
-            if (timeToCacheSubscriptions.HasValue)
+            if (pubSubSettings.DisableCaching == false)
             {
-                subscriptionStore = new CachedSubscriptionStore(subscriptionStore, timeToCacheSubscriptions.Value);
+                subscriptionStore = new CachedSubscriptionStore(subscriptionStore, pubSubSettings.CacheInvalidationPeriod);
             }
 
             if (hostSettings.SetupInfrastructure)
@@ -62,7 +61,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
-            var transactionOptions = transport.TransactionScopeOptions.TransactionOptions;
+            var transactionOptions = transport.TransactionScope.TransactionOptions;
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
             {
@@ -73,7 +72,7 @@ namespace NServiceBus.Transport.SqlServer
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
             {
-                 transport.TimeToWaitBeforeTriggering
+                 TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker
             });
 
             var queuePeekerOptions = transport.QueuePeeker;
@@ -154,7 +153,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 return new MessagePump(transport, s, hostSettings, receiveStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
-                    queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggering, subscriptionManager);
+                    queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
                 
             }).ToList<IMessageReceiver>().AsReadOnly();
 

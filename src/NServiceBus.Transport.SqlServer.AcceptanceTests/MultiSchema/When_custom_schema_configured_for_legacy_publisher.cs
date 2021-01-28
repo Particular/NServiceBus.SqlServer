@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
@@ -37,8 +37,8 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
                         var transport = c.ConfigureSqlServerTransport();
 
                         transport.DefaultSchema = "sender";
-                        transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
-                        transport.Subscriptions.DisableSubscriptionCache();
+                        transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
+                        transport.Subscriptions.DisableCaching = true;
 
                         c.OnEndpointSubscribed<Context>((s, context) =>
                         {
@@ -64,7 +64,7 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 
                     var transport = c.ConfigureSqlServerTransport();
                     transport.DefaultSchema = "receiver";
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
 
                     c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event),
                         AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));

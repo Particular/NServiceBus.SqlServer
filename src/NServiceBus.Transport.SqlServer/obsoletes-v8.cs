@@ -23,7 +23,7 @@ namespace NServiceBus
         /// </summary>
         /// <param name="transportExtensions">The transport to enable pub-sub compatibility on</param>
         [ObsoleteEx(Message = "EnableMessageDrivenPubSubCompatibilityMode has been obsoleted.",
-            ReplacementTypeOrMember = "RoutingSettings", RemoveInVersion = "9.0",
+            ReplacementTypeOrMember = "RoutingSettings.EnableMessageDrivenPubSubCompatibilityMode", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
@@ -135,7 +135,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
         [ObsoleteEx(Message = "TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted.",
-            ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggering", RemoveInVersion = "9.0",
+            ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
@@ -171,7 +171,7 @@ namespace NServiceBus
         ///     <see cref="IsolationLevel.ReadCommitted" />.
         /// </remarks>
         [ObsoleteEx(Message = "TransactionScopeOptions has been obsoleted.",
-            ReplacementTypeOrMember = "SqlServerTransport.TransactionScopeOptions", RemoveInVersion = "9.0",
+            ReplacementTypeOrMember = "SqlServerTransport.TransactionScope", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(
@@ -258,5 +258,28 @@ namespace NServiceBus
         {
             throw new NotImplementedException();
         }
+    }
+}
+
+namespace NServiceBus.Transport.SqlServer
+{
+    /// <summary>
+    /// Configures native delayed delivery.
+    /// </summary>
+    [ObsoleteEx(Message = "DelayedDeliverySettings has been obsoleted.",
+        ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery", RemoveInVersion = "9.0",
+        TreatAsErrorFromVersion = "8.0")]
+    public partial class DelayedDeliverySettings
+    {
+    }
+
+    /// <summary>
+    /// Configures the native pub/sub behavior
+    /// </summary>
+    [ObsoleteEx(Message = "SubscriptionSettings has been obsoleted.",
+        ReplacementTypeOrMember = "SqlServerTransport.Subscriptions", RemoveInVersion = "9.0",
+        TreatAsErrorFromVersion = "8.0")]
+    public class SubscriptionSettings
+    {
     }
 }

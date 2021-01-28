@@ -26,7 +26,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         }
 
         transport = new SqlServerTransport(connectionString);
-        transport.Subscriptions.DisableSubscriptionCache();
+        transport.Subscriptions.DisableCaching = true;
 
 #if !NETFRAMEWORK
         transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;

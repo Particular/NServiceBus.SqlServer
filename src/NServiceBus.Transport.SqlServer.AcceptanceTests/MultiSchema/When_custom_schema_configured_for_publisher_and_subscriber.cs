@@ -37,8 +37,8 @@
                 {
                     var transport = b.ConfigureSqlServerTransport();
                     transport.DefaultSchema = "sender";
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
-                    transport.Subscriptions.DisableSubscriptionCache();
+                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.DisableCaching = true;
                 });
             }
         }
@@ -51,7 +51,7 @@
                 {
                     var transport = c.ConfigureSqlServerTransport();
                     transport.DefaultSchema = "receiver";
-                    transport.Subscriptions.SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
 
                     c.DisableFeature<AutoSubscribe>();
                 });

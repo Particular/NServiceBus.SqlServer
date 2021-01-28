@@ -166,22 +166,22 @@ namespace NServiceBus
         /// <summary>
         /// Catalog and schema configuration for SQL Transport queues.
         /// </summary>
-        public QueueSchemaAndCatalogSettings SchemaAndCatalog { get; } = new QueueSchemaAndCatalogSettings();
+        public QueueSchemaAndCatalogOptions SchemaAndCatalog { get; } = new QueueSchemaAndCatalogOptions();
 
         /// <summary>
         /// Subscription infrastructure settings.
         /// </summary>
-        public SubscriptionSettings Subscriptions { get; } = new SubscriptionSettings();
+        public SubscriptionOptions Subscriptions { get; } = new SubscriptionOptions();
 
         /// <summary>
         /// Transaction scope settings.
         /// </summary>
-        public TransactionScopeOptions TransactionScopeOptions { get; } = new TransactionScopeOptions();
+        public TransactionScopeOptions TransactionScope { get; } = new TransactionScopeOptions();
 
         /// <summary>
         /// Time to wait before triggering the circuit breaker.
         /// </summary>
-        public TimeSpan TimeToWaitBeforeTriggering { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Queue peeker settings.
@@ -201,13 +201,13 @@ namespace NServiceBus
         /// <summary>
         /// Delayed delivery infrastructure configuration
         /// </summary>
-        public DelayedDeliverySettings DelayedDelivery { get; set; } = new DelayedDeliverySettings();
+        public DelayedDeliveryOptions DelayedDelivery { get; } = new DelayedDeliveryOptions();
 
         /// <summary>
         /// Disable native delayed delivery infrastructure
         /// </summary>
         ///TODO: this is for SC usage only. It should not be public
-        public bool DisableDelayedDelivery { get; set; } = false;
+        internal bool DisableDelayedDelivery { get; set; } = false;
 
         internal TestingInformation Testing { get; } = new TestingInformation(); 
 
