@@ -1,12 +1,12 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus
 {
     using System;
     using Logging;
 
     /// <summary>
-    /// SQL Transport queue peeker settings.
+    /// Queue peeker options.
     /// </summary>
-    public partial class QueuePeekerOptions
+    public class QueuePeekerOptions
     {
         /// <summary>
         /// Time delay between peeks.

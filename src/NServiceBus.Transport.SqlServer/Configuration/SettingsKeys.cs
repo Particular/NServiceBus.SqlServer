@@ -2,9 +2,7 @@
 {
     class SettingsKeys
     {
-
-        public const string PurgeBatchSizeKey = "SqlServer.PurgeBatchSize";
-
+        // These keys are used to configure custom schema and catalog for endpoints
         public const string SchemaPropertyKey = "Schema";
         public const string CatalogPropertyKey = "Catalog";
 

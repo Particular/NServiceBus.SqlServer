@@ -174,7 +174,7 @@ namespace NServiceBus
         public SubscriptionSettings Subscriptions { get; } = new SubscriptionSettings();
 
         /// <summary>
-        /// Transaction scope options settings.
+        /// Transaction scope settings.
         /// </summary>
         public TransactionScopeOptions TransactionScopeOptions { get; } = new TransactionScopeOptions();
 
@@ -194,14 +194,9 @@ namespace NServiceBus
         public bool CreateMessageBodyComputedColumn { get; set; } = false;
 
         /// <summary>
-        /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
+        /// Expired messages purger settings.
         /// </summary>
-        public bool PurgeExpiredMessagesOnStartup { get; set; } = false;
-
-        /// <summary>
-        /// Maximum number of messages used in each delete batch when message purging on startup is enabled.
-        /// </summary>
-        public int? PurgeExpiredMessagesBatchSize { get; set; } = null;
+        public ExpiredMessagesPurgerOptions ExpiredMessagesPurger { get; } = new ExpiredMessagesPurgerOptions();
 
         /// <summary>
         /// Delayed delivery infrastructure configuration

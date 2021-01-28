@@ -42,7 +42,7 @@
 
             receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
 
-            if (transport.PurgeExpiredMessagesOnStartup)
+            if (transport.ExpiredMessagesPurger.PurgeOnStartup)
             {
                 try
                 {

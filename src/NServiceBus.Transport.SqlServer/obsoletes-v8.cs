@@ -234,7 +234,7 @@ namespace NServiceBus
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
         /// <param name="purgeBatchSize">Size of the purge batch.</param>
         [ObsoleteEx(Message = "PurgeExpiredMessagesOnStartup has been obsoleted.",
-            ReplacementTypeOrMember = "SqlServerTransport.PurgeExpiredMessagesOnStartup", RemoveInVersion = "9.0",
+            ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup", RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
 #pragma warning disable 618
         public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(

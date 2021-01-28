@@ -88,7 +88,7 @@ namespace NServiceBus.Transport.SqlServer
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
-            if (transport.PurgeExpiredMessagesOnStartup == false)
+            if (transport.ExpiredMessagesPurger.PurgeOnStartup == false)
             {
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
@@ -99,7 +99,7 @@ namespace NServiceBus.Transport.SqlServer
             }
             else
             {
-                var purgeBatchSize = transport.PurgeExpiredMessagesBatchSize;
+                var purgeBatchSize = transport.ExpiredMessagesPurger.PurgeBatchSize;
 
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
