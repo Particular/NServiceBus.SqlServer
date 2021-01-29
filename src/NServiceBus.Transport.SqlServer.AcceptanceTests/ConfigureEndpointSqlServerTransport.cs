@@ -44,7 +44,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public async Task Cleanup()
     {
-
         Func<Task<SqlConnection>> factory = async () =>
         {
             if (transport.ConnectionString != null)
@@ -62,17 +61,17 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
 
-            //No clean-up for send-only endpoints
-            if (queueAddresses == null)
-            {
-                return;
-            }
-
             var commandTextBuilder = new StringBuilder();
-            foreach (var address in queueAddresses)
+
+            //No clean-up for send-only endpoints
+            if (queueAddresses != null)
             {
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}");
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{delayedQueueAddress}', 'U') IS NOT NULL DROP TABLE {delayedQueueAddress}");
+                foreach (var address in queueAddresses)
+                {
+                    commandTextBuilder.AppendLine($"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}");
+                    commandTextBuilder.AppendLine(
+                        $"IF OBJECT_ID('{delayedQueueAddress}', 'U') IS NOT NULL DROP TABLE {delayedQueueAddress}");
+                }
             }
 
             var subscriptionTableName = transport.Testing.SubscriptionTable;

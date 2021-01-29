@@ -1,3 +1,5 @@
+using System;
+
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Data;
@@ -21,19 +23,32 @@ namespace NServiceBus.Transport.SqlServer
         public async Task CreateIfNecessary()
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
             {
+                try
+                {
+                    using (var transaction = connection.BeginTransaction())
+                    {
 #pragma warning disable 618
-                var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
+                        var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName,
+                            tableName.QuotedCatalog);
 #pragma warning restore 618
-                using (var command = new SqlCommand(sql, connection, transaction)
-                {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        using (var command = new SqlCommand(sql, connection, transaction)
+                        {
+                            CommandType = CommandType.Text
+                        })
+                        {
+                            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        }
+
+                        transaction.Commit();
+                    }
                 }
-                transaction.Commit();
+                catch (SqlException e) when (e.Number == 2714) //Object already exists
+                {
+                    //Table creation scripts are based on sys.objects metadata views.
+                    //It looks that these views are not fully transactional and might
+                    //not return information on already created table under heavy load.
+                }
             }
         }
     }

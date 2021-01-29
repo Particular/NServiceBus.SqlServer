@@ -23,47 +23,67 @@ namespace NServiceBus.Transport.SqlServer
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
             {
                 foreach (var address in queueAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn).ConfigureAwait(false);
                 }
+
                 if (delayedQueueAddress != null)
                 {
-                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn).ConfigureAwait(false);
                 }
-                transaction.Commit();
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn)
         {
             try
             {
-                var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-                using (var command = new SqlCommand(sql, connection, transaction)
+                using (var transaction = connection.BeginTransaction())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
+                        canonicalQueueAddress.QuotedCatalogName);
+                    using (var command = new SqlCommand(sql, connection, transaction)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+                    }
+
+                    transaction.Commit();
                 }
             }
-            catch (Exception e) when (e.Message.StartsWith("There is already an object named") || e.Message.StartsWith("The operation failed because an index or statistics with name"))
+            catch (SqlException e) when (e.Number == 2714) //Object already exists
+            {
+                //Table creation scripts are based on sys.objects metadata views.
+                //It looks that these views are not fully transactional and might
+                //not return information on already created table under heavy load.
+            }
+            catch (Exception e) when (e.Message.StartsWith("There is already an object named") ||
+                                      e.Message.StartsWith("The operation failed because an index or statistics with name"))
             {
                 // ignored because of race when multiple endpoints start
             }
 
             if (createMessageBodyColumn)
             {
-                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn,
+                    canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+
+                using (var transaction = connection.BeginTransaction())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    }
+
+                    transaction.Commit();
                 }
             }
         }
