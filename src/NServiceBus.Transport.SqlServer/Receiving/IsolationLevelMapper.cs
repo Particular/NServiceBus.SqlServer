@@ -22,9 +22,9 @@
                     return IsolationLevel.Chaos;
                 case System.Transactions.IsolationLevel.Unspecified:
                     return IsolationLevel.Unspecified;
+                default:
+                    return IsolationLevel.ReadCommitted;
             }
-
-            return IsolationLevel.ReadCommitted;
         }
     }
 }

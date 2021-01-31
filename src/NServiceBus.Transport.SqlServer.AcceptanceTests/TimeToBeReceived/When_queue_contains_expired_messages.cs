@@ -61,7 +61,7 @@
                 connection.Open();
                 using (var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection))
                 {
-                    var numberOfMessagesInQueue = (int) command.ExecuteScalar();
+                    var numberOfMessagesInQueue = (int)command.ExecuteScalar();
                     return numberOfMessagesInQueue == 0;
                 }
             }

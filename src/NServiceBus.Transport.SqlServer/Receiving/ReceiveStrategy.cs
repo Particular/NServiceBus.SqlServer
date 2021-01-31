@@ -78,7 +78,7 @@
         }
 
         protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts)
-        { 
+        {
             message.ResetHeaders();
             try
             {

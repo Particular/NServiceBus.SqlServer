@@ -34,7 +34,7 @@
 
             var pump = new MessagePump(
                 m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
-                qa => qa == "input" ? (TableBasedQueue)inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
+                qa => qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa),
                 new QueuePurger(sqlConnectionFactory),
                 new NoOpExpiredMessagesPurger(),
                 new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
@@ -87,9 +87,9 @@
                 this.successfulReceives = successfulReceives;
             }
 
-            public override  Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
+            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
             {
-                NumberOfReceives ++;
+                NumberOfReceives++;
 
                 var readResult = NumberOfReceives <= successfulReceives
                     ? MessageReadResult.Success(new Message("1", string.Empty, null, new byte[0], false))
@@ -100,7 +100,7 @@
 
             public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
             {
-                NumberOfPeeks ++;
+                NumberOfPeeks++;
 
                 return Task.FromResult(NumberOfPeeks == 1 ? queueSize : 0);
             }

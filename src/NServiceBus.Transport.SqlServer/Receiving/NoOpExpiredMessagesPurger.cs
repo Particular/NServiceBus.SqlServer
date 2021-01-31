@@ -3,7 +3,7 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    class NoOpExpiredMessagesPurger: IExpiredMessagesPurger
+    class NoOpExpiredMessagesPurger : IExpiredMessagesPurger
     {
         public Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
         {

@@ -38,7 +38,7 @@ namespace NServiceBus.Transport.SqlServer
                 CommandTimeout = timeoutInSeconds
             })
             {
-                var numberOfMessages = (int) await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
                 return numberOfMessages;
             }
         }
@@ -141,7 +141,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
             {
-                var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+                var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
@@ -150,7 +150,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
-                var rowsCount = (int) await command.ExecuteScalarAsync().ConfigureAwait(false);
+                var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
