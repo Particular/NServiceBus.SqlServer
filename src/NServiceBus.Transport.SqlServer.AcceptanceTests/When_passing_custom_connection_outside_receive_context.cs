@@ -29,7 +29,7 @@
                         using (var connection = new SqlConnection(ConnectionString))
                         {
                             await connection.OpenAsync().ConfigureAwait(false);
-                        
+
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlConnection(connection);
                             await bus.Send(new CommandFromRollbackedScope(), sendOptions);
@@ -62,7 +62,7 @@
                         using (var connection = new SqlConnection(ConnectionString))
                         {
                             await connection.OpenAsync().ConfigureAwait(false);
-                        
+
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlConnection(connection);
                             await bus.Send(new CommandFromCompletedScope(), sendOptions);
@@ -73,7 +73,7 @@
                         }
 
                         transactionId = Transaction.Current.TransactionInformation.DistributedIdentifier;
-                        
+
                         completedScope.Complete();
                     }
                 }))
@@ -128,7 +128,7 @@
                 });
             }
 
-            class ReplyHandler : IHandleMessages<CommandFromCompletedScope>, 
+            class ReplyHandler : IHandleMessages<CommandFromCompletedScope>,
                 IHandleMessages<EventFromCompletedScope>,
                 IHandleMessages<CommandFromRollbackedScope>,
                 IHandleMessages<EventFromRollbackedScope>,

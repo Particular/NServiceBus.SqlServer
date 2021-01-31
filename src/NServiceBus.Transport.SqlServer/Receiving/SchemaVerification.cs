@@ -35,7 +35,7 @@
                 using (var connection = await openConnection(queue).ConfigureAwait(false))
                 {
                     var indexExists = await check(queue, connection).ConfigureAwait(false);
-                    
+
                     if (!indexExists)
                     {
                         Logger.Warn(noIndexMessage);

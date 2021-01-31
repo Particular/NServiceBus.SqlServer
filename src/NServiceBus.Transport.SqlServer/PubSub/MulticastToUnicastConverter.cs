@@ -18,12 +18,12 @@ namespace NServiceBus.Transport.SqlServer
             var subscribers = await subscriptions.GetSubscribers(transportOperation.MessageType).ConfigureAwait(false);
 
             return (from subscriber in subscribers
-                select new UnicastTransportOperation(
-                    transportOperation.Message,
-                    subscriber,
-                    transportOperation.RequiredDispatchConsistency,
-                    transportOperation.DeliveryConstraints
-                )).ToList();
+                    select new UnicastTransportOperation(
+                        transportOperation.Message,
+                        subscriber,
+                        transportOperation.RequiredDispatchConsistency,
+                        transportOperation.DeliveryConstraints
+                    )).ToList();
         }
     }
 }
