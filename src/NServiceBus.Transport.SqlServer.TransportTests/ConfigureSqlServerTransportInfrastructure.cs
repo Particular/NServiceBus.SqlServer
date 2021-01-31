@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 #if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
+using System.Data.SqlClient;
 #else
-    using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 #endif
 using System.Linq;
 using System.Threading.Tasks;

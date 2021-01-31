@@ -228,28 +228,6 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        IExpiredMessagesPurger CreateExpiredMessagesPurger()
-        {
-            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
-            {
-                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-                {
-                    Enabled = false,
-                });
-                return new NoOpExpiredMessagesPurger();
-            }
-
-            var purgeBatchSize = settings.HasSetting(SettingsKeys.PurgeBatchSizeKey) ? settings.Get<int?>(SettingsKeys.PurgeBatchSizeKey) : null;
-
-            diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
-            {
-                Enabled = true,
-                BatchSize = purgeBatchSize
-            });
-
-            return new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
-        }
-
         async Task<StartupCheckResult> ValidateDatabaseAccess(TransactionOptions transactionOptions)
         {
             var isDatabaseAccessible = await TryOpenDatabaseConnection().ConfigureAwait(false);

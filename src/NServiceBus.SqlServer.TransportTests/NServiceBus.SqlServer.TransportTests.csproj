@@ -17,15 +17,10 @@
     <PackageReference Include="NServiceBus.TransportTests.Sources" Version="8.0.0-alpha.644" />
     <PackageReference Include="NUnit" Version="3.13.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
-    <PackageReference Include="Particular.CodeRules" Version="0.7.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.TransportTests\**\*.cs" Exclude="**\obj\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\TestSuppressions.cs" Link="TestSuppressions.cs" />
   </ItemGroup>
 
 </Project>

@@ -76,7 +76,7 @@
         {
         }
 
-        class  EventFromCommittedTransaction : IEvent
+        class EventFromCommittedTransaction : IEvent
         {
         }
 
@@ -109,7 +109,7 @@
                 IHandleMessages<EventFromRollbackedTransaction>,
                 IHandleMessages<EventFromCommittedTransaction>
             {
-                private readonly MyContext scenarioContext;
+                readonly MyContext scenarioContext;
                 public ReplyHandler(MyContext scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

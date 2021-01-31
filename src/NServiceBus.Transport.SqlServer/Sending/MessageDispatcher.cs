@@ -56,9 +56,9 @@
             {
                 return;
             }
-            
+
             transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
-            
+
             if (userProvidedTransaction)
             {
                 transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);

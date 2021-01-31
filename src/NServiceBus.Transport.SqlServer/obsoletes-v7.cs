@@ -1,8 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using Configuration.AdvancedExtensibility;
-    using Settings;
 
     /// <summary>
     /// Configures native delayed delivery.

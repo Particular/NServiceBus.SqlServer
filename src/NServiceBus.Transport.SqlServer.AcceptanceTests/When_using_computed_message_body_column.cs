@@ -17,7 +17,7 @@
                 .Run();
 
             Assert.IsTrue(context.WasCalled);
-      }
+        }
         class Context : ScenarioContext
         {
             public bool WasCalled { get; set; }
@@ -36,7 +36,7 @@
 
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public MyMessageHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

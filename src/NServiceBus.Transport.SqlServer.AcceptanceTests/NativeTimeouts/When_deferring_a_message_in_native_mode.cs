@@ -48,7 +48,7 @@
 
             public class MyMessageHandler : IHandleMessages<MyMessage>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public MyMessageHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

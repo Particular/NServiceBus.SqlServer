@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus
 {
     using System;
-    using Transport.SqlServer;
 
     partial class SqlServerTransportSettingsExtensions
     {

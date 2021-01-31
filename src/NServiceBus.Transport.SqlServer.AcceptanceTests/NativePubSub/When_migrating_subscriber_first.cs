@@ -177,7 +177,7 @@
 
             public class MyEventHandler : IHandleMessages<MyEvent>
             {
-                private readonly Context scenarioContext;
+                readonly Context scenarioContext;
                 public MyEventHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

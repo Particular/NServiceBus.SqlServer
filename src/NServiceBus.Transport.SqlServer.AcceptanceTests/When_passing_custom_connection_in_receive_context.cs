@@ -40,7 +40,7 @@
         class InitiatingMessage : IMessage
         {
         }
-        
+
         class FollowUpCompletedCommand : IMessage
         {
         }
@@ -78,12 +78,12 @@
             }
 
             class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
-                IHandleMessages<FollowUpCompletedCommand>, 
+                IHandleMessages<FollowUpCompletedCommand>,
                 IHandleMessages<FollowUpCompletedEvent>,
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
-                private readonly MyContext scenarioContext;
+                readonly MyContext scenarioContext;
                 public ImmediateDispatchHandlers(MyContext scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

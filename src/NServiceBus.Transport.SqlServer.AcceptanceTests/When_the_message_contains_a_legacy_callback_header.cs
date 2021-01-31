@@ -57,7 +57,7 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private readonly MyContext scenarioContext;
+                readonly MyContext scenarioContext;
                 public ReplyHandler(MyContext scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;
@@ -81,7 +81,7 @@
 
             class ReplyHandler : IHandleMessages<Reply>
             {
-                private readonly MyContext scenarioContext;
+                readonly MyContext scenarioContext;
                 public ReplyHandler(MyContext scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

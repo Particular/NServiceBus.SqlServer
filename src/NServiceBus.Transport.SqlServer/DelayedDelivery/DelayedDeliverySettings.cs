@@ -34,7 +34,7 @@
 
             this.GetSettings().Set(SettingsKeys.DelayedDeliveryMatureBatchSize, batchSize);
         }
-        
+
         /// <summary>
         /// Configures how often delayed messages are processed (every 5 seconds by default).
         /// </summary>
