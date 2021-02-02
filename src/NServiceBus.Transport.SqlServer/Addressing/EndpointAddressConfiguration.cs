@@ -49,7 +49,7 @@ namespace NServiceBus.Transport.SqlServer
 
             if (endpointName.Equals(localEndpointName))
             {
-                throw new ArgumentException("Custom catalog cannot be specified for the local endpoint.");
+                throw new ArgumentException("Custom catalog cannot be specified for the local endpoint. Local endpoint's schema can be specified with DefaultSchema transport setting.");
             }
 
             var schemaAndCatalogSettings = settings.GetSettings().GetOrCreate<EndpointSchemaAndCatalogSettings>();
