@@ -74,6 +74,8 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                     using (var comm = conn.CreateCommand())
                     {
                         comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
+                        Console.WriteLine($"### {comm.CommandText}");
+
                         await comm.ExecuteNonQueryAsync();
                     }
                 }
