@@ -1,7 +1,5 @@
-#pragma warning disable 618
 namespace NServiceBus.Transport.SqlServer
 {
-    using System;
     using System.Data;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
@@ -9,7 +7,6 @@ namespace NServiceBus.Transport.SqlServer
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
-    using Transport;
 
     class QueueCreator
     {
@@ -91,4 +88,3 @@ namespace NServiceBus.Transport.SqlServer
         bool createMessageBodyColumn;
     }
 }
-#pragma warning restore 618

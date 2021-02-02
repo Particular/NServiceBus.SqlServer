@@ -1,7 +1,7 @@
-﻿using NServiceBus.AcceptanceTests.EndpointTemplates;
-
-namespace NServiceBus.Transport.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests
 {
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
+
     public class CustomizedServer : DefaultServer
     {
         public CustomizedServer(SqlServerTransport transport)

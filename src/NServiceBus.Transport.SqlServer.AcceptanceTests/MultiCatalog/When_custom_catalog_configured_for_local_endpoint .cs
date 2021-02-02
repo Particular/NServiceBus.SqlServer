@@ -1,10 +1,9 @@
-﻿using System;
-
+﻿
 namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
+    using System;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
@@ -20,12 +19,12 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
                 .WithEndpoint<Receiver>(b => b.CustomConfig(c =>
                 {
                     Assert.Throws<ArgumentException>(
-                        () => c.ConfigureRouting().UseCatalogForEndpoint(endpointName,"some-catalog"),
+                        () => c.ConfigureRouting().UseCatalogForEndpoint(endpointName, "some-catalog"),
                         "Custom catalog configuration is not supported for a local endpoint");
                 }))
                 .Done(c => c.EndpointsStarted)
                 .Run();
-            
+
             Assert.Pass();
         }
 

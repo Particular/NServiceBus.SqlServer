@@ -1,5 +1,3 @@
-using System;
-
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Data;
@@ -28,10 +26,8 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-#pragma warning disable 618
-                        var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName,
-                            tableName.QuotedCatalog);
-#pragma warning restore 618
+                        var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
+
                         using (var command = new SqlCommand(sql, connection, transaction)
                         {
                             CommandType = CommandType.Text

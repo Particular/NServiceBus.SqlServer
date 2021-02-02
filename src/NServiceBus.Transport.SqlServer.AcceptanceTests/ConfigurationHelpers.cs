@@ -6,6 +6,6 @@ static class ConfigurationHelpers
 {
     public static SqlServerTransport ConfigureSqlServerTransport(this EndpointConfiguration configuration)
     {
-        return (SqlServerTransport) configuration.GetSettings().Get<TransportDefinition>();
+        return (SqlServerTransport)configuration.GetSettings().Get<TransportDefinition>();
     }
 }

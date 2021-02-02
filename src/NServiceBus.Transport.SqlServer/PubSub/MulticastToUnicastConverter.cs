@@ -8,21 +8,19 @@ namespace NServiceBus.Transport.SqlServer
     {
         ISubscriptionStore subscriptions;
 
-        public MulticastToUnicastConverter(ISubscriptionStore subscriptions)
-        {
-            this.subscriptions = subscriptions;
-        }
+        public MulticastToUnicastConverter(ISubscriptionStore subscriptions) => this.subscriptions = subscriptions;
 
         public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
         {
-            var subscribers = await subscriptions.GetSubscribers(transportOperation.MessageType).ConfigureAwait(false);
+            List<string> subscribers =
+                await subscriptions.GetSubscribers(transportOperation.MessageType).ConfigureAwait(false);
 
             return (from subscriber in subscribers
-                select new UnicastTransportOperation(
-                    transportOperation.Message,
-                    subscriber,
-                    transportOperation.Properties,
-                    transportOperation.RequiredDispatchConsistency
+                    select new UnicastTransportOperation(
+                        transportOperation.Message,
+                        subscriber,
+                        transportOperation.Properties,
+                        transportOperation.RequiredDispatchConsistency
                 )).ToList();
         }
     }

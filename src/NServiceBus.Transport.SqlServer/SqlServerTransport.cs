@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace NServiceBus
 {
     using System;
@@ -12,6 +10,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using Transport;
     using Transport.SqlServer;
+    using System.Collections.Generic;
 
     /// <summary>
     /// SqlServer Transport
@@ -27,11 +26,11 @@ namespace NServiceBus
             {
                 using (var connection = ConnectionFactory().GetAwaiter().GetResult())
                 {
-                    return new DbConnectionStringBuilder {ConnectionString = connection.ConnectionString};
+                    return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
                 }
             }
 
-            return new DbConnectionStringBuilder {ConnectionString = ConnectionString};
+            return new DbConnectionStringBuilder { ConnectionString = ConnectionString };
         }
 
         internal string GetDefaultCatalog()
@@ -62,7 +61,7 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        public SqlServerTransport(string connectionString) 
+        public SqlServerTransport(string connectionString)
             : base(TransportTransactionMode.TransactionScope, true, true, true)
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
@@ -97,9 +96,9 @@ namespace NServiceBus
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
         {
             FinalizeConfiguration();
-            
+
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
-            
+
             await infrastructure.ConfigureSubscriptions(catalog).ConfigureAwait(false);
 
             if (receivers.Length > 0)
@@ -156,7 +155,7 @@ namespace NServiceBus
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<Task<SqlConnection>> ConnectionFactory { get; } 
+        public Func<Task<SqlConnection>> ConnectionFactory { get; }
 
         /// <summary>
         /// Default address schema.
@@ -209,13 +208,13 @@ namespace NServiceBus
         ///TODO: this is for SC usage only. It should not be public
         internal bool DisableDelayedDelivery { get; set; } = false;
 
-        internal TestingInformation Testing { get; } = new TestingInformation(); 
+        internal TestingInformation Testing { get; } = new TestingInformation();
 
         internal class TestingInformation
         {
             internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
 
-            internal string[] ReceiveAddresses { get;  set; }
+            internal string[] ReceiveAddresses { get; set; }
 
             internal string[] SendingAddresses { get; set; }
 

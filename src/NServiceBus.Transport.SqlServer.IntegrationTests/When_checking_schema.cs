@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using SqlServer;
-    using Transport;
 
     public class When_checking_schema
     {
@@ -54,7 +53,7 @@
                     comm.ExecuteNonQuery();
                 }
             }
-            await queueCreator.CreateQueueIfNecessary(new[] {QueueTableName}, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus")).ConfigureAwait(false);
+            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus")).ConfigureAwait(false);
         }
     }
 }

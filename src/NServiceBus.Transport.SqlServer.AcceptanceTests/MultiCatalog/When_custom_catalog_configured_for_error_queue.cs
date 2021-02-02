@@ -3,7 +3,6 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_custom_catalog_configured_for_error_queue : MultiCatalogAcceptanceTest
@@ -63,7 +62,7 @@
         {
             public ErrorSpy()
             {
-                EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => {});
+                EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => { });
             }
 
             class Handler : IHandleMessages<Message>

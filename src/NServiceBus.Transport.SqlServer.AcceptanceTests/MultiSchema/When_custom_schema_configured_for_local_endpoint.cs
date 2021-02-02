@@ -1,8 +1,7 @@
-﻿using System;
-using NUnit.Framework;
-
-namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 {
+    using System;
+    using NUnit.Framework;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using NServiceBus.AcceptanceTests;

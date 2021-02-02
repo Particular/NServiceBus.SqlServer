@@ -30,7 +30,7 @@
             {
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
             }
-            
+
             var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
             {
                 TransportTransactionMode = TransportTransactionMode.None,
@@ -45,7 +45,7 @@
                 (_, __) => { },
                 true);
 
-            var infrastructure = await transport.Initialize(hostSettings, new[] {receiver},new string[0]);
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
 
             var pump = infrastructure.Receivers[0];
 

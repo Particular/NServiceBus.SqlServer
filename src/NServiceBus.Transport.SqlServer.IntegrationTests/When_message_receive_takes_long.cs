@@ -97,7 +97,7 @@
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, false);
 
-            return queueCreator.CreateQueueIfNecessary(new[] {QueueTableName}, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
     }
 }

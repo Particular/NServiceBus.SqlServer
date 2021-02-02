@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Generic;
@@ -40,7 +38,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             if (operations.MulticastTransportOperations.Count == 0)
             {
-                return emptyUnicastTransportOperationsList;
+                return _emptyUnicastTransportOperationsList;
             }
 
             var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert);
@@ -197,6 +195,6 @@ namespace NServiceBus.Transport.SqlServer
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
-        static UnicastTransportOperation[] emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
+        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }
 }

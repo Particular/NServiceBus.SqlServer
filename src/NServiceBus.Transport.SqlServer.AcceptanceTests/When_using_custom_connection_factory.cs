@@ -47,8 +47,8 @@
 
                     return connection;
                 });
-                
-                EndpointSetup(new CustomizedServer(transport), (c, sd) => 
+
+                EndpointSetup(new CustomizedServer(transport), (c, sd) =>
                 {
                     c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
                 });

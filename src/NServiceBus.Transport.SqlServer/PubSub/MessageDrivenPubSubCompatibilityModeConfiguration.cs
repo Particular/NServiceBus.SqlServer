@@ -1,7 +1,7 @@
-﻿using NServiceBus.Configuration.AdvancedExtensibility;
-
-namespace NServiceBus
+﻿namespace NServiceBus
 {
+    using Configuration.AdvancedExtensibility;
+
     /// <summary>
     /// Configuration extensions for Message-Driven Pub-Sub compatibility mode
     /// </summary>

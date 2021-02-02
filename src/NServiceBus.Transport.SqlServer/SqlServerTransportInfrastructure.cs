@@ -1,6 +1,3 @@
-using System.Linq;
-using NServiceBus.Transport.SqlServer.PubSub;
-
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
@@ -14,6 +11,9 @@ namespace NServiceBus.Transport.SqlServer
     using System.Transactions;
     using Logging;
     using Transport;
+    using System.Linq;
+    using NServiceBus.Transport.SqlServer.PubSub;
+
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
@@ -33,9 +33,9 @@ namespace NServiceBus.Transport.SqlServer
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
             var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, catalog);
-            
+
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
-            
+
             if (pubSubSettings.DisableCaching == false)
             {
                 subscriptionStore = new CachedSubscriptionStore(subscriptionStore, pubSubSettings.CacheInvalidationPeriod);
@@ -72,7 +72,7 @@ namespace NServiceBus.Transport.SqlServer
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
             {
-                 TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker
+                TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker
             });
 
             var queuePeekerOptions = transport.QueuePeeker;
@@ -125,7 +125,7 @@ namespace NServiceBus.Transport.SqlServer
                     Native = true,
                     Suffix = delayedDelivery.TableSuffix,
                     Interval = delayedDelivery.ProcessingInterval,
-                    BatchSize = delayedDelivery.BatchSize,
+                    delayedDelivery.BatchSize,
                 });
 
                 var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(), delayedDelivery.TableSuffix);
@@ -148,13 +148,13 @@ namespace NServiceBus.Transport.SqlServer
             Receivers = receiveSettings.Select(s =>
             {
                 ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
-                    ? (ISubscriptionManager) new SubscriptionManager(subscriptionStore, hostSettings.Name, s.ReceiveAddress)
+                    ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, s.ReceiveAddress)
                     : new NoOpSubscriptionManager();
 
                 return new MessagePump(transport, s, hostSettings, receiveStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
-                
+
             }).ToList<IMessageReceiver>().AsReadOnly();
 
             await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
@@ -258,7 +258,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 if (!string.IsNullOrWhiteSpace(message))
                 {
-                    Logger.Warn(message);
+                    _logger.Warn(message);
                 }
             }
         }
@@ -278,7 +278,7 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
         }
 
-        internal QueueAddressTranslator addressTranslator;
+        readonly QueueAddressTranslator addressTranslator;
         readonly SqlServerTransport transport;
         readonly HostSettings hostSettings;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
@@ -289,7 +289,6 @@ namespace NServiceBus.Transport.SqlServer
         TableBasedQueueCache tableBasedQueueCache;
         bool isEncrypted;
 
-        static ILog Logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
-       
+        static ILog _logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
 }

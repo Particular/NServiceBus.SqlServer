@@ -1,9 +1,9 @@
-﻿using System;
-using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Routing;
-
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System;
+    using Configuration.AdvancedExtensibility;
+    using Routing;
+
     /// <summary>
     /// Configuration extensions for endpoint catalog and schema settings
     /// </summary>
@@ -33,7 +33,6 @@ namespace NServiceBus.Transport.SqlServer
             settings.GetSettings().GetOrCreate<EndpointInstances>()
                 .AddOrReplaceInstances("SqlServer", schemaAndCatalogSettings.ToEndpointInstances());
         }
-        
 
         /// <summary>
         /// Specifies custom catalog for given endpoint.

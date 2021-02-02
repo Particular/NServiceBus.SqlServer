@@ -1,8 +1,7 @@
-using System.Linq;
-using NServiceBus.Unicast.Messages;
-
 namespace NServiceBus.Transport.SqlServer
 {
+    using System.Linq;
+    using Unicast.Messages;
     using System.Threading.Tasks;
     using Extensibility;
 
@@ -15,7 +14,9 @@ namespace NServiceBus.Transport.SqlServer
             this.localAddress = localAddress;
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
         public Task Subscribe(MessageMetadata eventType, ContextBag context)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             return subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType);
         }

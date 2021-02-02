@@ -37,7 +37,7 @@
                 var transport = new SqlServerTransport(PublisherConnectionString);
                 transport.Subscriptions.DisableCaching = true;
                 transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                
+
                 EndpointSetup(new CustomizedServer(transport), (c, rd) => { });
             }
         }

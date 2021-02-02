@@ -16,7 +16,7 @@
     public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
-        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+        static string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task Should_not_lose_any_events()
@@ -25,7 +25,7 @@
 
             //Before migration begins
             var beforeMigration = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(ConnectionString, false), b =>
+                .WithEndpoint(new Publisher(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
@@ -34,7 +34,7 @@
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
 
-                .WithEndpoint(new Subscriber(ConnectionString, false), b =>
+                .WithEndpoint(new Subscriber(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
@@ -60,7 +60,7 @@
             };
             subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var subscriberMigrated = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(ConnectionString, false),b =>
+                .WithEndpoint(new Publisher(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
@@ -96,7 +96,7 @@
             };
             publisherMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var publisherMigrated = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(ConnectionString, true),b =>
+                .WithEndpoint(new Publisher(_connectionString, true), b =>
                 {
                     b.CustomConfig(c =>
                     {
@@ -127,7 +127,7 @@
 
             //Compatibility mode disabled in both publisher and subscriber
             var compatModeDisabled = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(ConnectionString, true), b =>
+                .WithEndpoint(new Publisher(_connectionString, true), b =>
                 {
                     b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
                 })
@@ -164,7 +164,7 @@
 
         public class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber() : this(ConnectionString, true)
+            public Subscriber() : this(_connectionString, true)
             {
             }
 

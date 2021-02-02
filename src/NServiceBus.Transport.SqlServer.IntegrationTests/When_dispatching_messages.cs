@@ -26,8 +26,8 @@
             using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
             {
                 var operations = new TransportOperations(
-                    CreateTransportOperation(id: "1", destination: validAddress, consistency: dispatchConsistency),
-                    CreateTransportOperation(id: "2", destination: validAddress, consistency: dispatchConsistency)
+                    CreateTransportOperation(id: "1", destination: ValidAddress, consistency: dispatchConsistency),
+                    CreateTransportOperation(id: "2", destination: ValidAddress, consistency: dispatchConsistency)
                     );
 
                 await dispatcher.Dispatch(operations, contextProvider.TransportTransaction);
@@ -49,8 +49,8 @@
             using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
             {
                 var invalidOperations = new TransportOperations(
-                    CreateTransportOperation(id: "3", destination: validAddress, consistency: dispatchConsistency),
-                    CreateTransportOperation(id: "4", destination: invalidAddress, consistency: dispatchConsistency)
+                    CreateTransportOperation(id: "3", destination: ValidAddress, consistency: dispatchConsistency),
+                    CreateTransportOperation(id: "4", destination: InvalidAddress, consistency: dispatchConsistency)
                     );
 
                 Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
@@ -115,8 +115,8 @@
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
         {
             purger = new QueuePurger(sqlConnectionFactory);
-            var queueAddress = addressTranslator.Parse(validAddress).QualifiedTableName;
-            queue = new TableBasedQueue(queueAddress, validAddress, true);
+            var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
+            queue = new TableBasedQueue(queueAddress, ValidAddress, true);
 
             return purger.Purge(queue);
         }
@@ -125,14 +125,14 @@
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] {validAddress}, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
 
         QueuePurger purger;
         MessageDispatcher dispatcher;
         TableBasedQueue queue;
-        const string validAddress = "TableBasedQueueDispatcherTests";
-        const string invalidAddress = "TableBasedQueueDispatcherTests.Invalid";
+        const string ValidAddress = "TableBasedQueueDispatcherTests";
+        const string InvalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
         SqlConnectionFactory sqlConnectionFactory;
 

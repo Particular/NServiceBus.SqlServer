@@ -1,10 +1,10 @@
-﻿using System.Threading.Tasks;
-using NServiceBus.AcceptanceTesting;
-using NServiceBus.AcceptanceTests.EndpointTemplates;
-using NUnit.Framework;
-
-namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
+    using System.Threading.Tasks;
+    using NServiceBus.AcceptanceTesting;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    using NUnit.Framework;
+
     public class When_custom_catalog_configured_for_legacy_publisher : MultiCatalogAcceptanceTest
     {
         static string PublisherConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");

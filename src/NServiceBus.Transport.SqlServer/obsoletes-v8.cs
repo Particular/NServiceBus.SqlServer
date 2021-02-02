@@ -1,18 +1,16 @@
-using System;
-using System.Threading.Tasks;
-using System.Transactions;
-using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Logging;
-using NServiceBus.Transport.SqlServer;
+namespace NServiceBus
+{
+    using System;
+    using System.Threading.Tasks;
+    using System.Transactions;
+    using Configuration.AdvancedExtensibility;
+    using Transport.SqlServer;
 #if SYSTEMDATASQLCLIENT
-using System.Data.SqlClient;
+    using System.Data.SqlClient;
 #else
     using Microsoft.Data.SqlClient;
 #endif
 
-
-namespace NServiceBus
-{
     /// <summary>
     ///     Configuration extensions for Message-Driven Pub-Sub compatibility mode
     /// </summary>
@@ -41,8 +39,6 @@ namespace NServiceBus
     /// </summary>
     public static class SqlServerTransportSettingsExtensions
     {
-        static ILog Logger = LogManager.GetLogger<SqlServerTransport>();
-
         /// <summary>
         ///     Sets a default schema for both input and output queues
         /// </summary>

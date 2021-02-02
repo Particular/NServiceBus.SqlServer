@@ -1,12 +1,14 @@
-﻿using System.Threading.Tasks;
-using NServiceBus.Extensibility;
-using NServiceBus.Unicast.Messages;
-
-namespace NServiceBus.Transport.SqlServer.PubSub
+﻿namespace NServiceBus.Transport.SqlServer.PubSub
 {
+    using System.Threading.Tasks;
+    using Extensibility;
+    using Unicast.Messages;
+
     class NoOpSubscriptionManager : ISubscriptionManager
     {
+#pragma warning disable IDE0060 // Remove unused parameter
         public Task Subscribe(MessageMetadata eventType, ContextBag context)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             return Task.CompletedTask;
         }

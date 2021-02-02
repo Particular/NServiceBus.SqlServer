@@ -57,7 +57,7 @@
         {
             public Receiver()
             {
-                EndpointSetup(new CustomizedServer(ReceiverConnectionString), (c, sd) => {});
+                EndpointSetup(new CustomizedServer(ReceiverConnectionString), (c, sd) => { });
             }
 
             class Handler : IHandleMessages<Message>

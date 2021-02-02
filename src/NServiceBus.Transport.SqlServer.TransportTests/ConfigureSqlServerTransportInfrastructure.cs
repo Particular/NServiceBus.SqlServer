@@ -37,10 +37,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
             NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
         }
 #endif
-        
+
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableCaching = true;
-        
+
         var receivers = new[]
         {
             new ReceiveSettings(
@@ -51,7 +51,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 errorQueueName)
         };
 
-        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] {errorQueueName}).ConfigureAwait(false);
+        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }).ConfigureAwait(false);
     }
 
     public async Task Cleanup()
@@ -72,7 +72,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
             {
                 await conn.OpenAsync();
 
-                foreach (var queue in new[] {errorQueueName, inputQueueName})
+                foreach (var queue in queues)
                 {
                     using (var comm = conn.CreateCommand())
                     {
