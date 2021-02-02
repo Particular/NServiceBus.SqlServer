@@ -58,14 +58,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     {
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {
-            var delayedQueueAddress = new QueueAddress(inputQueueName, null, new Dictionary<string, string>(),
-                sqlServerTransport.DelayedDelivery.TableSuffix);
-
             var queues = new[]
             {
                 errorQueueName,
                 inputQueueName,
-                sqlServerTransport.ToTransportAddress(delayedQueueAddress)
+                sqlServerTransport.Testing.DelayedDeliveryQueue
             };
 
             using (var conn = new SqlConnection(connectionString))
