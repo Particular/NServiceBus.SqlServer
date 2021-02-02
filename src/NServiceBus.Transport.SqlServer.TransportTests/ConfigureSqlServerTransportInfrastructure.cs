@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 #if SYSTEMDATASQLCLIENT
 using System.Data.SqlClient;
 #else
@@ -71,12 +70,14 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
                 foreach (var queue in queues)
                 {
-                    using (var comm = conn.CreateCommand())
+                    if (string.IsNullOrWhiteSpace(queue) == false)
                     {
-                        comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
-                        Console.WriteLine($"### {comm.CommandText}");
+                        using (var comm = conn.CreateCommand())
+                        {
+                            comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
 
-                        await comm.ExecuteNonQueryAsync();
+                            await comm.ExecuteNonQueryAsync();
+                        }
                     }
                 }
             }
