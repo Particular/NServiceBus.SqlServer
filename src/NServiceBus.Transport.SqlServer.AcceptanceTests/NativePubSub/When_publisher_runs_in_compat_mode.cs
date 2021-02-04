@@ -15,6 +15,7 @@
     public class When_publisher_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(MigratedPublisher));
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task Legacy_subscriber_can_subscribe()
@@ -40,7 +41,7 @@
             {
                 EndpointSetup<DefaultPublisher>(c =>
                 {
-                    c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
@@ -56,9 +57,8 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                     //SqlServerTransport no longer implements message-driven pub sub interface so we need to configure Publishers "manually"
                     c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                     {

@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
     using Features;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
@@ -13,6 +12,7 @@
     public class When_subscriber_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
+        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task It_can_subscribe_for_event_published_by_legacy_publisher()
@@ -36,9 +36,8 @@
         {
             public LegacyPublisher()
             {
-                EndpointSetup<DefaultPublisher>(c =>
+                EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
                         if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(MigratedSubscriber))))
@@ -56,7 +55,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var compatMode = c.ConfigureSqlServerTransport().EnableMessageDrivenPubSubCompatibilityMode();
+                    var compatMode = c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     compatMode.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     c.DisableFeature<AutoSubscribe>();
                 });

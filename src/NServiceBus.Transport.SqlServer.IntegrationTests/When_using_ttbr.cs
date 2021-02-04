@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using DeliveryConstraints;
     using Extensibility;
     using NUnit.Framework;
     using Performance.TimeToBeReceived;
@@ -30,10 +29,10 @@
 
                     var operation = new TransportOperation(
                         new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]),
-                        new UnicastAddressTag(validAddress)
+                        new UnicastAddressTag(ValidAddress)
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, context).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -63,10 +62,10 @@
                     };
                     var operation = new TransportOperation(
                         new OutgoingMessage("1", headers, new byte[0]),
-                        new UnicastAddressTag(validAddress)
+                        new UnicastAddressTag(ValidAddress)
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, context).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -92,15 +91,14 @@
 
                     var operation = new TransportOperation(
                         new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]),
-                        new UnicastAddressTag(validAddress),
-                        DispatchConsistency.Default,
-                        new List<DeliveryConstraint>
+                        new UnicastAddressTag(ValidAddress),
+                        new DispatchProperties
                         {
-                            new DiscardIfNotReceivedBefore(TimeSpan.FromMinutes(-1)) //Discard immediately
+                            DiscardIfNotReceivedBefore = new DiscardIfNotReceivedBefore(TimeSpan.FromMinutes(-1)) //Discard immediately
                         }
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, context).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -117,7 +115,7 @@
 
         async Task PrepareAsync()
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogSettings());
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
             var tableCache = new TableBasedQueueCache(addressParser, true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
@@ -138,7 +136,7 @@
         Task PurgeOutputQueue(QueueAddressTranslator addressParser)
         {
             purger = new QueuePurger(sqlConnectionFactory);
-            var queueAddress = addressParser.Parse(validAddress);
+            var queueAddress = addressParser.Parse(ValidAddress);
             queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
 
             return purger.Purge(queue);
@@ -146,11 +144,9 @@
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
-            var queueBindings = new QueueBindings();
-            queueBindings.BindReceiving(validAddress);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
 
-            return queueCreator.CreateQueueIfNecessary(queueBindings, "");
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
 
         QueuePurger purger;
@@ -158,7 +154,7 @@
         TableBasedQueue queue;
         SqlConnectionFactory sqlConnectionFactory;
 
-        const string validAddress = "TTBRTests";
+        const string ValidAddress = "TTBRTests";
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {

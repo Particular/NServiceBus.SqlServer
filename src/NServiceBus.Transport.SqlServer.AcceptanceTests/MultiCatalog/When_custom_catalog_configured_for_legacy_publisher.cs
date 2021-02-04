@@ -1,9 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
-    using Configuration.AdvancedExtensibility;
+    using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
@@ -11,7 +9,9 @@
     {
         static string PublisherConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
         static string SubscriberConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
-        static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
+
+        static string PublisherEndpoint =>
+            AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
 
         [Test]
         public Task Should_receive_event()
@@ -33,23 +33,22 @@
         {
             public LegacyPublisher()
             {
-                EndpointSetup<DefaultPublisher>(c =>
-                {
-                    var transport = c.UseTransport<SqlServerTransport>();
-                    transport.ConnectionString(PublisherConnectionString);
-
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                    transport.SubscriptionSettings().DisableSubscriptionCache();
-
-                    c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
-                    c.OnEndpointSubscribed<Context>((s, context) =>
+                EndpointSetup(new CustomizedServer(PublisherConnectionString, false),
+                    (c, rd) =>
                     {
-                        if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
+                        var transport = c.ConfigureSqlServerTransport();
+                        transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                        transport.Subscriptions.DisableCaching = true;
+
+                        c.OnEndpointSubscribed<Context>((s, context) =>
                         {
-                            context.Subscribed = true;
-                        }
+                            var subscriberName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Subscriber));
+                            if (s.SubscriberEndpoint.Contains(subscriberName))
+                            {
+                                context.Subscribed = true;
+                            }
+                        });
                     });
-                });
             }
         }
 
@@ -57,21 +56,22 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(b =>
+                var transport = new SqlServerTransport(SubscriberConnectionString);
+                transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+
+                EndpointSetup(new CustomizedServer(transport), (c, rd) =>
                 {
-                    var transport = b.UseTransport<SqlServerTransport>();
-                    transport.ConnectionString(SubscriberConnectionString);
-
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-
-                    transport.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");
-                    transport.EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event), PublisherEndpoint);
+                    var routing = c.ConfigureRouting();
+                    routing.EnableMessageDrivenPubSubCompatibilityMode()
+                        .RegisterPublisher(typeof(Event), PublisherEndpoint);
+                    routing.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");
                 });
             }
 
             class EventHandler : IHandleMessages<Event>
             {
                 readonly Context scenarioContext;
+
                 public EventHandler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;

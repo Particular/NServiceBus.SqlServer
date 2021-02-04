@@ -4,66 +4,81 @@ using System.Data.SqlClient;
 #else
 using Microsoft.Data.SqlClient;
 #endif
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Configuration.AdvancedExtensibility;
-using NServiceBus.Settings;
-using NServiceBus.Transport;
 
 public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecution
 {
-    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
+    public ConfigureEndpointSqlServerTransport(SqlServerTransport transport)
     {
-        queueBindings = configuration.GetSettings().Get<QueueBindings>();
-        settings = configuration.GetSettings();
-        settings.Set("SqlServer.SubscriptionTableQuotedQualifiedNameSetter", (Action<string>)SetSubscriptionTableName);
+        this.transport = transport;
+    }
 
-        doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+    public ConfigureEndpointSqlServerTransport()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");
         }
 
-        var transportConfig = configuration.UseTransport<SqlServerTransport>();
-        transportConfig.ConnectionString(connectionString);
-        transportConfig.SubscriptionSettings().DisableSubscriptionCache();
+        transport = new SqlServerTransport(connectionString);
+        transport.Subscriptions.DisableCaching = true;
 
 #if !NETFRAMEWORK
-        transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
+        transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
 #endif
-        return Task.FromResult(0);
     }
 
-    void SetSubscriptionTableName(string tableQuotedQualifiedName)
+    public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
     {
-        subscriptionTableQuotedQualifiedName = tableQuotedQualifiedName;
+        doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
+
+        configuration.UseTransport(transport);
+
+        return Task.FromResult(0);
     }
 
     public async Task Cleanup()
     {
-        using (var conn = new SqlConnection(connectionString))
+        Func<Task<SqlConnection>> factory = async () =>
         {
-            await conn.OpenAsync().ConfigureAwait(false);
-
-            var queueAddresses = queueBindings.ReceivingAddresses.Select(QueueAddress.Parse);
-
-            var commandTextBuilder = new StringBuilder();
-            foreach (var address in queueAddresses)
+            if (transport.ConnectionString != null)
             {
-                var qualifiedName = address.QualifiedTableName;
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{qualifiedName}', 'U') IS NOT NULL DROP TABLE {qualifiedName}");
-                var delayedAddressQualifiedName = new QueueAddress(address.Table + ".Delayed", address.Schema, address.Catalog).QualifiedTableName;
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{delayedAddressQualifiedName}', 'U') IS NOT NULL DROP TABLE {delayedAddressQualifiedName}");
+                var connection = new SqlConnection(transport.ConnectionString);
+                await connection.OpenAsync().ConfigureAwait(false);
+                return connection;
             }
 
-            if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableQuotedQualifiedName))
+            return await transport.ConnectionFactory().ConfigureAwait(false);
+        };
+
+        using (var conn = await factory().ConfigureAwait(false))
+        {
+            var queueAddresses = transport.Testing.ReceiveAddresses;
+            var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
+
+            var commandTextBuilder = new StringBuilder();
+
+            //No clean-up for send-only endpoints
+            if (queueAddresses != null)
             {
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableQuotedQualifiedName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableQuotedQualifiedName}");
+                foreach (var address in queueAddresses)
+                {
+                    commandTextBuilder.AppendLine($"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}");
+                    commandTextBuilder.AppendLine(
+                        $"IF OBJECT_ID('{delayedQueueAddress}', 'U') IS NOT NULL DROP TABLE {delayedQueueAddress}");
+                }
+            }
+
+            var subscriptionTableName = transport.Testing.SubscriptionTable;
+
+            if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableName))
+            {
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableName}");
             }
 
             var commandText = commandTextBuilder.ToString();
@@ -94,110 +109,5 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     }
 
     bool doNotCleanNativeSubscriptions;
-    string connectionString;
-    QueueBindings queueBindings;
-    SettingsHolder settings;
-    string subscriptionTableQuotedQualifiedName;
-
-    class QueueAddress
-    {
-        public QueueAddress(string table, string schemaName, string catalogName)
-        {
-            Table = table;
-            Catalog = SafeUnquote(catalogName);
-            Schema = SafeUnquote(schemaName);
-        }
-
-        public string Catalog { get; }
-        public string Table { get; }
-        public string Schema { get; }
-
-        public static QueueAddress Parse(string address)
-        {
-            var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
-
-            if (firstAtIndex == -1)
-            {
-                return new QueueAddress(address, null, null);
-            }
-
-            var tableName = address.Substring(0, firstAtIndex);
-            address = firstAtIndex + 1 < address.Length ? address.Substring(firstAtIndex + 1) : string.Empty;
-
-            address = ExtractNextPart(address, out var schemaName);
-
-            string catalogName = null;
-
-            if (address != string.Empty)
-            {
-                ExtractNextPart(address, out catalogName);
-            }
-            return new QueueAddress(tableName, schemaName, catalogName);
-        }
-
-        public string QualifiedTableName => $"{Quote(Catalog)}.{Quote(Schema)}.{Quote(Table)}";
-
-        static string ExtractNextPart(string address, out string part)
-        {
-            var noRightBrackets = 0;
-            var index = 1;
-
-            while (true)
-            {
-                if (index >= address.Length)
-                {
-                    part = address;
-                    return string.Empty;
-                }
-
-                if (address[index] == '@' && (address[0] != '[' || noRightBrackets % 2 == 1))
-                {
-                    part = address.Substring(0, index);
-                    return index + 1 < address.Length ? address.Substring(index + 1) : string.Empty;
-                }
-
-                if (address[index] == ']')
-                {
-                    noRightBrackets++;
-                }
-
-                index++;
-            }
-        }
-
-        static string Quote(string name)
-        {
-            if (name == null)
-            {
-                return null;
-            }
-            return prefix + name.Replace(suffix, suffix + suffix) + suffix;
-        }
-
-        static string SafeUnquote(string name)
-        {
-            var result = Unquote(name);
-            return string.IsNullOrWhiteSpace(result)
-                ? null
-                : result;
-        }
-
-        const string prefix = "[";
-        const string suffix = "]";
-        static string Unquote(string quotedString)
-        {
-            if (quotedString == null)
-            {
-                return null;
-            }
-
-            if (!quotedString.StartsWith(prefix) || !quotedString.EndsWith(suffix))
-            {
-                return quotedString;
-            }
-
-            return quotedString
-                .Substring(prefix.Length, quotedString.Length - prefix.Length - suffix.Length).Replace(suffix + suffix, suffix);
-        }
-    }
+    SqlServerTransport transport;
 }

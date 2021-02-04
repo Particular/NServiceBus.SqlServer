@@ -22,7 +22,8 @@
 
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            var inputQueue = new FakeTableBasedQueue(parser.Parse("input").QualifiedTableName, queueSize, successfulReceives);
+            var inputQueueAddress = parser.Parse("input").Address;
+            var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
             if (string.IsNullOrEmpty(connectionString))
@@ -30,29 +31,37 @@
                 connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
             }
 
-            var sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
+            {
+                TransportTransactionMode = TransportTransactionMode.None,
+                TimeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.MaxValue,
+            };
 
-            var pump = new MessagePump(
-                m => new ProcessWithNoTransaction(sqlConnectionFactory, null),
-                qa => qa == "input" ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true),
-                new QueuePurger(sqlConnectionFactory),
-                new NoOpExpiredMessagesPurger(),
-                new QueuePeeker(sqlConnectionFactory, new QueuePeekerOptions()),
-                new QueuePeekerOptions(),
-                new SchemaInspector(_ => sqlConnectionFactory.OpenNewConnection(), false),
-                TimeSpan.MaxValue);
+            transport.Testing.QueueFactoryOverride = qa =>
+                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
-            await pump.Init(
-                _ => Task.FromResult(0),
-                _ => Task.FromResult(ErrorHandleResult.Handled),
-                new CriticalError(_ => Task.FromResult(0)),
-                new PushSettings("input", "error", false, TransportTransactionMode.None));
+            var receiver = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
+            var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
+                (_, __) => { },
+                true);
 
-            pump.Start(new PushRuntimeSettings(1));
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
+
+            var pump = infrastructure.Receivers[0];
+
+            await pump.Initialize(
+                new PushRuntimeSettings(1),
+                _ => Task.CompletedTask,
+                _ => Task.FromResult(ErrorHandleResult.Handled)
+            );
+
+            await pump.StartReceive();
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.Stop();
+            await pump.StopReceive();
+
+            await infrastructure.DisposeAsync();
 
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }

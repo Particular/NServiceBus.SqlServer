@@ -1,7 +1,5 @@
-#pragma warning disable 618
 namespace NServiceBus.Transport.SqlServer
 {
-    using System;
     using System.Data;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
@@ -9,77 +7,84 @@ namespace NServiceBus.Transport.SqlServer
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
-    using Transport;
 
-    class QueueCreator : ICreateQueues
+    class QueueCreator
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator,
-            CanonicalQueueAddress delayedQueueAddress, bool createMessageBodyColumn = false)
+        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
-            this.delayedQueueAddress = delayedQueueAddress;
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
-        public async Task CreateQueueIfNecessary(QueueBindings queueBindings, string identity)
+        public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
             {
-                foreach (var receivingAddress in queueBindings.ReceivingAddresses)
+                foreach (var address in queueAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(receivingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
-                }
-
-                foreach (var sendingAddress in queueBindings.SendingAddresses)
-                {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(sendingAddress), connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn).ConfigureAwait(false);
                 }
 
                 if (delayedQueueAddress != null)
                 {
-                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, transaction, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn).ConfigureAwait(false);
                 }
-                transaction.Commit();
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, SqlTransaction transaction, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn)
         {
             try
             {
-                var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-                using (var command = new SqlCommand(sql, connection, transaction)
+                using (var transaction = connection.BeginTransaction())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
+                        canonicalQueueAddress.QuotedCatalogName);
+                    using (var command = new SqlCommand(sql, connection, transaction)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+                    }
+
+                    transaction.Commit();
                 }
             }
-            catch (Exception e) when (e.Message.StartsWith("There is already an object named") || e.Message.StartsWith("The operation failed because an index or statistics with name"))
+            catch (SqlException e) when (e.Number == 2714 || e.Number == 1913) //Object already exists
             {
-                // ignored because of race when multiple endpoints start
+                //Table creation scripts are based on sys.objects metadata views.
+                //It looks that these views are not fully transactional and might
+                //not return information on already created table under heavy load.
+                //This in turn can result in executing table create or index create queries
+                //for objects that already exists. These queries will fail with
+                // 2714 (table) and 1913 (index) error codes. 
             }
 
             if (createMessageBodyColumn)
             {
-                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
-                using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn,
+                    canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
+
+                using (var transaction = connection.BeginTransaction())
                 {
-                    CommandType = CommandType.Text
-                })
-                {
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                    {
+                        CommandType = CommandType.Text
+                    })
+                    {
+                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    }
+
+                    transaction.Commit();
                 }
             }
         }
 
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
-        CanonicalQueueAddress delayedQueueAddress;
         bool createMessageBodyColumn;
     }
 }
-#pragma warning restore 618

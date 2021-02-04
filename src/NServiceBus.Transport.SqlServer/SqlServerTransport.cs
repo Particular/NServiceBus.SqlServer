@@ -8,75 +8,47 @@ namespace NServiceBus
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
-    using Settings;
     using Transport;
     using Transport.SqlServer;
+    using System.Collections.Generic;
 
     /// <summary>
     /// SqlServer Transport
     /// </summary>
     public class SqlServerTransport : TransportDefinition
     {
-        /// <summary>
-        /// <see cref="TransportDefinition.ExampleConnectionStringForErrorMessage" />
-        /// </summary>
-        public override string ExampleConnectionStringForErrorMessage => @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        QueueAddressTranslator addressTranslator;
+        string catalog;
 
-        /// <summary>
-        /// <see cref="TransportDefinition.RequiresConnectionString" />
-        /// </summary>
-        public override bool RequiresConnectionString => false;
-
-        /// <summary>
-        /// <see cref="TransportDefinition.Initialize" />
-        /// </summary>
-        public override TransportInfrastructure Initialize(SettingsHolder settings, string connectionString)
+        DbConnectionStringBuilder GetConnectionStringBuilder()
         {
-            var catalog = GetDefaultCatalog(settings, connectionString);
-            var isEncrypted = IsEncrypted(settings, connectionString);
-
-            return new SqlServerTransportInfrastructure(catalog, settings, connectionString, settings.LocalAddress, settings.LogicalAddress, isEncrypted);
-        }
-
-        static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
-        {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
+            if (ConnectionFactory != null)
             {
-                using (var connection = factoryOverride().GetAwaiter().GetResult())
+                using (var connection = ConnectionFactory().GetAwaiter().GetResult())
                 {
-                    connectionString = connection.ConnectionString;
+                    return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
                 }
             }
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new Exception("Either connection string or connection factory has to be specified in the SQL Server transport configuration.");
-            }
-            var parser = new DbConnectionStringBuilder
-            {
-                ConnectionString = connectionString
-            };
+
+            return new DbConnectionStringBuilder { ConnectionString = ConnectionString };
+        }
+
+        internal string GetDefaultCatalog()
+        {
+            var parser = GetConnectionStringBuilder();
+
             if (parser.TryGetValue("Initial Catalog", out var catalog) ||
                 parser.TryGetValue("database", out catalog))
             {
                 return (string)catalog;
             }
+
             throw new Exception("Initial Catalog property is mandatory in the connection string.");
         }
 
-        static bool IsEncrypted(SettingsHolder settings, string connectionString)
+        bool IsEncrypted()
         {
-            if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
-            {
-                using (var connection = factoryOverride().GetAwaiter().GetResult())
-                {
-                    connectionString = connection.ConnectionString;
-                }
-            }
-
-            var parser = new DbConnectionStringBuilder
-            {
-                ConnectionString = connectionString
-            };
+            var parser = GetConnectionStringBuilder();
 
             if (parser.TryGetValue("Column Encryption Setting", out var enabled))
             {
@@ -84,6 +56,171 @@ namespace NServiceBus
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Creates and instance of <see cref="SqlServerTransport"/>
+        /// </summary>
+        public SqlServerTransport(string connectionString)
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
+        {
+            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+            ConnectionString = connectionString;
+        }
+
+        /// <summary>
+        /// Creates and instance of <see cref="SqlServerTransport"/>
+        /// </summary>
+        /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
+        public SqlServerTransport(Func<Task<SqlConnection>> connectionFactory)
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
+        {
+            Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+
+            ConnectionFactory = connectionFactory;
+        }
+
+        /// <summary>
+        /// For the pub-sub migration tests only
+        /// </summary>
+        internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
+            : base(TransportTransactionMode.TransactionScope, supportsDelayedDelivery, supportsPublishSubscribe, true)
+        {
+            ConnectionString = connectionString;
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.Initialize"/>
+        /// </summary>
+        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
+        {
+            FinalizeConfiguration();
+
+            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
+
+            await infrastructure.ConfigureSubscriptions(catalog).ConfigureAwait(false);
+
+            if (receivers.Length > 0)
+            {
+                await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
+            }
+
+            infrastructure.ConfigureSendInfrastructure();
+
+            return infrastructure;
+        }
+
+        /// <summary>
+        /// Translates a <see cref="QueueAddress"/> object into a transport specific queue address-string.
+        /// </summary>
+        public override string ToTransportAddress(Transport.QueueAddress address)
+        {
+            FinalizeConfiguration();
+
+            var tableQueueAddress = addressTranslator.Generate(address);
+
+            return addressTranslator.GetCanonicalForm(tableQueueAddress).Address;
+        }
+
+        void FinalizeConfiguration()
+        {
+            if (addressTranslator == null)
+            {
+                catalog = GetDefaultCatalog();
+
+                addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, SchemaAndCatalog);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="TransportDefinition.GetSupportedTransactionModes"/>
+        /// </summary>
+        public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes()
+        {
+            return new[]
+            {
+                TransportTransactionMode.None,
+                TransportTransactionMode.ReceiveOnly,
+                TransportTransactionMode.SendsAtomicWithReceive,
+                TransportTransactionMode.TransactionScope
+            };
+        }
+
+        /// <summary>
+        /// Connection string to be used by the transport.
+        /// </summary>
+        public string ConnectionString { get; }
+
+        /// <summary>
+        /// Connection string factory.
+        /// </summary>
+        public Func<Task<SqlConnection>> ConnectionFactory { get; }
+
+        /// <summary>
+        /// Default address schema.
+        /// </summary>
+        public string DefaultSchema { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Catalog and schema configuration for SQL Transport queues.
+        /// </summary>
+        public QueueSchemaAndCatalogOptions SchemaAndCatalog { get; } = new QueueSchemaAndCatalogOptions();
+
+        /// <summary>
+        /// Subscription infrastructure settings.
+        /// </summary>
+        public SubscriptionOptions Subscriptions { get; } = new SubscriptionOptions();
+
+        /// <summary>
+        /// Transaction scope settings.
+        /// </summary>
+        public TransactionScopeOptions TransactionScope { get; } = new TransactionScopeOptions();
+
+        /// <summary>
+        /// Time to wait before triggering the circuit breaker.
+        /// </summary>
+        public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; } = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Queue peeker settings.
+        /// </summary>
+        public QueuePeekerOptions QueuePeeker { get; set; } = new QueuePeekerOptions();
+
+        /// <summary>
+        /// Instructs the transport to create a computed column for inspecting message body contents.
+        /// </summary>
+        public bool CreateMessageBodyComputedColumn { get; set; } = false;
+
+        /// <summary>
+        /// Expired messages purger settings.
+        /// </summary>
+        public ExpiredMessagesPurgerOptions ExpiredMessagesPurger { get; } = new ExpiredMessagesPurgerOptions();
+
+        /// <summary>
+        /// Delayed delivery infrastructure configuration
+        /// </summary>
+        public DelayedDeliveryOptions DelayedDelivery { get; } = new DelayedDeliveryOptions();
+
+        /// <summary>
+        /// Disable native delayed delivery infrastructure
+        /// </summary>
+        ///TODO: this is for SC usage only. It should not be public
+        internal bool DisableDelayedDelivery { get; set; } = false;
+
+        internal TestingInformation Testing { get; } = new TestingInformation();
+
+        internal class TestingInformation
+        {
+            internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
+
+            internal string[] ReceiveAddresses { get; set; }
+
+            internal string[] SendingAddresses { get; set; }
+
+            internal string DelayedDeliveryQueue { get; set; }
+
+            internal string SubscriptionTable { get; set; }
         }
     }
 }

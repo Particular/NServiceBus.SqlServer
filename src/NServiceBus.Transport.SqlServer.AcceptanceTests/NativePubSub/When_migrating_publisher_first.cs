@@ -16,6 +16,7 @@
     public class When_migrating_publisher_first : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
+        static string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
 
         [Test]
         public async Task Should_not_lose_any_events()
@@ -24,21 +25,19 @@
 
             //Before migration begins
             var beforeMigration = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
 
-                .WithEndpoint<Subscriber>(b =>
+                .WithEndpoint(new Subscriber(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                         c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                         {
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
@@ -56,21 +55,20 @@
 
             //Publisher migrated and in compatibility mode
             var publisherMigrated = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(_connectionString, true), b =>
                 {
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     });
                     b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
                 })
 
-                .WithEndpoint<Subscriber>(b =>
+                .WithEndpoint(new Subscriber(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("SqlServer.DisableNativePubSub", true);
                         c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
                         {
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
@@ -93,21 +91,21 @@
             };
             subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var subscriberMigrated = await Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b =>
+                .WithEndpoint(new Publisher(_connectionString, true), b =>
                 {
                     b.CustomConfig(c =>
                     {
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     });
                     b.When(c => c.SubscribedMessageDriven && c.SubscribedNative, (session, ctx) => session.Publish(new MyEvent()));
                 })
 
-                .WithEndpoint<Subscriber>(b =>
+                .WithEndpoint(new Subscriber(_connectionString, true), b =>
                 {
                     b.CustomConfig(c =>
                     {
-                        c.GetSettings().Set("NServiceBus.Subscriptions.EnableMigrationMode", true);
+                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                         var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
                         compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                     });
@@ -145,9 +143,14 @@
 
         public class Publisher : EndpointConfigurationBuilder
         {
-            public Publisher()
+            public Publisher() : this(_connectionString, true)
             {
-                EndpointSetup<DefaultPublisher>(c =>
+
+            }
+
+            public Publisher(string connectionString, bool supportsPublishSubscribe)
+            {
+                EndpointSetup(new CustomizedServer(_connectionString, supportsPublishSubscribe), (c, rd) =>
                 {
                     c.OnEndpointSubscribed<Context>((s, context) =>
                     {
@@ -162,9 +165,13 @@
 
         public class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber()
+            public Subscriber() : this(_connectionString, true)
             {
-                EndpointSetup<DefaultServer>(c =>
+            }
+
+            public Subscriber(string connectionString, bool supportsPublishSubscribe)
+            {
+                EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
                     {
                         c.DisableFeature<AutoSubscribe>();
                     },

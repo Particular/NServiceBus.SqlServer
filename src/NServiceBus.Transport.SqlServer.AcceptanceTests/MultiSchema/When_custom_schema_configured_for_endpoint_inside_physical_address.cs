@@ -33,15 +33,14 @@
                 {
                     var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
 
-                    var transportSettings = c.UseTransport<SqlServerTransport>();
+                    var transportSettings = c.ConfigureSqlServerTransport();
 
-                    transportSettings
-                        .GetSettings()
-                        .GetOrCreate<UnicastRoutingTable>()
-                        .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
-                        {
-                            new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
-                        });
+                    c.GetSettings()
+                    .GetOrCreate<UnicastRoutingTable>()
+                    .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
+                    {
+                        new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
+                    });
                 });
             }
         }

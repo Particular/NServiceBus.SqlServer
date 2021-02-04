@@ -26,14 +26,12 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(SenderConnectionString), (c, sd) =>
                 {
-                    var routing = c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SenderConnectionString)
-                        .UseCatalogForEndpoint(ReceiverEndpoint, "nservicebus2")
-                        .Routing();
+                    var routing = c.ConfigureRouting();
 
                     routing.RouteToEndpoint(typeof(Message), ReceiverEndpoint);
+                    routing.UseCatalogForEndpoint(ReceiverEndpoint, "nservicebus2");
                 });
             }
 
@@ -59,10 +57,7 @@
         {
             public Receiver()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport<SqlServerTransport>().ConnectionString(ReceiverConnectionString);
-                });
+                EndpointSetup(new CustomizedServer(ReceiverConnectionString), (c, sd) => { });
             }
 
             class Handler : IHandleMessages<Message>

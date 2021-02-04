@@ -46,8 +46,7 @@
                         b.DoNotFailOnErrorMessages();
                         b.CustomConfig(c =>
                         {
-                            c.UseTransport<SqlServerTransport>()
-                                .Transactions(txMode);
+                            c.ConfigureSqlServerTransport().TransportTransactionMode = txMode;
                         });
                         b.When(async (bus, c) =>
                         {
@@ -134,7 +133,6 @@ END";
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>();
                     c.SendFailedMessagesTo(errorQueueName);
                 });
             }

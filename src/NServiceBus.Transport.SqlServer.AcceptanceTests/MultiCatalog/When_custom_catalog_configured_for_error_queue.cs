@@ -3,7 +3,6 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_custom_catalog_configured_for_error_queue : MultiCatalogAcceptanceTest
@@ -36,7 +35,7 @@
         {
             public Sender()
             {
-                EndpointSetup<DefaultServer>(c =>
+                EndpointSetup(new CustomizedServer(SenderConnectionString), (c, sd) =>
                 {
                     var errorSpyName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(ErrorSpy));
 
@@ -46,9 +45,7 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SenderConnectionString)
-                        .UseCatalogForQueue(errorSpyName, "nservicebus2");
+                    c.ConfigureSqlServerTransport().SchemaAndCatalog.UseCatalogForQueue(errorSpyName, "nservicebus2");
                 });
             }
 
@@ -65,11 +62,7 @@
         {
             public ErrorSpy()
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.UseTransport<SqlServerTransport>()
-                        .ConnectionString(SpyConnectionString);
-                });
+                EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => { });
             }
 
             class Handler : IHandleMessages<Message>

@@ -44,7 +44,8 @@
                         .Immediate(i => i.NumberOfRetries(0))
                         .Delayed(d => d.NumberOfRetries(0));
 
-                    c.UseTransport<SqlServerTransport>().UseSchemaForQueue(errorSpyName, ErrorSpySchema);
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.SchemaAndCatalog.UseSchemaForQueue(errorSpyName, ErrorSpySchema);
                 });
             }
 
@@ -63,7 +64,7 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.UseTransport<SqlServerTransport>().DefaultSchema(ErrorSpySchema);
+                    c.ConfigureSqlServerTransport().DefaultSchema = ErrorSpySchema;
                 });
             }
 

@@ -21,7 +21,7 @@
             return schemas.TryGetValue(endpointName, out schema);
         }
 
-        public List<EndpointInstance> ToEndpointInstances()
+        internal List<EndpointInstance> ToEndpointInstances()
         {
             return schemas.Keys.Concat(catalogs.Keys).Distinct()
                 .Select(endpoint => new EndpointInstance(endpoint, null, GetProperties(endpoint)))

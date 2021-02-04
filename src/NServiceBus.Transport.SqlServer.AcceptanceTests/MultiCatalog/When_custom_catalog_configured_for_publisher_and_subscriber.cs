@@ -3,7 +3,6 @@
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using Features;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_custom_catalog_configured_for_publisher_and_subscriber : MultiCatalogAcceptanceTest
@@ -35,14 +34,11 @@
         {
             public Publisher()
             {
-                EndpointSetup<DefaultPublisher>(b =>
-                {
-                    var transport = b.UseTransport<SqlServerTransport>();
-                    transport.ConnectionString(PublisherConnectionString);
+                var transport = new SqlServerTransport(PublisherConnectionString);
+                transport.Subscriptions.DisableCaching = true;
+                transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
 
-                    transport.SubscriptionSettings().DisableSubscriptionCache();
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-                });
+                EndpointSetup(new CustomizedServer(transport), (c, rd) => { });
             }
         }
 
@@ -50,13 +46,11 @@
         {
             public Subscriber()
             {
-                EndpointSetup<DefaultServer>(c =>
+                var transport = new SqlServerTransport(SubscriberConnectionString);
+                transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+
+                EndpointSetup(new CustomizedServer(transport), (c, rd) =>
                 {
-                    var transport = c.UseTransport<SqlServerTransport>();
-
-                    transport.ConnectionString(SubscriberConnectionString);
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
-
                     c.DisableFeature<AutoSubscribe>();
                 });
             }

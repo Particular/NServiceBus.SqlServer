@@ -10,13 +10,9 @@
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
-    using DelayedDelivery;
-    using DeliveryConstraints;
-    using Extensibility;
-    using Performance.TimeToBeReceived;
     using Transport;
 
-    class MessageDispatcher : IDispatchMessages
+    class MessageDispatcher : IMessageDispatcher
     {
         public MessageDispatcher(QueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, SqlConnectionFactory connectionFactory)
         {
@@ -28,7 +24,7 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, ContextBag context)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction)
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))
@@ -42,7 +38,7 @@
         {
             if (operations.MulticastTransportOperations.Count == 0)
             {
-                return emptyUnicastTransportOperationsList;
+                return _emptyUnicastTransportOperationsList;
             }
 
             var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert);
@@ -153,8 +149,10 @@
 
         Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation)
         {
-            TryGetConstraint(operation, out DiscardIfNotReceivedBefore discardIfNotReceivedBefore);
-            if (TryGetConstraint(operation, out DoNotDeliverBefore doNotDeliverBefore))
+            var discardIfNotReceivedBefore = operation.Properties.DiscardIfNotReceivedBefore;
+            var doNotDeliverBefore = operation.Properties.DoNotDeliverBefore;
+
+            if (doNotDeliverBefore != null)
             {
                 if (discardIfNotReceivedBefore != null && discardIfNotReceivedBefore.MaxTime < TimeSpan.MaxValue)
                 {
@@ -163,7 +161,9 @@
 
                 return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction);
             }
-            if (TryGetConstraint(operation, out DelayDeliveryWith delayDeliveryWith))
+
+            var delayDeliveryWith = operation.Properties.DelayDeliveryWith;
+            if (delayDeliveryWith != null)
             {
                 if (discardIfNotReceivedBefore != null && discardIfNotReceivedBefore.MaxTime < TimeSpan.MaxValue)
                 {
@@ -190,17 +190,11 @@
             return transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
         }
 
-        static bool TryGetConstraint<T>(IOutgoingTransportOperation operation, out T constraint) where T : DeliveryConstraint
-        {
-            constraint = operation.DeliveryConstraints.OfType<T>().FirstOrDefault();
-            return constraint != null;
-        }
-
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         SqlConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
-        static UnicastTransportOperation[] emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
+        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }
 }

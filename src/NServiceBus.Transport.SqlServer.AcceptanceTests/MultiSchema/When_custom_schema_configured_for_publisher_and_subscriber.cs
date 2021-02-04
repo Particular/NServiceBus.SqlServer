@@ -35,11 +35,10 @@
             {
                 EndpointSetup<DefaultPublisher>(b =>
                 {
-                    var transport = b.UseTransport<SqlServerTransport>();
-                    transport.DefaultSchema("sender");
-
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
-                    transport.SubscriptionSettings().DisableSubscriptionCache();
+                    var transport = b.ConfigureSqlServerTransport();
+                    transport.DefaultSchema = "sender";
+                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.DisableCaching = true;
                 });
             }
         }
@@ -50,10 +49,10 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    var transport = c.UseTransport<SqlServerTransport>();
-                    transport.DefaultSchema("receiver");
+                    var transport = c.ConfigureSqlServerTransport();
+                    transport.DefaultSchema = "receiver";
+                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
 
-                    transport.SubscriptionSettings().SubscriptionTableName("SubscriptionRouting", "dbo");
                     c.DisableFeature<AutoSubscribe>();
                 });
             }

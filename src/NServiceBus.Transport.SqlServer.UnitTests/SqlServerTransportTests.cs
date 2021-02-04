@@ -1,22 +1,25 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using NUnit.Framework;
-    using Settings;
-    using SqlServer;
 
     [TestFixture]
     public class SqlServerTransportTests
     {
+        HostSettings settings;
+
+        [SetUp]
+        public void SetUp()
+        {
+            settings = new HostSettings(string.Empty, string.Empty, new StartupDiagnosticEntries(),
+                (s, exception) => { }, true);
+        }
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
         {
-            var definition = new SqlServerTransport();
-            var subscriptionSettings = new SubscriptionSettings();
-            subscriptionSettings.DisableSubscriptionCache();
-            var settings = new SettingsHolder();
-            settings.Set(subscriptionSettings);
+            var definition = new SqlServerTransport(@"Data Source=.\SQLEXPRESS;Integrated Security=True");
 
-            Assert.That(() => definition.Initialize(settings, @"Data Source=.\SQLEXPRESS;Integrated Security=True"),
+            Assert.That(
+                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false),
                 Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
         }
 
@@ -27,14 +30,8 @@
         [TestCase("database=my.catalog")]
         public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
-            var definition = new SqlServerTransport();
+            new SqlServerTransport(connectionString).GetDefaultCatalog();
 
-            var subscriptionSettings = new SubscriptionSettings();
-            subscriptionSettings.DisableSubscriptionCache();
-            var settings = new SettingsHolder();
-            settings.Set(subscriptionSettings);
-
-            definition.Initialize(settings, connectionString);
             Assert.Pass();
         }
     }
