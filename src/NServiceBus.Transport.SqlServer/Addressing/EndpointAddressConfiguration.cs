@@ -1,8 +1,9 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus
 {
     using System;
     using Configuration.AdvancedExtensibility;
     using Routing;
+    using Transport.SqlServer;
 
     /// <summary>
     /// Configuration extensions for endpoint catalog and schema settings
