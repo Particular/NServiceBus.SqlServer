@@ -5,6 +5,11 @@
 [assembly: System.Runtime.InteropServices.ComVisible(false)]
 namespace NServiceBus
 {
+    public static class EndpointAddressConfiguration
+    {
+        public static void UseCatalogForEndpoint(this NServiceBus.RoutingSettings settings, string endpointName, string catalog) { }
+        public static void UseSchemaForEndpoint(this NServiceBus.RoutingSettings settings, string endpointName, string schema) { }
+    }
     public class ExpiredMessagesPurgerOptions
     {
         public int? PurgeBatchSize { get; set; }
@@ -129,11 +134,6 @@ namespace NServiceBus.Transport.SqlServer
         [System.Obsolete("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
             " details. Will be removed in version 8.0.0.", true)]
         public void EnableTimeoutManagerCompatibility() { }
-    }
-    public static class EndpointAddressConfiguration
-    {
-        public static void UseCatalogForEndpoint(this NServiceBus.RoutingSettings settings, string endpointName, string catalog) { }
-        public static void UseSchemaForEndpoint(this NServiceBus.RoutingSettings settings, string endpointName, string schema) { }
     }
     public class QueueSchemaAndCatalogOptions
     {
