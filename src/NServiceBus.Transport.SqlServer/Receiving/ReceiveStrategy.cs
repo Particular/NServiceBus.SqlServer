@@ -12,21 +12,21 @@
 
     abstract class ReceiveStrategy
     {
-        protected TableBasedQueue InputQueue { get; private set; }
-        protected TableBasedQueue ErrorQueue { get; private set; }
+        TableBasedQueue inputQueue;
+        TableBasedQueue errorQueue;
 
-        Func<MessageContext, Task> onMessage;
-        Func<ErrorContext, Task<ErrorHandleResult>> onError;
+        OnMessage onMessage;
+        OnError onError;
 
         protected ReceiveStrategy(TableBasedQueueCache tableBasedQueueCache)
         {
             this.tableBasedQueueCache = tableBasedQueueCache;
         }
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, Func<MessageContext, Task> onMessage, Func<ErrorContext, Task<ErrorHandleResult>> onError, Action<string, Exception> criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception> criticalError)
         {
-            InputQueue = inputQueue;
-            ErrorQueue = errorQueue;
+            this.inputQueue = inputQueue;
+            this.errorQueue = errorQueue;
 
             this.onMessage = onMessage;
             this.onError = onError;
@@ -37,11 +37,11 @@
 
         protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
         {
-            var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+            var receiveResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
             if (receiveResult.IsPoison)
             {
-                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
                 return null;
             }
 
@@ -60,21 +60,14 @@
 
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {
-            if (message.Expired) //Do not process expired messages
+            //Do not process expired messages
+            if (message.Expired == false)
             {
-                return true;
-            }
-            using (var pushCancellationTokenSource = new CancellationTokenSource())
-            {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, pushCancellationTokenSource, new ContextBag());
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, new ContextBag());
                 await onMessage(messageContext).ConfigureAwait(false);
-
-                // Cancellation is requested when message processing is aborted.
-                // We return the opposite value:
-                //  - true when message processing completed successfully,
-                //  - false when message processing was aborted.
-                return !pushCancellationTokenSource.Token.IsCancellationRequested;
             }
+
+            return true;
         }
 
         protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts)
@@ -111,7 +104,7 @@
                 //This is not a delayed message. Process in local endpoint instance.
                 return false;
             }
-            if (forwardDestination == InputQueue.Name)
+            if (forwardDestination == inputQueue.Name)
             {
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
