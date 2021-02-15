@@ -159,8 +159,6 @@ namespace NServiceBus.Transport.SqlServer
 
             await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
 
-            dueDelayedMessageProcessor?.Start();
-
             var receiveAddresses = receiveSettings.Select(r => r.ReceiveAddress).ToList();
 
             if (hostSettings.SetupInfrastructure)
@@ -174,6 +172,8 @@ namespace NServiceBus.Transport.SqlServer
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress)
                     .ConfigureAwait(false);
             }
+
+            dueDelayedMessageProcessor?.Start();
 
             transport.Testing.SendingAddresses = sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
             transport.Testing.ReceiveAddresses = receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
