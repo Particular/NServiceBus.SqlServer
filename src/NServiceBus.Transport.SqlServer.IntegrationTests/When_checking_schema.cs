@@ -32,7 +32,7 @@
         [Test]
         public async Task It_returns_type_for_headers_column()
         {
-            using (var connection = await sqlConnectionFactory.OpenNewConnection())
+            using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
             {
                 var type = await queue.CheckHeadersColumnType(connection);
                 Assert.AreEqual("nvarchar", type);
@@ -45,7 +45,7 @@
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            using (var connection = await sqlConnectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await sqlConnectionFactory.OpenNewConnection(default).ConfigureAwait(false))
             {
                 using (var comm = connection.CreateCommand())
                 {
@@ -53,7 +53,7 @@
                     comm.ExecuteNonQuery();
                 }
             }
-            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus")).ConfigureAwait(false);
+            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default).ConfigureAwait(false);
         }
     }
 }

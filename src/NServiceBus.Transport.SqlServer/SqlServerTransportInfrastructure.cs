@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.SqlServer
     using Transport;
     using System.Linq;
     using NServiceBus.Transport.SqlServer.PubSub;
-
+    using System.Threading;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.SqlServer
             connectionFactory = CreateConnectionFactory();
         }
 
-        public async Task ConfigureSubscriptions(string catalog)
+        public async Task ConfigureSubscriptions(string catalog, CancellationToken cancellationToken)
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
@@ -43,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer
 
             if (hostSettings.SetupInfrastructure)
             {
-                await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary().ConfigureAwait(false);
+                await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
             }
 
             transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
@@ -59,7 +59,7 @@ namespace NServiceBus.Transport.SqlServer
             return SqlConnectionFactory.Default(transport.ConnectionString);
         }
 
-        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses)
+        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken)
         {
             var transactionOptions = transport.TransactionScope.TransactionOptions;
 
@@ -106,11 +106,11 @@ namespace NServiceBus.Transport.SqlServer
                     BatchSize = purgeBatchSize
                 });
 
-                expiredMessagesPurger = new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(), purgeBatchSize);
+                expiredMessagesPurger = new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(cancellationToken), purgeBatchSize);
                 validateExpiredIndex = true;
             }
 
-            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(), validateExpiredIndex);
+            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(cancellationToken), validateExpiredIndex);
 
             var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
 
@@ -155,9 +155,9 @@ namespace NServiceBus.Transport.SqlServer
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
-            }).ToList<IMessageReceiver>().ToDictionary(r => r.Id, r => r);
+            }).ToDictionary(pump => pump.Id, pump => pump as IMessageReceiver);
 
-            await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
+            await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
 
             var receiveAddresses = receiveSettings.Select(r => r.ReceiveAddress).ToList();
 
@@ -169,11 +169,11 @@ namespace NServiceBus.Transport.SqlServer
 
                 var queueCreator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
 
-                await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress)
+                await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);
             }
 
-            dueDelayedMessageProcessor?.Start();
+            dueDelayedMessageProcessor?.Start(cancellationToken);
 
             transport.Testing.SendingAddresses = sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
             transport.Testing.ReceiveAddresses = receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
@@ -200,18 +200,18 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions)
+        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
         {
-            await TryOpenDatabaseConnection().ConfigureAwait(false);
+            await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
-            await TryEscalateToDistributedTransactions(transactionOptions).ConfigureAwait(false);
+            await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task TryOpenDatabaseConnection()
+        async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
         {
             try
             {
-                using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
                 }
             }
@@ -223,7 +223,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions)
+        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions, CancellationToken cancellationToken)
         {
             if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
             {
@@ -232,8 +232,8 @@ namespace NServiceBus.Transport.SqlServer
                 try
                 {
                     using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+                    using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                     {
                         scope.Complete();
                     }
@@ -273,9 +273,9 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task Shutdown()
+        public override Task Shutdown(CancellationToken cancellationToken)
         {
-            return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
+            return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
         readonly QueueAddressTranslator addressTranslator;

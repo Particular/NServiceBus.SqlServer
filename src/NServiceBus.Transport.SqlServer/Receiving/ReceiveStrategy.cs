@@ -23,7 +23,7 @@
             this.tableBasedQueueCache = tableBasedQueueCache;
         }
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception> criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
         {
             this.inputQueue = inputQueue;
             this.errorQueue = errorQueue;
@@ -33,44 +33,45 @@
             this.criticalError = criticalError;
         }
 
-        public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
+        public abstract Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
-            var receiveResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+            var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
             if (receiveResult.IsPoison)
             {
-                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
                 return null;
             }
 
             if (receiveResult.Successful)
             {
-                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
+                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
                 {
                     return null;
                 }
 
                 return receiveResult.Message;
             }
-            receiveCancellationTokenSource.Cancel();
+
+            stopBatch.Cancel();
             return null;
         }
 
-        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
+        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             //Do not process expired messages
             if (message.Expired == false)
             {
                 var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, new ContextBag());
-                await onMessage(messageContext).ConfigureAwait(false);
+                await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts)
+        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts, CancellationToken cancellationToken)
         {
             message.ResetHeaders();
             try
@@ -78,11 +79,15 @@
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts);
                 errorContext.Message.Headers.Remove(ForwardHeader);
 
-                return await onError(errorContext).ConfigureAwait(false);
+                return await onError(errorContext, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return ErrorHandleResult.Handled;
             }
             catch (Exception ex)
             {
-                criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
+                criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex, cancellationToken);
 
                 return ErrorHandleResult.RetryRequired;
             }
@@ -92,7 +97,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
+        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {
@@ -112,12 +117,12 @@
             var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
 
             var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
-            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction).ConfigureAwait(false);
+            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
             return true;
         }
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
-        Action<string, Exception> criticalError;
+        Action<string, Exception, CancellationToken> criticalError;
     }
 }

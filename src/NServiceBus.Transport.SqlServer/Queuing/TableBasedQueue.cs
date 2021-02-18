@@ -18,7 +18,6 @@ namespace NServiceBus.Transport.SqlServer
 
         public TableBasedQueue(string qualifiedTableName, string queueName, bool isStreamSupported)
         {
-#pragma warning disable 618
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
             receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
@@ -29,7 +28,6 @@ namespace NServiceBus.Transport.SqlServer
             checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
-#pragma warning restore 618
         }
 
         public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
@@ -46,32 +44,30 @@ namespace NServiceBus.Transport.SqlServer
 
         public void FormatPeekCommand(int maxRecordsToPeek)
         {
-#pragma warning disable 618
             peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
-#pragma warning restore 618
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
+        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             using (var command = new SqlCommand(receiveCommand, connection, transaction))
             {
-                return await ReadMessage(command).ConfigureAwait(false);
+                return await ReadMessage(command, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction)
+        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
-            return SendRawMessage(poisonMessage, connection, transaction);
+            return SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
         }
 
-        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
-            return SendRawMessage(messageRow, connection, transaction);
+            return SendRawMessage(messageRow, connection, transaction, cancellationToken);
         }
 
-        async Task<MessageReadResult> ReadMessage(SqlCommand command)
+        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
@@ -79,18 +75,18 @@ namespace NServiceBus.Transport.SqlServer
                 behavior |= CommandBehavior.SequentialAccess;
             }
 
-            using (var dataReader = await command.ExecuteReaderAsync(behavior).ConfigureAwait(false))
+            using (var dataReader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false))
             {
-                if (!await dataReader.ReadAsync().ConfigureAwait(false))
+                if (!await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
                 {
                     return MessageReadResult.NoMessage;
                 }
 
-                return await MessageRow.Read(dataReader, isStreamSupported).ConfigureAwait(false);
+                return await MessageRow.Read(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction)
+        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             try
             {
@@ -98,7 +94,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     message.PrepareSendCommand(command);
 
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (SqlException ex)

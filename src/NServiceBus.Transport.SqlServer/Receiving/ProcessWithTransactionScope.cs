@@ -15,15 +15,15 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
             Message message = null;
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, null, stopBatch, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -36,7 +36,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -45,6 +45,10 @@
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful shutdown
             }
             catch (Exception exception)
             {
@@ -66,11 +70,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -80,7 +84,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                return await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception)
             {

@@ -11,7 +11,7 @@
         public void SetUp()
         {
             settings = new HostSettings(string.Empty, string.Empty, new StartupDiagnosticEntries(),
-                (s, exception) => { }, true);
+                (_, __, ___) => { }, true);
         }
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
@@ -19,7 +19,7 @@
             var definition = new SqlServerTransport(@"Data Source=.\SQLEXPRESS;Integrated Security=True");
 
             Assert.That(
-                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0]).ConfigureAwait(false),
+                async () => await definition.Initialize(settings, new ReceiveSettings[0], new string[0], default).ConfigureAwait(false),
                 Throws.Exception.Message.Contains("Initial Catalog property is mandatory in the connection string."));
         }
 
