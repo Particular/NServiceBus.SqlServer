@@ -18,7 +18,6 @@ namespace NServiceBus.Transport.SqlServer
 
         public TableBasedQueue(string qualifiedTableName, string queueName, bool isStreamSupported)
         {
-#pragma warning disable 618
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
             receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
@@ -29,7 +28,6 @@ namespace NServiceBus.Transport.SqlServer
             checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
             checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
-#pragma warning restore 618
         }
 
         public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
@@ -46,9 +44,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public void FormatPeekCommand(int maxRecordsToPeek)
         {
-#pragma warning disable 618
             peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
-#pragma warning restore 618
         }
 
         public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction)
