@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
@@ -36,7 +37,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
                 Assert.IsFalse(message.Message.Expired);
             }
         }
@@ -69,7 +70,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
                 Assert.IsFalse(message.Message.Expired);
             }
         }
@@ -102,7 +103,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
                 Assert.IsTrue(message.Message.Expired);
             }
         }
@@ -158,7 +159,7 @@
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken)
             {
                 return Task.FromResult(new List<UnicastTransportOperation>());
             }

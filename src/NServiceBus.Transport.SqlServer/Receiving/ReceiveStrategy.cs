@@ -37,17 +37,17 @@
 
         protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
-            var receiveResult = await inputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
+            var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
             if (receiveResult.IsPoison)
             {
-                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
                 return null;
             }
 
             if (receiveResult.Successful)
             {
-                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
+                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
                 {
                     return null;
                 }
@@ -91,7 +91,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
+        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {
@@ -111,7 +111,7 @@
             var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
 
             var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
-            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction).ConfigureAwait(false);
+            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
             return true;
         }
 

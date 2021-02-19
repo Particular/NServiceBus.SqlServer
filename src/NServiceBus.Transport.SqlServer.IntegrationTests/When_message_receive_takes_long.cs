@@ -55,7 +55,7 @@
                 using (var tx = connection.BeginTransaction())
                 {
                     var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-                    await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx);
+                    await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, default);
                     tx.Commit();
                     scope.Complete();
                 }
@@ -83,7 +83,7 @@
                 using (var connection = await sqlConnectionFactory.OpenNewConnection())
                 using (var tx = connection.BeginTransaction())
                 {
-                    await tableBasedQueue.TryReceive(connection, tx);
+                    await tableBasedQueue.TryReceive(connection, tx, default);
                     await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds));
                     tx.Commit();
                     scope.Complete();
