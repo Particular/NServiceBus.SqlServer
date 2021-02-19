@@ -31,11 +31,11 @@
                     CreateTransportOperation(id: "2", destination: ValidAddress, consistency: dispatchConsistency)
                     );
 
-                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, default);
+                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction);
 
                 contextProvider.Complete();
 
-                var messagesSent = await purger.Purge(queue, default);
+                var messagesSent = await purger.Purge(queue);
 
                 Assert.AreEqual(2, messagesSent);
             }
@@ -56,12 +56,12 @@
 
                 Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
-                    await dispatcher.Dispatch(invalidOperations, contextProvider.TransportTransaction, default);
+                    await dispatcher.Dispatch(invalidOperations, contextProvider.TransportTransaction);
                     contextProvider.Complete();
                 });
             }
 
-            var messagesSent = await purger.Purge(queue, default);
+            var messagesSent = await purger.Purge(queue);
 
             Assert.AreEqual(0, messagesSent);
         }
@@ -70,7 +70,7 @@
         public void Proper_exception_is_thrown_if_queue_does_not_exist()
         {
             var operation = new TransportOperation(new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag("InvalidQueue"));
-            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction(), default), Throws.TypeOf<QueueNotFoundException>());
+            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction()), Throws.TypeOf<QueueNotFoundException>());
         }
 
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)
@@ -119,14 +119,14 @@
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
             queue = new TableBasedQueue(queueAddress, ValidAddress, true);
 
-            return purger.Purge(queue, default);
+            return purger.Purge(queue);
         }
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
 
         QueuePurger purger;
@@ -139,7 +139,7 @@
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new List<UnicastTransportOperation>());
             }
@@ -170,7 +170,7 @@
         {
             public HandlerContextProvider(SqlConnectionFactory sqlConnectionFactory)
             {
-                sqlConnection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult();
+                sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
                 TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);

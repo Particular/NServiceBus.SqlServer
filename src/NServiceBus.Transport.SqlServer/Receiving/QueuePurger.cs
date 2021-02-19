@@ -10,7 +10,7 @@
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken)
+        public virtual async Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {

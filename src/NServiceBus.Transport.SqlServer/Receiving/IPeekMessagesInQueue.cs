@@ -5,6 +5,6 @@ namespace NServiceBus.Transport.SqlServer
 
     interface IPeekMessagesInQueue
     {
-        Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken);
+        Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default);
     }
 }

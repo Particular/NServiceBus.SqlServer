@@ -14,18 +14,18 @@ namespace NServiceBus.Transport.SqlServer
             this.subscriptionTable = subscriptionTable;
         }
 
-        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken)
+        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var topics = GetTopics(eventType);
             return subscriptionTable.GetSubscribers(topics.ToArray(), cancellationToken);
         }
 
-        public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken)
+        public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
         {
             return subscriptionTable.Subscribe(endpointName, endpointAddress, TopicName.From(eventType), cancellationToken);
         }
 
-        public Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken)
+        public Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
         {
             return subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType), cancellationToken);
         }

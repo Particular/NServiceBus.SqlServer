@@ -18,7 +18,7 @@
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
 
-        public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken)
+        public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
             var totalPurgedRowsCount = 0;

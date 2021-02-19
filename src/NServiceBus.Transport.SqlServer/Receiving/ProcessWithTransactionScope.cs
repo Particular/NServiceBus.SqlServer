@@ -15,7 +15,7 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationToken cancellationToken)
+        public override async Task ReceiveMessage(CancellationToken cancellationToken = default)
         {
             Message message = null;
             try
@@ -67,7 +67,7 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {

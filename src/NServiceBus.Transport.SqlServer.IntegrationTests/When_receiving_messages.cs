@@ -46,7 +46,7 @@
                 (_, __, ___) => { },
                 true);
 
-            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0], default);
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
 
             // DB-TODO: Was Receivers[0], which one is the normal pump? Going with .Values.First() for now
             var pump = infrastructure.Receivers.Values.First();
@@ -100,7 +100,7 @@
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 

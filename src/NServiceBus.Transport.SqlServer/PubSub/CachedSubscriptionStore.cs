@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SqlServer
             this.cacheFor = cacheFor;
         }
 
-        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken)
+        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var cacheItem = Cache.GetOrAdd(CacheKey(eventType),
                 _ => new CacheItem
@@ -34,13 +34,13 @@ namespace NServiceBus.Transport.SqlServer
             return cacheItem.Subscribers;
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken)
+        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
         {
             await inner.Subscribe(endpointName, endpointAddress, eventType, cancellationToken).ConfigureAwait(false);
             ClearForMessageType(CacheKey(eventType));
         }
 
-        public async Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken)
+        public async Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
         {
             await inner.Unsubscribe(endpointName, eventType, cancellationToken).ConfigureAwait(false);
             ClearForMessageType(CacheKey(eventType));

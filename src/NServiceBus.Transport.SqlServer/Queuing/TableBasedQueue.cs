@@ -47,7 +47,7 @@ namespace NServiceBus.Transport.SqlServer
             peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(receiveCommand, connection, transaction))
             {
@@ -55,19 +55,19 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             return SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
         }
 
-        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction, cancellationToken);
         }
 
-        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken)
+        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken = default)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
@@ -86,7 +86,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             try
             {

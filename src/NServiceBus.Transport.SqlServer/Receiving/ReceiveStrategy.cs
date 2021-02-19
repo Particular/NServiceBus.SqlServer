@@ -33,9 +33,9 @@
             this.criticalError = criticalError;
         }
 
-        public abstract Task ReceiveMessage(CancellationToken cancellationToken);
+        public abstract Task ReceiveMessage(CancellationToken cancellationToken = default);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
@@ -57,7 +57,7 @@
             return null;
         }
 
-        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)
@@ -69,7 +69,7 @@
             return true;
         }
 
-        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts, CancellationToken cancellationToken)
+        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts, CancellationToken cancellationToken = default)
         {
             message.ResetHeaders();
             try
@@ -91,7 +91,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {
