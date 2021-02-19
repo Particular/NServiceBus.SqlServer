@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.SqlServer
     using Transport;
     using System.Linq;
     using NServiceBus.Transport.SqlServer.PubSub;
-
+    using System.Threading;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.SqlServer
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
-            }).ToList<IMessageReceiver>().AsReadOnly();
+            }).ToDictionary(pump => pump.Id, pump => pump as IMessageReceiver);
 
             await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
 
@@ -273,7 +273,7 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task DisposeAsync()
+        public override Task Shutdown(CancellationToken cancellationToken)
         {
             return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
         }

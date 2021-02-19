@@ -11,6 +11,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
+    using System.Threading;
 
     class MessageDispatcher : IMessageDispatcher
     {
@@ -24,7 +25,7 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))

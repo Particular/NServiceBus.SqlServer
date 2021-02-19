@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NServiceBus;
@@ -45,7 +46,7 @@ public class TestingInMemorySubscriptionPersistence : Feature
 
 public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
 {
-    public Task Subscribe(Subscriber subscriber, MessageType messageType, ContextBag context)
+    public Task Subscribe(Subscriber subscriber, MessageType messageType, ContextBag context, CancellationToken cancellationToken)
     {
         var dict = storage.GetOrAdd(messageType, type => new ConcurrentDictionary<string, Subscriber>(StringComparer.OrdinalIgnoreCase));
 
@@ -58,7 +59,7 @@ public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
         return $"{subscriber.TransportAddress ?? ""}_{subscriber.Endpoint ?? ""}";
     }
 
-    public Task Unsubscribe(Subscriber subscriber, MessageType messageType, ContextBag context)
+    public Task Unsubscribe(Subscriber subscriber, MessageType messageType, ContextBag context, CancellationToken cancellationToken)
     {
         if (storage.TryGetValue(messageType, out var dict))
         {
@@ -67,7 +68,7 @@ public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
         return Task.FromResult(true);
     }
 
-    public Task<IEnumerable<Subscriber>> GetSubscriberAddressesForMessage(IEnumerable<MessageType> messageTypes, ContextBag context)
+    public Task<IEnumerable<Subscriber>> GetSubscriberAddressesForMessage(IEnumerable<MessageType> messageTypes, ContextBag context, CancellationToken cancellationToken)
     {
         var result = new HashSet<Subscriber>();
         foreach (var m in messageTypes)

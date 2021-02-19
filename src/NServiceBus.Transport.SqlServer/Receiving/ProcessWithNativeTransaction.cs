@@ -42,7 +42,8 @@
                         return;
                     }
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction)).ConfigureAwait(false))
+                    // DB-TODO: Passing token from source
+                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction), receiveCancellationTokenSource.Token).ConfigureAwait(false))
                     {
                         transaction.Rollback();
                         return;
@@ -80,11 +81,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -94,7 +95,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                return await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception)
             {

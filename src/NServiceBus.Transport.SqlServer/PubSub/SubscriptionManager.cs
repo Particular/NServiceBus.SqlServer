@@ -1,9 +1,10 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Linq;
-    using Unicast.Messages;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
+    using NServiceBus.Unicast.Messages;
 
     class SubscriptionManager : ISubscriptionManager
     {
@@ -21,12 +22,12 @@ namespace NServiceBus.Transport.SqlServer
             return subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType);
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken)
         {
             return Task.WhenAll(eventTypes.Select(et => Subscribe(et, context)));
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken)
         {
             return subscriptionStore.Unsubscribe(endpointName, eventType.MessageType);
         }

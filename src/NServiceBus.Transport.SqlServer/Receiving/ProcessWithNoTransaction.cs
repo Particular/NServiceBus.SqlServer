@@ -34,11 +34,13 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                    // DB-TODO: Passing token from source
+                    await TryProcessingMessage(message, transportTransaction, receiveCancellationTokenSource.Token).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
-                    await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
+                    // DB-TODO: Passing token from source
+                    await HandleError(exception, message, transportTransaction, 1, receiveCancellationTokenSource.Token).ConfigureAwait(false);
                 }
             }
         }

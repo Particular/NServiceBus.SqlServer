@@ -30,7 +30,7 @@
                     CreateTransportOperation(id: "2", destination: ValidAddress, consistency: dispatchConsistency)
                     );
 
-                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction);
+                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, default);
 
                 contextProvider.Complete();
 
@@ -55,7 +55,7 @@
 
                 Assert.ThrowsAsync(Is.AssignableTo<Exception>(), async () =>
                 {
-                    await dispatcher.Dispatch(invalidOperations, contextProvider.TransportTransaction);
+                    await dispatcher.Dispatch(invalidOperations, contextProvider.TransportTransaction, default);
                     contextProvider.Complete();
                 });
             }
@@ -69,7 +69,7 @@
         public void Proper_exception_is_thrown_if_queue_does_not_exist()
         {
             var operation = new TransportOperation(new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag("InvalidQueue"));
-            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction()), Throws.TypeOf<QueueNotFoundException>());
+            Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction(), default), Throws.TypeOf<QueueNotFoundException>());
         }
 
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)

@@ -11,6 +11,7 @@
     using NUnit.Framework;
     using Transport;
     using SqlServer;
+    using System.Linq;
 
     public class When_receiving_messages
     {
@@ -42,26 +43,28 @@
 
             var receiver = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
-                (_, __) => { },
+                (_, __, ___) => { },
                 true);
 
-            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0], default);
 
-            var pump = infrastructure.Receivers[0];
+            // DB-TODO: Was Receivers[0], which one is the normal pump? Going with .Values.First() for now
+            var pump = infrastructure.Receivers.Values.First();
 
             await pump.Initialize(
                 new PushRuntimeSettings(1),
-                _ => Task.CompletedTask,
-                _ => Task.FromResult(ErrorHandleResult.Handled)
+                (_, __) => Task.CompletedTask,
+                (_, __) => Task.FromResult(ErrorHandleResult.Handled),
+                default
             );
 
-            await pump.StartReceive();
+            await pump.StartReceive(default);
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.StopReceive();
+            await pump.StopReceive(default);
 
-            await infrastructure.DisposeAsync();
+            await infrastructure.Shutdown(default);
 
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }
