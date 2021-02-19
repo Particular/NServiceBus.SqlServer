@@ -23,7 +23,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ReceiveMessage(CancellationToken cancellationToken)
         {
             Message message = null;
             try
@@ -31,7 +31,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -42,8 +42,7 @@
                         return;
                     }
 
-                    // DB-TODO: Passing token from source
-                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction), receiveCancellationTokenSource.Token).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction), cancellationToken).ConfigureAwait(false))
                     {
                         transaction.Rollback();
                         return;

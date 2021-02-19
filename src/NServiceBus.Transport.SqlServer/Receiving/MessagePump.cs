@@ -57,22 +57,21 @@
                 }
             }
 
-            await PurgeExpiredMessages().ConfigureAwait(false);
+            await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
 
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
-        public Task StartReceive(CancellationToken receiveMethodCancellationToken)
+        public Task StartReceive(CancellationToken _)
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
-            cancellationTokenSource = new CancellationTokenSource();
 
-            cancellationToken = cancellationTokenSource.Token;
+            messagePumpCancellationTokenSource = new CancellationTokenSource();
+            messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
-            // DB-TODO: Specific implementation of message pump tokens happens here
-            messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
+            messagePumpTask = Task.Run(() => ProcessMessages(messagePumpCancellationTokenSource.Token), messagePumpCancellationTokenSource.Token);
 
             return Task.CompletedTask;
         }
@@ -80,42 +79,45 @@
         public async Task StopReceive(CancellationToken cancellationToken)
         {
             const int timeoutDurationInSeconds = 30;
-            cancellationTokenSource.Cancel();
+            var timedCancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutDurationInSeconds));
+
+            messagePumpCancellationTokenSource?.Cancel();
+
+            var userOrTimedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timedCancellationSource.Token);
+            var userOrTimedCancellationToken = userOrTimedCancellationTokenSource.Token;
+            userOrTimedCancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
 
             await messagePumpTask.ConfigureAwait(false);
 
-            try
+            while (concurrencyLimiter.CurrentCount != maxConcurrency)
             {
-                using (var shutdownCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutDurationInSeconds)))
-                {
-                    while (concurrencyLimiter.CurrentCount != maxConcurrency)
-                    {
-                        await Task.Delay(50, shutdownCancellationTokenSource.Token).ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Logger.ErrorFormat("The message pump failed to stop within the time allowed ({0}s)", timeoutDurationInSeconds);
+                // Pass CancellationToken.None so that no exceptions will be thrown while waiting
+                // for the message pump to gracefully shut down. The cancellation tokens passed to
+                // ProcessMessages (and thus the message processing pipelines) will be responsible
+                // for more forcefully shutting down message processing after the user's shutdown SLA
+                // is reached
+                await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
             }
 
             concurrencyLimiter.Dispose();
-            cancellationTokenSource.Dispose();
+            userOrTimedCancellationTokenSource?.Dispose();
+            messagePumpCancellationTokenSource?.Dispose();
+            messageProcessingCancellationTokenSource?.Dispose();
         }
 
-        async Task ProcessMessages()
+        async Task ProcessMessages(CancellationToken messagePumpCancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!messagePumpCancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    await InnerProcessMessages().ConfigureAwait(false);
+                    await InnerProcessMessages(messagePumpCancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     // For graceful shutdown purposes
                 }
-                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+                catch (SqlException e) when (messagePumpCancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown during cancellation", e);
                 }
@@ -127,43 +129,40 @@
             }
         }
 
-        async Task InnerProcessMessages()
+        async Task InnerProcessMessages(CancellationToken messagePumpCancellationToken)
         {
-            while (!cancellationTokenSource.IsCancellationRequested)
+            while (!messagePumpCancellationToken.IsCancellationRequested)
             {
-                var messageCount = await queuePeeker.Peek(inputQueue, peekCircuitBreaker, cancellationToken).ConfigureAwait(false);
+                var messageCount = await queuePeeker.Peek(inputQueue, peekCircuitBreaker, messagePumpCancellationToken).ConfigureAwait(false);
 
                 if (messageCount == 0)
                 {
                     continue;
                 }
 
-                if (cancellationTokenSource.IsCancellationRequested)
+                if (messagePumpCancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
-
-                // We cannot dispose this token source because of potential race conditions of concurrent receives
-                var loopCancellationTokenSource = new CancellationTokenSource();
 
                 // If the receive or peek circuit breaker is triggered start only one message processing task at a time.
                 var maximumConcurrentReceives = receiveCircuitBreaker.Triggered || peekCircuitBreaker.Triggered ? 1 : messageCount;
 
                 for (var i = 0; i < maximumConcurrentReceives; i++)
                 {
-                    if (loopCancellationTokenSource.Token.IsCancellationRequested)
+                    if (messagePumpCancellationToken.IsCancellationRequested)
                     {
                         break;
                     }
 
-                    await concurrencyLimiter.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    await concurrencyLimiter.WaitAsync(messagePumpCancellationToken).ConfigureAwait(false);
 
-                    _ = InnerReceive(loopCancellationTokenSource);
+                    _ = InnerReceive(messageProcessingCancellationTokenSource.Token);
                 }
             }
         }
 
-        async Task InnerReceive(CancellationTokenSource loopCancellationTokenSource)
+        async Task InnerReceive(CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -171,7 +170,7 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(loopCancellationTokenSource)
+                await receiveStrategy.ReceiveMessage(messageProcessingCancellationToken)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();
@@ -193,7 +192,7 @@
             }
         }
 
-        async Task PurgeExpiredMessages()
+        async Task PurgeExpiredMessages(CancellationToken cancellationToken)
         {
             try
             {
@@ -228,8 +227,8 @@
         SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
         SemaphoreSlim concurrencyLimiter;
-        CancellationTokenSource cancellationTokenSource;
-        CancellationToken cancellationToken;
+        CancellationTokenSource messagePumpCancellationTokenSource;
+        CancellationTokenSource messageProcessingCancellationTokenSource;
         int maxConcurrency;
         RepeatedFailuresOverTimeCircuitBreaker peekCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker receiveCircuitBreaker;

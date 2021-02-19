@@ -13,14 +13,14 @@ namespace NServiceBus.Transport.SqlServer
             this.connectionFactory = connectionFactory;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ReceiveMessage(CancellationToken cancellationToken)
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
                 Message message;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -34,13 +34,11 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    // DB-TODO: Passing token from source
-                    await TryProcessingMessage(message, transportTransaction, receiveCancellationTokenSource.Token).ConfigureAwait(false);
+                    await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
-                    // DB-TODO: Passing token from source
-                    await HandleError(exception, message, transportTransaction, 1, receiveCancellationTokenSource.Token).ConfigureAwait(false);
+                    await HandleError(exception, message, transportTransaction, 1, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

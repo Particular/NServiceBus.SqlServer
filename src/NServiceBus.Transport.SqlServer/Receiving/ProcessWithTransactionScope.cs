@@ -15,7 +15,7 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ReceiveMessage(CancellationToken cancellationToken)
         {
             Message message = null;
             try
@@ -23,7 +23,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -37,7 +37,7 @@
                     connection.Close();
 
                     // DB-TODO: Passing token from source
-                    if (!await TryProcess(message, PrepareTransportTransaction(), receiveCancellationTokenSource.Token).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
