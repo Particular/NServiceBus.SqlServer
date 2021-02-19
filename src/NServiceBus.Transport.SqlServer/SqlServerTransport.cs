@@ -25,7 +25,7 @@ namespace NServiceBus
         {
             if (ConnectionFactory != null)
             {
-                using (var connection = ConnectionFactory().GetAwaiter().GetResult())
+                using (var connection = ConnectionFactory(default).GetAwaiter().GetResult())
                 {
                     return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
                 }
@@ -74,7 +74,7 @@ namespace NServiceBus
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
         /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
-        public SqlServerTransport(Func<Task<SqlConnection>> connectionFactory)
+        public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
             : base(TransportTransactionMode.TransactionScope, true, true, true)
         {
             Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
@@ -100,11 +100,11 @@ namespace NServiceBus
 
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
 
-            await infrastructure.ConfigureSubscriptions(catalog).ConfigureAwait(false);
+            await infrastructure.ConfigureSubscriptions(catalog, cancellationToken).ConfigureAwait(false);
 
             if (receivers.Length > 0)
             {
-                await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses).ConfigureAwait(false);
+                await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses, cancellationToken).ConfigureAwait(false);
             }
 
             infrastructure.ConfigureSendInfrastructure();
@@ -156,7 +156,7 @@ namespace NServiceBus
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<Task<SqlConnection>> ConnectionFactory { get; }
+        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; }
 
         /// <summary>
         /// Default address schema.

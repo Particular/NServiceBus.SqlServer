@@ -8,17 +8,18 @@
 #endif
     using System.Threading.Tasks;
     using Logging;
+    using System.Threading;
 
     class SqlConnectionFactory
     {
-        public SqlConnectionFactory(Func<Task<SqlConnection>> factory)
+        public SqlConnectionFactory(Func<CancellationToken, Task<SqlConnection>> factory)
         {
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection()
+        public async Task<SqlConnection> OpenNewConnection(CancellationToken cancellationToken)
         {
-            var connection = await openNewConnection().ConfigureAwait(false);
+            var connection = await openNewConnection(cancellationToken).ConfigureAwait(false);
 
             ValidateConnectionPool(connection.ConnectionString);
 
@@ -27,14 +28,14 @@
 
         public static SqlConnectionFactory Default(string connectionString)
         {
-            return new SqlConnectionFactory(async () =>
+            return new SqlConnectionFactory(async (cancellationToken) =>
             {
                 ValidateConnectionPool(connectionString);
 
                 var connection = new SqlConnection(connectionString);
                 try
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -62,7 +63,7 @@
             hasValidated = true;
         }
 
-        Func<Task<SqlConnection>> openNewConnection;
+        Func<CancellationToken, Task<SqlConnection>> openNewConnection;
         static bool hasValidated;
 
         static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();

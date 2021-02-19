@@ -53,7 +53,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
                 return connection;
             }
 
-            return await transport.ConnectionFactory().ConfigureAwait(false);
+            return await transport.ConnectionFactory(default).ConfigureAwait(false);
         };
 
         using (var conn = await factory().ConfigureAwait(false))

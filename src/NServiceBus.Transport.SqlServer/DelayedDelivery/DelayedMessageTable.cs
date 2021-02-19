@@ -12,12 +12,12 @@ namespace NServiceBus.Transport.SqlServer
 
     interface IDelayedMessageStore
     {
-        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction);
+        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken);
     }
 
     class SendOnlyDelayedMessageStore : IDelayedMessageStore
     {
-        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
+        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             throw new Exception("Delayed delivery is not supported for send-only endpoints.");
         }
@@ -27,19 +27,17 @@ namespace NServiceBus.Transport.SqlServer
     {
         public DelayedMessageTable(string delayedQueueTable, string inputQueueTable)
         {
-#pragma warning disable 618
             storeCommand = string.Format(SqlConstants.StoreDelayedMessageText, delayedQueueTable);
             moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
-#pragma warning restore 618
         }
 
-        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
+        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
             using (var command = new SqlCommand(storeCommand, connection, transaction))
             {
                 messageRow.PrepareSendCommand(command);
-                await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 

@@ -51,7 +51,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
                 using (var tx = connection.BeginTransaction())
                 {
                     var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
@@ -66,7 +66,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
                 using (var tx = connection.BeginTransaction())
                 {
                     tableBasedQueue.FormatPeekCommand(100);
@@ -80,7 +80,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection())
+                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
                 using (var tx = connection.BeginTransaction())
                 {
                     await tableBasedQueue.TryReceive(connection, tx, default);
@@ -97,7 +97,7 @@
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, false);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
         }
     }
 }

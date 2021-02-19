@@ -28,7 +28,7 @@
             Message message = null;
             try
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
                     message = await TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);

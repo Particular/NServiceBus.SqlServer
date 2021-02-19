@@ -76,7 +76,7 @@
             }
 
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             using (var tx = connection.BeginTransaction())
             {
                 await Dispatch(sortedOperations.IsolatedDispatch, connection, tx, cancellationToken).ConfigureAwait(false);
@@ -104,7 +104,7 @@
 
         async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -124,7 +124,7 @@
             {
                 if (sqlTransportConnection == null)
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                     {
                         await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                     }
@@ -160,7 +160,7 @@
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction);
+                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction, cancellationToken);
             }
 
             var delayDeliveryWith = operation.Properties.DelayDeliveryWith;
@@ -171,7 +171,7 @@
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return delayedMessageTable.Store(operation.Message, delayDeliveryWith.Delay, operation.Destination, connection, transaction);
+                return delayedMessageTable.Store(operation.Message, delayDeliveryWith.Delay, operation.Destination, connection, transaction, cancellationToken);
             }
 
             var queue = tableBasedQueueCache.Get(operation.Destination);

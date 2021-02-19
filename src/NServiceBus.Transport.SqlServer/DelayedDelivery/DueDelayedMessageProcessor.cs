@@ -21,34 +21,34 @@ namespace NServiceBus.Transport.SqlServer
             message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
         }
 
-        public void Start()
+        public void Start(CancellationToken startCancellationToken)
         {
-            cancellationTokenSource = new CancellationTokenSource();
-            cancellationToken = cancellationTokenSource.Token;
+            pumpCancellationTokenSource = new CancellationTokenSource();
 
-            task = Task.Run(MoveMaturedDelayedMessages, CancellationToken.None);
+            task = Task.Run(() => MoveMaturedDelayedMessages(pumpCancellationTokenSource.Token), startCancellationToken);
         }
 
-        public async Task Stop()
+        // DB-TODO: I don't think a token applies here.
+        public async Task Stop(CancellationToken _)
         {
-            cancellationTokenSource.Cancel();
+            pumpCancellationTokenSource?.Cancel();
 
             await task.ConfigureAwait(false);
 
-            cancellationTokenSource.Dispose();
+            pumpCancellationTokenSource?.Dispose();
         }
 
-        async Task MoveMaturedDelayedMessages()
+        async Task MoveMaturedDelayedMessages(CancellationToken pumpCancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!pumpCancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(pumpCancellationToken).ConfigureAwait(false))
                     {
                         using (var transaction = connection.BeginTransaction())
                         {
-                            await table.MoveDueMessages(batchSize, connection, transaction, cancellationToken).ConfigureAwait(false);
+                            await table.MoveDueMessages(batchSize, connection, transaction, pumpCancellationToken).ConfigureAwait(false);
                             transaction.Commit();
                         }
                     }
@@ -58,7 +58,7 @@ namespace NServiceBus.Transport.SqlServer
                     // Graceful shutdown
                     return;
                 }
-                catch (SqlException e) when (cancellationToken.IsCancellationRequested)
+                catch (SqlException e) when (pumpCancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
                     return;
@@ -70,7 +70,7 @@ namespace NServiceBus.Transport.SqlServer
                 finally
                 {
                     Logger.DebugFormat(message);
-                    await Task.Delay(interval, cancellationToken).IgnoreCancellation()
+                    await Task.Delay(interval, pumpCancellationToken).IgnoreCancellation()
                         .ConfigureAwait(false);
                 }
             }
@@ -81,8 +81,7 @@ namespace NServiceBus.Transport.SqlServer
         SqlConnectionFactory connectionFactory;
         TimeSpan interval;
         int batchSize;
-        CancellationToken cancellationToken;
-        CancellationTokenSource cancellationTokenSource;
+        CancellationTokenSource pumpCancellationTokenSource;
         Task task;
 
         static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();

@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
@@ -43,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = unsubscribeCommand;
@@ -64,7 +64,7 @@ namespace NServiceBus.Transport.SqlServer
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = getSubscribersCommand;

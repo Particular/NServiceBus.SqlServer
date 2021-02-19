@@ -47,7 +47,7 @@
             {
                 try
                 {
-                    var purgedRowsCount = await queuePurger.Purge(inputQueue).ConfigureAwait(false);
+                    var purgedRowsCount = await queuePurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
 
                     Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, receiveSettings.ReceiveAddress);
                 }

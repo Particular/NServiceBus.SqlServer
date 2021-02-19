@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public override async Task ReceiveMessage(CancellationToken cancellationToken)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 Message message;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))

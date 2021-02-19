@@ -16,7 +16,7 @@
         [Test]
         public async Task Defaults_to_no_ttbr()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -45,7 +45,7 @@
         [Test]
         public async Task Diagnostic_headers_are_ignored()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -78,7 +78,7 @@
         [Test]
         public async Task Delivery_constraint_is_respected()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -140,14 +140,14 @@
             var queueAddress = addressParser.Parse(ValidAddress);
             queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
 
-            return purger.Purge(queue);
+            return purger.Purge(queue, default);
         }
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
         }
 
         QueuePurger purger;

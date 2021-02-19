@@ -35,7 +35,7 @@
 
                 contextProvider.Complete();
 
-                var messagesSent = await purger.Purge(queue);
+                var messagesSent = await purger.Purge(queue, default);
 
                 Assert.AreEqual(2, messagesSent);
             }
@@ -61,7 +61,7 @@
                 });
             }
 
-            var messagesSent = await purger.Purge(queue);
+            var messagesSent = await purger.Purge(queue, default);
 
             Assert.AreEqual(0, messagesSent);
         }
@@ -119,14 +119,14 @@
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
             queue = new TableBasedQueue(queueAddress, ValidAddress, true);
 
-            return purger.Purge(queue);
+            return purger.Purge(queue, default);
         }
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
         }
 
         QueuePurger purger;
@@ -170,7 +170,7 @@
         {
             public HandlerContextProvider(SqlConnectionFactory sqlConnectionFactory)
             {
-                sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+                sqlConnection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
                 TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);
