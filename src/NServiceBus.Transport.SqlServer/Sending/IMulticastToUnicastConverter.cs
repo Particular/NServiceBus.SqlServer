@@ -6,6 +6,6 @@ namespace NServiceBus.Transport.SqlServer
 
     interface IMulticastToUnicastConverter
     {
-        Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken);
+        Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default);
     }
 }

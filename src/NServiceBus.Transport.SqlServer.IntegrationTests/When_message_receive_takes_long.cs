@@ -51,11 +51,11 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
                 using (var tx = connection.BeginTransaction())
                 {
                     var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
-                    await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, default);
+                    await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx);
                     tx.Commit();
                     scope.Complete();
                 }
@@ -66,7 +66,7 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
                 using (var tx = connection.BeginTransaction())
                 {
                     tableBasedQueue.FormatPeekCommand(100);
@@ -80,10 +80,10 @@
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(default))
+                using (var connection = await sqlConnectionFactory.OpenNewConnection())
                 using (var tx = connection.BeginTransaction())
                 {
-                    await tableBasedQueue.TryReceive(connection, tx, default);
+                    await tableBasedQueue.TryReceive(connection, tx);
                     await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds));
                     tx.Commit();
                     scope.Complete();
@@ -97,7 +97,7 @@
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, false);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
     }
 }

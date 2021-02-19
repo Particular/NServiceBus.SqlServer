@@ -5,6 +5,6 @@
 
     interface IPurgeQueues
     {
-        Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken);
+        Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken = default);
     }
 }

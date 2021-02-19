@@ -46,7 +46,7 @@
                 (_, __, ___) => { },
                 true);
 
-            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0], default);
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
 
             var pump = infrastructure.Receivers.First().Value;
 
@@ -58,13 +58,13 @@
                 default
             );
 
-            await pump.StartReceive(default);
+            await pump.StartReceive();
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.StopReceive(default);
+            await pump.StopReceive();
 
-            await infrastructure.Shutdown(default);
+            await infrastructure.Shutdown();
 
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }
@@ -100,7 +100,7 @@
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 

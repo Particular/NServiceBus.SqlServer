@@ -17,7 +17,7 @@
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection(CancellationToken cancellationToken)
+        public async Task<SqlConnection> OpenNewConnection(CancellationToken cancellationToken = default)
         {
             var connection = await openNewConnection(cancellationToken).ConfigureAwait(false);
 

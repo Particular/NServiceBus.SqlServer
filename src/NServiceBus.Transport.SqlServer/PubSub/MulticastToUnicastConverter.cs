@@ -11,7 +11,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public MulticastToUnicastConverter(ISubscriptionStore subscriptions) => this.subscriptions = subscriptions;
 
-        public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken)
+        public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
         {
             List<string> subscribers =
                 await subscriptions.GetSubscribers(transportOperation.MessageType, cancellationToken).ConfigureAwait(false);

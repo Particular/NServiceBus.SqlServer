@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.SqlServer
             connectionFactory = CreateConnectionFactory();
         }
 
-        public async Task ConfigureSubscriptions(string catalog, CancellationToken cancellationToken)
+        public async Task ConfigureSubscriptions(string catalog, CancellationToken cancellationToken = default)
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
@@ -59,7 +59,7 @@ namespace NServiceBus.Transport.SqlServer
             return SqlConnectionFactory.Default(transport.ConnectionString);
         }
 
-        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken)
+        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             var transactionOptions = transport.TransactionScope.TransactionOptions;
 
@@ -200,14 +200,14 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
+        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken = default)
         {
             await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
             await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
+        async Task TryOpenDatabaseConnection(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions, CancellationToken cancellationToken)
+        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions, CancellationToken cancellationToken = default)
         {
             if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
             {
@@ -273,7 +273,7 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken)
+        public override Task Shutdown(CancellationToken cancellationToken = default)
         {
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }

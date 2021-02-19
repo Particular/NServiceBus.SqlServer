@@ -16,7 +16,7 @@
         [Test]
         public async Task Defaults_to_no_ttbr()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -33,11 +33,11 @@
                         new UnicastAddressTag(ValidAddress)
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, default).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
                 Assert.IsFalse(message.Message.Expired);
             }
         }
@@ -45,7 +45,7 @@
         [Test]
         public async Task Diagnostic_headers_are_ignored()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -66,11 +66,11 @@
                         new UnicastAddressTag(ValidAddress)
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, default).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
                 Assert.IsFalse(message.Message.Expired);
             }
         }
@@ -78,7 +78,7 @@
         [Test]
         public async Task Delivery_constraint_is_respected()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection(default).GetAwaiter().GetResult())
+            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -99,11 +99,11 @@
                         }
                     );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction, default).ConfigureAwait(false);
+                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null, default).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
                 Assert.IsTrue(message.Message.Expired);
             }
         }
@@ -140,14 +140,14 @@
             var queueAddress = addressParser.Parse(ValidAddress);
             queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
 
-            return purger.Purge(queue, default);
+            return purger.Purge(queue);
         }
 
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), default);
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
         }
 
         QueuePurger purger;
@@ -159,7 +159,7 @@
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new List<UnicastTransportOperation>());
             }

@@ -5,6 +5,6 @@
 
     interface IExpiredMessagesPurger
     {
-        Task Purge(TableBasedQueue queue, CancellationToken cancellationToken);
+        Task Purge(TableBasedQueue queue, CancellationToken cancellationToken = default);
     }
 }

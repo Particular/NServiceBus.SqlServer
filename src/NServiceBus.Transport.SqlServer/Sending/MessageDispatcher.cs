@@ -25,7 +25,7 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations, cancellationToken).ConfigureAwait(false))
@@ -35,7 +35,7 @@
             await DispatchIsolated(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations, CancellationToken cancellationToken)
+        async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations, CancellationToken cancellationToken = default)
         {
             if (operations.MulticastTransportOperations.Count == 0)
             {
@@ -47,7 +47,7 @@
             return result.SelectMany(x => x);
         }
 
-        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             if (sortedOperations.IsolatedDispatch == null)
             {
@@ -85,7 +85,7 @@
             }
         }
 
-        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             if (sortedOperations.DefaultDispatch == null)
             {
@@ -102,7 +102,7 @@
         }
 
 
-        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
+        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
@@ -114,7 +114,7 @@
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken = default)
         {
             transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
             transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
@@ -140,7 +140,7 @@
             }
         }
 
-        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             foreach (var operation in operations)
             {
@@ -148,7 +148,7 @@
             }
         }
 
-        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken)
+        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken = default)
         {
             var discardIfNotReceivedBefore = operation.Properties.DiscardIfNotReceivedBefore;
             var doNotDeliverBefore = operation.Properties.DoNotDeliverBefore;

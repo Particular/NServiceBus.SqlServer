@@ -17,7 +17,7 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
+        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
         {
             var row = await ReadRow(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
             return row.TryParse();
@@ -47,7 +47,7 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
         {
             return new MessageRow
             {
@@ -82,7 +82,7 @@
             return default;
         }
 
-        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
+        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken = default)
         {
             if (await dataReader.IsDBNullAsync(headersIndex, cancellationToken).ConfigureAwait(false))
             {
@@ -95,7 +95,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, CancellationToken cancellationToken)
+        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, CancellationToken cancellationToken = default)
         {
             // Null values will be returned as an empty (zero bytes) Stream.
             using (var outStream = new MemoryStream())

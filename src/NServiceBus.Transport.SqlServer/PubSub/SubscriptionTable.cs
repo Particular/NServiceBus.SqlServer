@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.SqlServer
             unsubscribeCommand = string.Format(SqlConstants.UnsubscribeText, qualifiedTableName);
         }
 
-        public async Task Subscribe(string endpointName, string queueAddress, string topic, CancellationToken cancellationToken)
+        public async Task Subscribe(string endpointName, string queueAddress, string topic, CancellationToken cancellationToken = default)
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -39,7 +39,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public async Task Unsubscribe(string endpointName, string topic, CancellationToken cancellationToken)
+        public async Task Unsubscribe(string endpointName, string topic, CancellationToken cancellationToken = default)
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -55,7 +55,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public async Task<List<string>> GetSubscribers(string[] topics, CancellationToken cancellationToken)
+        public async Task<List<string>> GetSubscribers(string[] topics, CancellationToken cancellationToken = default)
         {
             var results = new List<string>();
 

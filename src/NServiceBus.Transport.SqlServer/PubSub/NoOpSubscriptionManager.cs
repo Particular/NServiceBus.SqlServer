@@ -14,12 +14,12 @@
             return Task.CompletedTask;
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

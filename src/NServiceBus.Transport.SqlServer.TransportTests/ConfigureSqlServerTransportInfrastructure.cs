@@ -24,7 +24,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         return new SqlServerTransport(connectionString);
     }
 
-    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName, CancellationToken cancellationToken)
+    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName, CancellationToken cancellationToken = default)
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
@@ -54,7 +54,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task Cleanup(CancellationToken cancellationToken)
+    public async Task Cleanup(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {

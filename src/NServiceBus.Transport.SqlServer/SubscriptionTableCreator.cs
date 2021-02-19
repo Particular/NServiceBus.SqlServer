@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.SqlServer
             this.tableName = tableName;
             this.connectionFactory = connectionFactory;
         }
-        public async Task CreateIfNecessary(CancellationToken cancellationToken)
+        public async Task CreateIfNecessary(CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {

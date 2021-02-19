@@ -28,7 +28,7 @@
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, OnCompleted onCompleted, CancellationToken cancellationToken)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, OnCompleted onCompleted, CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
 
@@ -76,7 +76,7 @@
             return Task.CompletedTask;
         }
 
-        public async Task StopReceive(CancellationToken cancellationToken)
+        public async Task StopReceive(CancellationToken cancellationToken = default)
         {
             const int timeoutDurationInSeconds = 30;
             var timedCancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutDurationInSeconds));
@@ -201,7 +201,7 @@
             }
         }
 
-        async Task PurgeExpiredMessages(CancellationToken cancellationToken)
+        async Task PurgeExpiredMessages(CancellationToken cancellationToken = default)
         {
             try
             {
