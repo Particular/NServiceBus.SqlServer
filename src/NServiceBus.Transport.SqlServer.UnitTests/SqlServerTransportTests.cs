@@ -11,7 +11,7 @@
         public void SetUp()
         {
             settings = new HostSettings(string.Empty, string.Empty, new StartupDiagnosticEntries(),
-                (s, exception) => { }, true);
+                (s, exception, ct) => { }, true);
         }
         [Test]
         public void It_rejects_connection_string_without_catalog_property()

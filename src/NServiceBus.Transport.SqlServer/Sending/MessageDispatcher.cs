@@ -8,6 +8,7 @@
     using Microsoft.Data.SqlClient;
 #endif
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
@@ -24,7 +25,7 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))
