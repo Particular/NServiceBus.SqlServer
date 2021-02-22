@@ -53,6 +53,10 @@
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Graceful shutdown
+            }
             catch (Exception exception)
             {
                 if (message == null)
@@ -95,6 +99,11 @@
             try
             {
                 return await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Graceful shutdown
+                return false;
             }
             catch (Exception exception)
             {

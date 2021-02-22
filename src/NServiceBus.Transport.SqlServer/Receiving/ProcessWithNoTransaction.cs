@@ -36,6 +36,10 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // Graceful shutdown
+                }
                 catch (Exception exception)
                 {
                     await HandleError(exception, message, transportTransaction, 1, cancellationToken).ConfigureAwait(false);

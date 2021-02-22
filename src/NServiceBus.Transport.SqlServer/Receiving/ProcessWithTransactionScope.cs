@@ -36,7 +36,6 @@
 
                     connection.Close();
 
-                    // DB-TODO: Passing token from source
                     if (!await TryProcess(message, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
                     {
                         return;
@@ -46,6 +45,10 @@
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful shutdown
             }
             catch (Exception exception)
             {
