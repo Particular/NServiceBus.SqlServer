@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Linq;
-    using System.Threading;
     using Unicast.Messages;
     using System.Threading.Tasks;
     using Extensibility;
@@ -16,18 +15,18 @@ namespace NServiceBus.Transport.SqlServer
         }
 
 #pragma warning disable IDE0060 // Remove unused parameter
-        public Task Subscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
+        public Task Subscribe(MessageMetadata eventType, ContextBag context)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             return subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType);
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
         {
             return Task.WhenAll(eventTypes.Select(et => Subscribe(et, context)));
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
         {
             return subscriptionStore.Unsubscribe(endpointName, eventType.MessageType);
         }

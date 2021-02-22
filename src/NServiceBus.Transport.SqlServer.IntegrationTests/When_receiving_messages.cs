@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
-    using System.Linq;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
@@ -43,27 +42,26 @@
 
             var receiver = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
-                (_, __, ___) => { },
+                (_, __) => { },
                 true);
 
             var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
 
-            var pump = infrastructure.Receivers.First().Value;
+            var pump = infrastructure.Receivers[0];
 
             await pump.Initialize(
                 new PushRuntimeSettings(1),
-                (_, __) => Task.CompletedTask,
-                (_, __) => Task.FromResult(ErrorHandleResult.Handled),
-                CancellationToken.None
+                _ => Task.CompletedTask,
+                _ => Task.FromResult(ErrorHandleResult.Handled)
             );
 
-            await pump.StartReceive(CancellationToken.None);
+            await pump.StartReceive();
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.StopReceive(CancellationToken.None);
+            await pump.StopReceive();
 
-            await infrastructure.Shutdown(CancellationToken.None);
+            await infrastructure.DisposeAsync();
 
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
         }

@@ -28,14 +28,14 @@
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError)
         {
             this.limitations = limitations;
 
             receiveStrategy = receiveStrategyFactory(transport.TransportTransactionMode);
 
-            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, cancellationToken));
-            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, cancellationToken));
+            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex));
+            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex));
 
             inputQueue = queueFactory(receiveSettings.ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
@@ -61,21 +61,21 @@
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
-        public Task StartReceive(CancellationToken cancellationToken = default)
+        public Task StartReceive()
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
             cancellationTokenSource = new CancellationTokenSource();
 
-            this.cancellationToken = cancellationTokenSource.Token;
+            cancellationToken = cancellationTokenSource.Token;
 
             messagePumpTask = Task.Run(ProcessMessages, CancellationToken.None);
 
             return Task.CompletedTask;
         }
 
-        public async Task StopReceive(CancellationToken cancellationToken = default)
+        public async Task StopReceive()
         {
             const int timeoutDurationInSeconds = 30;
             cancellationTokenSource.Cancel();
