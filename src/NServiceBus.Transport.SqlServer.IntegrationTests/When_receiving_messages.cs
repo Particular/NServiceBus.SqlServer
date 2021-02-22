@@ -48,8 +48,7 @@
 
             var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0], default);
 
-            // DB-TODO: Was Receivers[0], which one is the normal pump? Going with .Values.First() for now
-            var pump = infrastructure.Receivers.Values.First();
+            var pump = infrastructure.Receivers["receiver"];
 
             await pump.Initialize(
                 new PushRuntimeSettings(1),
