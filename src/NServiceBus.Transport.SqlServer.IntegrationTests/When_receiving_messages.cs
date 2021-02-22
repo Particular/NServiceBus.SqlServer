@@ -11,7 +11,6 @@
     using NUnit.Framework;
     using Transport;
     using SqlServer;
-    using System.Linq;
 
     public class When_receiving_messages
     {

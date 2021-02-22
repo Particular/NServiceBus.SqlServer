@@ -23,7 +23,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public override async Task ReceiveMessage(CancellationToken cancellationToken)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
             Message message = null;
             try
@@ -31,7 +31,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    message = await TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                    message = await TryReceive(connection, transaction, stopBatch, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {

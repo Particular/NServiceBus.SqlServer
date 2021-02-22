@@ -145,24 +145,27 @@
                     return;
                 }
 
+                // We cannot dispose this token source because of potential race conditions of concurrent receives
+                var stopBatchCancellationSource = new CancellationTokenSource();
+
                 // If the receive or peek circuit breaker is triggered start only one message processing task at a time.
                 var maximumConcurrentReceives = receiveCircuitBreaker.Triggered || peekCircuitBreaker.Triggered ? 1 : messageCount;
 
                 for (var i = 0; i < maximumConcurrentReceives; i++)
                 {
-                    if (messagePumpCancellationToken.IsCancellationRequested)
+                    if (messagePumpCancellationToken.IsCancellationRequested || stopBatchCancellationSource.IsCancellationRequested)
                     {
                         break;
                     }
 
                     await concurrencyLimiter.WaitAsync(messagePumpCancellationToken).ConfigureAwait(false);
 
-                    _ = InnerReceive(messageProcessingCancellationTokenSource.Token);
+                    _ = InnerReceive(stopBatchCancellationSource, messageProcessingCancellationTokenSource.Token);
                 }
             }
         }
 
-        async Task InnerReceive(CancellationToken messageProcessingCancellationToken)
+        async Task InnerReceive(CancellationTokenSource stopBatch, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -170,7 +173,7 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(messageProcessingCancellationToken)
+                await receiveStrategy.ReceiveMessage(stopBatch, messageProcessingCancellationToken)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();

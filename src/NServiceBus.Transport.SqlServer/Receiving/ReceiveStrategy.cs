@@ -33,9 +33,9 @@
             this.criticalError = criticalError;
         }
 
-        public abstract Task ReceiveMessage(CancellationToken cancellationToken);
+        public abstract Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
             var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
@@ -54,6 +54,8 @@
 
                 return receiveResult.Message;
             }
+
+            stopBatch.Cancel();
             return null;
         }
 
