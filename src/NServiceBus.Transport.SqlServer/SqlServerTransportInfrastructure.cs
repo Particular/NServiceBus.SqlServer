@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.SqlServer
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
-            }).ToList<IMessageReceiver>().AsReadOnly();
+            }).ToList<IMessageReceiver>().ToDictionary(r => r.Id, r => r);
 
             await ValidateDatabaseAccess(transactionOptions).ConfigureAwait(false);
 
@@ -273,7 +273,7 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task DisposeAsync()
+        public override Task Shutdown()
         {
             return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
         }
