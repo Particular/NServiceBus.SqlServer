@@ -23,7 +23,7 @@
             this.tableBasedQueueCache = tableBasedQueueCache;
         }
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception> criticalError)
         {
             this.inputQueue = inputQueue;
             this.errorQueue = errorQueue;
@@ -64,7 +64,7 @@
             if (message.Expired == false)
             {
                 var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, new ContextBag());
-                await onMessage(messageContext, CancellationToken.None).ConfigureAwait(false);
+                await onMessage(messageContext).ConfigureAwait(false);
             }
 
             return true;
@@ -78,11 +78,11 @@
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts);
                 errorContext.Message.Headers.Remove(ForwardHeader);
 
-                return await onError(errorContext, CancellationToken.None).ConfigureAwait(false);
+                return await onError(errorContext).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex, CancellationToken.None);
+                criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex);
 
                 return ErrorHandleResult.RetryRequired;
             }
@@ -118,6 +118,6 @@
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
-        Action<string, Exception, CancellationToken> criticalError;
+        Action<string, Exception> criticalError;
     }
 }

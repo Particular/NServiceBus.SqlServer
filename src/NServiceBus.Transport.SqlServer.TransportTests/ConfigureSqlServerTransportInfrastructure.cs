@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 #if SYSTEMDATASQLCLIENT
 using System.Data.SqlClient;
 #else
@@ -24,7 +23,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         return new SqlServerTransport(connectionString);
     }
 
-    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName, CancellationToken cancellationToken = default)
+    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName)
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
@@ -51,10 +50,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 errorQueueName)
         };
 
-        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, CancellationToken.None).ConfigureAwait(false);
+        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }).ConfigureAwait(false);
     }
 
-    public async Task Cleanup(CancellationToken cancellationToken = default)
+    public async Task Cleanup()
     {
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {
@@ -67,7 +66,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
             using (var conn = new SqlConnection(connectionString))
             {
-                await conn.OpenAsync(CancellationToken.None);
+                await conn.OpenAsync();
 
                 foreach (var queue in queues)
                 {
@@ -77,7 +76,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                         {
                             comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
 
-                            await comm.ExecuteNonQueryAsync(CancellationToken.None);
+                            await comm.ExecuteNonQueryAsync();
                         }
                     }
                 }

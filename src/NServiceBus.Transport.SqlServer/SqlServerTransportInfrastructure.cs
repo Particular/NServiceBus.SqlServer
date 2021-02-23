@@ -12,7 +12,6 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using Transport;
     using System.Linq;
-    using System.Threading;
     using NServiceBus.Transport.SqlServer.PubSub;
 
 
@@ -274,7 +273,10 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken = default) => dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
+        public override Task Shutdown()
+        {
+            return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
+        }
 
         readonly QueueAddressTranslator addressTranslator;
         readonly SqlServerTransport transport;

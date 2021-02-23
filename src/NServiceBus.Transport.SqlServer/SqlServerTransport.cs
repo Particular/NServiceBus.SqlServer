@@ -11,7 +11,6 @@ namespace NServiceBus
     using Transport;
     using Transport.SqlServer;
     using System.Collections.Generic;
-    using System.Threading;
 
     /// <summary>
     /// SqlServer Transport
@@ -94,7 +93,7 @@ namespace NServiceBus
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>
         /// </summary>
-        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
+        public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
         {
             FinalizeConfiguration();
 
