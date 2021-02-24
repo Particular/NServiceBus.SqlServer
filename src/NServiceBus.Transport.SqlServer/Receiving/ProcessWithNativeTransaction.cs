@@ -23,7 +23,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken)
+        public override async Task ReceiveMessage(ReceiveContext receiveContext, CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
             Message message = null;
             try
@@ -42,7 +42,11 @@
                         return;
                     }
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction), cancellationToken).ConfigureAwait(false))
+                    if (await TryProcess(message, receiveContext, PrepareTransportTransaction(connection, transaction), cancellationToken).ConfigureAwait(false))
+                    {
+                        receiveContext.WasAcknowledged = true;
+                    }
+                    else
                     {
                         transaction.Rollback();
                         return;
@@ -53,10 +57,6 @@
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                // Graceful shutdown
-            }
             catch (Exception exception)
             {
                 if (message == null)
@@ -64,6 +64,17 @@
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+            }
+            finally
+            {
+                try
+                {
+                    await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+
+                }
             }
         }
 
@@ -84,11 +95,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task<bool> TryProcess(Message message, ReceiveContext receiveContext, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(receiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -98,7 +109,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
+                return await TryProcessingMessage(message, receiveContext, transportTransaction, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

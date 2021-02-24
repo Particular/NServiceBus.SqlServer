@@ -15,7 +15,7 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken)
+        public override async Task ReceiveMessage(ReceiveContext receiveContext, CancellationTokenSource stopBatch, CancellationToken cancellationToken)
         {
             Message message = null;
             try
@@ -36,7 +36,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
+                    if (!await TryProcess(message, receiveContext, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -45,10 +45,6 @@
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
-            }
-            catch (OperationCanceledException)
-            {
-                // Graceful shutdown
             }
             catch (Exception exception)
             {
@@ -70,11 +66,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task<bool> TryProcess(Message message, ReceiveContext receiveContext, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(receiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -84,7 +80,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction, cancellationToken).ConfigureAwait(false);
+                return await TryProcessingMessage(message, receiveContext, transportTransaction, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception)
             {

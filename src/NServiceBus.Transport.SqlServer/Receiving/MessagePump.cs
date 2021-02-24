@@ -173,10 +173,16 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(stopBatch, messageProcessingCancellationToken)
+                var receiveContext = new ReceiveContext();
+
+                await receiveStrategy.ReceiveMessage(receiveContext, stopBatch, messageProcessingCancellationToken)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful shutdown
             }
             catch (SqlException e) when (e.Number == 1205)
             {
