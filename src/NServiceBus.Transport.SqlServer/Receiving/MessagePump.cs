@@ -28,7 +28,7 @@
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, OnCompleted onCompleted, CancellationToken cancellationToken)
         {
             this.limitations = limitations;
 
@@ -41,7 +41,7 @@
             inputQueue = queueFactory(receiveSettings.ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
 
-            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
+            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, onCompleted, hostSettings.CriticalErrorAction);
 
             if (transport.ExpiredMessagesPurger.PurgeOnStartup)
             {
