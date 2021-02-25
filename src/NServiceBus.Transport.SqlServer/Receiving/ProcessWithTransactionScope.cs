@@ -36,7 +36,11 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, receiveContext, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
+                    if (await TryProcess(message, receiveContext, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
+                    {
+                        receiveContext.WasAcknowledged = true;
+                    }
+                    else
                     {
                         return;
                     }
@@ -52,8 +56,10 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
             }
+
+            await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
         }
 
         TransportTransaction PrepareTransportTransaction()
@@ -70,7 +76,9 @@
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(receiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.ReceiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
+
+                await MarkComplete(message, failure.ReceiveContext, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -82,9 +90,15 @@
             {
                 return await TryProcessingMessage(message, receiveContext, transportTransaction, cancellationToken).ConfigureAwait(false);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Graceful shutdown
+                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
+                return false;
+            }
             catch (Exception exception)
             {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
                 return false;
             }
         }

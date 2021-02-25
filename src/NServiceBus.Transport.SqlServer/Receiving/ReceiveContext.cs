@@ -14,17 +14,5 @@
             StartedAt = DateTimeOffset.UtcNow;
             Extensions = new ContextBag();
         }
-
-        /// <summary>
-        /// Used when we discover the message has cached failure data from a previous processing attempt
-        /// so that the onError uses the original data
-        /// </summary>
-        /// <param name="storedContext"></param>
-        public void ReplaceWith(ReceiveContext storedContext)
-        {
-            StartedAt = storedContext.StartedAt;
-            Extensions = storedContext.Extensions;
-            WasAcknowledged = storedContext.WasAcknowledged;
-        }
     }
 }

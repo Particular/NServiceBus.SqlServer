@@ -50,14 +50,7 @@ namespace NServiceBus.Transport.SqlServer
                     }
                 }
 
-                try
-                {
-                    await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-
-                }
+                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
             }
         }
 

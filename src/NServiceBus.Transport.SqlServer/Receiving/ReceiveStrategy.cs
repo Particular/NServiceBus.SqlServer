@@ -100,8 +100,21 @@
 
         protected Task MarkComplete(Message message, ReceiveContext receiveContext, CancellationToken cancellationToken)
         {
-            var context = new CompleteContext(message.TransportId, receiveContext.WasAcknowledged, message.Headers, receiveContext.StartedAt, DateTimeOffset.UtcNow, receiveContext.Extensions);
-            return onCompleted(context, cancellationToken);
+            if (message == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            try
+            {
+                var context = new CompleteContext(message.TransportId, receiveContext.WasAcknowledged, message.Headers, receiveContext.StartedAt, DateTimeOffset.UtcNow, receiveContext.Extensions);
+                return onCompleted(context, cancellationToken);
+            }
+            catch (Exception)
+            {
+            }
+
+            return Task.CompletedTask;
         }
 
         async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
