@@ -84,7 +84,7 @@
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                return ErrorHandleResult.Handled;
+                return ErrorHandleResult.RetryRequired;
             }
             catch (Exception ex)
             {
@@ -107,7 +107,7 @@
 
             try
             {
-                var context = new CompleteContext(message.TransportId, receiveContext.WasAcknowledged, message.Headers, receiveContext.StartedAt, DateTimeOffset.UtcNow, receiveContext.Extensions);
+                var context = new CompleteContext(message.TransportId, receiveContext.WasAcknowledged, message.Headers, receiveContext.StartedAt, DateTimeOffset.UtcNow, receiveContext.OnMessageFailed, receiveContext.Extensions);
                 return onCompleted(context, cancellationToken);
             }
             catch (Exception)

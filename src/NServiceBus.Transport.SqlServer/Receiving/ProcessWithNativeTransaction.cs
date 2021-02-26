@@ -92,6 +92,11 @@
             {
                 var errorHandlingResult = await HandleError(failure.ReceiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
 
+                if (errorHandlingResult == ErrorHandleResult.Handled)
+                {
+                    failure.ReceiveContext.WasAcknowledged = true;
+                }
+
                 await MarkComplete(message, failure.ReceiveContext, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
@@ -112,6 +117,7 @@
             }
             catch (Exception exception)
             {
+                receiveContext.OnMessageFailed = true;
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
                 return false;
             }

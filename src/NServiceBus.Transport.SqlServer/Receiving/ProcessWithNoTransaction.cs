@@ -43,6 +43,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (Exception exception)
                 {
+                    receiveContext.OnMessageFailed = true;
                     var result = await HandleError(receiveContext, exception, message, transportTransaction, 1, cancellationToken).ConfigureAwait(false);
                     if (result == ErrorHandleResult.Handled)
                     {
