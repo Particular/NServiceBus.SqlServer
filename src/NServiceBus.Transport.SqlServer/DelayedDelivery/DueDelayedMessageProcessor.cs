@@ -25,15 +25,14 @@ namespace NServiceBus.Transport.SqlServer
         {
             pumpCancellationTokenSource = new CancellationTokenSource();
 
-            task = Task.Run(() => MoveMaturedDelayedMessages(pumpCancellationTokenSource.Token), startCancellationToken);
+            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(pumpCancellationTokenSource.Token), startCancellationToken);
         }
 
-        // DB-TODO: I don't think a token applies here.
-        public async Task Stop(CancellationToken _)
+        public async Task Stop()
         {
             pumpCancellationTokenSource?.Cancel();
 
-            await task.ConfigureAwait(false);
+            await moveDelayedMessagesTask.ConfigureAwait(false);
 
             pumpCancellationTokenSource?.Dispose();
         }
@@ -67,11 +66,15 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     Logger.Fatal("Exception thrown while moving matured delayed messages", e);
                 }
-                finally
+
+                try
                 {
                     Logger.DebugFormat(message);
-                    await Task.Delay(interval, pumpCancellationToken).IgnoreCancellation()
-                        .ConfigureAwait(false);
+                    await Task.Delay(interval, pumpCancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
                 }
             }
         }
@@ -82,7 +85,7 @@ namespace NServiceBus.Transport.SqlServer
         TimeSpan interval;
         int batchSize;
         CancellationTokenSource pumpCancellationTokenSource;
-        Task task;
+        Task moveDelayedMessagesTask;
 
         static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
     }

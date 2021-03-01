@@ -31,12 +31,13 @@
         public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, OnCompleted onCompleted, CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
+            messagePumpCancellationTokenSource = new CancellationTokenSource();
+            messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
             receiveStrategy = receiveStrategyFactory(transport.TransportTransactionMode);
 
-            // DB-TODO: Review CancellationToken.None
-            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, CancellationToken.None));
-            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, CancellationToken.None));
+            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(receiveSettings.ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
@@ -67,9 +68,6 @@
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
-
-            messagePumpCancellationTokenSource = new CancellationTokenSource();
-            messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
             messagePumpTask = Task.Run(() => ProcessMessages(messagePumpCancellationTokenSource.Token), messagePumpCancellationTokenSource.Token);
 
