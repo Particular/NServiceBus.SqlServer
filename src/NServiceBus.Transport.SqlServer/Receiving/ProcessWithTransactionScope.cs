@@ -48,6 +48,7 @@
                     scope.Complete();
                 }
 
+                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
             catch (Exception exception)
@@ -58,8 +59,6 @@
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
             }
-
-            await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
         }
 
         TransportTransaction PrepareTransportTransaction()
