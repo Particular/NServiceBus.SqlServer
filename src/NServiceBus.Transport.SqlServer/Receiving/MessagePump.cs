@@ -28,7 +28,7 @@
             Subscriptions = subscriptionManager;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, OnCompleted onCompleted, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
             messagePumpCancellationTokenSource = new CancellationTokenSource();
@@ -42,7 +42,7 @@
             inputQueue = queueFactory(receiveSettings.ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
 
-            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, onCompleted, hostSettings.CriticalErrorAction);
+            receiveStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
 
             if (transport.ExpiredMessagesPurger.PurgeOnStartup)
             {
@@ -171,9 +171,7 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                var receiveContext = new ReceiveContext();
-
-                await receiveStrategy.ReceiveMessage(receiveContext, stopBatch, messageProcessingCancellationToken)
+                await receiveStrategy.ReceiveMessage(stopBatch, messageProcessingCancellationToken)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();

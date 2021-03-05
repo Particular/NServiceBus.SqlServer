@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using NServiceBus.Extensibility;
 
     class ProcessWithTransactionScope : ReceiveStrategy
     {
@@ -15,9 +16,11 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(ReceiveContext receiveContext, CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
+            var extensions = new ContextBag();
+
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
@@ -36,11 +39,7 @@
 
                     connection.Close();
 
-                    if (await TryProcess(message, receiveContext, PrepareTransportTransaction(), cancellationToken).ConfigureAwait(false))
-                    {
-                        receiveContext.WasAcknowledged = true;
-                    }
-                    else
+                    if (!await TryProcess(message, PrepareTransportTransaction(), extensions, cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -48,7 +47,6 @@
                     scope.Complete();
                 }
 
-                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
             catch (Exception exception)
@@ -57,7 +55,7 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, extensions);
             }
         }
 
@@ -71,18 +69,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, ReceiveContext receiveContext, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag extensions, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.ReceiveContext, failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, cancellationToken).ConfigureAwait(false);
-
-                if (errorHandlingResult == ErrorHandleResult.Handled)
-                {
-                    failure.ReceiveContext.WasAcknowledged = true;
-                }
-
-                await MarkComplete(message, failure.ReceiveContext, cancellationToken).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, failure.Extensions, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -92,18 +83,16 @@
 
             try
             {
-                return await TryProcessingMessage(message, receiveContext, transportTransaction, cancellationToken).ConfigureAwait(false);
+                return await TryProcessingMessage(message, transportTransaction, extensions, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // Graceful shutdown
-                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
                 return false;
             }
             catch (Exception exception)
             {
-                receiveContext.OnMessageFailed = true;
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, receiveContext);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, extensions);
                 return false;
             }
         }

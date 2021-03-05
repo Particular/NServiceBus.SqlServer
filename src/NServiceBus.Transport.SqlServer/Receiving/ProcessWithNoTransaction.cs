@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Extensibility;
 
     class ProcessWithNoTransaction : ReceiveStrategy
     {
@@ -13,7 +14,7 @@ namespace NServiceBus.Transport.SqlServer
             this.connectionFactory = connectionFactory;
         }
 
-        public override async Task ReceiveMessage(ReceiveContext receiveContext, CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
@@ -29,13 +30,13 @@ namespace NServiceBus.Transport.SqlServer
                     return;
                 }
 
+                var extensions = new ContextBag();
                 var transportTransaction = new TransportTransaction();
                 transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
                 try
                 {
-                    await TryProcessingMessage(message, receiveContext, transportTransaction, cancellationToken).ConfigureAwait(false);
-                    receiveContext.WasAcknowledged = true;
+                    await TryProcessingMessage(message, transportTransaction, extensions, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -43,15 +44,8 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (Exception exception)
                 {
-                    receiveContext.OnMessageFailed = true;
-                    var result = await HandleError(receiveContext, exception, message, transportTransaction, 1, cancellationToken).ConfigureAwait(false);
-                    if (result == ErrorHandleResult.Handled)
-                    {
-                        receiveContext.WasAcknowledged = true;
-                    }
+                    _ = await HandleError(exception, message, transportTransaction, 1, extensions, cancellationToken).ConfigureAwait(false);
                 }
-
-                await MarkComplete(message, receiveContext, cancellationToken).ConfigureAwait(false);
             }
         }
 

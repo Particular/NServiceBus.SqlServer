@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using NServiceBus.Extensibility;
     using NUnit.Framework;
     using SqlServer;
 
@@ -12,18 +13,18 @@
         {
             var messageId = Guid.NewGuid().ToString("D");
             var exception = new Exception();
-            var receiveContext = new ReceiveContext();
+            var extensions = new ContextBag();
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, exception, receiveContext);
+            storage.RecordFailureInfoForMessage(messageId, exception, extensions);
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.NotNull(failureInfo);
             Assert.AreEqual(1, failureInfo.NumberOfProcessingAttempts);
             Assert.AreSame(exception, failureInfo.Exception);
-            Assert.AreSame(receiveContext, failureInfo.ReceiveContext);
+            Assert.AreSame(extensions, failureInfo.Extensions);
         }
 
         [Test]

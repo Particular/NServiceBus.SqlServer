@@ -54,7 +54,6 @@
                 new PushRuntimeSettings(1),
                 (_, __) => Task.CompletedTask,
                 (_, __) => Task.FromResult(ErrorHandleResult.Handled),
-                (_, __) => Task.CompletedTask,
                 default
             );
 
