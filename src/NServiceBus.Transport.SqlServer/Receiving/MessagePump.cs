@@ -63,13 +63,13 @@
             await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
         }
 
-        public Task StartReceive(CancellationToken _)
+        public Task StartReceive(CancellationToken cancellationToken)
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
-            messagePumpTask = Task.Run(() => ProcessMessages(messagePumpCancellationTokenSource.Token), messagePumpCancellationTokenSource.Token);
+            messagePumpTask = Task.Run(() => ProcessMessages(messagePumpCancellationTokenSource.Token), cancellationToken);
 
             return Task.CompletedTask;
         }
