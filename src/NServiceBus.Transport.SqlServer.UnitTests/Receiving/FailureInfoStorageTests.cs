@@ -24,7 +24,7 @@
             Assert.NotNull(failureInfo);
             Assert.AreEqual(1, failureInfo.NumberOfProcessingAttempts);
             Assert.AreSame(exception, failureInfo.Exception);
-            Assert.AreSame(extensions, failureInfo.Extensions);
+            Assert.AreSame(extensions, failureInfo.Context);
         }
 
         [Test]

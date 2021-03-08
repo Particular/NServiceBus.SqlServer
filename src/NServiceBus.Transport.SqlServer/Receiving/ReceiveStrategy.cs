@@ -59,24 +59,24 @@
             return null;
         }
 
-        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, ContextBag extensions, CancellationToken cancellationToken = default)
+        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)
             {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, extensions);
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, context);
                 await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts, ContextBag extensions, CancellationToken cancellationToken = default)
+        protected async Task<ErrorHandleResult> HandleError(Exception exception, Message message, TransportTransaction transportTransaction, int processingAttempts, ContextBag context, CancellationToken cancellationToken = default)
         {
             message.ResetHeaders();
             try
             {
-                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, extensions);
+                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, context);
                 errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);

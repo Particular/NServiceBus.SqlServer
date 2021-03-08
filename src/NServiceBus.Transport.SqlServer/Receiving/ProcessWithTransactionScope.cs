@@ -19,7 +19,7 @@
         public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
-            var extensions = new ContextBag();
+            var context = new ContextBag();
 
             try
             {
@@ -39,7 +39,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(), extensions, cancellationToken).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -55,7 +55,7 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, extensions);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
             }
         }
 
@@ -69,11 +69,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag extensions, CancellationToken cancellationToken)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, failure.Extensions, cancellationToken).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, failure.Context, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -83,7 +83,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction, extensions, cancellationToken).ConfigureAwait(false);
+                return await TryProcessingMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -92,7 +92,7 @@
             }
             catch (Exception exception)
             {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, extensions);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
                 return false;
             }
         }

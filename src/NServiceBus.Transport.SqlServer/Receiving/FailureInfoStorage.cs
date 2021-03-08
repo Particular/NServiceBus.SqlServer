@@ -14,14 +14,14 @@
             this.maxElements = maxElements;
         }
 
-        public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag extensions)
+        public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
             lock (lockObject)
             {
                 if (failureInfoPerMessage.TryGetValue(messageId, out var node))
                 {
                     // We have seen this message before, just update the counter and store exception.
-                    node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception), extensions);
+                    node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception), context);
 
                     // Maintain invariant: leastRecentlyUsedMessages.First contains the LRU item.
                     leastRecentlyUsedMessages.Remove(node.LeastRecentlyUsedEntry);
@@ -39,7 +39,7 @@
 
                     var newNode = new FailureInfoNode(
                         messageId,
-                        new ProcessingFailureInfo(1, ExceptionDispatchInfo.Capture(exception), extensions));
+                        new ProcessingFailureInfo(1, ExceptionDispatchInfo.Capture(exception), context));
 
                     failureInfoPerMessage[messageId] = newNode;
 
@@ -92,17 +92,17 @@
 
         public class ProcessingFailureInfo
         {
-            public ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag extensions)
+            public ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
             {
                 NumberOfProcessingAttempts = numberOfProcessingAttempts;
                 ExceptionDispatchInfo = exceptionDispatchInfo;
-                Extensions = extensions;
+                Context = context;
             }
 
             public int NumberOfProcessingAttempts { get; }
             public Exception Exception => ExceptionDispatchInfo.SourceException;
             ExceptionDispatchInfo ExceptionDispatchInfo { get; }
-            public ContextBag Extensions { get; }
+            public ContextBag Context { get; }
         }
     }
 }

@@ -30,13 +30,13 @@ namespace NServiceBus.Transport.SqlServer
                     return;
                 }
 
-                var extensions = new ContextBag();
+                var context = new ContextBag();
                 var transportTransaction = new TransportTransaction();
                 transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
                 try
                 {
-                    await TryProcessingMessage(message, transportTransaction, extensions, cancellationToken).ConfigureAwait(false);
+                    await TryProcessingMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -44,7 +44,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (Exception exception)
                 {
-                    _ = await HandleError(exception, message, transportTransaction, 1, extensions, cancellationToken).ConfigureAwait(false);
+                    _ = await HandleError(exception, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
