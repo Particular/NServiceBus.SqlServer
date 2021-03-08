@@ -19,45 +19,9 @@ namespace NServiceBus
     public class SqlServerTransport : TransportDefinition
     {
         QueueAddressTranslator addressTranslator;
-        string catalog;
 
-        DbConnectionStringBuilder GetConnectionStringBuilder()
-        {
-            if (ConnectionFactory != null)
-            {
-                using (var connection = ConnectionFactory(default).GetAwaiter().GetResult())
-                {
-                    return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
-                }
-            }
-
-            return new DbConnectionStringBuilder { ConnectionString = ConnectionString };
-        }
-
-        internal string GetDefaultCatalog()
-        {
-            var parser = GetConnectionStringBuilder();
-
-            if (parser.TryGetValue("Initial Catalog", out var catalog) ||
-                parser.TryGetValue("database", out catalog))
-            {
-                return (string)catalog;
-            }
-
-            throw new Exception("Initial Catalog property is mandatory in the connection string.");
-        }
-
-        bool IsEncrypted()
-        {
-            var parser = GetConnectionStringBuilder();
-
-            if (parser.TryGetValue("Column Encryption Setting", out var enabled))
-            {
-                return ((string)enabled).Equals("enabled", StringComparison.InvariantCultureIgnoreCase);
-            }
-
-            return false;
-        }
+        internal string Catalog { get; private set; }
+        internal bool IsEncrypted { get; private set; }
 
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
@@ -96,11 +60,11 @@ namespace NServiceBus
         /// </summary>
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
-            FinalizeConfiguration();
+            await FinalizeConfiguration(cancellationToken).ConfigureAwait(false);
 
-            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted());
+            var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted);
 
-            await infrastructure.ConfigureSubscriptions(catalog, cancellationToken).ConfigureAwait(false);
+            await infrastructure.ConfigureSubscriptions(Catalog, cancellationToken).ConfigureAwait(false);
 
             if (receivers.Length > 0)
             {
@@ -112,26 +76,50 @@ namespace NServiceBus
             return infrastructure;
         }
 
+        internal async Task FinalizeConfiguration(CancellationToken cancellationToken = default)
+        {
+            var parser = await GetConnectionStringBuilder(cancellationToken).ConfigureAwait(false);
+
+            if (!parser.TryGetValue("Initial Catalog", out var catalogSetting) && !parser.TryGetValue("database", out catalogSetting))
+            {
+                throw new Exception("Initial Catalog property is mandatory in the connection string.");
+            }
+            Catalog = (string)catalogSetting;
+
+            if (parser.TryGetValue("Column Encryption Setting", out var enabled))
+            {
+                IsEncrypted = ((string)enabled).Equals("enabled", StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            addressTranslator = new QueueAddressTranslator(Catalog, "dbo", DefaultSchema, SchemaAndCatalog);
+        }
+
+        async Task<DbConnectionStringBuilder> GetConnectionStringBuilder(CancellationToken cancellationToken)
+        {
+            if (ConnectionFactory != null)
+            {
+                using (var connection = await ConnectionFactory(cancellationToken).ConfigureAwait(false))
+                {
+                    return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
+                }
+            }
+
+            return new DbConnectionStringBuilder { ConnectionString = ConnectionString };
+        }
+
         /// <summary>
         /// Translates a <see cref="QueueAddress"/> object into a transport specific queue address-string.
         /// </summary>
         public override string ToTransportAddress(Transport.QueueAddress address)
         {
-            FinalizeConfiguration();
+            if (addressTranslator == null)
+            {
+                throw new Exception("Initialize must be called before using ToTransportAddress");
+            }
 
             var tableQueueAddress = addressTranslator.Generate(address);
 
             return addressTranslator.GetCanonicalForm(tableQueueAddress).Address;
-        }
-
-        void FinalizeConfiguration()
-        {
-            if (addressTranslator == null)
-            {
-                catalog = GetDefaultCatalog();
-
-                addressTranslator = new QueueAddressTranslator(catalog, "dbo", DefaultSchema, SchemaAndCatalog);
-            }
         }
 
         /// <summary>
