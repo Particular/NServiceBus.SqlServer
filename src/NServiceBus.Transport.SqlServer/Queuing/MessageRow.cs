@@ -101,6 +101,7 @@
             using (var outStream = new MemoryStream())
             using (var stream = dataReader.GetStream(bodyIndex))
             {
+                // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
                 await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
                 return outStream.ToArray();
             }

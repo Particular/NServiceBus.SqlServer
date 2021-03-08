@@ -44,6 +44,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (Exception exception)
                 {
+                    // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
                     _ = await HandleError(exception, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
