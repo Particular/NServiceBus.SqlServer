@@ -18,15 +18,15 @@
             this.validateExpiredIndex = validateExpiredIndex;
         }
 
-        public async Task PerformInspection(TableBasedQueue queue)
+        public async Task PerformInspection(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             if (validateExpiredIndex)
             {
-                await VerifyExpiredIndex(queue).ConfigureAwait(false);
+                await VerifyExpiredIndex(queue, cancellationToken).ConfigureAwait(false);
             }
 
-            await VerifyNonClusteredRowVersionIndex(queue).ConfigureAwait(false);
-            await VerifyHeadersColumnType(queue).ConfigureAwait(false);
+            await VerifyNonClusteredRowVersionIndex(queue, cancellationToken).ConfigureAwait(false);
+            await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
         async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken = default)

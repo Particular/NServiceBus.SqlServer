@@ -60,7 +60,7 @@
 
             await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
 
-            await schemaInspector.PerformInspection(inputQueue).ConfigureAwait(false);
+            await schemaInspector.PerformInspection(inputQueue, cancellationToken).ConfigureAwait(false);
         }
 
         public Task StartReceive(CancellationToken cancellationToken)
