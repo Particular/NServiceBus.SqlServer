@@ -29,10 +29,10 @@
         [TestCase("Initial Catalog=my.catalog")]
         [TestCase("Database=my.catalog")]
         [TestCase("database=my.catalog")]
-        public async Task It_accepts_connection_string_with_catalog_property(string connectionString)
+        public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
             var transport = new SqlServerTransport(connectionString);
-            await transport.FinalizeConfiguration().ConfigureAwait(false);
+            transport.ParseConnectionAttributes();
 
             Assert.AreEqual("my.catalog", transport.Catalog);
         }
