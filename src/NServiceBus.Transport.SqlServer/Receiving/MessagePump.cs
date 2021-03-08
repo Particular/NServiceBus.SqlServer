@@ -76,14 +76,9 @@
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
-            const int timeoutDurationInSeconds = 30;
-            var timedCancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutDurationInSeconds));
-
             messagePumpCancellationTokenSource?.Cancel();
 
-            var userOrTimedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timedCancellationSource.Token);
-            var userOrTimedCancellationToken = userOrTimedCancellationTokenSource.Token;
-            userOrTimedCancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
+            cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
 
             await messagePumpTask.ConfigureAwait(false);
 
@@ -98,7 +93,6 @@
             }
 
             concurrencyLimiter.Dispose();
-            userOrTimedCancellationTokenSource?.Dispose();
             messagePumpCancellationTokenSource?.Dispose();
             messageProcessingCancellationTokenSource?.Dispose();
         }
