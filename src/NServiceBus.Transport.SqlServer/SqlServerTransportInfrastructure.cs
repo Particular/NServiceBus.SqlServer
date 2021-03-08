@@ -110,7 +110,7 @@ namespace NServiceBus.Transport.SqlServer
                 validateExpiredIndex = true;
             }
 
-            var schemaVerification = new SchemaInspector(queue => connectionFactory.OpenNewConnection(cancellationToken), validateExpiredIndex);
+            var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex);
 
             var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
 

@@ -122,46 +122,46 @@ namespace NServiceBus.Transport.SqlServer
             throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
 
-        public async Task<int> Purge(SqlConnection connection)
+        public async Task<int> Purge(SqlConnection connection, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(purgeCommand, connection))
             {
-                return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize)
+        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(purgeExpiredCommand, connection))
             {
                 command.Parameters.AddWithValue("@BatchSize", purgeBatchSize);
-                return await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection)
+        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
             {
-                var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
+                var rowsCount = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection)
+        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
-                var rowsCount = (int)await command.ExecuteScalarAsync().ConfigureAwait(false);
+                var rowsCount = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<string> CheckHeadersColumnType(SqlConnection connection)
+        public async Task<string> CheckHeadersColumnType(SqlConnection connection, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
             {
-                return (string)await command.ExecuteScalarAsync().ConfigureAwait(false);
+                return (string)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 

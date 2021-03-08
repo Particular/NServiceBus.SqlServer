@@ -31,7 +31,7 @@
 
                     while (continuePurging && !cancellationToken.IsCancellationRequested)
                     {
-                        var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, purgeBatchSize).ConfigureAwait(false);
+                        var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, purgeBatchSize, cancellationToken).ConfigureAwait(false);
 
                         totalPurgedRowsCount += purgedRowsCount;
                         continuePurging = purgedRowsCount == purgeBatchSize;
