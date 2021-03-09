@@ -58,7 +58,15 @@
             {
                 triggered = true;
                 Logger.WarnFormat("The circuit breaker for {0} will now be triggered", name);
-                triggerAction(lastException);
+
+                try
+                {
+                    triggerAction(lastException);
+                }
+                catch (Exception x)
+                {
+                    Logger.Error($"Error invoking trigger action for circuit breaker {name}", x);
+                }
             }
         }
 
