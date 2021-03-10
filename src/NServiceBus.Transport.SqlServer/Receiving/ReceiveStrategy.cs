@@ -9,6 +9,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
+    using NServiceBus.Logging;
 
     abstract class ReceiveStrategy
     {
@@ -21,6 +22,7 @@
         protected ReceiveStrategy(TableBasedQueueCache tableBasedQueueCache)
         {
             this.tableBasedQueueCache = tableBasedQueueCache;
+            log = LogManager.GetLogger(GetType());
         }
 
         public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
@@ -33,9 +35,9 @@
             this.criticalError = criticalError;
         }
 
-        public abstract Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default);
+        public abstract Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
+        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
@@ -55,7 +57,7 @@
                 return receiveResult.Message;
             }
 
-            stopBatch.Cancel();
+            stopBatchCancellationTokenSource.Cancel();
             return null;
         }
 
@@ -83,6 +85,7 @@
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
                 return ErrorHandleResult.RetryRequired;
             }
             catch (Exception ex)
@@ -124,5 +127,6 @@
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
         Action<string, Exception, CancellationToken> criticalError;
+        protected ILog log;
     }
 }

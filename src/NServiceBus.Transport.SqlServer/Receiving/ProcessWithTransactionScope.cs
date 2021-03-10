@@ -16,7 +16,7 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -26,7 +26,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, null, stopBatch, cancellationToken).ConfigureAwait(false);
+                    message = await TryReceive(connection, null, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -87,7 +87,7 @@
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                // Graceful shutdown
+                log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
                 return false;
             }
             catch (Exception exception)

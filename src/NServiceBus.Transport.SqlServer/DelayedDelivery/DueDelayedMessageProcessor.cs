@@ -21,20 +21,20 @@ namespace NServiceBus.Transport.SqlServer
             message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
         }
 
-        public void Start(CancellationToken startCancellationToken)
+        public void Start(CancellationToken cancellationToken)
         {
-            pumpCancellationTokenSource = new CancellationTokenSource();
+            moveDelayedMessagesCancellationTokenSource = new CancellationTokenSource();
 
-            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(pumpCancellationTokenSource.Token), startCancellationToken);
+            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), cancellationToken);
         }
 
         public async Task Stop()
         {
-            pumpCancellationTokenSource?.Cancel();
+            moveDelayedMessagesCancellationTokenSource?.Cancel();
 
             await moveDelayedMessagesTask.ConfigureAwait(false);
 
-            pumpCancellationTokenSource?.Dispose();
+            moveDelayedMessagesCancellationTokenSource?.Dispose();
         }
 
         async Task MoveMaturedDelayedMessages(CancellationToken pumpCancellationToken)
@@ -84,7 +84,7 @@ namespace NServiceBus.Transport.SqlServer
         SqlConnectionFactory connectionFactory;
         TimeSpan interval;
         int batchSize;
-        CancellationTokenSource pumpCancellationTokenSource;
+        CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
         Task moveDelayedMessagesTask;
 
         static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();

@@ -36,11 +36,8 @@
 
             receiveStrategy = receiveStrategyFactory(transport.TransportTransactionMode);
 
-            var criticalErrorAction = hostSettings.CriticalErrorAction;
-            var receiveAddress = receiveSettings.ReceiveAddress;
-            var tokenForCriticalErrorAction = messageProcessingCancellationTokenSource.Token; // Prevent ObjectDisposed after endpoint shut down
-            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + receiveAddress, ex, tokenForCriticalErrorAction));
-            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + receiveAddress, ex, tokenForCriticalErrorAction));
+            peekCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("SqlPeek", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            receiveCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("ReceiveText", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(receiveSettings.ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
@@ -95,6 +92,8 @@
                 await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
             }
 
+            peekCircuitBreaker.Dispose();
+            receiveCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
             messagePumpCancellationTokenSource?.Dispose();
             messageProcessingCancellationTokenSource?.Dispose();
@@ -172,10 +171,6 @@
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();
-            }
-            catch (OperationCanceledException)
-            {
-                // Graceful shutdown
             }
             catch (SqlException e) when (e.Number == 1205)
             {

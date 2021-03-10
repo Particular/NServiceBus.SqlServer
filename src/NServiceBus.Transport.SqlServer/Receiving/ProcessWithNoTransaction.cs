@@ -14,14 +14,14 @@ namespace NServiceBus.Transport.SqlServer
             this.connectionFactory = connectionFactory;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatch, CancellationToken cancellationToken = default)
+        public override async Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 Message message;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, stopBatch, cancellationToken).ConfigureAwait(false);
+                    message = await TryReceive(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -40,7 +40,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    // Graceful shutdown
+                    log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
                 }
                 catch (Exception exception)
                 {
