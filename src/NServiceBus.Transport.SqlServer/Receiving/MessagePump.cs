@@ -160,7 +160,7 @@
             }
         }
 
-        async Task InnerReceive(CancellationTokenSource stopBatch, CancellationToken messageProcessingCancellationToken)
+        async Task InnerReceive(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -168,7 +168,7 @@
                 // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                 await Task.Yield();
 
-                await receiveStrategy.ReceiveMessage(stopBatch, messageProcessingCancellationToken)
+                await receiveStrategy.ReceiveMessage(stopBatchCancellationTokenSource, messageProcessingCancellationToken)
                     .ConfigureAwait(false);
 
                 receiveCircuitBreaker.Success();
