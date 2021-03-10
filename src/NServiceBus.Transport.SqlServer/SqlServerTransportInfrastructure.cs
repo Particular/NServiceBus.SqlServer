@@ -155,7 +155,7 @@ namespace NServiceBus.Transport.SqlServer
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
-            }).ToDictionary(pump => pump.Id, pump => pump as IMessageReceiver);
+            }).ToDictionary<MessagePump, string, IMessageReceiver>(pump => pump.Id, pump => pump);
 
             await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
 

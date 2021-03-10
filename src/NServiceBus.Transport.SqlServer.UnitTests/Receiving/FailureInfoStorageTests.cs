@@ -35,8 +35,8 @@
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, new Exception(), null);
-            storage.RecordFailureInfoForMessage(messageId, secondException, null);
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+            storage.RecordFailureInfoForMessage(messageId, secondException, default);
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
@@ -52,7 +52,7 @@
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, new Exception(), null);
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
 
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
@@ -72,14 +72,14 @@
 
             var lruMessageId = Guid.NewGuid().ToString("D");
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), null);
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
             for (var i = 0; i < MaxElements; ++i)
             {
                 var messageId = Guid.NewGuid().ToString("D");
                 var exception = new Exception();
 
-                storage.RecordFailureInfoForMessage(messageId, exception, null);
+                storage.RecordFailureInfoForMessage(messageId, exception, default);
             }
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
@@ -95,7 +95,7 @@
 
             var lruMessageId = Guid.NewGuid().ToString("D");
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), null);
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
             var messageIds = new List<string>(MaxElements);
             for (var i = 0; i < MaxElements; ++i)
@@ -105,12 +105,12 @@
 
             for (var i = 0; i < MaxElements - 1; ++i)
             {
-                storage.RecordFailureInfoForMessage(messageIds[i], new Exception(), null);
+                storage.RecordFailureInfoForMessage(messageIds[i], new Exception(), default);
             }
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), null);
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
-            storage.RecordFailureInfoForMessage(messageIds[MaxElements - 1], new Exception(), null);
+            storage.RecordFailureInfoForMessage(messageIds[MaxElements - 1], new Exception(), default);
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
