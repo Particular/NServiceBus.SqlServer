@@ -37,17 +37,17 @@ namespace NServiceBus.Transport.SqlServer
             moveDelayedMessagesCancellationTokenSource?.Dispose();
         }
 
-        async Task MoveMaturedDelayedMessages(CancellationToken moveDelayedMessagesCancellationTokenSource)
+        async Task MoveMaturedDelayedMessages(CancellationToken moveDelayedMessagesCancellationToken)
         {
-            while (!moveDelayedMessagesCancellationTokenSource.IsCancellationRequested)
+            while (!moveDelayedMessagesCancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationTokenSource).ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
                     {
                         using (var transaction = connection.BeginTransaction())
                         {
-                            await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationTokenSource).ConfigureAwait(false);
+                            await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                             transaction.Commit();
                         }
                     }
@@ -57,7 +57,7 @@ namespace NServiceBus.Transport.SqlServer
                     // Graceful shutdown
                     return;
                 }
-                catch (SqlException e) when (moveDelayedMessagesCancellationTokenSource.IsCancellationRequested)
+                catch (SqlException e) when (moveDelayedMessagesCancellationToken.IsCancellationRequested)
                 {
                     Logger.Debug("Exception thrown while performing cancellation", e);
                     return;
@@ -70,7 +70,7 @@ namespace NServiceBus.Transport.SqlServer
                 try
                 {
                     Logger.DebugFormat(message);
-                    await Task.Delay(interval, moveDelayedMessagesCancellationTokenSource).ConfigureAwait(false);
+                    await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
