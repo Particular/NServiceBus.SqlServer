@@ -16,7 +16,7 @@
     public class When_receiving_messages
     {
         [Test]
-        public async Task Should_stop_pumping_messages_after_first_unsuccessful_receive()
+        public async Task Should_stop_receiving_messages_after_first_unsuccessful_receive()
         {
             var successfulReceives = 46;
             var queueSize = 1000;
@@ -41,31 +41,31 @@
             transport.Testing.QueueFactoryOverride = qa =>
                 qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
-            var receiver = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
+            var receiveSettings = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
                 (_, __, ___) => { },
                 true);
 
-            var infrastructure = await transport.Initialize(hostSettings, new[] { receiver }, new string[0]);
+            var infrastructure = await transport.Initialize(hostSettings, new[] { receiveSettings }, new string[0]);
 
-            var pump = infrastructure.Receivers.First().Value;
+            var receiver = infrastructure.Receivers.First().Value;
 
-            await pump.Initialize(
+            await receiver.Initialize(
                 new PushRuntimeSettings(1),
                 (_, __) => Task.CompletedTask,
                 (_, __) => Task.FromResult(ErrorHandleResult.Handled),
                 default
             );
 
-            await pump.StartReceive();
+            await receiver.StartReceive();
 
             await WaitUntil(() => inputQueue.NumberOfPeeks > 1);
 
-            await pump.StopReceive();
+            await receiver.StopReceive();
 
             await infrastructure.Shutdown();
 
-            Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Pump should stop receives after first unsuccessful attempt.");
+            Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Receiver should stop receives after first unsuccessful attempt.");
         }
 
         static async Task WaitUntil(Func<bool> condition, int timeoutInSeconds = 5)

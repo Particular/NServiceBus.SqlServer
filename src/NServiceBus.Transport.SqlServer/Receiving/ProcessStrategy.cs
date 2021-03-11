@@ -11,7 +11,7 @@
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
 
-    abstract class ReceiveStrategy
+    abstract class ProcessStrategy
     {
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
@@ -19,7 +19,7 @@
         OnMessage onMessage;
         OnError onError;
 
-        protected ReceiveStrategy(TableBasedQueueCache tableBasedQueueCache)
+        protected ProcessStrategy(TableBasedQueueCache tableBasedQueueCache)
         {
             this.tableBasedQueueCache = tableBasedQueueCache;
             log = LogManager.GetLogger(GetType());
@@ -35,9 +35,9 @@
             this.criticalError = criticalError;
         }
 
-        public abstract Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
+        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        protected async Task<Message> TryGetMessage(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
@@ -61,7 +61,7 @@
             return null;
         }
 
-        protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
+        protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)

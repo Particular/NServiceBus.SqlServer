@@ -12,7 +12,7 @@
     using IsolationLevel = System.Data.IsolationLevel;
     using NServiceBus.Extensibility;
 
-    class ProcessWithNativeTransaction : ReceiveStrategy
+    class ProcessWithNativeTransaction : ProcessStrategy
     {
         public ProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
         : base(tableBasedQueueCache)
@@ -24,7 +24,7 @@
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -34,7 +34,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    message = await TryReceive(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    message = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -97,7 +97,7 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+                return await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

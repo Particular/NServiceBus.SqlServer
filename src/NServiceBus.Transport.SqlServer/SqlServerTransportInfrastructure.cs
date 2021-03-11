@@ -79,8 +79,8 @@ namespace NServiceBus.Transport.SqlServer
 
             var createMessageBodyComputedColumn = transport.CreateMessageBodyComputedColumn;
 
-            Func<TransportTransactionMode, ReceiveStrategy> receiveStrategyFactory =
-                guarantee => SelectReceiveStrategy(guarantee, transactionOptions, connectionFactory);
+            Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory =
+                guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
@@ -151,11 +151,11 @@ namespace NServiceBus.Transport.SqlServer
                     ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, s.ReceiveAddress)
                     : new NoOpSubscriptionManager();
 
-                return new MessagePump(transport, s, hostSettings, receiveStrategyFactory, queueFactory, queuePurger,
+                return new MessageReceiver(transport, s, hostSettings, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
-            }).ToDictionary<MessagePump, string, IMessageReceiver>(pump => pump.Id, pump => pump);
+            }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
             await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
 
@@ -180,7 +180,7 @@ namespace NServiceBus.Transport.SqlServer
             transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
         }
 
-        ReceiveStrategy SelectReceiveStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
