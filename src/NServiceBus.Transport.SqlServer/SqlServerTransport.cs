@@ -47,6 +47,15 @@ namespace NServiceBus
         }
 
         /// <summary>
+        /// Used for backwards compatibility with the legacy transport api.
+        /// </summary>
+        internal SqlServerTransport()
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
+        {
+
+        }
+
+        /// <summary>
         /// For the pub-sub migration tests only
         /// </summary>
         internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
@@ -60,6 +69,8 @@ namespace NServiceBus
         /// </summary>
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
+            ValidateConfiguration();
+
             ParseConnectionAttributes();
 
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted);
@@ -74,6 +85,21 @@ namespace NServiceBus
             infrastructure.ConfigureSendInfrastructure();
 
             return infrastructure;
+        }
+
+        void ValidateConfiguration()
+        {
+            //This is needed due to legacy transport api support. It can be removed when the api is no longer supported.
+            if (ConnectionFactory == null || string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                throw new Exception("SqlServer transport requires connection string or connection factory.");
+            }
+
+            if (ConnectionFactory != null && !string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                throw new Exception("ConnectionString() and UseCustomConnectionFactory() settings are exclusive and can't be used at the same time.");
+            }
+
         }
 
         internal void ParseConnectionAttributes()
@@ -166,12 +192,12 @@ namespace NServiceBus
         /// <summary>
         /// Connection string to be used by the transport.
         /// </summary>
-        public string ConnectionString { get; }
+        public string ConnectionString { get; internal set; }
 
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; }
+        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; internal set; }
 
         /// <summary>
         /// Default address schema.
