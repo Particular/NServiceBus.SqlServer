@@ -57,60 +57,71 @@ namespace NServiceBus
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
-    public static class SqlServerTransportSettingsExtensions
+    public static class SqlServerTransportApiExtensions
     {
-        [System.Obsolete("CreateMessageBodyComputedColumn has been obsoleted. Use `SqlServerTransport.Creat" +
-            "eMessageBodyComputedColumn` instead. The member currently throws a NotImplemente" +
-            "dException. Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        [System.Obsolete("DefaultSchema has been obsoleted. Use `SqlServerTransport.DefaultSchema` instead." +
-            " The member currently throws a NotImplementedException. Will be removed in versi" +
-            "on 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
-        [System.Obsolete("NativeDelayedDelivery has been obsoleted. Use `SqlServerTransport.DelayedDelivery" +
-            "` instead. The member currently throws a NotImplementedException. Will be remove" +
-            "d in version 8.0.0.", true)]
-        public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        [System.Obsolete("PurgeExpiredMessagesOnStartup has been obsoleted. Use `SqlServerTransport.PurgeOn" +
-            "Startup` instead. The member currently throws a NotImplementedException. Will be" +
-            " removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int? purgeBatchSize) { }
-        [System.Obsolete("QueuePeekerOptions has been obsoleted. Use `SqlServerTransport.QueuePeeker` inste" +
-            "ad. The member currently throws a NotImplementedException. Will be removed in ve" +
-            "rsion 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> QueuePeekerOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default, int? peekBatchSize = default) { }
-        [System.Obsolete("SubscriptionSettings has been obsoleted. Use `SqlServerTransport.Subscriptions` i" +
-            "nstead. The member currently throws a NotImplementedException. Will be removed i" +
-            "n version 8.0.0.", true)]
-        public static NServiceBus.Transport.SqlServer.SubscriptionSettings SubscriptionSettings(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
-        [System.Obsolete("TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted. Use `SqlServerTransp" +
-            "ort.TimeToWaitBeforeTriggeringCircuitBreaker` instead. The member currently thro" +
-            "ws a NotImplementedException. Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
-        [System.Obsolete("TransactionScopeOptions has been obsoleted. Use `SqlServerTransport.TransactionSc" +
-            "ope` instead. The member currently throws a NotImplementedException. Will be rem" +
-            "oved in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? timeout = default, System.Transactions.IsolationLevel? isolationLevel = default) { }
-        [System.Obsolete("UseCatalogForEndpoint has been obsoleted. Use `RoutingSettings.UseCatalogForEndpo" +
-            "int` instead. The member currently throws a NotImplementedException. Will be rem" +
-            "oved in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
-        [System.Obsolete("UseCatalogForQueue has been obsoleted. Use `SqlServerTransport.SchemaAndCatalog.U" +
-            "seCatalogForQueue` instead. The member currently throws a NotImplementedExceptio" +
-            "n. Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
-        [System.Obsolete("UseCustomSqlConnectionFactory has been obsoleted. Use `SqlServerTransport.Connect" +
-            "ionFactory` instead. The member currently throws a NotImplementedException. Will" +
-            " be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
-        [System.Obsolete("UseSchemaForEndpoint has been obsoleted. Use `RoutingSettings.UseSchemaForEndpoin" +
-            "t` instead. The member currently throws a NotImplementedException. Will be remov" +
-            "ed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
-        [System.Obsolete("UseSchemaForQueue has been obsoleted. Use `SqlServerTransport.SchemaAndCatalog.Us" +
-            "eSchemaForQueue` instead. The member currently throws a NotImplementedException." +
-            " Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
+        [System.Obsolete("Use `EndpointConfiguration.UseTransport(new SqlServerTransport())` instead. Will " +
+            "be treated as an error from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        public static NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseTransport<T>(this NServiceBus.EndpointConfiguration config)
+            where T : NServiceBus.SqlServerTransport { }
+        public class SqlServerTransportSettings : NServiceBus.TransportSettings<NServiceBus.SqlServerTransport>
+        {
+            [System.Obsolete("ConnectionString has been obsoleted. Use `configuration.UseTransport(new SqlServe" +
+                "rTransport(string connectionString))` instead. Will be treated as an error from " +
+                "version 8.0.0. Will be removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings ConnectionString(string connectionString) { }
+            [System.Obsolete("CreateMessageBodyComputedColumn has been obsoleted. Use `SqlServerTransport.Creat" +
+                "eMessageBodyComputedColumn` instead. Will be treated as an error from version 8." +
+                "0.0. Will be removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings CreateMessageBodyComputedColumn() { }
+            [System.Obsolete("DefaultSchema has been obsoleted. Use `SqlServerTransport.DefaultSchema` instead." +
+                " Will be treated as an error from version 8.0.0. Will be removed in version 9.0." +
+                "0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings DefaultSchema(string schemaName) { }
+            [System.Obsolete("NativeDelayedDelivery has been obsoleted. Use `SqlServerTransport.DelayedDelivery" +
+                "` instead. Will be treated as an error from version 8.0.0. Will be removed in ve" +
+                "rsion 9.0.0.", false)]
+            public NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery() { }
+            [System.Obsolete("PurgeExpiredMessagesOnStartup has been obsoleted. Use `SqlServerTransport.PurgeOn" +
+                "Startup` instead. Will be treated as an error from version 8.0.0. Will be remove" +
+                "d in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings PurgeExpiredMessagesOnStartup(int? purgeBatchSize) { }
+            [System.Obsolete("QueuePeekerOptions has been obsoleted. Use `SqlServerTransport.QueuePeeker` inste" +
+                "ad. Will be treated as an error from version 8.0.0. Will be removed in version 9" +
+                ".0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings QueuePeekerOptions(System.TimeSpan? delay = default, int? peekBatchSize = default) { }
+            [System.Obsolete("SubscriptionSettings has been obsoleted. Use `SqlServerTransport.Subscriptions` i" +
+                "nstead. Will be treated as an error from version 8.0.0. Will be removed in versi" +
+                "on 9.0.0.", false)]
+            public NServiceBus.Transport.SqlServer.SubscriptionSettings SubscriptionSettings() { }
+            [System.Obsolete("TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted. Use `SqlServerTransp" +
+                "ort.TimeToWaitBeforeTriggeringCircuitBreaker` instead. Will be treated as an err" +
+                "or from version 8.0.0. Will be removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings TimeToWaitBeforeTriggeringCircuitBreaker(System.TimeSpan waitTime) { }
+            [System.Obsolete("TransactionScopeOptions has been obsoleted. Use `SqlServerTransport.TransactionSc" +
+                "ope` instead. Will be treated as an error from version 8.0.0. Will be removed in" +
+                " version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings TransactionScopeOptions(System.TimeSpan? timeout = default, System.Transactions.IsolationLevel? isolationLevel = default) { }
+            [System.Obsolete("UseCatalogForEndpoint has been obsoleted. Use `RoutingSettings.UseCatalogForEndpo" +
+                "int` instead. The member currently throws a NotImplementedException. Will be rem" +
+                "oved in version 8.0.0.", true)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseCatalogForEndpoint(string endpointName, string catalog) { }
+            [System.Obsolete("UseCatalogForQueue has been obsoleted. Use `SqlServerTransport.SchemaAndCatalog.U" +
+                "seCatalogForQueue` instead. Will be treated as an error from version 8.0.0. Will" +
+                " be removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseCatalogForQueue(string queueName, string catalog) { }
+            [System.Obsolete("UseCustomSqlConnectionFactory has been obsoleted. Use `SqlServerTransport.Connect" +
+                "ionFactory` instead. Will be treated as an error from version 8.0.0. Will be rem" +
+                "oved in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseCustomSqlConnectionFactory(System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+            [System.Obsolete("UseSchemaForEndpoint has been obsoleted. Use `RoutingSettings.UseSchemaForEndpoin" +
+                "t` instead. The member currently throws a NotImplementedException. Will be remov" +
+                "ed in version 9.0.0.", true)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseSchemaForEndpoint(string endpointName, string schema) { }
+            [System.Obsolete("UseSchemaForQueue has been obsoleted. Use `SqlServerTransport.SchemaAndCatalog.Us" +
+                "eSchemaForQueue` instead. Will be treated as an error from version 8.0.0. Will b" +
+                "e removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings UseSchemaForQueue(string queueName, string schema) { }
+        }
     }
     public class TransactionScopeOptions
     {
@@ -127,13 +138,22 @@ namespace NServiceBus.Transport.SqlServer
         public string TableSuffix { get; set; }
     }
     [System.Obsolete("DelayedDeliverySettings has been obsoleted. Use `SqlServerTransport.DelayedDelive" +
-        "ry` instead. Will be removed in version 8.0.0.", true)]
+        "ry` instead. Will be treated as an error from version 8.0.0. Will be removed in " +
+        "version 9.0.0.", false)]
     public class DelayedDeliverySettings
     {
-        public DelayedDeliverySettings() { }
+        [System.Obsolete("Use `SqlServerTransport.BatchSize` instead. Will be treated as an error from vers" +
+            "ion 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void BatchSize(int batchSize) { }
         [System.Obsolete("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
             " details. Will be removed in version 8.0.0.", true)]
         public void EnableTimeoutManagerCompatibility() { }
+        [System.Obsolete("Use `SqlServerTransport.ProcessingInterval` instead. Will be treated as an error " +
+            "from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void ProcessingInterval(System.TimeSpan interval) { }
+        [System.Obsolete("Use `SqlServerTransport.TableSuffix` instead. Will be treated as an error from ve" +
+            "rsion 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void TableSuffix(string suffix) { }
     }
     public class QueueSchemaAndCatalogOptions
     {
@@ -148,10 +168,19 @@ namespace NServiceBus.Transport.SqlServer
         public NServiceBus.Transport.SqlServer.SubscriptionTableName SubscriptionTableName { get; set; }
     }
     [System.Obsolete("SubscriptionSettings has been obsoleted. Use `SqlServerTransport.Subscriptions` i" +
-        "nstead. Will be removed in version 8.0.0.", true)]
+        "nstead. Will be treated as an error from version 8.0.0. Will be removed in versi" +
+        "on 9.0.0.", false)]
     public class SubscriptionSettings
     {
-        public SubscriptionSettings() { }
+        [System.Obsolete("Use `SubscriptionOptions.CacheSubscriptionInformationFor` instead. Will be treate" +
+            "d as an error from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void CacheSubscriptionInformationFor(System.TimeSpan timeSpan) { }
+        [System.Obsolete("Use `SubscriptionOptions.DisableSubscriptionCache` instead. Will be treated as an" +
+            " error from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void DisableSubscriptionCache() { }
+        [System.Obsolete("Use `SubscriptionOptions.SubscriptionTableName` instead. Will be treated as an er" +
+            "ror from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        public void SubscriptionTableName(string tableName, string schemaName = null, string catalogName = null) { }
     }
     public class SubscriptionTableName
     {
