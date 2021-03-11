@@ -19,7 +19,7 @@
             this.settings = settings;
         }
 
-        public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken)
+        public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
             var messageCount = 0;
 
@@ -27,7 +27,7 @@
             {
 #if NETFRAMEWORK
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
                     messageCount = await inputQueue.TryPeek(connection, null, cancellationToken).ConfigureAwait(false);
 
@@ -36,7 +36,7 @@
 
 #else
                 using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var tx = connection.BeginTransaction())
                 {
                     messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken).ConfigureAwait(false);

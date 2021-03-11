@@ -4,8 +4,9 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
+    using NServiceBus.Extensibility;
 
-    class ProcessWithNoTransaction : ReceiveStrategy
+    class ProcessWithNoTransaction : ProcessStrategy
     {
         public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
         : base(tableBasedQueueCache)
@@ -13,14 +14,14 @@ namespace NServiceBus.Transport.SqlServer
             this.connectionFactory = connectionFactory;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 Message message;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -29,16 +30,22 @@ namespace NServiceBus.Transport.SqlServer
                     return;
                 }
 
+                var context = new ContextBag();
                 var transportTransaction = new TransportTransaction();
                 transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
                 try
                 {
-                    await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                    await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
                 }
                 catch (Exception exception)
                 {
-                    await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
+                    // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
+                    _ = await HandleError(exception, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

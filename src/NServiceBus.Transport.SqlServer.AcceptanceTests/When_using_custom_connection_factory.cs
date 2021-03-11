@@ -39,11 +39,11 @@
         {
             public Endpoint()
             {
-                var transport = new SqlServerTransport(async () =>
+                var transport = new SqlServerTransport(async cancellationToken =>
                 {
                     var connection = new SqlConnection(GetConnectionString());
 
-                    await connection.OpenAsync();
+                    await connection.OpenAsync(cancellationToken);
 
                     return connection;
                 });

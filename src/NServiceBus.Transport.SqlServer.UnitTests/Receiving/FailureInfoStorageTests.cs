@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using NServiceBus.Extensibility;
     using NUnit.Framework;
     using SqlServer;
 
@@ -12,16 +13,18 @@
         {
             var messageId = Guid.NewGuid().ToString("D");
             var exception = new Exception();
+            var extensions = new ContextBag();
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, exception);
+            storage.RecordFailureInfoForMessage(messageId, exception, extensions);
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.NotNull(failureInfo);
             Assert.AreEqual(1, failureInfo.NumberOfProcessingAttempts);
             Assert.AreSame(exception, failureInfo.Exception);
+            Assert.AreSame(extensions, failureInfo.Context);
         }
 
         [Test]
@@ -32,8 +35,8 @@
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, new Exception());
-            storage.RecordFailureInfoForMessage(messageId, secondException);
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+            storage.RecordFailureInfoForMessage(messageId, secondException, default);
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
@@ -49,7 +52,7 @@
 
             var storage = GetFailureInfoStorage();
 
-            storage.RecordFailureInfoForMessage(messageId, new Exception());
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
 
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
@@ -69,14 +72,14 @@
 
             var lruMessageId = Guid.NewGuid().ToString("D");
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception());
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
             for (var i = 0; i < MaxElements; ++i)
             {
                 var messageId = Guid.NewGuid().ToString("D");
                 var exception = new Exception();
 
-                storage.RecordFailureInfoForMessage(messageId, exception);
+                storage.RecordFailureInfoForMessage(messageId, exception, default);
             }
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
@@ -92,7 +95,7 @@
 
             var lruMessageId = Guid.NewGuid().ToString("D");
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception());
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
             var messageIds = new List<string>(MaxElements);
             for (var i = 0; i < MaxElements; ++i)
@@ -102,12 +105,12 @@
 
             for (var i = 0; i < MaxElements - 1; ++i)
             {
-                storage.RecordFailureInfoForMessage(messageIds[i], new Exception());
+                storage.RecordFailureInfoForMessage(messageIds[i], new Exception(), default);
             }
 
-            storage.RecordFailureInfoForMessage(lruMessageId, new Exception());
+            storage.RecordFailureInfoForMessage(lruMessageId, new Exception(), default);
 
-            storage.RecordFailureInfoForMessage(messageIds[MaxElements - 1], new Exception());
+            storage.RecordFailureInfoForMessage(messageIds[MaxElements - 1], new Exception(), default);
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 

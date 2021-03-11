@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
+    using System.Threading.Tasks;
     using NUnit.Framework;
 
     [TestFixture]
@@ -11,7 +12,7 @@
         public void SetUp()
         {
             settings = new HostSettings(string.Empty, string.Empty, new StartupDiagnosticEntries(),
-                (s, exception) => { }, true);
+                (_, __, ___) => { }, true);
         }
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
@@ -30,9 +31,10 @@
         [TestCase("database=my.catalog")]
         public void It_accepts_connection_string_with_catalog_property(string connectionString)
         {
-            new SqlServerTransport(connectionString).GetDefaultCatalog();
+            var transport = new SqlServerTransport(connectionString);
+            transport.ParseConnectionAttributes();
 
-            Assert.Pass();
+            Assert.AreEqual("my.catalog", transport.Catalog);
         }
     }
 }

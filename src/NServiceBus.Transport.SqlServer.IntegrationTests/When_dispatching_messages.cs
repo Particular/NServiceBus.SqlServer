@@ -14,6 +14,7 @@
     using Transport;
     using SqlServer;
     using Unicast.Queuing;
+    using System.Threading;
 
     public class When_dispatching_messages
     {
@@ -138,7 +139,7 @@
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new List<UnicastTransportOperation>());
             }

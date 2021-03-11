@@ -7,6 +7,7 @@ namespace NServiceBus.Transport.SqlServer
     using Microsoft.Data.SqlClient;
 #endif
     using System.Threading.Tasks;
+    using System.Threading;
 
     class QueueCreator
     {
@@ -17,9 +18,9 @@ namespace NServiceBus.Transport.SqlServer
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
-        public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress)
+        public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 foreach (var address in queueAddresses)
                 {
@@ -60,7 +61,7 @@ namespace NServiceBus.Transport.SqlServer
                 //not return information on already created table under heavy load.
                 //This in turn can result in executing table create or index create queries
                 //for objects that already exists. These queries will fail with
-                // 2714 (table) and 1913 (index) error codes. 
+                // 2714 (table) and 1913 (index) error codes.
             }
 
             if (createMessageBodyColumn)

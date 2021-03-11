@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
@@ -158,7 +159,7 @@
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
-            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+            public Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(new List<UnicastTransportOperation>());
             }

@@ -40,9 +40,9 @@ namespace NServiceBus
     }
     public class SqlServerTransport : NServiceBus.Transport.TransportDefinition
     {
-        public SqlServerTransport(System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> connectionFactory) { }
+        public SqlServerTransport(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> connectionFactory) { }
         public SqlServerTransport(string connectionString) { }
-        public System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> ConnectionFactory { get; }
+        public System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> ConnectionFactory { get; }
         public string ConnectionString { get; }
         public bool CreateMessageBodyComputedColumn { get; set; }
         public string DefaultSchema { get; set; }
@@ -54,7 +54,7 @@ namespace NServiceBus
         public System.TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; }
         public NServiceBus.TransactionScopeOptions TransactionScope { get; }
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
-        public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses) { }
+        public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
     public static class SqlServerTransportSettingsExtensions

@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.PubSub
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using Unicast.Messages;
@@ -13,12 +14,12 @@
             return Task.CompletedTask;
         }
 
-        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context)
+        public Task SubscribeAll(MessageMetadata[] eventTypes, ContextBag context, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public Task Unsubscribe(MessageMetadata eventType, ContextBag context)
+        public Task Unsubscribe(MessageMetadata eventType, ContextBag context, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

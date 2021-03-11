@@ -4,8 +4,9 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using NServiceBus.Extensibility;
 
-    class ProcessWithTransactionScope : ReceiveStrategy
+    class ProcessWithTransactionScope : ProcessStrategy
     {
         public ProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
          : base(tableBasedQueueCache)
@@ -15,15 +16,17 @@
             this.failureInfoStorage = failureInfoStorage;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             Message message = null;
+            var context = new ContextBag();
+
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    message = await TryReceive(connection, null, receiveCancellationTokenSource).ConfigureAwait(false);
+                    message = await TryGetMessage(connection, null, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
                     if (message == null)
                     {
@@ -36,7 +39,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction()).ConfigureAwait(false))
+                    if (!await TryProcess(message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -52,7 +55,7 @@
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
             }
         }
 
@@ -66,11 +69,11 @@
             return transportTransaction;
         }
 
-        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction)
+        async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken)
         {
             if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
             {
-                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts).ConfigureAwait(false);
+                var errorHandlingResult = await HandleError(failure.Exception, message, transportTransaction, failure.NumberOfProcessingAttempts, failure.Context, cancellationToken).ConfigureAwait(false);
 
                 if (errorHandlingResult == ErrorHandleResult.Handled)
                 {
@@ -80,11 +83,16 @@
 
             try
             {
-                return await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                return await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
+                return false;
             }
             catch (Exception exception)
             {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
                 return false;
             }
         }

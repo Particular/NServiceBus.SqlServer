@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class MulticastToUnicastConverter : IMulticastToUnicastConverter
@@ -10,10 +11,10 @@ namespace NServiceBus.Transport.SqlServer
 
         public MulticastToUnicastConverter(ISubscriptionStore subscriptions) => this.subscriptions = subscriptions;
 
-        public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation)
+        public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
         {
             List<string> subscribers =
-                await subscriptions.GetSubscribers(transportOperation.MessageType).ConfigureAwait(false);
+                await subscriptions.GetSubscribers(transportOperation.MessageType, cancellationToken).ConfigureAwait(false);
 
             return (from subscriber in subscribers
                     select new UnicastTransportOperation(

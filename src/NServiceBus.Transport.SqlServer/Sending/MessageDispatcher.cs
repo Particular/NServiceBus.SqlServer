@@ -11,6 +11,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
+    using System.Threading;
 
     class MessageDispatcher : IMessageDispatcher
     {
@@ -24,29 +25,29 @@
         }
 
         // We need to check if we can support cancellation in here as well?
-        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction)
+        public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             var sortedOperations = operations.UnicastTransportOperations
-                .Concat(await ConvertToUnicastOperations(operations).ConfigureAwait(false))
+                .Concat(await ConvertToUnicastOperations(operations, cancellationToken).ConfigureAwait(false))
                 .SortAndDeduplicate(addressTranslator);
 
-            await DispatchDefault(sortedOperations, transportTransaction).ConfigureAwait(false);
-            await DispatchIsolated(sortedOperations, transportTransaction).ConfigureAwait(false);
+            await DispatchDefault(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
+            await DispatchIsolated(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations)
+        async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations, CancellationToken cancellationToken = default)
         {
             if (operations.MulticastTransportOperations.Count == 0)
             {
                 return _emptyUnicastTransportOperationsList;
             }
 
-            var tasks = operations.MulticastTransportOperations.Select(multicastToUnicastConverter.Convert);
+            var tasks = operations.MulticastTransportOperations.Select(operation => multicastToUnicastConverter.Convert(operation, cancellationToken));
             var result = await Task.WhenAll(tasks).ConfigureAwait(false);
             return result.SelectMany(x => x);
         }
 
-        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction)
+        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             if (sortedOperations.IsolatedDispatch == null)
             {
@@ -60,14 +61,14 @@
                 transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
                 if (sqlTransportTransaction != null)
                 {
-                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction).ConfigureAwait(false);
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
                 transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
                 if (sqlTransportConnection != null)
                 {
-                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null).ConfigureAwait(false);
+                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -75,16 +76,16 @@
             }
 
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             using (var tx = connection.BeginTransaction())
             {
-                await Dispatch(sortedOperations.IsolatedDispatch, connection, tx).ConfigureAwait(false);
+                await Dispatch(sortedOperations.IsolatedDispatch, connection, tx, cancellationToken).ConfigureAwait(false);
                 tx.Commit();
                 scope.Complete();
             }
         }
 
-        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction)
+        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
             if (sortedOperations.DefaultDispatch == null)
             {
@@ -93,27 +94,27 @@
 
             if (InReceiveWithNoTransactionMode(transportTransaction) || InReceiveOnlyTransportTransactionMode(transportTransaction))
             {
-                await DispatchUsingNewConnectionAndTransaction(sortedOperations.DefaultDispatch).ConfigureAwait(false);
+                await DispatchUsingNewConnectionAndTransaction(sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch).ConfigureAwait(false);
+            await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
         }
 
 
-        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations)
+        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    await Dispatch(operations, connection, transaction).ConfigureAwait(false);
+                    await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
                     transaction.Commit();
                 }
             }
         }
 
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations)
+        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken = default)
         {
             transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
             transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
@@ -123,31 +124,31 @@
             {
                 if (sqlTransportConnection == null)
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                    using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                     {
-                        await Dispatch(operations, connection, null).ConfigureAwait(false);
+                        await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    await Dispatch(operations, sqlTransportConnection, null).ConfigureAwait(false);
+                    await Dispatch(operations, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                await Dispatch(operations, sqlTransportConnection, sqlTransportTransaction).ConfigureAwait(false);
+                await Dispatch(operations, sqlTransportConnection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction)
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             foreach (var operation in operations)
             {
-                await Dispatch(connection, transaction, operation).ConfigureAwait(false);
+                await Dispatch(connection, transaction, operation, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation)
+        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken = default)
         {
             var discardIfNotReceivedBefore = operation.Properties.DiscardIfNotReceivedBefore;
             var doNotDeliverBefore = operation.Properties.DoNotDeliverBefore;
@@ -159,7 +160,7 @@
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction);
+                return delayedMessageTable.Store(operation.Message, doNotDeliverBefore.At - DateTimeOffset.UtcNow, operation.Destination, connection, transaction, cancellationToken);
             }
 
             var delayDeliveryWith = operation.Properties.DelayDeliveryWith;
@@ -170,11 +171,11 @@
                     throw new Exception("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.");
                 }
 
-                return delayedMessageTable.Store(operation.Message, delayDeliveryWith.Delay, operation.Destination, connection, transaction);
+                return delayedMessageTable.Store(operation.Message, delayDeliveryWith.Delay, operation.Destination, connection, transaction, cancellationToken);
             }
 
             var queue = tableBasedQueueCache.Get(operation.Destination);
-            return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction);
+            return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction, cancellationToken);
         }
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)

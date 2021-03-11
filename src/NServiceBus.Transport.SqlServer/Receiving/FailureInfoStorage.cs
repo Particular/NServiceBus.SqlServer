@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Runtime.ExceptionServices;
+    using NServiceBus.Extensibility;
 
     // The data structure has fixed maximum size. When the data structure reaches its maximum size,
     // the least recently used (LRU) message processing failure is removed from the storage.
@@ -13,14 +14,14 @@
             this.maxElements = maxElements;
         }
 
-        public void RecordFailureInfoForMessage(string messageId, Exception exception)
+        public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
             lock (lockObject)
             {
                 if (failureInfoPerMessage.TryGetValue(messageId, out var node))
                 {
                     // We have seen this message before, just update the counter and store exception.
-                    node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception));
+                    node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception), context);
 
                     // Maintain invariant: leastRecentlyUsedMessages.First contains the LRU item.
                     leastRecentlyUsedMessages.Remove(node.LeastRecentlyUsedEntry);
@@ -38,7 +39,7 @@
 
                     var newNode = new FailureInfoNode(
                         messageId,
-                        new ProcessingFailureInfo(1, ExceptionDispatchInfo.Capture(exception)));
+                        new ProcessingFailureInfo(1, ExceptionDispatchInfo.Capture(exception), context));
 
                     failureInfoPerMessage[messageId] = newNode;
 
@@ -91,15 +92,17 @@
 
         public class ProcessingFailureInfo
         {
-            public ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo)
+            public ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
             {
                 NumberOfProcessingAttempts = numberOfProcessingAttempts;
                 ExceptionDispatchInfo = exceptionDispatchInfo;
+                Context = context;
             }
 
             public int NumberOfProcessingAttempts { get; }
             public Exception Exception => ExceptionDispatchInfo.SourceException;
             ExceptionDispatchInfo ExceptionDispatchInfo { get; }
+            public ContextBag Context { get; }
         }
     }
 }

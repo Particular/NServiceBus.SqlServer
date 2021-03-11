@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System.Threading;
     using System.Threading.Tasks;
 
     class QueuePurger : IPurgeQueues
@@ -9,11 +10,11 @@
             this.connectionFactory = connectionFactory;
         }
 
-        public virtual async Task<int> Purge(TableBasedQueue queue)
+        public virtual async Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
-                return await queue.Purge(connection).ConfigureAwait(false);
+                return await queue.Purge(connection, cancellationToken).ConfigureAwait(false);
             }
         }
 

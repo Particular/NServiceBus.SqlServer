@@ -4,6 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class PolymorphicSubscriptionStore : ISubscriptionStore
@@ -13,20 +14,20 @@ namespace NServiceBus.Transport.SqlServer
             this.subscriptionTable = subscriptionTable;
         }
 
-        public Task<List<string>> GetSubscribers(Type eventType)
+        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var topics = GetTopics(eventType);
-            return subscriptionTable.GetSubscribers(topics.ToArray());
+            return subscriptionTable.GetSubscribers(topics.ToArray(), cancellationToken);
         }
 
-        public Task Subscribe(string endpointName, string endpointAddress, Type eventType)
+        public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
         {
-            return subscriptionTable.Subscribe(endpointName, endpointAddress, TopicName.From(eventType));
+            return subscriptionTable.Subscribe(endpointName, endpointAddress, TopicName.From(eventType), cancellationToken);
         }
 
-        public Task Unsubscribe(string endpointName, Type eventType)
+        public Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
         {
-            return subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType));
+            return subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType), cancellationToken);
         }
 
         IEnumerable<string> GetTopics(Type messageType)

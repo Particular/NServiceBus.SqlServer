@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
 
@@ -14,34 +15,34 @@ namespace NServiceBus.Transport.SqlServer
             this.cacheFor = cacheFor;
         }
 
-        public Task<List<string>> GetSubscribers(Type eventType)
+        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var cacheItem = Cache.GetOrAdd(CacheKey(eventType),
                 _ => new CacheItem
                 {
                     StoredUtc = DateTime.UtcNow,
-                    Subscribers = inner.GetSubscribers(eventType)
+                    Subscribers = inner.GetSubscribers(eventType, cancellationToken)
                 });
 
             var age = DateTime.UtcNow - cacheItem.StoredUtc;
             if (age >= cacheFor)
             {
-                cacheItem.Subscribers = inner.GetSubscribers(eventType);
+                cacheItem.Subscribers = inner.GetSubscribers(eventType, cancellationToken);
                 cacheItem.StoredUtc = DateTime.UtcNow;
             }
 
             return cacheItem.Subscribers;
         }
 
-        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType)
+        public async Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
         {
-            await inner.Subscribe(endpointName, endpointAddress, eventType).ConfigureAwait(false);
+            await inner.Subscribe(endpointName, endpointAddress, eventType, cancellationToken).ConfigureAwait(false);
             ClearForMessageType(CacheKey(eventType));
         }
 
-        public async Task Unsubscribe(string endpointName, Type eventType)
+        public async Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
         {
-            await inner.Unsubscribe(endpointName, eventType).ConfigureAwait(false);
+            await inner.Unsubscribe(endpointName, eventType, cancellationToken).ConfigureAwait(false);
             ClearForMessageType(CacheKey(eventType));
         }
 
