@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
 
-    class ProcessWithNoTransaction : ReceiveStrategy
+    class ProcessWithNoTransaction : ProcessStrategy
     {
         public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
         : base(tableBasedQueueCache)
@@ -14,14 +14,14 @@ namespace NServiceBus.Transport.SqlServer
             this.connectionFactory = connectionFactory;
         }
 
-        public override async Task ReceiveMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 Message message;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    message = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
                     transaction.Commit();
                 }
 
@@ -36,7 +36,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    await TryProcessingMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+                    await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
