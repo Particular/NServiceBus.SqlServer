@@ -16,7 +16,7 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServerTransport : TransportDefinition
+    public partial class SqlServerTransport : TransportDefinition
     {
         QueueAddressTranslator addressTranslator;
 
@@ -44,15 +44,6 @@ namespace NServiceBus
             Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
 
             ConnectionFactory = connectionFactory;
-        }
-
-        /// <summary>
-        /// Used for backwards compatibility with the legacy transport api.
-        /// </summary>
-        internal SqlServerTransport()
-            : base(TransportTransactionMode.TransactionScope, true, true, true)
-        {
-
         }
 
         /// <summary>
@@ -85,21 +76,6 @@ namespace NServiceBus
             infrastructure.ConfigureSendInfrastructure();
 
             return infrastructure;
-        }
-
-        void ValidateConfiguration()
-        {
-            //This is needed due to legacy transport api support. It can be removed when the api is no longer supported.
-            if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
-            {
-                throw new Exception("SqlServer transport requires connection string or connection factory.");
-            }
-
-            if (ConnectionFactory != null && !string.IsNullOrWhiteSpace(ConnectionString))
-            {
-                throw new Exception("ConnectionString() and UseCustomConnectionFactory() settings are exclusive and can't be used at the same time.");
-            }
-
         }
 
         internal void ParseConnectionAttributes()

@@ -110,6 +110,35 @@ namespace NServiceBus
     using System.Transactions;
     using Transport.SqlServer;
 
+    /// <summary>
+    /// SqlServer Transport
+    /// </summary>
+    public partial class SqlServerTransport
+    {
+        /// <summary>
+        /// Used for backwards compatibility with the legacy transport api.
+        /// </summary>
+        internal SqlServerTransport()
+            : base(TransportTransactionMode.TransactionScope, true, true, true)
+        {
+
+        }
+
+        void ValidateConfiguration()
+        {
+            //This is needed due to legacy transport api support. It can be removed when the api is no longer supported.
+            if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                throw new Exception("SqlServer transport requires connection string or connection factory.");
+            }
+
+            if (ConnectionFactory != null && !string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                throw new Exception("ConnectionString() and UseCustomConnectionFactory() settings are exclusive and can't be used at the same time.");
+            }
+
+        }
+    }
 
     /// <summary>
     /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
