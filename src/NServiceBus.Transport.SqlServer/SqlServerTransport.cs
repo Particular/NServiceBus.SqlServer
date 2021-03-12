@@ -16,7 +16,7 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public class SqlServerTransport : TransportDefinition
+    public partial class SqlServerTransport : TransportDefinition
     {
         QueueAddressTranslator addressTranslator;
 
@@ -60,6 +60,8 @@ namespace NServiceBus
         /// </summary>
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
+            ValidateConfiguration();
+
             ParseConnectionAttributes();
 
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, addressTranslator, IsEncrypted);
@@ -166,12 +168,12 @@ namespace NServiceBus
         /// <summary>
         /// Connection string to be used by the transport.
         /// </summary>
-        public string ConnectionString { get; }
+        public string ConnectionString { get; internal set; }
 
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; }
+        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; internal set; }
 
         /// <summary>
         /// Default address schema.
