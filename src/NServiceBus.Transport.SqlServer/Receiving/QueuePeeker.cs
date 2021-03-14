@@ -29,7 +29,7 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    messageCount = await inputQueue.TryPeek(connection, null, cancellationToken).ConfigureAwait(false);
+                    messageCount = await inputQueue.TryPeek(connection, null, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     scope.Complete();
                 }
@@ -39,7 +39,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var tx = connection.BeginTransaction())
                 {
-                    messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken).ConfigureAwait(false);
+                    messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     tx.Commit();
                     scope.Complete();

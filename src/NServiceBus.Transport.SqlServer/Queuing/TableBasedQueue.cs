@@ -30,14 +30,14 @@ namespace NServiceBus.Transport.SqlServer
             this.isStreamSupported = isStreamSupported;
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
+        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(peekCommand, connection, transaction)
             {
-                CommandTimeout = timeoutInSeconds
+                CommandTimeout = timeoutInSeconds ?? 30
             })
             {
-                var numberOfMessages = (int)await command.ExecuteScalarAsync(token).ConfigureAwait(false);
+                var numberOfMessages = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
                 return numberOfMessages;
             }
         }
