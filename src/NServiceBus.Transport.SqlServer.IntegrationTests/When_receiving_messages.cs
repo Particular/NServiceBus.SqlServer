@@ -110,7 +110,7 @@
                 return Task.FromResult(readResult);
             }
 
-            public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, CancellationToken token, int timeoutInSeconds = 30)
+            public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 

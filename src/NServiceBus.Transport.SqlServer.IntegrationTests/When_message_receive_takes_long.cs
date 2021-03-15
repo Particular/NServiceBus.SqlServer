@@ -70,7 +70,7 @@
                 using (var tx = connection.BeginTransaction())
                 {
                     tableBasedQueue.FormatPeekCommand(100);
-                    await tableBasedQueue.TryPeek(connection, tx, CancellationToken.None, PeekTimeoutInSeconds);
+                    await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds);
                     scope.Complete();
                 }
             }
