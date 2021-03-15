@@ -78,18 +78,20 @@
         {
             messageReceivingCancellationTokenSource?.Cancel();
 
-            cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel());
-
-            await messageReceivingTask.ConfigureAwait(false);
-
-            while (concurrencyLimiter.CurrentCount != maxConcurrency)
+            using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
-                // Pass CancellationToken.None so that no exceptions will be thrown while waiting
-                // for the message receiver to gracefully shut down. The cancellation tokens passed to
-                // ProcessMessages (and thus the message processing pipelines) will be responsible
-                // for more forcefully shutting down message processing after the user's shutdown SLA
-                // is reached
-                await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+
+                await messageReceivingTask.ConfigureAwait(false);
+
+                while (concurrencyLimiter.CurrentCount != maxConcurrency)
+                {
+                    // Pass CancellationToken.None so that no exceptions will be thrown while waiting
+                    // for the message receiver to gracefully shut down. The cancellation tokens passed to
+                    // ProcessMessages (and thus the message processing pipelines) will be responsible
+                    // for more forcefully shutting down message processing after the user's shutdown SLA
+                    // is reached
+                    await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+                }
             }
 
             messageReceivingCircuitBreaker.Dispose();
