@@ -12,8 +12,10 @@ namespace NServiceBus.Transport.SqlServer
 
     class DueDelayedMessageProcessor
     {
-        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, TimeSpan interval, int batchSize)
+        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, TimeSpan interval, int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
+            this.hostSettings = hostSettings;
+            this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.table = table;
             this.connectionFactory = connectionFactory;
             this.interval = interval;
@@ -24,6 +26,8 @@ namespace NServiceBus.Transport.SqlServer
         public void Start(CancellationToken cancellationToken)
         {
             moveDelayedMessagesCancellationTokenSource = new CancellationTokenSource();
+
+            dueDelayedMessageProcessorCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("due delayed message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to move matured delayed messages to input queue", ex, moveDelayedMessagesCancellationTokenSource.Token));
 
             moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), cancellationToken);
         }
@@ -51,6 +55,8 @@ namespace NServiceBus.Transport.SqlServer
                             transaction.Commit();
                         }
                     }
+
+                    dueDelayedMessageProcessorCircuitBreaker.Success();
                 }
                 catch (OperationCanceledException)
                 {
@@ -64,12 +70,15 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 catch (Exception e)
                 {
-                    Logger.Fatal("Exception thrown while moving matured delayed messages", e);
+                    Logger.Error("Exception thrown while moving matured delayed messages", e);
+                    await dueDelayedMessageProcessorCircuitBreaker.Failure(e).ConfigureAwait(false);
+                    // since the circuit breaker might already delay a bit and we were supposed to move messages let's try again.
+                    continue;
                 }
 
                 try
                 {
-                    Logger.DebugFormat(message);
+                    Logger.Debug(message);
                     await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -79,13 +88,17 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        string message;
-        DelayedMessageTable table;
-        SqlConnectionFactory connectionFactory;
-        TimeSpan interval;
-        int batchSize;
+        readonly TimeSpan waitTimeCircuitBreaker;
+        readonly HostSettings hostSettings;
+        readonly string message;
+        readonly DelayedMessageTable table;
+        readonly SqlConnectionFactory connectionFactory;
+        readonly TimeSpan interval;
+        readonly int batchSize;
+
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
         Task moveDelayedMessagesTask;
+        RepeatedFailuresOverTimeCircuitBreaker dueDelayedMessageProcessorCircuitBreaker;
 
         static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
     }
