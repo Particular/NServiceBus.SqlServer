@@ -47,16 +47,16 @@
             AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
+        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
         {
             return new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
-                correlationId = await GetNullableAsync<string>(dataReader, 1).ConfigureAwait(false),
-                replyToAddress = await GetNullableAsync<string>(dataReader, 2).ConfigureAwait(false),
+                correlationId = await GetNullableAsync<string>(dataReader, 1, cancellationToken).ConfigureAwait(false),
+                replyToAddress = await GetNullableAsync<string>(dataReader, 2, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(3, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 4, cancellationToken).ConfigureAwait(false),
-                bodyBytes = isStreamSupported ? await GetBody(dataReader, 5, cancellationToken).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5).ConfigureAwait(false)
+                bodyBytes = isStreamSupported ? await GetBody(dataReader, 5, cancellationToken).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5, cancellationToken).ConfigureAwait(false)
             };
         }
 
@@ -82,7 +82,7 @@
             return default;
         }
 
-        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken = default)
+        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
         {
             if (await dataReader.IsDBNullAsync(headersIndex, cancellationToken).ConfigureAwait(false))
             {
@@ -95,7 +95,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, CancellationToken cancellationToken = default)
+        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, CancellationToken cancellationToken)
         {
             // Null values will be returned as an empty (zero bytes) Stream.
             using (var outStream = new MemoryStream())
@@ -107,19 +107,19 @@
             }
         }
 
-        static Task<byte[]> GetNonStreamBody(SqlDataReader dataReader, int bodyIndex)
+        static Task<byte[]> GetNonStreamBody(SqlDataReader dataReader, int bodyIndex, CancellationToken cancellationToken)
         {
             return Task.FromResult((byte[])dataReader[bodyIndex]);
         }
 
-        static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index) where T : class
+        static async Task<T> GetNullableAsync<T>(SqlDataReader dataReader, int index, CancellationToken cancellationToken) where T : class
         {
-            if (await dataReader.IsDBNullAsync(index).ConfigureAwait(false))
+            if (await dataReader.IsDBNullAsync(index, cancellationToken).ConfigureAwait(false))
             {
                 return default;
             }
 
-            return await dataReader.GetFieldValueAsync<T>(index).ConfigureAwait(false);
+            return await dataReader.GetFieldValueAsync<T>(index, cancellationToken).ConfigureAwait(false);
         }
 
         void AddParameter(SqlCommand command, string name, SqlDbType type, object value)

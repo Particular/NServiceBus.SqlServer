@@ -63,7 +63,7 @@
             await schemaInspector.PerformInspection(inputQueue, cancellationToken).ConfigureAwait(false);
         }
 
-        public Task StartReceive(CancellationToken cancellationToken)
+        public Task StartReceive(CancellationToken cancellationToken = default)
         {
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
@@ -120,7 +120,7 @@
                 catch (Exception ex)
                 {
                     Logger.Error("Message receiving failed", ex);
-                    await messageReceivingCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                    await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -183,7 +183,7 @@
             {
                 Logger.Warn("Message processing failed", ex);
 
-                await messageProcessingCircuitBreaker.Failure(ex).ConfigureAwait(false);
+                await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -191,7 +191,7 @@
             }
         }
 
-        async Task PurgeExpiredMessages(CancellationToken cancellationToken = default)
+        async Task PurgeExpiredMessages(CancellationToken cancellationToken)
         {
             try
             {

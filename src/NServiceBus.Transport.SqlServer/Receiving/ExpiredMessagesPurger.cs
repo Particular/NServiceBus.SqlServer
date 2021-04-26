@@ -12,7 +12,7 @@
 
     class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, Task<SqlConnection>> openConnection, int? purgeBatchSize)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection, int? purgeBatchSize)
         {
             this.openConnection = openConnection;
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
@@ -25,7 +25,7 @@
 
             try
             {
-                using (var connection = await openConnection(queue).ConfigureAwait(false))
+                using (var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false))
                 {
                     var continuePurging = true;
 
@@ -48,7 +48,7 @@
         }
 
         int purgeBatchSize;
-        Func<TableBasedQueue, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection;
         const int DefaultPurgeBatchSize = 10000;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

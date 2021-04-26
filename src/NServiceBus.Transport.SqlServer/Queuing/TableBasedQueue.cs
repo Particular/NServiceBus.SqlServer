@@ -67,7 +67,7 @@ namespace NServiceBus.Transport.SqlServer
             return SendRawMessage(messageRow, connection, transaction, cancellationToken);
         }
 
-        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken = default)
+        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
@@ -86,7 +86,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             try
             {

@@ -24,17 +24,17 @@ namespace NServiceBus.Transport.SqlServer
             {
                 foreach (var address in queueAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (delayedQueueAddress != null)
                 {
-                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn).ConfigureAwait(false);
+                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace NServiceBus.Transport.SqlServer
                         CommandType = CommandType.Text
                     })
                     {
-                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
                     }
 
@@ -76,7 +76,7 @@ namespace NServiceBus.Transport.SqlServer
                         CommandType = CommandType.Text
                     })
                     {
-                        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                     }
 
                     transaction.Commit();

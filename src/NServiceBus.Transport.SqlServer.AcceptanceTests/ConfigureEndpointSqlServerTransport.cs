@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 #endif
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
@@ -53,7 +54,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
                 return connection;
             }
 
-            return await transport.ConnectionFactory(default).ConfigureAwait(false);
+            return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
         };
 
         using (var conn = await factory().ConfigureAwait(false))
