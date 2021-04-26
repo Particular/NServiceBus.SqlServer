@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using SqlServer;
@@ -41,11 +42,11 @@
 
         SqlConnectionFactory sqlConnectionFactory;
 
-        static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
+        static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            using (var connection = await sqlConnectionFactory.OpenNewConnection().ConfigureAwait(false))
+            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 using (var comm = connection.CreateCommand())
                 {
@@ -53,7 +54,7 @@
                     comm.ExecuteNonQuery();
                 }
             }
-            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus")).ConfigureAwait(false);
+            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken).ConfigureAwait(false);
         }
     }
 }

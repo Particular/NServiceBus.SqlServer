@@ -53,9 +53,7 @@
             await receiver.Initialize(
                 new PushRuntimeSettings(1),
                 (_, __) => Task.CompletedTask,
-                (_, __) => Task.FromResult(ErrorHandleResult.Handled),
-                default
-            );
+                (_, __) => Task.FromResult(ErrorHandleResult.Handled));
 
             await receiver.StartReceive();
 
@@ -68,7 +66,7 @@
             Assert.That(inputQueue.NumberOfReceives, Is.AtMost(successfulReceives + 2), "Receiver should stop receives after first unsuccessful attempt.");
         }
 
-        static async Task WaitUntil(Func<bool> condition, int timeoutInSeconds = 5)
+        static async Task WaitUntil(Func<bool> condition, int timeoutInSeconds = 5, CancellationToken cancellationToken = default)
         {
             var startTime = DateTime.UtcNow; //Local usage only
 
@@ -79,7 +77,7 @@
                     return;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
             }
 
             throw new Exception("Condition has not been met in predefined timespan.");

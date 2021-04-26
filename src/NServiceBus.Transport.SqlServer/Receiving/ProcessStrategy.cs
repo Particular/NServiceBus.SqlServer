@@ -100,7 +100,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {

@@ -106,7 +106,7 @@ namespace NServiceBus.Transport.SqlServer
                     BatchSize = purgeBatchSize
                 });
 
-                expiredMessagesPurger = new ExpiredMessagesPurger(_ => connectionFactory.OpenNewConnection(cancellationToken), purgeBatchSize);
+                expiredMessagesPurger = new ExpiredMessagesPurger((_, token) => connectionFactory.OpenNewConnection(token), purgeBatchSize);
                 validateExpiredIndex = true;
             }
 
@@ -200,14 +200,14 @@ namespace NServiceBus.Transport.SqlServer
             return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
         }
 
-        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken = default)
+        async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
         {
             await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
             await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task TryOpenDatabaseConnection(CancellationToken cancellationToken = default)
+        async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions, CancellationToken cancellationToken = default)
+        async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions, CancellationToken cancellationToken)
         {
             if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
             {
@@ -275,7 +275,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public override Task Shutdown(CancellationToken cancellationToken = default)
         {
-            return dueDelayedMessageProcessor?.Stop() ?? Task.FromResult(0);
+            return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
         readonly QueueAddressTranslator addressTranslator;

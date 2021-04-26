@@ -59,7 +59,7 @@
             catch (Exception ex)
             {
                 Logger.Warn("Sql peek operation failed", ex);
-                await circuitBreaker.Failure(ex).ConfigureAwait(false);
+                await circuitBreaker.Failure(ex, cancellationToken).ConfigureAwait(false);
             }
 
             if (messageCount == 0)

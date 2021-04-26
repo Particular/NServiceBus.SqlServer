@@ -37,7 +37,7 @@
             Logger.InfoFormat("The circuit breaker for {0} is now disarmed", name);
         }
 
-        public Task Failure(Exception exception)
+        public Task Failure(Exception exception, CancellationToken cancellationToken = default)
         {
             lastException = exception;
             var newValue = Interlocked.Increment(ref failureCount);
@@ -49,7 +49,7 @@
             }
 
             var delay = Triggered ? ThrottledDelay : NonThrottledDelay;
-            return Task.Delay(delay);
+            return Task.Delay(delay, CancellationToken.None);
         }
 
         void CircuitBreakerTriggered(object state)

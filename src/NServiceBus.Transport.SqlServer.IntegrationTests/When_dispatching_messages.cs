@@ -101,32 +101,32 @@
             PrepareAsync().GetAwaiter().GetResult();
         }
 
-        async Task PrepareAsync()
+        async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var tableCache = new TableBasedQueueCache(addressParser, true);
 
-            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
+            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory, cancellationToken);
 
-            await PurgeOutputQueue(addressParser);
+            await PurgeOutputQueue(addressParser, cancellationToken);
 
             dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
         }
 
-        Task PurgeOutputQueue(QueueAddressTranslator addressTranslator)
+        Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
             queue = new TableBasedQueue(queueAddress, ValidAddress, true);
 
-            return purger.Purge(queue);
+            return purger.Purge(queue, cancellationToken);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"));
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
 
         QueuePurger purger;

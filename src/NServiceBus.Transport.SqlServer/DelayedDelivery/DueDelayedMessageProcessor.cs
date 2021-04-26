@@ -23,7 +23,7 @@ namespace NServiceBus.Transport.SqlServer
             message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
         }
 
-        public void Start(CancellationToken cancellationToken)
+        public void Start(CancellationToken cancellationToken = default)
         {
             moveDelayedMessagesCancellationTokenSource = new CancellationTokenSource();
 
@@ -32,7 +32,7 @@ namespace NServiceBus.Transport.SqlServer
             moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), cancellationToken);
         }
 
-        public async Task Stop()
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
             moveDelayedMessagesCancellationTokenSource?.Cancel();
 
@@ -71,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
                 catch (Exception e)
                 {
                     Logger.Error("Exception thrown while moving matured delayed messages", e);
-                    await dueDelayedMessageProcessorCircuitBreaker.Failure(e).ConfigureAwait(false);
+                    await dueDelayedMessageProcessorCircuitBreaker.Failure(e, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                     // since the circuit breaker might already delay a bit and we were supposed to move messages let's try again.
                     continue;
                 }

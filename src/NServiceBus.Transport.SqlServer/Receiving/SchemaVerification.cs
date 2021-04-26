@@ -29,7 +29,7 @@
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken = default)
+        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -48,7 +48,7 @@
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
-        Task VerifyNonClusteredRowVersionIndex(TableBasedQueue queue, CancellationToken cancellationToken = default)
+        Task VerifyNonClusteredRowVersionIndex(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -57,7 +57,7 @@
                 cancellationToken);
         }
 
-        Task VerifyExpiredIndex(TableBasedQueue queue, CancellationToken cancellationToken = default)
+        Task VerifyExpiredIndex(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -67,7 +67,7 @@
             );
         }
 
-        async Task VerifyHeadersColumnType(TableBasedQueue queue, CancellationToken cancellationToken = default)
+        async Task VerifyHeadersColumnType(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             try
             {
