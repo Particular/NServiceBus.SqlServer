@@ -57,7 +57,7 @@ jobs:
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
-        if: matrix.name == 'Windows'
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v2.2.2
         with:
           name: NuGet packages
@@ -74,9 +74,9 @@ jobs:
         shell: pwsh
         run: |
           $hostname = "psw-mssql-$(Get-Random)"
-          echo "::set-output name=sqlinstance::$hostname"
+          echo "::set-output name=hostname::$hostname"
           echo "Creating SQL Server container $hostname (This can take awhile.)"
-          $details = az container create --image mcr.microsoft.com/mssql/server:2019-CU10-ubuntu-20.04  --name $hostname --resource-group GitHubActions-RG --cpu 1 --memory 3.5 --port 1433 --ip-address public -e ACCEPT_EULA=Y MSSQL_SA_PASSWORD=${{ secrets.ACI_MSSQL_PASSWORD }} MSSQL_PID=Developer MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS MSSQL_ENABLE_HADR=Y --dns-name-label $hostname | ConvertFrom-Json
+          $details = az container create --image mcr.microsoft.com/mssql/server:2019-CU10-ubuntu-20.04  --name $hostname --resource-group GitHubActions-RG --cpu 1 --memory 3.5 --ports 1433 135 51000 --ip-address public -e ACCEPT_EULA=Y MSSQL_SA_PASSWORD=${{ secrets.ACI_MSSQL_PASSWORD }} MSSQL_PID=Developer MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS MSSQL_ENABLE_HADR=Y MSSQL_RPC_PORT=135 MSSQL_DTC_TCP_PORT=51000 --dns-name-label $hostname | ConvertFrom-Json
 
           $domain=$details.ipAddress.fqdn
           echo "::add-mask::$domain"
@@ -86,12 +86,26 @@ jobs:
           $ignore = az tag create --resource-id $details.id --tags Package=SqlTransport RunnerOS=${{ runner.os }} $dateTag
 
           actions-tool dbinit mssql --server $domain --password ${{ secrets.ACI_MSSQL_PASSWORD }} --env-var-name SqlServerTransportConnectionString --script-file src/Scripts/Create-Databases.sql
+      - name: Setup DTC on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          echo "Setting DTC network settings"
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name NetworkDtcAccess -Value 1
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name NetworkDtcAccessClients -Value 1
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name NetworkDtcAccessInbound -Value 1
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name NetworkDtcAccessOutbound -Value 1
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name NetworkDtcAccessTransactions -Value 1
+          Set-ItemProperty -Path HKLM:\Software\Microsoft\MSDTC\Security -Name XaTransactions -Value 1
+
+          echo "Restarting MSDTC Service"
+          Restart-Service -Name MSDTC
       - name: Run Windows tests
-        if: matrix.name == 'Windows'
+        if: runner.os == 'Windows'
         # -m:1 parameter prevents test projects from being run in parallel, since multiple test projects share the same tests
         run: dotnet test src --configuration Release --no-build --logger "GitHubActions;report-warnings=false" -m:1
       - name: Run Linux tests
-        if: matrix.name == 'Linux'
+        if: runner.os == 'Linux'
         # -m:1 parameter prevents test projects from being run in parallel, since multiple test projects share the same tests
         run: dotnet test src --configuration Release --no-build --framework netcoreapp3.1 -m:1 --logger "GitHubActions;report-warnings=false"
       - name: Teardown SQL Server
