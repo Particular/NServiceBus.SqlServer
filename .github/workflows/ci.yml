@@ -76,7 +76,7 @@ jobs:
           $hostname = "psw-mssql-$(Get-Random)"
           echo "::set-output name=hostname::$hostname"
           echo "Creating SQL Server container $hostname (This can take awhile.)"
-          $details = az container create --image mcr.microsoft.com/mssql/server:2019-CU10-ubuntu-20.04  --name $hostname --resource-group GitHubActions-RG --cpu 1 --memory 3.5 --ports 1433 135 51000 --ip-address public -e ACCEPT_EULA=Y MSSQL_SA_PASSWORD=${{ secrets.ACI_MSSQL_PASSWORD }} MSSQL_PID=Developer MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS MSSQL_ENABLE_HADR=Y MSSQL_RPC_PORT=135 MSSQL_DTC_TCP_PORT=51000 --dns-name-label $hostname | ConvertFrom-Json
+          $details = az container create --image mcr.microsoft.com/mssql/server:2017-CU22-ubuntu-16.04  --name $hostname --resource-group GitHubActions-RG --cpu 1 --memory 3.5 --ports 1433 135 51000 --ip-address public -e ACCEPT_EULA=Y MSSQL_SA_PASSWORD=${{ secrets.ACI_MSSQL_PASSWORD }} MSSQL_PID=Developer MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS MSSQL_ENABLE_HADR=Y MSSQL_RPC_PORT=135 MSSQL_DTC_TCP_PORT=51000 --dns-name-label $hostname | ConvertFrom-Json
 
           $domain=$details.ipAddress.fqdn
           echo "::add-mask::$domain"
