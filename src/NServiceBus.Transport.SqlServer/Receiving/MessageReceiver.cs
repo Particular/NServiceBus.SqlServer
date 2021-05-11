@@ -118,7 +118,7 @@
                     }
                     else
                     {
-                        Logger.Warn("Operation cancelled thrown.", ex);
+                        Logger.Warn("OperationCanceledException thrown.", ex);
                     }
                 }
                 catch (SqlException e) when (messageReceivingCancellationToken.IsCancellationRequested)
@@ -214,7 +214,7 @@
                 }
                 else
                 {
-                    Logger.Warn("Operation cancelled thrown.", ex);
+                    Logger.Warn("OperationCanceledException thrown.", ex);
                 }
             }
             catch (SqlException e) when (e.Number == 1205)

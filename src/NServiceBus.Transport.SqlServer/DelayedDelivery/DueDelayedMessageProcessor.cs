@@ -67,7 +67,7 @@ namespace NServiceBus.Transport.SqlServer
                     }
                     else
                     {
-                        Logger.Warn("Operation cancelled thrown.", ex);
+                        Logger.Warn("OperationCanceledException thrown.", ex);
                     }
                     return;
                 }
@@ -97,7 +97,7 @@ namespace NServiceBus.Transport.SqlServer
                     }
                     else
                     {
-                        Logger.Warn("Operation cancelled thrown.", ex);
+                        Logger.Warn("OperationCanceledException thrown.", ex);
                     }
                     return;
                 }

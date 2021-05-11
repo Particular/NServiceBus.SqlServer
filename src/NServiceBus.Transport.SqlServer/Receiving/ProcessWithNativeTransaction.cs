@@ -107,7 +107,7 @@
                 }
                 else
                 {
-                    log.Warn("Operation cancelled thrown.", ex);
+                    log.Warn("OperationCanceledException thrown.", ex);
                 }
                 return false;
             }

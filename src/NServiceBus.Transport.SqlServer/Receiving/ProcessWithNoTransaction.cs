@@ -46,7 +46,7 @@ namespace NServiceBus.Transport.SqlServer
                     }
                     else
                     {
-                        log.Warn("Operation cancelled thrown.", ex);
+                        log.Warn("OperationCanceledException thrown.", ex);
                     }
                 }
                 catch (Exception exception)
