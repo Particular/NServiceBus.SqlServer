@@ -38,9 +38,16 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException ex)
                 {
-                    log.Info($"Message processing cancelled for message id '{message.TransportId}'.");
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        log.Debug("Message processing cancelled.", ex);
+                    }
+                    else
+                    {
+                        log.Warn("Operation cancelled thrown.", ex);
+                    }
                 }
                 catch (Exception exception)
                 {

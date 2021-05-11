@@ -69,7 +69,7 @@
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
-            messageReceivingTask = Task.Run(() => ReceiveMessages(messageReceivingCancellationTokenSource.Token), cancellationToken);
+            messageReceivingTask = Task.Run(() => ReceiveMessages(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
 
             return Task.CompletedTask;
         }
@@ -109,9 +109,17 @@
                 {
                     await InnerReceiveMessages(messageReceivingCancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
                     // For graceful shutdown purposes
+                    if (messageReceivingCancellationToken.IsCancellationRequested)
+                    {
+                        Logger.Debug("Message receiving cancelled.", ex);
+                    }
+                    else
+                    {
+                        Logger.Warn("Operation cancelled thrown.", ex);
+                    }
                 }
                 catch (SqlException e) when (messageReceivingCancellationToken.IsCancellationRequested)
                 {
