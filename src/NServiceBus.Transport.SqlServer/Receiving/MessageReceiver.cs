@@ -205,9 +205,17 @@
             {
                 await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 // Graceful shutdown
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Debug("Purging expired messages cancelled.", ex);
+                }
+                else
+                {
+                    Logger.Warn("Operation cancelled thrown.", ex);
+                }
             }
             catch (SqlException e) when (e.Number == 1205)
             {
