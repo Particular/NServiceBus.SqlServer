@@ -29,7 +29,7 @@ namespace NServiceBus.Transport.SqlServer
 
             dueDelayedMessageProcessorCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("due delayed message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to move matured delayed messages to input queue", ex, moveDelayedMessagesCancellationTokenSource.Token));
 
-            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), cancellationToken);
+            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), CancellationToken.None);
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
@@ -58,9 +58,17 @@ namespace NServiceBus.Transport.SqlServer
 
                     dueDelayedMessageProcessorCircuitBreaker.Success();
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
                     // Graceful shutdown
+                    if (moveDelayedMessagesCancellationToken.IsCancellationRequested)
+                    {
+                        Logger.Debug("Delayed message poller cancelled.", ex);
+                    }
+                    else
+                    {
+                        Logger.Warn("OperationCanceledException thrown.", ex);
+                    }
                     return;
                 }
                 catch (SqlException e) when (moveDelayedMessagesCancellationToken.IsCancellationRequested)
@@ -81,8 +89,16 @@ namespace NServiceBus.Transport.SqlServer
                     Logger.Debug(message);
                     await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
+                    if (moveDelayedMessagesCancellationToken.IsCancellationRequested)
+                    {
+                        Logger.Debug("Delayed message poller cancelled.", ex);
+                    }
+                    else
+                    {
+                        Logger.Warn("OperationCanceledException thrown.", ex);
+                    }
                     return;
                 }
             }

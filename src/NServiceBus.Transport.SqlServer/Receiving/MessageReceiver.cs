@@ -69,7 +69,7 @@
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
-            messageReceivingTask = Task.Run(() => ReceiveMessages(messageReceivingCancellationTokenSource.Token), cancellationToken);
+            messageReceivingTask = Task.Run(() => ReceiveMessages(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
 
             return Task.CompletedTask;
         }
@@ -109,9 +109,17 @@
                 {
                     await InnerReceiveMessages(messageReceivingCancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
                     // For graceful shutdown purposes
+                    if (messageReceivingCancellationToken.IsCancellationRequested)
+                    {
+                        Logger.Debug("Message receiving cancelled.", ex);
+                    }
+                    else
+                    {
+                        Logger.Warn("OperationCanceledException thrown.", ex);
+                    }
                 }
                 catch (SqlException e) when (messageReceivingCancellationToken.IsCancellationRequested)
                 {
@@ -197,9 +205,17 @@
             {
                 await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 // Graceful shutdown
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Debug("Purging expired messages cancelled.", ex);
+                }
+                else
+                {
+                    Logger.Warn("OperationCanceledException thrown.", ex);
+                }
             }
             catch (SqlException e) when (e.Number == 1205)
             {

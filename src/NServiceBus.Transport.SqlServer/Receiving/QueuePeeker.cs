@@ -48,9 +48,17 @@
 
                 circuitBreaker.Success();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 //Graceful shutdown
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Debug("Message receiving cancelled.", ex);
+                }
+                else
+                {
+                    Logger.Warn("OperationCanceledException thrown.", ex);
+                }
             }
             catch (SqlException e) when (cancellationToken.IsCancellationRequested)
             {
