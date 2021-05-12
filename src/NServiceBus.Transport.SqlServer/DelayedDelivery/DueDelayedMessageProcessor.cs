@@ -1,11 +1,6 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -29,7 +24,8 @@ namespace NServiceBus.Transport.SqlServer
 
             dueDelayedMessageProcessorCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("due delayed message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to move matured delayed messages to input queue", ex, moveDelayedMessagesCancellationTokenSource.Token));
 
-            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessages(moveDelayedMessagesCancellationTokenSource.Token), CancellationToken.None);
+            // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
+            moveDelayedMessagesTask = Task.Run(() => MoveMaturedDelayedMessagesAndSwallowExceptions(moveDelayedMessagesCancellationTokenSource.Token), CancellationToken.None);
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
@@ -41,10 +37,28 @@ namespace NServiceBus.Transport.SqlServer
             moveDelayedMessagesCancellationTokenSource?.Dispose();
         }
 
+        async Task MoveMaturedDelayedMessagesAndSwallowExceptions(CancellationToken moveDelayedMessagesCancellationToken)
+        {
+            try
+            {
+                await MoveMaturedDelayedMessages(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex.IsCausedBy(moveDelayedMessagesCancellationToken))
+            {
+                Logger.Debug("Delayed message poller canceled.", ex);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Exception thrown while moving matured delayed messages", ex);
+            }
+        }
+
         async Task MoveMaturedDelayedMessages(CancellationToken moveDelayedMessagesCancellationToken)
         {
-            while (!moveDelayedMessagesCancellationToken.IsCancellationRequested)
+            while (true)
             {
+                moveDelayedMessagesCancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
@@ -58,49 +72,16 @@ namespace NServiceBus.Transport.SqlServer
 
                     dueDelayedMessageProcessorCircuitBreaker.Success();
                 }
-                catch (OperationCanceledException ex)
+                catch (Exception ex) when (!ex.IsCausedBy(moveDelayedMessagesCancellationToken))
                 {
-                    // Graceful shutdown
-                    if (moveDelayedMessagesCancellationToken.IsCancellationRequested)
-                    {
-                        Logger.Debug("Delayed message poller cancelled.", ex);
-                    }
-                    else
-                    {
-                        Logger.Warn("OperationCanceledException thrown.", ex);
-                    }
-                    return;
-                }
-                catch (SqlException e) when (moveDelayedMessagesCancellationToken.IsCancellationRequested)
-                {
-                    Logger.Debug("Exception thrown while performing cancellation", e);
-                    return;
-                }
-                catch (Exception e)
-                {
-                    Logger.Error("Exception thrown while moving matured delayed messages", e);
-                    await dueDelayedMessageProcessorCircuitBreaker.Failure(e, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                    // since the circuit breaker might already delay a bit and we were supposed to move messages let's try again.
+                    Logger.Error("Exception thrown while moving matured delayed messages", ex);
+                    await dueDelayedMessageProcessorCircuitBreaker.Failure(ex, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                    // since the circuit breaker might already delay a bit and we were supposed to move messages, let's try again
                     continue;
                 }
 
-                try
-                {
-                    Logger.Debug(message);
-                    await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    if (moveDelayedMessagesCancellationToken.IsCancellationRequested)
-                    {
-                        Logger.Debug("Delayed message poller cancelled.", ex);
-                    }
-                    else
-                    {
-                        Logger.Warn("OperationCanceledException thrown.", ex);
-                    }
-                    return;
-                }
+                Logger.Debug(message);
+                await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -116,6 +97,6 @@ namespace NServiceBus.Transport.SqlServer
         Task moveDelayedMessagesTask;
         RepeatedFailuresOverTimeCircuitBreaker dueDelayedMessageProcessorCircuitBreaker;
 
-        static ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
+        static readonly ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
     }
 }

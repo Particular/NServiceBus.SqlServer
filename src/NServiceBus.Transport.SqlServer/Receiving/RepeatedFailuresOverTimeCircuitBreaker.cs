@@ -63,9 +63,9 @@
                 {
                     triggerAction(lastException);
                 }
-                catch (Exception x)
+                catch (Exception ex)
                 {
-                    Logger.Error($"Error invoking trigger action for circuit breaker {name}", x);
+                    Logger.Error($"Error invoking trigger action for circuit breaker {name}", ex);
                 }
             }
         }

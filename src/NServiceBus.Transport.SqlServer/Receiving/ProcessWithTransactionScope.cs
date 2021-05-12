@@ -49,13 +49,13 @@
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
-            catch (Exception exception)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 if (message == null)
                 {
                     throw;
                 }
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
             }
         }
 
@@ -85,21 +85,9 @@
             {
                 return await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException ex)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    log.Debug("Message processing cancelled.", ex);
-                }
-                else
-                {
-                    log.Warn("OperationCanceledException thrown.", ex);
-                }
-                return false;
-            }
-            catch (Exception exception)
-            {
-                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, exception, context);
+                failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
                 return false;
             }
         }

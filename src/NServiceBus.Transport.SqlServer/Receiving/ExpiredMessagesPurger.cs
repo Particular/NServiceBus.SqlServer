@@ -29,8 +29,10 @@
                 {
                     var continuePurging = true;
 
-                    while (continuePurging && !cancellationToken.IsCancellationRequested)
+                    while (continuePurging)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+
                         var purgedRowsCount = await queue.PurgeBatchOfExpiredMessages(connection, purgeBatchSize, cancellationToken).ConfigureAwait(false);
 
                         totalPurgedRowsCount += purgedRowsCount;
@@ -40,7 +42,7 @@
 
                 Logger.DebugFormat("{0} expired messages were successfully purged from table {1}", totalPurgedRowsCount, queue);
             }
-            catch
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 Logger.WarnFormat("Purging expired messages from table {0} failed after purging {1} messages.", queue, totalPurgedRowsCount);
                 throw;
