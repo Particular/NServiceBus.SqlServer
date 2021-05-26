@@ -39,49 +39,40 @@ namespace NServiceBus.Transport.SqlServer
 
         async Task MoveMaturedDelayedMessagesAndSwallowExceptions(CancellationToken moveDelayedMessagesCancellationToken)
         {
-            try
+            while (!moveDelayedMessagesCancellationToken.IsCancellationRequested)
             {
-                await MoveMaturedDelayedMessages(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex.IsCausedBy(moveDelayedMessagesCancellationToken))
-            {
-                Logger.Debug("Delayed message poller canceled.", ex);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Exception thrown while moving matured delayed messages", ex);
-            }
-        }
-
-        async Task MoveMaturedDelayedMessages(CancellationToken moveDelayedMessagesCancellationToken)
-        {
-            while (true)
-            {
-                moveDelayedMessagesCancellationToken.ThrowIfCancellationRequested();
-
                 try
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
+                    try
                     {
-                        using (var transaction = connection.BeginTransaction())
+                        using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
                         {
-                            await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                            transaction.Commit();
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                                transaction.Commit();
+                            }
                         }
+
+                        dueDelayedMessageProcessorCircuitBreaker.Success();
+
+                        Logger.Debug(message);
+                        await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                     }
-
-                    dueDelayedMessageProcessorCircuitBreaker.Success();
+                    catch (Exception ex) when (!ex.IsCausedBy(moveDelayedMessagesCancellationToken))
+                    {
+                        Logger.Error("Exception thrown while moving matured delayed messages", ex);
+                        await dueDelayedMessageProcessorCircuitBreaker.Failure(ex, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                        // since the circuit breaker might already delay a bit and we were supposed to move messages, let's try again
+                        continue;
+                    }
                 }
-                catch (Exception ex) when (!ex.IsCausedBy(moveDelayedMessagesCancellationToken))
+                catch (Exception ex) when (ex.IsCausedBy(moveDelayedMessagesCancellationToken))
                 {
-                    Logger.Error("Exception thrown while moving matured delayed messages", ex);
-                    await dueDelayedMessageProcessorCircuitBreaker.Failure(ex, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                    // since the circuit breaker might already delay a bit and we were supposed to move messages, let's try again
-                    continue;
+                    // private token, processor is being stopped, log the exception in case the stack trace is ever needed for debugging
+                    Logger.Debug("Operation canceled while stopping the moving of matured delayed messages.", ex);
+                    break;
                 }
-
-                Logger.Debug(message);
-                await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             }
         }
 
