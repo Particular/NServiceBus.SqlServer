@@ -1,11 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -48,23 +43,7 @@
 
                 circuitBreaker.Success();
             }
-            catch (OperationCanceledException ex)
-            {
-                //Graceful shutdown
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    Logger.Debug("Message receiving cancelled.", ex);
-                }
-                else
-                {
-                    Logger.Warn("OperationCanceledException thrown.", ex);
-                }
-            }
-            catch (SqlException e) when (cancellationToken.IsCancellationRequested)
-            {
-                Logger.Debug("Exception thrown while performing cancellation", e);
-            }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 Logger.Warn("Sql peek operation failed", ex);
                 await circuitBreaker.Failure(ex, cancellationToken).ConfigureAwait(false);
@@ -77,16 +56,15 @@
                     Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
                 }
 
-                // This doesn't require a try/catch (OperationCanceledException) because the upper layers handle the shutdown case gracefully
                 await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
             }
 
             return messageCount;
         }
 
-        SqlConnectionFactory connectionFactory;
-        QueuePeekerOptions settings;
+        readonly SqlConnectionFactory connectionFactory;
+        readonly QueuePeekerOptions settings;
 
-        static ILog Logger = LogManager.GetLogger<QueuePeeker>();
+        static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }
 }

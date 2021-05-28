@@ -83,19 +83,7 @@
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException ex)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    log.Debug("Message processing cancelled.", ex);
-                }
-                else
-                {
-                    log.Warn("OperationCanceledException thrown.", ex);
-                }
-                return ErrorHandleResult.RetryRequired;
-            }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex, cancellationToken);
 

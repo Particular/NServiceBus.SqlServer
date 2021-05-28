@@ -215,7 +215,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 var message = "Could not open connection to the SQL instance. Check the original error message for details. Original error message: " + ex.Message;
 

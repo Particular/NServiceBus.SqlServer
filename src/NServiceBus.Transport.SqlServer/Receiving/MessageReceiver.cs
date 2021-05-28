@@ -52,7 +52,7 @@
 
                     Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, receiveSettings.ReceiveAddress);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                 {
                     Logger.Warn("Failed to purge input queue on startup.", ex);
                 }
@@ -69,7 +69,8 @@
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
-            messageReceivingTask = Task.Run(() => ReceiveMessages(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
+            // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
+            messageReceivingTask = Task.Run(() => ReceiveMessagesAndSwallowExceptions(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
 
             return Task.CompletedTask;
         }
@@ -80,7 +81,6 @@
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
-
                 await messageReceivingTask.ConfigureAwait(false);
 
                 while (concurrencyLimiter.CurrentCount != maxConcurrency)
@@ -101,97 +101,91 @@
             messageProcessingCancellationTokenSource?.Dispose();
         }
 
-        async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
+        async Task ReceiveMessagesAndSwallowExceptions(CancellationToken messageReceivingCancellationToken)
         {
             while (!messageReceivingCancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    await InnerReceiveMessages(messageReceivingCancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    // For graceful shutdown purposes
-                    if (messageReceivingCancellationToken.IsCancellationRequested)
+                    try
                     {
-                        Logger.Debug("Message receiving cancelled.", ex);
+                        await ReceiveMessages(messageReceivingCancellationToken).ConfigureAwait(false);
                     }
-                    else
+                    catch (Exception ex) when (!ex.IsCausedBy(messageReceivingCancellationToken))
                     {
-                        Logger.Warn("OperationCanceledException thrown.", ex);
+                        Logger.Error("Message receiving failed", ex);
+                        await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken).ConfigureAwait(false);
                     }
                 }
-                catch (SqlException e) when (messageReceivingCancellationToken.IsCancellationRequested)
+                catch (Exception ex) when (ex.IsCausedBy(messageReceivingCancellationToken))
                 {
-                    Logger.Debug("Exception thrown during cancellation", e);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Message receiving failed", ex);
-                    await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken).ConfigureAwait(false);
+                    // private token, receiver is being stopped, log the exception in case the stack trace is ever needed for debugging
+                    Logger.Debug("Operation canceled while stopping the message receiver.", ex);
+                    break;
                 }
             }
         }
 
-        async Task InnerReceiveMessages(CancellationToken messageReceivingCancellationToken)
+        async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            while (!messageReceivingCancellationToken.IsCancellationRequested)
+            var messageCount = await queuePeeker.Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken).ConfigureAwait(false);
+
+            if (messageCount == 0)
             {
-                var messageCount = await queuePeeker.Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken).ConfigureAwait(false);
+                return;
+            }
 
-                if (messageCount == 0)
+            messageReceivingCancellationToken.ThrowIfCancellationRequested();
+
+            // We cannot dispose this token source because of potential race conditions of concurrent processing
+            var stopBatchCancellationSource = new CancellationTokenSource();
+
+            // If either the receiving or processing circuit breakers are triggered, start only one message processing task at a time.
+            var maximumConcurrentProcessing = messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered ? 1 : messageCount;
+
+            for (var i = 0; i < maximumConcurrentProcessing; i++)
+            {
+                if (stopBatchCancellationSource.IsCancellationRequested)
                 {
-                    continue;
+                    break;
                 }
 
-                if (messageReceivingCancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
+                await concurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
-                // We cannot dispose this token source because of potential race conditions of concurrent processing
-                var stopBatchCancellationSource = new CancellationTokenSource();
-
-                // If either the receiving or processing circuit breakers are triggered, start only one message processing task at a time.
-                var maximumConcurrentProcessing = messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered ? 1 : messageCount;
-
-                for (var i = 0; i < maximumConcurrentProcessing; i++)
-                {
-                    if (messageReceivingCancellationToken.IsCancellationRequested || stopBatchCancellationSource.IsCancellationRequested)
-                    {
-                        break;
-                    }
-
-                    await concurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
-
-                    _ = ProcessMessage(stopBatchCancellationSource, messageProcessingCancellationTokenSource.Token);
-                }
+                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource, messageProcessingCancellationTokenSource.Token);
             }
         }
 
-        async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken messageProcessingCancellationToken)
+        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
-                // We need to force the method to continue asynchronously because SqlConnection
-                // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
-                await Task.Yield();
+                try
+                {
+                    // We need to force the method to continue asynchronously because SqlConnection
+                    // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
+                    await Task.Yield();
 
-                await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, messageProcessingCancellationToken)
-                    .ConfigureAwait(false);
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, messageProcessingCancellationToken)
+                        .ConfigureAwait(false);
 
-                messageProcessingCircuitBreaker.Success();
+                    messageProcessingCircuitBreaker.Success();
+                }
+                catch (SqlException ex) when (ex.Number == 1205)
+                {
+                    // getting the message was the victim of a lock resolution
+                    Logger.Warn("Message processing failed", ex);
+                }
+                catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
+                {
+                    Logger.Warn("Message processing failed", ex);
+
+                    await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken).ConfigureAwait(false);
+                }
             }
-            catch (SqlException ex) when (ex.Number == 1205)
+            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationToken))
             {
-                // getting the message was the victim of a lock resolution
-                Logger.Warn("Message processing failed", ex);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn("Message processing failed", ex);
-
-                await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken).ConfigureAwait(false);
+                Logger.Debug("Message processing canceled.", ex);
             }
             finally
             {
@@ -205,26 +199,10 @@
             {
                 await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException ex)
-            {
-                // Graceful shutdown
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    Logger.Debug("Purging expired messages cancelled.", ex);
-                }
-                else
-                {
-                    Logger.Warn("OperationCanceledException thrown.", ex);
-                }
-            }
             catch (SqlException e) when (e.Number == 1205)
             {
                 //Purge has been victim of a lock resolution
                 Logger.Warn("Purger has been selected as a lock victim.", e);
-            }
-            catch (SqlException e) when (cancellationToken.IsCancellationRequested)
-            {
-                Logger.Debug("Exception thrown while performing cancellation", e);
             }
         }
 
@@ -233,13 +211,13 @@
         readonly SqlServerTransport transport;
         readonly ReceiveSettings receiveSettings;
         readonly HostSettings hostSettings;
-        Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
-        IPurgeQueues queuePurger;
-        Func<string, TableBasedQueue> queueFactory;
-        IExpiredMessagesPurger expiredMessagesPurger;
-        IPeekMessagesInQueue queuePeeker;
-        QueuePeekerOptions queuePeekerOptions;
-        SchemaInspector schemaInspector;
+        readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
+        readonly IPurgeQueues queuePurger;
+        readonly Func<string, TableBasedQueue> queueFactory;
+        readonly IExpiredMessagesPurger expiredMessagesPurger;
+        readonly IPeekMessagesInQueue queuePeeker;
+        readonly QueuePeekerOptions queuePeekerOptions;
+        readonly SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
         SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
@@ -250,7 +228,7 @@
         Task messageReceivingTask;
         ProcessStrategy processStrategy;
 
-        static ILog Logger = LogManager.GetLogger<MessageReceiver>();
+        static readonly ILog Logger = LogManager.GetLogger<MessageReceiver>();
         PushRuntimeSettings limitations;
 
 

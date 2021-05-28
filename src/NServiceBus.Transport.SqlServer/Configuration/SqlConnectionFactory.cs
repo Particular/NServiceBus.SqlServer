@@ -37,9 +37,19 @@
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
                 }
+#pragma warning disable PS0019 // Do not catch Exception without considering OperationCanceledException
                 catch (Exception)
+#pragma warning restore PS0019 // Do not catch Exception without considering OperationCanceledException
                 {
-                    connection.Dispose();
+                    try
+                    {
+                        connection.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn("Failed to dispose connection.", ex);
+                    }
+
                     throw;
                 }
 

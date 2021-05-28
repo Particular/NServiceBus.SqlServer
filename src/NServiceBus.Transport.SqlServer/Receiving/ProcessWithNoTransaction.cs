@@ -38,21 +38,10 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException ex)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        log.Debug("Message processing cancelled.", ex);
-                    }
-                    else
-                    {
-                        log.Warn("OperationCanceledException thrown.", ex);
-                    }
-                }
-                catch (Exception exception)
+                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
-                    _ = await HandleError(exception, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
+                    _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

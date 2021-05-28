@@ -97,16 +97,11 @@ namespace NServiceBus.Transport.SqlServer
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
-            catch (SqlException ex)
+            catch (SqlException ex) when (ex.Number == 208)
             {
-                if (ex.Number == 208)
-                {
-                    ThrowQueueNotFoundException(ex);
-                }
-
-                ThrowFailedToSendException(ex);
+                ThrowQueueNotFoundException(ex);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 ThrowFailedToSendException(ex);
             }
