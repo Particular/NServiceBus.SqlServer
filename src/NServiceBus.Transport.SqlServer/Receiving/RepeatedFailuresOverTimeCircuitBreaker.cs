@@ -49,7 +49,7 @@
             }
 
             var delay = Triggered ? ThrottledDelay : NonThrottledDelay;
-            return Task.Delay(delay, CancellationToken.None);
+            return Task.Delay(delay, cancellationToken);
         }
 
         void CircuitBreakerTriggered(object state)
