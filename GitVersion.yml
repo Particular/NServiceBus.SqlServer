@@ -7,4 +7,4 @@ branches:
     tracks-release-branches: true
   release:
     increment: Patch
-    tag: ''
+    tag: beta
