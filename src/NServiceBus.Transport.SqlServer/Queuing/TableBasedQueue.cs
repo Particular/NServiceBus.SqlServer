@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.SqlServer
                 CommandTimeout = timeoutInSeconds ?? 30
             })
             {
-                var numberOfMessages = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                var numberOfMessages = (int)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0);
                 return numberOfMessages;
             }
         }
