@@ -37,7 +37,20 @@ namespace NServiceBus.Transport.SqlServer
                 CommandTimeout = timeoutInSeconds ?? 30
             })
             {
-                var numberOfMessages = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!(result is int numberOfMessages))
+                {
+                    if (result is null)
+                    {
+                        throw new Exception("The peek command returned a null value.");
+                    }
+                    else
+                    {
+                        throw new Exception($"The peek command returned an unexpected value of type {result.GetType()}.");
+                    }
+                }
+
                 return numberOfMessages;
             }
         }
