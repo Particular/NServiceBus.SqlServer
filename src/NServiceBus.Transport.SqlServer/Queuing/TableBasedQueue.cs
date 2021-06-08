@@ -10,6 +10,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using Unicast.Queuing;
+    using Logging;
     using static System.String;
 
     class TableBasedQueue
@@ -37,7 +38,7 @@ namespace NServiceBus.Transport.SqlServer
                 CommandTimeout = timeoutInSeconds ?? 30
             })
             {
-                var numberOfMessages = (int)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0);
+                var numberOfMessages = await command.ExecuteScalarAsyncOrDefault<int>(nameof(peekCommand), msg => log.Warn(msg), cancellationToken).ConfigureAwait(false);
                 return numberOfMessages;
             }
         }
@@ -138,7 +139,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
             {
-                var rowsCount = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
@@ -147,7 +148,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
-                var rowsCount = (int)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
@@ -156,7 +157,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
             {
-                return (string)await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -175,5 +176,7 @@ namespace NServiceBus.Transport.SqlServer
         string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
         bool isStreamSupported;
+
+        static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();
     }
 }
