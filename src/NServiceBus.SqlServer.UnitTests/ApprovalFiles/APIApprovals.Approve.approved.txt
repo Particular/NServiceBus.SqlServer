@@ -45,6 +45,7 @@ namespace NServiceBus
         public System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Data.SqlClient.SqlConnection>> ConnectionFactory { get; }
         public string ConnectionString { get; }
         public bool CreateMessageBodyComputedColumn { get; set; }
+        public string DefaultCatalog { get; set; }
         public string DefaultSchema { get; set; }
         public NServiceBus.Transport.SqlServer.DelayedDeliveryOptions DelayedDelivery { get; }
         public NServiceBus.ExpiredMessagesPurgerOptions ExpiredMessagesPurger { get; }
@@ -73,6 +74,9 @@ namespace NServiceBus
                 "eMessageBodyComputedColumn` instead. Will be treated as an error from version 8." +
                 "0.0. Will be removed in version 9.0.0.", false)]
             public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings CreateMessageBodyComputedColumn() { }
+            [System.Obsolete("DefaultCatalog is obsolete. Use `SqlServerTransport.DefaultCatalog` instead. Will" +
+                " be treated as an error from version 8.0.0. Will be removed in version 9.0.0.", false)]
+            public NServiceBus.SqlServerTransportApiExtensions.SqlServerTransportSettings DefaultCatalog(string catalogName) { }
             [System.Obsolete("DefaultSchema has been obsoleted. Use `SqlServerTransport.DefaultSchema` instead." +
                 " Will be treated as an error from version 8.0.0. Will be removed in version 9.0." +
                 "0.", false)]
