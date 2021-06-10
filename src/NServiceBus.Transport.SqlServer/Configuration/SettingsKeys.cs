@@ -3,6 +3,8 @@
     class SettingsKeys
     {
         public const string DefaultSchemaSettingsKey = "SqlServer.SchemaName";
+        public const string DefaultCatalogSettingsKey = "SqlServer.CatalogName";
+
         public const string ConnectionFactoryOverride = "SqlServer.ConnectionFactoryOverride";
         public const string TimeToWaitBeforeTriggering = "SqlServer.CircuitBreaker.TimeToWaitBeforeTriggering";
 

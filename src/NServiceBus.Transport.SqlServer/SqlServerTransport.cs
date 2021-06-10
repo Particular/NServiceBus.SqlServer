@@ -40,6 +40,11 @@ namespace NServiceBus
 
         static string GetDefaultCatalog(SettingsHolder settings, string connectionString)
         {
+            if (settings.TryGet(SettingsKeys.DefaultCatalogSettingsKey, out string defaultCatalog))
+            {
+                return defaultCatalog;
+            }
+
             if (settings.TryGet(SettingsKeys.ConnectionFactoryOverride, out Func<Task<SqlConnection>> factoryOverride))
             {
                 using (var connection = factoryOverride().GetAwaiter().GetResult())
@@ -55,6 +60,7 @@ namespace NServiceBus
             {
                 ConnectionString = connectionString
             };
+
             if (parser.TryGetValue("Initial Catalog", out var catalog) ||
                 parser.TryGetValue("database", out catalog))
             {
