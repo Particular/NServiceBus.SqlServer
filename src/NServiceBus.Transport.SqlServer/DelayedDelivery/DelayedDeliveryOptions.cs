@@ -9,7 +9,6 @@
     {
         string tableSuffix = "Delayed";
         int batchSize = 100;
-        TimeSpan interval = TimeSpan.FromSeconds(1);
 
         internal DelayedDeliveryOptions() { }
 
@@ -44,17 +43,15 @@
         }
 
         /// <summary>
-        /// Configures how often delayed messages are processed (every 5 seconds by default).
+        /// Configures how often delayed messages are processed.
         /// </summary>
+        [ObsoleteEx(Message = "Delayed message polling now uses an adaptive delays and no longer needs a processing interval. This setting is safe to remove.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
         public TimeSpan ProcessingInterval
         {
-            get => interval;
-            set
-            {
-                Guard.AgainstNegativeAndZero(nameof(interval), value);
-
-                interval = value;
-            }
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
     }
 }

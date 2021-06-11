@@ -31,6 +31,8 @@ namespace NServiceBus.Transport.SqlServer
             moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
         }
 
+        public event EventHandler<DateTimeOffset> OnStoreDelayedMessage;
+
         public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
@@ -39,14 +41,19 @@ namespace NServiceBus.Transport.SqlServer
                 messageRow.PrepareSendCommand(command);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
+
+            OnStoreDelayedMessage?.Invoke(null, DateTimeOffset.Now.Add(dueAfter));
         }
 
-        public async Task MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        /// <returns>The time of the next timeout due</returns>
+        public async Task<DateTimeOffset> MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(moveDueCommand, connection, transaction))
             {
                 command.Parameters.AddWithValue("BatchSize", batchSize);
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                var millisecondsToNextInvoke = await command.ExecuteScalarAsync<long>(nameof(MoveDueMessages), cancellationToken).ConfigureAwait(false);
+                var now = DateTimeOffset.UtcNow;
+                return millisecondsToNextInvoke > 0 ? now.AddMilliseconds(millisecondsToNextInvoke) : now;
             }
         }
 
