@@ -51,9 +51,24 @@ namespace NServiceBus.Transport.SqlServer
             using (var command = new SqlCommand(moveDueCommand, connection, transaction))
             {
                 command.Parameters.AddWithValue("BatchSize", batchSize);
-                var millisecondsToNextInvoke = await command.ExecuteScalarAsync<long>(nameof(MoveDueMessages), cancellationToken).ConfigureAwait(false);
-                var now = DateTimeOffset.UtcNow;
-                return millisecondsToNextInvoke > 0 ? now.AddMilliseconds(millisecondsToNextInvoke) : now;
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        // No timeouts waiting
+                        return DateTimeOffset.UtcNow.AddMinutes(1);
+                    }
+
+                    // Normalizing in case of clock drift between executing machine and SQL Server instance
+                    var sqlNow = reader.GetDateTimeOffset(0);
+                    var sqlNextDue = reader.GetDateTimeOffset(1);
+                    if (sqlNextDue <= sqlNow)
+                    {
+                        return DateTimeOffset.UtcNow;
+                    }
+
+                    return DateTimeOffset.UtcNow.Add(sqlNextDue - sqlNow);
+                }
             }
         }
 

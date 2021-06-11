@@ -99,16 +99,9 @@ OUTPUT
     deleted.Body
 INTO {1};
 
-IF @@ROWCOUNT = @BatchSize
-BEGIN
-	SELECT 0 as NextDueMilliseconds
-END
-ELSE
-BEGIN
-	SELECT TOP 1 DATEDIFF_BIG(ms, GETUTCDATE(), Due) as NextDueMillseconds
-	FROM {0}
-	ORDER BY Due
-END";
+SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
+FROM {0}
+ORDER BY Due";
 
         public static readonly string PeekText = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";
