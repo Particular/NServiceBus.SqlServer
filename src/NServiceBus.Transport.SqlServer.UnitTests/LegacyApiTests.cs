@@ -23,7 +23,6 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
             var nativeDelayedDelivery = transport.NativeDelayedDelivery();
             nativeDelayedDelivery.TableSuffix("suffix");
             nativeDelayedDelivery.BatchSize(100);
-            nativeDelayedDelivery.ProcessingInterval(TimeSpan.FromSeconds(1));
 
             var subscriptionSettings = transport.SubscriptionSettings();
             subscriptionSettings.SubscriptionTableName("table", "schema", "catalog");

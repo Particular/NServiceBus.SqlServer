@@ -50,14 +50,26 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         /// <summary>
-        /// Configures how often delayed messages are processed (every 5 seconds by default).
+        /// Configures how often delayed messages are processed.
         /// </summary>
-        [ObsoleteEx(ReplacementTypeOrMember = "SqlServerTransport.ProcessingInterval", RemoveInVersion = "9.0", TreatAsErrorFromVersion = "8.0")]
-        public void ProcessingInterval(TimeSpan interval)
-        {
-            Guard.AgainstNegativeAndZero(nameof(interval), interval);
+        [ObsoleteEx(Message = "Delayed message polling now uses an adaptive delays and no longer needs a processing interval. This setting is safe to remove.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
+        public void ProcessingInterval(TimeSpan interval) => throw new NotImplementedException();
+    }
 
-            options.ProcessingInterval = interval;
+    public partial class DelayedDeliveryOptions
+    {
+        /// <summary>
+        /// Configures how often delayed messages are processed.
+        /// </summary>
+        [ObsoleteEx(Message = "Delayed message polling now uses an adaptive delays and no longer needs a processing interval. This setting is safe to remove.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
+        public TimeSpan ProcessingInterval
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
     }
 

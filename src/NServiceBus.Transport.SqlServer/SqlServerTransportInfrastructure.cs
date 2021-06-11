@@ -124,7 +124,6 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     Native = true,
                     Suffix = delayedDelivery.TableSuffix,
-                    Interval = delayedDelivery.ProcessingInterval,
                     delayedDelivery.BatchSize,
                 });
 

@@ -134,6 +134,9 @@ namespace NServiceBus.Transport.SqlServer
     public class DelayedDeliveryOptions
     {
         public int BatchSize { get; set; }
+        [System.Obsolete("Delayed message polling now uses an adaptive delays and no longer needs a process" +
+            "ing interval. This setting is safe to remove. The member currently throws a NotI" +
+            "mplementedException. Will be removed in version 8.0.0.", true)]
         public System.TimeSpan ProcessingInterval { get; set; }
         public string TableSuffix { get; set; }
     }
@@ -148,8 +151,9 @@ namespace NServiceBus.Transport.SqlServer
         [System.Obsolete("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
             " details. Will be removed in version 8.0.0.", true)]
         public void EnableTimeoutManagerCompatibility() { }
-        [System.Obsolete("Use `SqlServerTransport.ProcessingInterval` instead. Will be treated as an error " +
-            "from version 8.0.0. Will be removed in version 9.0.0.", false)]
+        [System.Obsolete("Delayed message polling now uses an adaptive delays and no longer needs a process" +
+            "ing interval. This setting is safe to remove. The member currently throws a NotI" +
+            "mplementedException. Will be removed in version 8.0.0.", true)]
         public void ProcessingInterval(System.TimeSpan interval) { }
         [System.Obsolete("Use `SqlServerTransport.TableSuffix` instead. Will be treated as an error from ve" +
             "rsion 8.0.0. Will be removed in version 9.0.0.", false)]
