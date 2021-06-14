@@ -22,7 +22,6 @@ namespace NServiceBus.Transport.SqlServer
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
             receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
-            sendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
             checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
@@ -89,6 +88,8 @@ namespace NServiceBus.Transport.SqlServer
 
         async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
+            await EnsureSendCommandReady(connection, transaction, cancellationToken).ConfigureAwait(false);
+
             try
             {
                 using (var command = new SqlCommand(sendCommand, connection, transaction))
@@ -105,6 +106,46 @@ namespace NServiceBus.Transport.SqlServer
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 ThrowFailedToSendException(ex);
+            }
+        }
+
+        async Task EnsureSendCommandReady(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        {
+            if (sendCommand != null)
+            {
+                return;
+            }
+
+            await sendCommandLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (sendCommand != null)
+                {
+                    return;
+                }
+
+                var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
+                using (var command = new SqlCommand(commandText, connection, transaction))
+                {
+                    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
+                        {
+                            if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
+                            {
+                                sendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
+                                return;
+                            }
+                        }
+                    }
+
+                    sendCommand = Format(SqlConstants.SendText, qualifiedTableName);
+
+                }
+            }
+            finally
+            {
+                sendCommandLock.Release();
             }
         }
 
@@ -177,6 +218,7 @@ namespace NServiceBus.Transport.SqlServer
         string checkHeadersColumnTypeCommand;
         bool isStreamSupported;
 
+        readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
         static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();
     }
 }
