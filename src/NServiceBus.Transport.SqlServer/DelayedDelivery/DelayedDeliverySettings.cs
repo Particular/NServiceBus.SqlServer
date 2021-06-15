@@ -44,13 +44,14 @@
         }
 
         /// <summary>
-        /// Configures how often delayed messages are processed (every 5 seconds by default).
+        /// Configures how often delayed messages are processed.
         /// </summary>
+        [ObsoleteEx(Message = "Delayed message polling now uses an adaptive delays and no longer needs a processing interval. This setting is safe to remove.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
         public void ProcessingInterval(TimeSpan interval)
         {
-            Guard.AgainstNegativeAndZero(nameof(interval), interval);
-
-            this.GetSettings().Set(SettingsKeys.DelayedDeliveryInterval, interval);
+            // no-op
         }
     }
 }
