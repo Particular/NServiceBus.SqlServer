@@ -33,12 +33,12 @@
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var purger = new QueuePurger(sqlConnectionFactory);
 
-            await RemoveQueueIfPresent(ValidAddress, token);
-            await RemoveQueueIfPresent($"{ValidAddress}.Delayed", token);
+            await RemoveQueueIfPresent(QueueName, token);
+            await RemoveQueueIfPresent($"{QueueName}.Delayed", token);
             await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
 
             var tableCache = new TableBasedQueueCache(addressParser, true);
-            var queue = tableCache.Get(ValidAddress);
+            var queue = tableCache.Get(QueueName);
             dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
 
             // Run normally
@@ -72,7 +72,7 @@
             {
                 // Run with Recoverable column in place
 
-                var operations = new TransportOperations(CreateTransportOperation(id: "1", destination: ValidAddress, consistency: dispatchConsistency));
+                var operations = new TransportOperations(CreateTransportOperation(id: "1", destination: QueueName, consistency: dispatchConsistency));
                 await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, cancellationToken);
                 contextProvider.Complete();
 
@@ -82,7 +82,7 @@
 
         async Task DropRecoverableColumn(CancellationToken cancellationToken)
         {
-            var cmdText = $"ALTER TABLE {ValidAddress} DROP COLUMN Recoverable";
+            var cmdText = $"ALTER TABLE {QueueName} DROP COLUMN Recoverable";
             using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
             using (var cmd = new SqlCommand(cmdText, connection))
             {
@@ -92,7 +92,7 @@
 
         async Task AddRecoverableColumn(CancellationToken cancellationToken)
         {
-            var cmdText = $"ALTER TABLE {ValidAddress} ADD Recoverable bit NOT NULL";
+            var cmdText = $"ALTER TABLE {QueueName} ADD Recoverable bit NOT NULL";
             using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
             using (var cmd = new SqlCommand(cmdText, connection))
             {
@@ -132,24 +132,15 @@ END";
                 );
         }
 
-        //Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
-        //{
-        //    purger = new QueuePurger(sqlConnectionFactory);
-        //    var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
-        //    queue = new TableBasedQueue(queueAddress, ValidAddress, true);
-
-        //    return purger.Purge(queue, cancellationToken);
-        //}
-
         static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
 
         MessageDispatcher dispatcher;
-        const string ValidAddress = "RecoverableColumnRemovalTable";
+        const string QueueName = "RecoverableColumnRemovalTable";
 
         SqlConnectionFactory sqlConnectionFactory;
 
