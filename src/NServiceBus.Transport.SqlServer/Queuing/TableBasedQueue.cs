@@ -90,7 +90,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                await EnsureSendCommandReady(connection, transaction, cancellationToken).ConfigureAwait(false);
+                var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
 
                 using (var command = new SqlCommand(sendCommand, connection, transaction))
                 {
@@ -98,6 +98,13 @@ namespace NServiceBus.Transport.SqlServer
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
+            }
+            // 207 = Invalid column name
+            // 515 = Cannot insert the value NULL into column; column does not allow nulls
+            catch (SqlException ex) when ((ex.Number == 207 || ex.Number == 515) && ex.Message.Contains("Recoverable"))
+            {
+                cachedSendCommand = null;
+                throw new Exception($"Failed to send message to {qualifiedTableName} due to a change in the existence of the Recoverable column that is scheduled for removal. If the table schema has changed, this is expected. Retrying the message send will detect the new table structure and adapt to it.", ex);
             }
             catch (SqlException ex) when (ex.Number == 208)
             {
@@ -109,19 +116,22 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task EnsureSendCommandReady(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task<string> GetSendCommandText(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
+            // Get a local reference because another thread could remove the cache between check and return
+            var sendCommand = cachedSendCommand;
             if (sendCommand != null)
             {
-                return;
+                return sendCommand;
             }
 
             await sendCommandLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                sendCommand = cachedSendCommand;
                 if (sendCommand != null)
                 {
-                    return;
+                    return sendCommand;
                 }
 
                 var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
@@ -133,14 +143,14 @@ namespace NServiceBus.Transport.SqlServer
                         {
                             if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
                             {
-                                sendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
-                                return;
+                                cachedSendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
+                                return cachedSendCommand;
                             }
                         }
                     }
 
-                    sendCommand = Format(SqlConstants.SendText, qualifiedTableName);
-
+                    cachedSendCommand = Format(SqlConstants.SendText, qualifiedTableName);
+                    return cachedSendCommand;
                 }
             }
             finally
@@ -210,7 +220,7 @@ namespace NServiceBus.Transport.SqlServer
         string qualifiedTableName;
         string peekCommand;
         string receiveCommand;
-        string sendCommand;
+        string cachedSendCommand;
         string purgeCommand;
         string purgeExpiredCommand;
         string checkExpiresIndexCommand;
