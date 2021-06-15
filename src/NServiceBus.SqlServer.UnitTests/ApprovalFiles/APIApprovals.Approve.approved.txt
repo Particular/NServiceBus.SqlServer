@@ -55,6 +55,9 @@ namespace NServiceBus.Transport.SqlServer
             "rently throws a NotImplementedException. Will be removed in version 7.0.0.", true)]
         public void DisableTimeoutManagerCompatibility() { }
         public void EnableTimeoutManagerCompatibility() { }
+        [System.ObsoleteAttribute("Delayed message polling now uses an adaptive delays and no longer needs a process" +
+            "ing interval. This setting is safe to remove. Will be treated as an error from v" +
+            "ersion 7.0.0. Will be removed in version 8.0.0.", false)]
         public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
     }

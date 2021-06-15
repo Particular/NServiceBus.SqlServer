@@ -168,11 +168,6 @@ namespace NServiceBus.Transport.SqlServer
                     suffix = "Delayed";
                 }
 
-                if (!settings.TryGet(SettingsKeys.DelayedDeliveryInterval, out TimeSpan interval))
-                {
-                    interval = TimeSpan.FromSeconds(1);
-                }
-
                 if (!settings.TryGet(SettingsKeys.DelayedDeliveryMatureBatchSize, out int matureBatchSize))
                 {
                     matureBatchSize = 100;
@@ -182,7 +177,6 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     Native = true,
                     Suffix = suffix,
-                    Interval = interval,
                     BatchSize = matureBatchSize,
                 });
 
@@ -192,7 +186,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
-                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, interval, matureBatchSize);
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, matureBatchSize);
             }
 
             return new TransportReceiveInfrastructure(
