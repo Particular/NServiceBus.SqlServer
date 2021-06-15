@@ -7,15 +7,17 @@ namespace NServiceBus.Transport.SqlServer
 
     class DueDelayedMessageProcessor
     {
-        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, TimeSpan interval, int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
+        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.table = table;
             this.connectionFactory = connectionFactory;
-            this.interval = interval;
             this.batchSize = batchSize;
-            message = $"Scheduling next attempt to move matured delayed messages to input queue in {interval}";
+            nextExecution = DateTimeOffset.MinValue;
+            oneMinute = TimeSpan.FromMinutes(1);
+
+            table.OnStoreDelayedMessage += OnDelayedMessageStored;
         }
 
         public void Start(CancellationToken cancellationToken = default)
@@ -45,19 +47,11 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     try
                     {
-                        using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                                transaction.Commit();
-                            }
-                        }
+                        var nextDueTime = await ExecuteOnce(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
 
                         dueDelayedMessageProcessorCircuitBreaker.Success();
 
-                        Logger.Debug(message);
-                        await Task.Delay(interval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                        await WaitForNextExecution(nextDueTime, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (!ex.IsCausedBy(moveDelayedMessagesCancellationToken))
                     {
@@ -76,17 +70,66 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
+        async Task<DateTimeOffset> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
+        {
+            using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    var nextDueTime = await table.MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                    transaction.Commit();
+                    return nextDueTime;
+                }
+            }
+        }
+
+        async Task WaitForNextExecution(DateTimeOffset nextDueTime, CancellationToken moveDelayedMessagesCancellationToken)
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            if (nextDueTime <= now)
+            {
+                Logger.Debug("Scheduling next attempt to move matured delayed messages immediately because a full batch was detected.");
+                return;
+            }
+
+            var timeToNext = nextDueTime - now;
+
+            if (timeToNext <= oneMinute)
+            {
+                Logger.Debug($"Scheduling next attempt to move matured delayed messages for time of next message due at {nextDueTime}.");
+                nextExecution = nextDueTime;
+            }
+            else
+            {
+                Logger.Debug($"Scheduling next attempt to move matured delayed messages in 1 minute.");
+                nextExecution = now + oneMinute;
+            }
+
+            while (DateTimeOffset.UtcNow < nextExecution)
+            {
+                await Task.Delay(1000, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+            }
+        }
+        void OnDelayedMessageStored(object sender, DateTimeOffset dueTime)
+        {
+            if (dueTime < nextExecution)
+            {
+                nextExecution = dueTime;
+            }
+        }
+
         readonly TimeSpan waitTimeCircuitBreaker;
         readonly HostSettings hostSettings;
-        readonly string message;
         readonly DelayedMessageTable table;
         readonly SqlConnectionFactory connectionFactory;
-        readonly TimeSpan interval;
         readonly int batchSize;
 
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
         Task moveDelayedMessagesTask;
         RepeatedFailuresOverTimeCircuitBreaker dueDelayedMessageProcessorCircuitBreaker;
+        DateTimeOffset nextExecution;
+        TimeSpan oneMinute;
 
         static readonly ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
     }

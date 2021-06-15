@@ -31,6 +31,8 @@ namespace NServiceBus.Transport.SqlServer
             moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
         }
 
+        public event EventHandler<DateTimeOffset> OnStoreDelayedMessage;
+
         public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
@@ -39,14 +41,34 @@ namespace NServiceBus.Transport.SqlServer
                 messageRow.PrepareSendCommand(command);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
+
+            OnStoreDelayedMessage?.Invoke(null, DateTimeOffset.Now.Add(dueAfter));
         }
 
-        public async Task MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        /// <returns>The time of the next timeout due</returns>
+        public async Task<DateTimeOffset> MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             using (var command = new SqlCommand(moveDueCommand, connection, transaction))
             {
                 command.Parameters.AddWithValue("BatchSize", batchSize);
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        // No timeouts waiting
+                        return DateTimeOffset.UtcNow.AddMinutes(1);
+                    }
+
+                    // Normalizing in case of clock drift between executing machine and SQL Server instance
+                    var sqlNow = reader.GetDateTimeOffset(0);
+                    var sqlNextDue = reader.GetDateTimeOffset(1);
+                    if (sqlNextDue <= sqlNow)
+                    {
+                        return DateTimeOffset.UtcNow;
+                    }
+
+                    return DateTimeOffset.UtcNow.Add(sqlNextDue - sqlNow);
+                }
             }
         }
 

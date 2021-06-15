@@ -84,11 +84,7 @@ IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public static readonly string MoveDueDelayedMessageText = @"
-DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
-IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
-SET NOCOUNT ON;
-
-WITH message AS (
+;WITH message AS (
     SELECT TOP(@BatchSize) *
     FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
     WHERE Due < GETUTCDATE())
@@ -103,8 +99,9 @@ OUTPUT
     deleted.Body
 INTO {1};
 
-IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
-IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
+FROM {0}
+ORDER BY Due";
 
         public static readonly string PeekText = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";

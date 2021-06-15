@@ -5,11 +5,10 @@
     /// <summary>
     /// Configures native delayed delivery.
     /// </summary>
-    public class DelayedDeliveryOptions
+    public partial class DelayedDeliveryOptions
     {
         string tableSuffix = "Delayed";
         int batchSize = 100;
-        TimeSpan interval = TimeSpan.FromSeconds(1);
 
         internal DelayedDeliveryOptions() { }
 
@@ -40,20 +39,6 @@
                 }
 
                 batchSize = value;
-            }
-        }
-
-        /// <summary>
-        /// Configures how often delayed messages are processed (every 5 seconds by default).
-        /// </summary>
-        public TimeSpan ProcessingInterval
-        {
-            get => interval;
-            set
-            {
-                Guard.AgainstNegativeAndZero(nameof(interval), value);
-
-                interval = value;
             }
         }
     }

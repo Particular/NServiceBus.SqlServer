@@ -23,7 +23,6 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
             var nativeDelayedDelivery = transport.NativeDelayedDelivery();
             nativeDelayedDelivery.TableSuffix("suffix");
             nativeDelayedDelivery.BatchSize(100);
-            nativeDelayedDelivery.ProcessingInterval(TimeSpan.FromSeconds(1));
 
             var subscriptionSettings = transport.SubscriptionSettings();
             subscriptionSettings.SubscriptionTableName("table", "schema", "catalog");
@@ -39,7 +38,6 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
 
             Assert.AreEqual("suffix", transport.SqlTransport.DelayedDelivery.TableSuffix);
             Assert.AreEqual(100, transport.SqlTransport.DelayedDelivery.BatchSize);
-            Assert.AreEqual(TimeSpan.FromSeconds(1), transport.SqlTransport.DelayedDelivery.ProcessingInterval);
 
             Assert.AreEqual(true, transport.SqlTransport.Subscriptions.DisableCaching);
             Assert.AreEqual(TimeSpan.FromSeconds(1), transport.SqlTransport.Subscriptions.CacheInvalidationPeriod);
