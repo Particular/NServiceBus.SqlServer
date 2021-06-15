@@ -42,7 +42,7 @@ namespace NServiceBus.Transport.SqlServer
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            OnStoreDelayedMessage?.Invoke(null, DateTimeOffset.Now.Add(dueAfter));
+            OnStoreDelayedMessage?.Invoke(null, DateTimeOffset.UtcNow.Add(dueAfter));
         }
 
         /// <returns>The time of the next timeout due</returns>
