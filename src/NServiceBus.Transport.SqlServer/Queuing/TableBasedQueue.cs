@@ -88,10 +88,10 @@ namespace NServiceBus.Transport.SqlServer
 
         async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
         {
-            await EnsureSendCommandReady(connection, transaction, cancellationToken).ConfigureAwait(false);
-
             try
             {
+                await EnsureSendCommandReady(connection, transaction, cancellationToken).ConfigureAwait(false);
+
                 using (var command = new SqlCommand(sendCommand, connection, transaction))
                 {
                     message.PrepareSendCommand(command);
