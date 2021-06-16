@@ -49,6 +49,9 @@
                 DefaultCatalog = defaultCatalog
             };
 
+            // Confirm Catalog is not set prior to parsing.
+            Assert.IsNull(transport.Catalog);
+
             transport.ParseConnectionAttributes();
 
             Assert.AreEqual(defaultCatalog, transport.Catalog);
