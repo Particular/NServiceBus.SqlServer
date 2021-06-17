@@ -274,19 +274,15 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
-        class FakePromotableResourceManager : IPromotableSinglePhaseNotification, IEnlistmentNotification
+        class FakePromotableResourceManager : IEnlistmentNotification
         {
+            public static readonly Guid Id = Guid.NewGuid();
             public void Prepare(PreparingEnlistment preparingEnlistment) => preparingEnlistment.Prepared();
             public void Commit(Enlistment enlistment) => enlistment.Done();
             public void Rollback(Enlistment enlistment) => enlistment.Done();
             public void InDoubt(Enlistment enlistment) => enlistment.Done();
-            public void Initialize() { }
-            public void SinglePhaseCommit(SinglePhaseEnlistment singlePhaseEnlistment) => singlePhaseEnlistment.Committed();
-            public void Rollback(SinglePhaseEnlistment singlePhaseEnlistment) => singlePhaseEnlistment.Done();
-            public byte[] Promote() => TransactionInterop.GetTransmitterPropagationToken(new CommittableTransaction());
-            static readonly Guid ResourceManagerId = Guid.Parse("6f057e24-a0d8-4c95-b091-b8dc9a916fa4");
 
-            public static void ForceDtc() => Transaction.Current.EnlistDurable(ResourceManagerId, new FakePromotableResourceManager(), EnlistmentOptions.None);
+            public static void ForceDtc() => Transaction.Current.EnlistDurable(Id, new FakePromotableResourceManager(), EnlistmentOptions.None);
         }
 
         readonly QueueAddressTranslator addressTranslator;
