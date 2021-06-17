@@ -10,7 +10,6 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
-    [Category("Default Catalog Tests")]
     public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
     {
         [Test]
