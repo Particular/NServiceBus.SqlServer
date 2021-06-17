@@ -11,8 +11,8 @@
 
     public static class SqlUtilities
     {
-        public static async Task<bool> CheckIfTableExists(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
-            => await RunCommand(connection, async (command, token) =>
+        public static Task<bool> CheckIfTableExists(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
+            => RunCommand(connection, async (command, token) =>
             {
                 command.CommandText = "SELECT OBJECT_ID(@tableName, 'U')";
                 _ = command.Parameters.Add(new SqlParameter("@tableName", $"[{catalogName}].[{schemaName}].[{tableName}]"));
