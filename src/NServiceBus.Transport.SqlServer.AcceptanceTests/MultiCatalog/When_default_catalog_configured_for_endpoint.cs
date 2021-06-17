@@ -10,6 +10,7 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
+    [Category("Default Catalog Tests")]
     public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
     {
         [Test]
@@ -63,9 +64,6 @@
 
             public bool ReplyReceived { get; set; }
             public bool MessageReceived { get; set; }
-
-            public string SenderDatabase { get; set; }
-            public string ReceiverDatabase { get; set; }
         }
 
         class SenderWithCustomCatalog : EndpointConfigurationBuilder
