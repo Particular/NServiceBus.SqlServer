@@ -239,7 +239,7 @@ namespace NServiceBus.Transport.SqlServer
                     message = "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions. " +
                                   "Check original error message for details. " +
                                   "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions`. " +
+                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
                                   "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
                                   "transactions to atomically update the database and consume a message. Original error message: " + ex.Message;
                 }
@@ -247,7 +247,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     message = "Could not escalate to a distributed transaction while configured to use TransactionScope. Check original error message for details. " +
                                   "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions`. " +
+                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
                                   "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
                                   "transactions to atomically update the database and consume a message. Original error message: " + exception.Message;
                 }
