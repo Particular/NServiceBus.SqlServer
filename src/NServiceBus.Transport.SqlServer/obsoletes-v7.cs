@@ -202,6 +202,18 @@ namespace NServiceBus
             }
 
             /// <summary>
+            ///     Sets a default schema for both input and output queues
+            /// </summary>
+            [ObsoleteEx(Message = "DefaultCatalog is obsolete.",
+                ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog", RemoveInVersion = "9", TreatAsErrorFromVersion = "8")]
+            public SqlServerTransportSettings DefaultCatalog(string catalogName)
+            {
+                Transport.DefaultCatalog = catalogName;
+
+                return this;
+            }
+
+            /// <summary>
             ///     Specifies custom schema for given endpoint.
             /// </summary>
             /// <param name="endpointName">Endpoint name.</param>

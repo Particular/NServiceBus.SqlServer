@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using NUnit.Framework;
 
@@ -35,6 +37,40 @@
             transport.ParseConnectionAttributes();
 
             Assert.AreEqual("my.catalog", transport.Catalog);
+        }
+
+        [Test]
+        [TestCase("Initial Catalog=incorrect.catalog", "correct.catalog")]
+        [TestCase("Database=incorrect.catalog", "correct.catalog")]
+        public void It_overrides_catalog_with_default_catalog(string connectionString, string defaultCatalog)
+        {
+            var transport = new SqlServerTransport(connectionString)
+            {
+                DefaultCatalog = defaultCatalog
+            };
+
+            // Confirm Catalog is not set prior to parsing.
+            Assert.IsNull(transport.Catalog);
+
+            transport.ParseConnectionAttributes();
+
+            Assert.AreEqual(defaultCatalog, transport.Catalog);
+        }
+
+        [Test]
+        [TestCase("Initial Catalog=incorrect.catalog", "correct.catalog")]
+        [TestCase("Database=incorrect.catalog", "correct.catalog")]
+        public void It_uses_default_catalog_for_transport_addresses(string connectionString, string defaultCatalog)
+        {
+            var transport = new SqlServerTransport(connectionString)
+            {
+                DefaultCatalog = defaultCatalog
+            };
+
+            string transportAddress = transport.ToTransportAddress(new Transport.QueueAddress("endpointName", null, null, null));
+            var catalogName = transportAddress.Split('@').Last();
+
+            Assert.AreEqual($"[{defaultCatalog}]", catalogName);
         }
     }
 }

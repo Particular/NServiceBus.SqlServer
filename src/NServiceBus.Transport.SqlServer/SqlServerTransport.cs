@@ -21,6 +21,7 @@ namespace NServiceBus
         QueueAddressTranslator addressTranslator;
 
         internal string Catalog { get; private set; }
+
         internal bool IsEncrypted { get; private set; }
 
         /// <summary>
@@ -87,11 +88,18 @@ namespace NServiceBus
 
             var parser = GetConnectionStringBuilder();
 
-            if (!parser.TryGetValue("Initial Catalog", out var catalogSetting) && !parser.TryGetValue("database", out catalogSetting))
+            if (DefaultCatalog != null)
             {
-                throw new Exception("Initial Catalog property is mandatory in the connection string.");
+                Catalog = DefaultCatalog;
             }
-            Catalog = (string)catalogSetting;
+            else
+            {
+                if (!parser.TryGetValue("Initial Catalog", out var catalogSetting) && !parser.TryGetValue("database", out catalogSetting))
+                {
+                    throw new Exception("Initial Catalog property is mandatory in the connection string.");
+                }
+                Catalog = (string)catalogSetting;
+            }
 
             if (parser.TryGetValue("Column Encryption Setting", out var enabled))
             {
@@ -179,6 +187,11 @@ namespace NServiceBus
         /// Default address schema.
         /// </summary>
         public string DefaultSchema { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Default address catalog.
+        /// </summary>
+        public string DefaultCatalog { get; set; }
 
         /// <summary>
         /// Catalog and schema configuration for SQL Transport queues.
