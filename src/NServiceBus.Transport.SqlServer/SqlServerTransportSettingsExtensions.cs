@@ -31,6 +31,19 @@
         }
 
         /// <summary>
+        /// Sets a default catalog for both input and output queues
+        /// </summary>
+        public static TransportExtensions<SqlServerTransport> DefaultCatalog(this TransportExtensions<SqlServerTransport> transportExtensions, string catalogName)
+        {
+            Guard.AgainstNull(nameof(transportExtensions), transportExtensions);
+            Guard.AgainstNullAndEmpty(nameof(catalogName), catalogName);
+
+            transportExtensions.GetSettings().Set(SettingsKeys.DefaultCatalogSettingsKey, catalogName);
+
+            return transportExtensions;
+        }
+
+        /// <summary>
         /// Specifies custom schema for given endpoint.
         /// </summary>
         /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
