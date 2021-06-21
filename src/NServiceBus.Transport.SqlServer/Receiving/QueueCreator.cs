@@ -58,6 +58,12 @@ namespace NServiceBus.Transport.SqlServer
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
+            catch (SqlException e) when (e.Number == 2714) //Object already exists
+            {
+                //Table creation scripts are based on sys.objects metadata views.
+                //It looks that these views are not fully transactional and might
+                //not return information on already created table under heavy load.
+            }
             catch (Exception e) when (e.Message.StartsWith("There is already an object named") || e.Message.StartsWith("The operation failed because an index or statistics with name"))
             {
                 // ignored because of race when multiple endpoints start
