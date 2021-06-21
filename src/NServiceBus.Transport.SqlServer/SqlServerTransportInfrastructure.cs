@@ -266,10 +266,16 @@ namespace NServiceBus.Transport.SqlServer
                 try
                 {
                     using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
-                    using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
                     {
-                        scope.Complete();
+                        FakePromotableResourceManager.ForceDtc();
+                        using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                        {
+                            FakePromotableResourceManager.ForceDtc();
+                            using (await connectionFactory.OpenNewConnection().ConfigureAwait(false))
+                            {
+                                scope.Complete();
+                            }
+                        }
                     }
                 }
                 catch (NotSupportedException ex)
@@ -281,13 +287,13 @@ namespace NServiceBus.Transport.SqlServer
                                   "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
                                   "transactions to atomically update the database and consume a message. Original error message: " + ex.Message;
                 }
-                catch (SqlException sqlException)
+                catch (Exception exception)
                 {
                     message = "Could not escalate to a distributed transaction while configured to use TransactionScope. Check original error message for details. " +
                                   "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
                                   "should specify a different transaction mode via `EndpointConfiguration.UseTransport<SqlServerTransport>().Transactions`. " +
                                   "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
-                                  "transactions to atomically update the database and consume a message. Original error message: " + sqlException.Message;
+                                  "transactions to atomically update the database and consume a message. Original error message: " + exception.Message;
                 }
 
                 if (!string.IsNullOrWhiteSpace(message))
@@ -358,6 +364,17 @@ namespace NServiceBus.Transport.SqlServer
         public override string MakeCanonicalForm(string transportAddress)
         {
             return addressTranslator.Parse(transportAddress).Address;
+        }
+
+        class FakePromotableResourceManager : IEnlistmentNotification
+        {
+            public static readonly Guid Id = Guid.NewGuid();
+            public void Prepare(PreparingEnlistment preparingEnlistment) => preparingEnlistment.Prepared();
+            public void Commit(Enlistment enlistment) => enlistment.Done();
+            public void Rollback(Enlistment enlistment) => enlistment.Done();
+            public void InDoubt(Enlistment enlistment) => enlistment.Done();
+
+            public static void ForceDtc() => Transaction.Current.EnlistDurable(Id, new FakePromotableResourceManager(), EnlistmentOptions.None);
         }
 
         QueueAddressTranslator addressTranslator;
