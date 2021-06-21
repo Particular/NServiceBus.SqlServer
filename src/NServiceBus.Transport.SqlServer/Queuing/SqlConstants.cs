@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     {
         public static readonly string PurgeText = "DELETE FROM {0}";
 
-        public static readonly string SendText =
+        public static readonly string SendTextWithRecoverable =
             @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
@@ -12,16 +12,12 @@ SET NOCOUNT ON;
 
 INSERT INTO {0} (
     Id,
-    CorrelationId,
-    ReplyToAddress,
     Recoverable,
     Expires,
     Headers,
     Body)
 VALUES (
     @Id,
-    @CorrelationId,
-    @ReplyToAddress,
     1,
     CASE WHEN @TimeToBeReceivedMs IS NOT NULL
         THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,
@@ -30,6 +26,29 @@ VALUES (
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
+        public static readonly string SendText =
+            @"
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
+SET NOCOUNT ON;
+
+INSERT INTO {0} (
+    Id,
+    Expires,
+    Headers,
+    Body)
+VALUES (
+    @Id,
+    CASE WHEN @TimeToBeReceivedMs IS NOT NULL
+        THEN DATEADD(ms, @TimeToBeReceivedMs, GETUTCDATE()) END,
+    @Headers,
+    @Body);
+
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
+        public static readonly string CheckIfTableHasRecoverableText = "SELECT TOP (0) * FROM {0} WITH (NOLOCK);";
 
         public static readonly string StoreDelayedMessageText =
 @"
@@ -68,8 +87,6 @@ WITH message AS (
 DELETE FROM message
 OUTPUT
     deleted.Id,
-    deleted.CorrelationId,
-    deleted.ReplyToAddress,
     CASE WHEN deleted.Expires IS NULL
         THEN 0
         ELSE CASE WHEN deleted.Expires > GETUTCDATE()
@@ -135,7 +152,7 @@ BEGIN
     RETURN
 END
 
-ALTER TABLE {0} 
+ALTER TABLE {0}
 ADD BodyString as cast(Body as nvarchar(max));
 
 EXEC sp_releaseapplock @Resource = '{0}_lock'";

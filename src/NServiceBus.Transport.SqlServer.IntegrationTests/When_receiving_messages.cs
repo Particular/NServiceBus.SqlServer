@@ -102,7 +102,7 @@
                 NumberOfReceives++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", string.Empty, null, new byte[0], false))
+                    ? MessageReadResult.Success(new Message("1", string.Empty, new byte[0], false))
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);

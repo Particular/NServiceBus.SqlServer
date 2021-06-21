@@ -4,13 +4,12 @@
 
     class Message
     {
-        public Message(string transportId, string originalHeaders, string replyToAddress, byte[] body, bool expired)
+        public Message(string transportId, string originalHeaders, byte[] body, bool expired)
         {
             TransportId = transportId;
             Body = body;
             Expired = expired;
             this.originalHeaders = originalHeaders;
-            this.replyToAddress = replyToAddress;
 
             InitializeHeaders();
         }
@@ -26,11 +25,6 @@
                 ? new Dictionary<string, string>()
                 : DictionarySerializer.DeSerialize(originalHeaders);
 
-            if (!string.IsNullOrEmpty(replyToAddress))
-            {
-                parsedHeaders[NServiceBus.Headers.ReplyToAddress] = replyToAddress;
-            }
-
             LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
 
             Headers = parsedHeaders;
@@ -42,6 +36,5 @@
         }
 
         string originalHeaders;
-        string replyToAddress;
     }
 }
