@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.SqlServer
             this.table = table;
             this.connectionFactory = connectionFactory;
             this.batchSize = batchSize;
-            nextExecution = DateTimeOffset.MinValue;
+            nextExecution = DateTime.MinValue;
             oneMinute = TimeSpan.FromMinutes(1);
 
             table.OnStoreDelayedMessage += OnDelayedMessageStored;
@@ -70,7 +70,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task<DateTimeOffset> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
+        async Task<DateTime> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
         {
             using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken).ConfigureAwait(false))
             {
@@ -83,9 +83,9 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task WaitForNextExecution(DateTimeOffset nextDueTime, CancellationToken moveDelayedMessagesCancellationToken)
+        async Task WaitForNextExecution(DateTime nextDueTime, CancellationToken moveDelayedMessagesCancellationToken)
         {
-            var now = DateTimeOffset.UtcNow;
+            var now = DateTime.UtcNow;
 
             if (nextDueTime <= now)
             {
@@ -106,12 +106,12 @@ namespace NServiceBus.Transport.SqlServer
                 nextExecution = now + oneMinute;
             }
 
-            while (DateTimeOffset.UtcNow < nextExecution)
+            while (DateTime.UtcNow < nextExecution)
             {
                 await Task.Delay(1000, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             }
         }
-        void OnDelayedMessageStored(object sender, DateTimeOffset dueTime)
+        void OnDelayedMessageStored(object sender, DateTime dueTime)
         {
             if (dueTime < nextExecution)
             {
@@ -128,7 +128,7 @@ namespace NServiceBus.Transport.SqlServer
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
         Task moveDelayedMessagesTask;
         RepeatedFailuresOverTimeCircuitBreaker dueDelayedMessageProcessorCircuitBreaker;
-        DateTimeOffset nextExecution;
+        DateTime nextExecution;
         TimeSpan oneMinute;
 
         static readonly ILog Logger = LogManager.GetLogger<DueDelayedMessageProcessor>();
