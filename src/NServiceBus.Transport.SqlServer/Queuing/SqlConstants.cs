@@ -284,16 +284,23 @@ BEGIN
     RETURN
 END
 
-CREATE TABLE {0} (
-    QueueAddress NVARCHAR(200) NOT NULL,
-    Endpoint NVARCHAR(200),
-    Topic NVARCHAR(200) NOT NULL,
-    PRIMARY KEY CLUSTERED
-    (
-        Endpoint,
-        Topic
+BEGIN TRY
+    CREATE TABLE {0} (
+        QueueAddress NVARCHAR(200) NOT NULL,
+        Endpoint NVARCHAR(200),
+        Topic NVARCHAR(200) NOT NULL,
+        PRIMARY KEY CLUSTERED
+        (
+            Endpoint,
+            Topic
+        )
     )
-)
+END TRY
+BEGIN CATCH
+    EXEC sp_releaseapplock @Resource = '{0}_lock';
+    THROW;
+END CATCH;
+
 EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public static readonly string SubscribeText = @"
