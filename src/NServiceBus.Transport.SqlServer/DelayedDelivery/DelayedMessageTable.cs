@@ -31,7 +31,7 @@ namespace NServiceBus.Transport.SqlServer
             moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
         }
 
-        public event EventHandler<DateTimeOffset> OnStoreDelayedMessage;
+        public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction)
         {
@@ -42,7 +42,7 @@ namespace NServiceBus.Transport.SqlServer
                 await command.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
 
-            OnStoreDelayedMessage?.Invoke(null, DateTimeOffset.UtcNow.Add(dueAfter));
+            OnStoreDelayedMessage?.Invoke(null, DateTime.UtcNow.Add(dueAfter));
         }
 
         /// <returns>The time of the next timeout due</returns>
