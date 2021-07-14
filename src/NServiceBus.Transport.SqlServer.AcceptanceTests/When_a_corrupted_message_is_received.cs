@@ -20,14 +20,8 @@
     public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
     {
         [SetUp]
-        public void SetConnectionString()
-        {
-            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
-            }
-        }
+        public void SetConnectionString() =>
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
 #if NETFRAMEWORK
         [TestCase(TransportTransactionMode.TransactionScope)]

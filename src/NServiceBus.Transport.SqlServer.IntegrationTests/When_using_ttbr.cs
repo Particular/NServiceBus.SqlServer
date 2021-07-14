@@ -119,11 +119,7 @@
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
             var tableCache = new TableBasedQueueCache(addressParser, true);
 
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-            }
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
             sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
 

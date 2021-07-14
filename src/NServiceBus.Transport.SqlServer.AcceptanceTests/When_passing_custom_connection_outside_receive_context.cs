@@ -15,7 +15,7 @@
 
     public class When_passing_custom_connection_outside_receive_context : NServiceBusAcceptanceTest
     {
-        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+        static readonly string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         [Test]
         public async Task Should_use_connection_for_all_transport_operations()

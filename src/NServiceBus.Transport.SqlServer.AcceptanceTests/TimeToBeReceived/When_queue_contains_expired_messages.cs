@@ -17,14 +17,8 @@
     public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
     {
         [SetUp]
-        public void SetUpConnectionString()
-        {
-            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
-            }
-        }
+        public void SetUpConnectionString() =>
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
 #if NETFRAMEWORK
         [TestCase(TransportTransactionMode.TransactionScope)]
