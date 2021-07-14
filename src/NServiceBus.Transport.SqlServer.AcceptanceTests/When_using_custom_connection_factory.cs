@@ -25,15 +25,8 @@
             Assert.True(ctx.MessageReceived, "Message should be properly received");
         }
 
-        static string GetConnectionString()
-        {
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
-            }
-            return connectionString;
-        }
+        static string GetConnectionString() =>
+            Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         public class Endpoint : EndpointConfigurationBuilder
         {

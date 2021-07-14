@@ -10,15 +10,8 @@
 
     public class MultiCatalogAcceptanceTest : NServiceBusAcceptanceTest
     {
-        protected static string GetDefaultConnectionString()
-        {
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;";
-            }
-            return connectionString;
-        }
+        protected static string GetDefaultConnectionString() =>
+            Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         protected static string WithCustomCatalog(string connectionString, string catalog)
         {

@@ -15,7 +15,7 @@
     public class When_publisher_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(MigratedPublisher));
-        static string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
+        static readonly string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         [Test]
         public async Task Legacy_subscriber_can_subscribe()

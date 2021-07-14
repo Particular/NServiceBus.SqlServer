@@ -14,12 +14,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 {
     public TransportDefinition CreateTransportDefinition()
     {
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            connectionString = @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
-        }
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         return new SqlServerTransport(connectionString);
     }

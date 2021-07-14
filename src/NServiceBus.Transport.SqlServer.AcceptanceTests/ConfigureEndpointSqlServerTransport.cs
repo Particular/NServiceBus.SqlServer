@@ -19,12 +19,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public ConfigureEndpointSqlServerTransport()
     {
-        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new Exception("The 'SqlServerTransportConnectionString' environment variable is not set.");
-        }
+        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
         transport = new SqlServerTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
