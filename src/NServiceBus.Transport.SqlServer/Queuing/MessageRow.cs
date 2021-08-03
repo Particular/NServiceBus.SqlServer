@@ -23,14 +23,14 @@
             return row.TryParse();
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, byte[] body, TimeSpan toBeReceived)
+        public static MessageRow From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan toBeReceived)
         {
             return new MessageRow
             {
                 id = Guid.NewGuid(),
                 timeToBeReceived = toBeReceived == TimeSpan.MaxValue ? null : (int?)toBeReceived.TotalMilliseconds,
                 headers = DictionarySerializer.Serialize(headers),
-                bodyBytes = body
+                bodyBytes = body.ToArray()
             };
         }
 
