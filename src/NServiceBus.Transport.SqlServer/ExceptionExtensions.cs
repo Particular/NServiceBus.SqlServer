@@ -1,4 +1,4 @@
-namespace NServiceBus
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
 #if SYSTEMDATASQLCLIENT
