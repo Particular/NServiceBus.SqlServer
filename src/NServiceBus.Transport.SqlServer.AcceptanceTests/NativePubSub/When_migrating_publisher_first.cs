@@ -178,10 +178,10 @@
                     metadata => metadata.RegisterPublisherFor<MyEvent>(typeof(Publisher)));
             }
 
-            public class MyEventHandler : IHandleMessages<MyEvent>
+            public class Handler : IHandleMessages<MyEvent>
             {
                 readonly Context scenarioContext;
-                public MyEventHandler(Context scenarioContext)
+                public Handler(Context scenarioContext)
                 {
                     this.scenarioContext = scenarioContext;
                 }
