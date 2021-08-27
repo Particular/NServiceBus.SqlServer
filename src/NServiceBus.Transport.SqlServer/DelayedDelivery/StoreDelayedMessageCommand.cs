@@ -13,7 +13,7 @@
     {
         StoreDelayedMessageCommand() { }
 
-        public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, byte[] body, TimeSpan dueAfter, string destination)
+        public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan dueAfter, string destination)
         {
             Guard.AgainstNull(nameof(destination), destination);
 
@@ -21,7 +21,7 @@
 
             headers["NServiceBus.SqlServer.ForwardDestination"] = destination;
             row.headers = DictionarySerializer.Serialize(headers);
-            row.bodyBytes = body;
+            row.bodyBytes = body.ToArray();
             row.dueAfter = dueAfter;
             return row;
         }
