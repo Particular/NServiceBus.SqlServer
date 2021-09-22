@@ -4,27 +4,16 @@
 
     static class IsolationLevelMapper
     {
-        public static IsolationLevel Map(System.Transactions.IsolationLevel isolationLevel)
+        public static IsolationLevel Map(System.Transactions.IsolationLevel isolationLevel) => isolationLevel switch
         {
-            switch (isolationLevel)
-            {
-                case System.Transactions.IsolationLevel.Serializable:
-                    return IsolationLevel.Serializable;
-                case System.Transactions.IsolationLevel.RepeatableRead:
-                    return IsolationLevel.RepeatableRead;
-                case System.Transactions.IsolationLevel.ReadCommitted:
-                    return IsolationLevel.ReadCommitted;
-                case System.Transactions.IsolationLevel.ReadUncommitted:
-                    return IsolationLevel.ReadUncommitted;
-                case System.Transactions.IsolationLevel.Snapshot:
-                    return IsolationLevel.Snapshot;
-                case System.Transactions.IsolationLevel.Chaos:
-                    return IsolationLevel.Chaos;
-                case System.Transactions.IsolationLevel.Unspecified:
-                    return IsolationLevel.Unspecified;
-                default:
-                    return IsolationLevel.ReadCommitted;
-            }
-        }
+            System.Transactions.IsolationLevel.Serializable => IsolationLevel.Serializable,
+            System.Transactions.IsolationLevel.RepeatableRead => IsolationLevel.RepeatableRead,
+            System.Transactions.IsolationLevel.ReadCommitted => IsolationLevel.ReadCommitted,
+            System.Transactions.IsolationLevel.ReadUncommitted => IsolationLevel.ReadUncommitted,
+            System.Transactions.IsolationLevel.Snapshot => IsolationLevel.Snapshot,
+            System.Transactions.IsolationLevel.Chaos => IsolationLevel.Chaos,
+            System.Transactions.IsolationLevel.Unspecified => IsolationLevel.Unspecified,
+            _ => IsolationLevel.ReadCommitted
+        };
     }
 }

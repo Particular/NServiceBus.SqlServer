@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>NServiceBus.Transport.SqlServer</AssemblyName>
     <RootNamespace>NServiceBus.Transport.SqlServer</RootNamespace>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
     <DefineConstants>$(DefineConstants);SYSTEMDATASQLCLIENT</DefineConstants>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
