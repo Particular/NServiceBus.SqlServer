@@ -29,12 +29,12 @@
 
                 if (operation.RequiredDispatchConsistency == DispatchConsistency.Default)
                 {
-                    defaultDispatch = defaultDispatch ?? new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
+                    defaultDispatch ??= new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
                     defaultDispatch[deduplicationKey] = operation;
                 }
                 else if (operation.RequiredDispatchConsistency == DispatchConsistency.Isolated)
                 {
-                    isolatedDispatch = isolatedDispatch ?? new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
+                    isolatedDispatch ??= new Dictionary<DeduplicationKey, UnicastTransportOperation>(DeduplicationKey.MessageIdDestinationComparer);
                     isolatedDispatch[deduplicationKey] = operation;
                 }
             }
