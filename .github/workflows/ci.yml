@@ -1,0 +1,84 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - release-[4-9].*
+  pull_request:
+    branches-ignore:
+      - release-[0-3].*
+  workflow_dispatch:
+env:
+  DOTNET_NOLOGO: true
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-2019
+            name: Windows
+          - os: ubuntu-20.04
+            name: Linux
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+      - name: Install SQL Server (Windows)
+        if: matrix.name == 'Windows'
+        shell: pwsh 
+        run: |
+          choco install sql-server-express
+          # Set necessary SQLCMD environment variable for the setup step
+          echo "SQLCMDSERVER=.\SQLEXPRESS" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+          # Set connection string as environment variable for the tests
+          echo "SqlServerTransportConnectionString=Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+      - name: Start SQL Server (Linux)
+        if: matrix.name == 'Linux'              
+        shell: bash         
+        run: |       
+          # If the password generator needs to be changed, make sure the resulting password meets SQL Server password requirements
+          sa_pw=$(uuidgen) 
+          echo "::add-mask::$sa_pw"
+          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Developer" -e "MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2017-latest
+          # Set necessary SQLCMD environment variable for the setup step
+          echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
+          echo "SQLCMDUSER=sa" >> $GITHUB_ENV
+          echo "SQLCMDSERVER=localhost,1433" >> $GITHUB_ENV
+          # Set connection string as environment variable for the tests
+          echo "SqlServerTransportConnectionString=Server=localhost;Database=nservicebus;User Id=sa;Password=$sa_pw;" >> $GITHUB_ENV  
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v1.8.2
+        with:
+          dotnet-version: 5.0.x
+      - name: Setup .NET Core 3.1 runtime
+        uses: actions/setup-dotnet@v1.8.2
+        with:
+          dotnet-version: 3.1.x
+      - name: Build
+        run: dotnet build src --configuration Release
+      - name: Upload packages
+        if: matrix.name == 'Windows'
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: NuGet packages
+          path: nugets/
+          retention-days: 7
+      - name: Prepare SQL Server
+        shell: pwsh       
+        run: |
+          # run this part later in the job to ensure the DB is up and running         
+          echo "create databases"
+          sqlcmd -Q "CREATE DATABASE nservicebus"
+          sqlcmd -Q "CREATE DATABASE nservicebus1"
+          sqlcmd -Q "CREATE DATABASE nservicebus2"
+          
+          echo "create additional schemas"
+          sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
+          sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
+          sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.0.0
