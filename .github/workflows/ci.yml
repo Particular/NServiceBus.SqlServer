@@ -7,6 +7,9 @@ on:
   pull_request:
     branches-ignore:
       - release-[0-3].*
+  pull_request_target:
+    branches-ignore:
+      - release-[0-3].*
   workflow_dispatch:
 env:
   DOTNET_NOLOGO: true
@@ -23,6 +26,11 @@ jobs:
             name: Linux
       fail-fast: false
     steps:
+      - name: Check for secrets
+        env:
+          SECRETS_AVAILABLE: ${{ secrets.SECRETS_AVAILABLE }}
+        shell: pwsh
+        run: exit $(If ($env:SECRETS_AVAILABLE -eq 'true') { 0 } Else { 1 })
       - name: Checkout
         uses: actions/checkout@v2.3.4
         with:
@@ -37,9 +45,11 @@ jobs:
           echo "SqlServerTransportConnectionString=Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       - name: Start SQL Server (Linux)
         if: matrix.name == 'Linux'
+        shell: pwsh
         run: |
-          sa_pw=DEVELOPERS!developers!
-          docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -p 1433:1433 --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
+          $sa_pw = [guid]::NewGuid().ToString()
+          echo "::add-mask::$sa_pw"
+          docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw"  -e "MSSQL_PID=Express" -e "MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS" -p 1433:1433 --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
           echo "SQLCMDUSER=sa" >> $GITHUB_ENV
@@ -47,11 +57,11 @@ jobs:
           # Set connection string as environment variable for the tests
           echo "SqlServerTransportConnectionString=Server=localhost;Database=nservicebus;User Id=SA;Password=$sa_pw;" >> $GITHUB_ENV
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v1.7.2
+        uses: actions/setup-dotnet@v1.8.2
         with:
           dotnet-version: 5.0.x
       - name: Setup .NET Core 3.1 runtime
-        uses: actions/setup-dotnet@v1.7.2
+        uses: actions/setup-dotnet@v1.8.2
         with:
           dotnet-version: 3.1.x
       - name: Build
