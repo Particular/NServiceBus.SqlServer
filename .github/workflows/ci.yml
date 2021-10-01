@@ -44,8 +44,7 @@ jobs:
           # Set connection string as environment variable for the tests
           echo "SqlServerTransportConnectionString=Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       - name: Start SQL Server (Linux)
-        if: matrix.name == 'Linux'
-        shell: pwsh
+        if: matrix.name == 'Linux'       
         run: |
           sa_pw=DEVELOPERS!developers!
           docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -p 1433:1433 --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
