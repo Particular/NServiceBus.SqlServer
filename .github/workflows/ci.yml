@@ -46,8 +46,7 @@ jobs:
       - name: Start SQL Server (Linux)
         if: matrix.name == 'Linux'           
         run: |
-          sa_pw = [guid]::NewGuid().ToString()
-          echo "::add-mask::$sa_pw"
+          sa_pw=DEVELOPERS!developers!
           docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -p 1433:1433 --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
