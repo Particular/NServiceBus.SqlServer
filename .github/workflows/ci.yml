@@ -43,7 +43,7 @@ jobs:
           $sa_pw = [guid]::NewGuid().ToString()
           echo $sa_pw
           echo "::add-mask::$sa_pw"
-          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Express" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu 
+          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Express" -p "MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS" 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu 
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
           echo "SQLCMDUSER=sa" >> $GITHUB_ENV
