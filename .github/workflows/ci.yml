@@ -45,9 +45,8 @@ jobs:
           echo "SqlServerTransportConnectionString=Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       - name: Start SQL Server (Linux)
         if: matrix.name == 'Linux'       
-        shell: pwsh
         run: |
-          $sa_pw = [guid]::NewGuid().ToString()
+          sa_pw=$(uuidgen)
           docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -p 1433:1433 --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
@@ -73,7 +72,6 @@ jobs:
           path: nugets/
           retention-days: 7
       - name: Prepare SQL Server
-        shell: pwsh
         run: |
           # run this part later in the job to ensure the DB is up and running         
           echo "create databases"
