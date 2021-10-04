@@ -48,7 +48,7 @@ jobs:
         if: matrix.name == 'Linux'           
         run: |
           $sa_pw = "DEVELOPERS!developers!"
-          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -p 1433:1433 -d --name sqlserver mcr.microsoft.com/mssql/server:2017-latest
+          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Express" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu 
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
           echo "SQLCMDUSER=sa" >> $GITHUB_ENV
