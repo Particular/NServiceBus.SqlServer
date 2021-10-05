@@ -1,6 +1,6 @@
 ﻿#pragma warning disable PS0013 // A Func used as a method parameter with a Task, ValueTask, or ValueTask<T> return type argument should have at least one CancellationToken parameter type argument unless it has a parameter type argument implementing ICancellableContext
 
-namespace NServiceBus.Transport.SqlServer.Configuration
+namespace NServiceBus
 {
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
@@ -72,13 +72,17 @@ namespace NServiceBus.Transport.SqlServer.Configuration
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
         /// <param name="transport">The transport settings to configure.</param>
-        [ObsoleteEx(Message = "UseSchemaForEndpoint has been obsoleted.",
+        [PreObsolete(Message = "UseSchemaForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint")]
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
-            this TransportExtensions<SqlServerTransport> transport, string endpointName, string schema) =>
-            throw new NotImplementedException();
+            this TransportExtensions<SqlServerTransport> transport, string endpointName, string schema)
+        {
+            transport.Routing().UseSchemaForEndpoint(endpointName, schema);
+
+            return transport;
+        }
 
         /// <summary>
         /// Overrides schema value for given queue. This setting will take precedence over any other source of schema
@@ -105,13 +109,17 @@ namespace NServiceBus.Transport.SqlServer.Configuration
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
         /// <param name="transport">The transport settings to configure.</param>
-        [ObsoleteEx(Message = "UseCatalogForEndpoint has been obsoleted.",
+        [PreObsolete(Message = "UseCatalogForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7.0",
             RemoveInVersion = "8.0",
             ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint")]
         public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
-            this TransportExtensions<SqlServerTransport> transport, string endpointName, string catalog) =>
-            throw new NotImplementedException();
+            this TransportExtensions<SqlServerTransport> transport, string endpointName, string catalog)
+        {
+            transport.Routing().UseCatalogForEndpoint(endpointName, catalog);
+
+            return transport;
+        }
 
         /// <summary>
         /// Specifies custom schema for given queue.
@@ -119,7 +127,7 @@ namespace NServiceBus.Transport.SqlServer.Configuration
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
         /// <param name="transport">The transport settings to configure.</param>
-        [ObsoleteEx(Message = "UseCatalogForQueue has been obsoleted.",
+        [PreObsolete(Message = "UseCatalogForQueue has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue")]
@@ -162,6 +170,21 @@ namespace NServiceBus.Transport.SqlServer.Configuration
             this TransportExtensions<SqlServerTransport> transport, string connectionString)
         {
             transport.Transport.ConnectionString = connectionString;
+
+            return transport;
+        }
+
+        /// <summary>
+        /// Configures the transport to use the given func as the connection string.
+        /// </summary>
+        [PreObsolete(
+            Message = "This transport does not support a connection string.",
+            TreatAsErrorFromVersion = "8.0",
+            RemoveInVersion = "9.0")]
+        public static TransportExtensions<SqlServerTransport> ConnectionString(
+            this TransportExtensions<SqlServerTransport> transport, Func<string> connectionString)
+        {
+            transport.Transport.ConnectionString = connectionString.Invoke();
 
             return transport;
         }
@@ -292,6 +315,29 @@ namespace NServiceBus.Transport.SqlServer.Configuration
         {
             transport.Transport.CreateMessageBodyComputedColumn = true;
             return transport;
+        }
+    }
+
+    /// <summary>
+    /// Configuration extensions for Message-Driven Pub-Sub compatibility mode
+    /// </summary>
+    public static partial class MessageDrivenPubSubCompatibilityModeConfiguration
+    {
+        /// <summary>
+        ///    Enables compatibility with endpoints running on message-driven pub-sub
+        /// </summary>
+        /// <param name="transport">The transport to enable pub-sub compatibility on</param>
+        [PreObsolete(Message = "EnableMessageDrivenPubSubCompatibilityMode has been obsoleted.",
+            ReplacementTypeOrMember = "RoutingSettings.EnableMessageDrivenPubSubCompatibilityMode",
+            RemoveInVersion = "8.0", TreatAsErrorFromVersion = "7.0")]
+#pragma warning disable 618
+        public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
+            this TransportExtensions<SqlServerTransport> transport)
+#pragma warning restore 618
+        {
+            var subscriptionMigrationModeSettings = transport.Routing().EnableMessageDrivenPubSubCompatibilityMode();
+
+            return subscriptionMigrationModeSettings;
         }
     }
 }
