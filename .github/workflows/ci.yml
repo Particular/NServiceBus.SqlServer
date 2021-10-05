@@ -7,9 +7,6 @@ on:
   pull_request:
     branches-ignore:
       - release-[0-3].*
-  pull_request_target:
-    branches-ignore:
-      - release-[0-3].*
   workflow_dispatch:
 env:
   DOTNET_NOLOGO: true
@@ -26,11 +23,6 @@ jobs:
             name: Linux
       fail-fast: false
     steps:
-      - name: Check for secrets
-        env:
-          SECRETS_AVAILABLE: ${{ secrets.SECRETS_AVAILABLE }}
-        shell: pwsh
-        run: exit $(If ($env:SECRETS_AVAILABLE -eq 'true') { 0 } Else { 1 })
       - name: Checkout
         uses: actions/checkout@v2.3.4
         with:
