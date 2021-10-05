@@ -37,6 +37,7 @@ jobs:
           fetch-depth: 0
       - name: Install SQL Server (Windows)
         if: matrix.name == 'Windows'
+        shell: bash 
         run: |
           choco install sql-server-express
           # Set necessary SQLCMD environment variable for the setup step
@@ -47,7 +48,9 @@ jobs:
         if: matrix.name == 'Linux'              
         shell: bash         
         run: |       
-          sa_pw=$(uuidgen)
+          # If the password generator needs to be changed, make sure the resulting password meets SQL Server password requirements
+          sa_pw=$(uuidgen) 
+          echo "::add-mask::$sa_pw"
           docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Developer" -e "MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
