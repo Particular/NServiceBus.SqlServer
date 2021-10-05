@@ -46,7 +46,8 @@ jobs:
       - name: Start SQL Server (Linux)
         if: matrix.name == 'Linux'       
         run: |
-          sa_pw=$(uuidgen)
+        shell: pwsh        
+          $sa_pw = [guid]::NewGuid().ToString()
           docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Developer" -e MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
@@ -72,6 +73,7 @@ jobs:
           path: nugets/
           retention-days: 7
       - name: Prepare SQL Server
+        shell: pwsh       
         run: |
           # run this part later in the job to ensure the DB is up and running         
           echo "create databases"
