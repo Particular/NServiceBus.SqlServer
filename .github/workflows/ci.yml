@@ -45,10 +45,10 @@ jobs:
           echo "SqlServerTransportConnectionString=Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       - name: Start SQL Server (Linux)
         if: matrix.name == 'Linux'              
-        shell: pwsh         
+        shell: bash         
         run: |       
           $sa_pw = [guid]::NewGuid().ToString()
-          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Developer" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2017-latest
+          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$sa_pw" -e "MSSQL_PID=Developer" -e MSSQL_COLLATION=SQL_Latin1_General_CP1_CS_AS -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2017-latest
           # Set necessary SQLCMD environment variable for the setup step
           echo "SQLCMDPASSWORD=$sa_pw" >> $GITHUB_ENV
           echo "SQLCMDUSER=sa" >> $GITHUB_ENV
