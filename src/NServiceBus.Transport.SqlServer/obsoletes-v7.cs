@@ -47,13 +47,8 @@ namespace NServiceBus
 {
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
 #endif
     using System;
-    using System.Threading.Tasks;
-    using System.Transactions;
-    using Transport.SqlServer;
 
     /// <summary>
     /// SqlServer Transport
@@ -97,14 +92,14 @@ namespace NServiceBus
             RemoveInVersion = "9",
             TreatAsErrorFromVersion = "8",
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(new SqlServerTransport())")]
-        public static SqlServerTransportSettings UseTransport<T>(this EndpointConfiguration config)
+        public static TransportExtensions<SqlServerTransport> UseTransport<T>(this EndpointConfiguration config)
             where T : SqlServerTransport
         {
             var transport = new SqlServerTransport();
 
             var routing = config.UseTransport(transport);
 
-            var settings = new SqlServerTransportSettings(transport, routing);
+            var settings = new TransportExtensions<SqlServerTransport>(transport, routing);
 
             return settings;
         }

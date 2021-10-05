@@ -36,7 +36,7 @@
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.DefaultSchema")]
-        public TransportExtensions<SqlServerTransport> DefaultSchema(
+        public static TransportExtensions<SqlServerTransport> DefaultSchema(
             this TransportExtensions<SqlServerTransport> transport, string schemaName)
         {
             transport.Transport.DefaultSchema = schemaName;
@@ -51,7 +51,7 @@
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog")]
-        public TransportExtensions<SqlServerTransport> DefaultCatalog(
+        public static TransportExtensions<SqlServerTransport> DefaultCatalog(
             this TransportExtensions<SqlServerTransport> transport, string catalogName)
         {
             transport.Transport.DefaultCatalog = catalogName;
@@ -64,11 +64,12 @@
         /// </summary>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [ObsoleteEx(Message = "UseSchemaForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint")]
-        public TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
+        public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
             this TransportExtensions<SqlServerTransport> transport, string endpointName, string schema) =>
             throw new NotImplementedException();
 
@@ -78,11 +79,12 @@
         /// </summary>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "UseSchemaForQueue has been obsoleted.",
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue")]
-        public TransportExtensions<SqlServerTransport> UseSchemaForQueue(
+        public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(
             this TransportExtensions<SqlServerTransport> transport, string queueName, string schema)
         {
             transport.Transport.SchemaAndCatalog.UseSchemaForQueue(queueName, schema);
@@ -95,11 +97,12 @@
         /// </summary>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [ObsoleteEx(Message = "UseCatalogForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7.0",
             RemoveInVersion = "8.0",
             ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint")]
-        public TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
+        public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
             this TransportExtensions<SqlServerTransport> transport, string endpointName, string catalog) =>
             throw new NotImplementedException();
 
@@ -108,11 +111,12 @@
         /// </summary>
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [ObsoleteEx(Message = "UseCatalogForQueue has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue")]
-        public TransportExtensions<SqlServerTransport> UseCatalogForQueue(
+        public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(
             this TransportExtensions<SqlServerTransport> transport, string queueName, string catalog)
         {
             transport.Transport.SchemaAndCatalog.UseCatalogForQueue(queueName, catalog);
@@ -125,11 +129,12 @@
         /// procedure in case there are numerous errors while trying to receive messages.
         /// </summary>
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker")]
-        public TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
+        public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
             this TransportExtensions<SqlServerTransport> transport, TimeSpan waitTime)
         {
             transport.Transport.TimeToWaitBeforeTriggeringCircuitBreaker = waitTime;
@@ -141,11 +146,12 @@
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
         /// <param name="connectionString">Sql Server instance connection string.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "ConnectionString has been obsoleted.",
             ReplacementTypeOrMember = "configuration.UseTransport(new SqlServerTransport(string connectionString))",
             RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
-        public TransportExtensions<SqlServerTransport> ConnectionString(
+        public static TransportExtensions<SqlServerTransport> ConnectionString(
             this TransportExtensions<SqlServerTransport> transport, string connectionString)
         {
             transport.Transport.ConnectionString = connectionString;
@@ -157,11 +163,12 @@
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "UseCustomSqlConnectionFactory has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory")]
-        public TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
+        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
             this TransportExtensions<SqlServerTransport> transport,
             Func<Task<SqlConnection>> sqlConnectionFactory)
         {
@@ -182,7 +189,7 @@
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.TransactionScope")]
-        public TransportExtensions<SqlServerTransport> TransactionScopeOptions(
+        public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(
             this TransportExtensions<SqlServerTransport> transport,
             TimeSpan? timeout = null,
             IsolationLevel? isolationLevel = null)
@@ -205,11 +212,12 @@
         /// </summary>
         /// <param name="delay">The delay value</param>
         /// <param name="peekBatchSize">The peek batch size</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "QueuePeekerOptions has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.QueuePeeker")]
-        public TransportExtensions<SqlServerTransport> QueuePeekerOptions(
+        public static TransportExtensions<SqlServerTransport> QueuePeekerOptions(
             this TransportExtensions<SqlServerTransport> transport,
             TimeSpan? delay = null,
             int? peekBatchSize = null)
@@ -231,8 +239,9 @@
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery")]
-        public DelayedDeliverySettings NativeDelayedDelivery() =>
-            new DelayedDeliverySettings(Transport.DelayedDelivery);
+        public static DelayedDeliverySettings NativeDelayedDelivery(
+            this TransportExtensions<SqlServerTransport> transport) =>
+            new DelayedDeliverySettings(transport.Transport.DelayedDelivery);
 
         /// <summary>
         /// Configures publish/subscribe behavior.
@@ -241,17 +250,20 @@
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.Subscriptions")]
-        public SubscriptionSettings SubscriptionSettings() => new SubscriptionSettings(Transport.Subscriptions);
+        public static SubscriptionSettings
+            SubscriptionSettings(this TransportExtensions<SqlServerTransport> transport) =>
+            new SubscriptionSettings(transport.Transport.Subscriptions);
 
         /// <summary>
         /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
         /// </summary>
         /// <param name="purgeBatchSize">Size of the purge batch.</param>
+        /// <param name="transport">The transport settings to configure.</param>
         [PreObsolete(Message = "PurgeExpiredMessagesOnStartup has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup")]
-        public TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(
+        public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(
             this TransportExtensions<SqlServerTransport> transport,
             int? purgeBatchSize)
         {
@@ -268,7 +280,7 @@
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.CreateMessageBodyComputedColumn")]
-        public TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(
+        public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(
             this TransportExtensions<SqlServerTransport> transport)
         {
             transport.Transport.CreateMessageBodyComputedColumn = true;
