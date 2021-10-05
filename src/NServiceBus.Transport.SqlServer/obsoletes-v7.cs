@@ -1,6 +1,4 @@
-﻿#pragma warning disable PS0013 // A Func used as a method parameter with a Task, ValueTask, or ValueTask<T> return type argument should have at least one CancellationToken parameter type argument unless it has a parameter type argument implementing ICancellableContext
-
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
 
@@ -45,9 +43,6 @@ namespace NServiceBus.Transport.SqlServer
 
 namespace NServiceBus
 {
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#endif
     using System;
 
     /// <summary>

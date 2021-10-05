@@ -1,9 +1,16 @@
-﻿namespace NServiceBus.Transport.SqlServer.Configuration
+﻿#pragma warning disable PS0013 // A Func used as a method parameter with a Task, ValueTask, or ValueTask<T> return type argument should have at least one CancellationToken parameter type argument unless it has a parameter type argument implementing ICancellableContext
+
+namespace NServiceBus.Transport.SqlServer.Configuration
 {
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Microsoft.Data.SqlClient;
+    using Transport.SqlServer;
 
     /// <summary>
     /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
