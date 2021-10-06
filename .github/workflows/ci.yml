@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
       - name: Install SQL Server (Windows)
         if: matrix.name == 'Windows'
-        shell: bash 
+        shell: pwsh 
         run: |
           choco install sql-server-express
           # Set necessary SQLCMD environment variable for the setup step
