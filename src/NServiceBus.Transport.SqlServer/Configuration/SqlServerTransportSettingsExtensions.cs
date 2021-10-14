@@ -15,7 +15,7 @@ namespace NServiceBus
     /// <summary>
     /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
     /// </summary>
-    public static class SqlServerTransportApiExtensions
+    public static class SqlServerTransportSettingsExtensions
     {
         /// <summary>
         /// Configures NServiceBus to use the given transport.
@@ -44,11 +44,11 @@ namespace NServiceBus
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.DefaultSchema")]
         public static TransportExtensions<SqlServerTransport> DefaultSchema(
-            this TransportExtensions<SqlServerTransport> transport, string schemaName)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
-            transport.Transport.DefaultSchema = schemaName;
+            transportExtensions.Transport.DefaultSchema = schemaName;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -59,11 +59,11 @@ namespace NServiceBus
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog")]
         public static TransportExtensions<SqlServerTransport> DefaultCatalog(
-            this TransportExtensions<SqlServerTransport> transport, string catalogName)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string catalogName)
         {
-            transport.Transport.DefaultCatalog = catalogName;
+            transportExtensions.Transport.DefaultCatalog = catalogName;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -71,17 +71,17 @@ namespace NServiceBus
         /// </summary>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "UseSchemaForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint")]
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
-            this TransportExtensions<SqlServerTransport> transport, string endpointName, string schema)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
         {
-            transport.Routing().UseSchemaForEndpoint(endpointName, schema);
+            transportExtensions.Routing().UseSchemaForEndpoint(endpointName, schema);
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -90,17 +90,17 @@ namespace NServiceBus
         /// </summary>
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "UseSchemaForQueue has been obsoleted.",
             TreatAsErrorFromVersion = "8",
             RemoveInVersion = "9",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue")]
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(
-            this TransportExtensions<SqlServerTransport> transport, string queueName, string schema)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
         {
-            transport.Transport.SchemaAndCatalog.UseSchemaForQueue(queueName, schema);
+            transportExtensions.Transport.SchemaAndCatalog.UseSchemaForQueue(queueName, schema);
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -108,17 +108,17 @@ namespace NServiceBus
         /// </summary>
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "UseCatalogForEndpoint has been obsoleted.",
             TreatAsErrorFromVersion = "7.0",
             RemoveInVersion = "8.0",
             ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint")]
         public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
-            this TransportExtensions<SqlServerTransport> transport, string endpointName, string catalog)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
         {
-            transport.Routing().UseCatalogForEndpoint(endpointName, catalog);
+            transportExtensions.Routing().UseCatalogForEndpoint(endpointName, catalog);
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -126,17 +126,17 @@ namespace NServiceBus
         /// </summary>
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "UseCatalogForQueue has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue")]
         public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(
-            this TransportExtensions<SqlServerTransport> transport, string queueName, string catalog)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)
         {
-            transport.Transport.SchemaAndCatalog.UseCatalogForQueue(queueName, catalog);
+            transportExtensions.Transport.SchemaAndCatalog.UseCatalogForQueue(queueName, catalog);
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -144,34 +144,34 @@ namespace NServiceBus
         /// procedure in case there are numerous errors while trying to receive messages.
         /// </summary>
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker")]
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
-            this TransportExtensions<SqlServerTransport> transport, TimeSpan waitTime)
+            this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
-            transport.Transport.TimeToWaitBeforeTriggeringCircuitBreaker = waitTime;
+            transportExtensions.Transport.TimeToWaitBeforeTriggeringCircuitBreaker = waitTime;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
         /// <param name="connectionString">Sql Server instance connection string.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "ConnectionString has been obsoleted.",
             ReplacementTypeOrMember = "configuration.UseTransport(new SqlServerTransport(string connectionString))",
             RemoveInVersion = "9.0",
             TreatAsErrorFromVersion = "8.0")]
         public static TransportExtensions<SqlServerTransport> ConnectionString(
-            this TransportExtensions<SqlServerTransport> transport, string connectionString)
+            this TransportExtensions<SqlServerTransport> transportExtensions, string connectionString)
         {
-            transport.Transport.ConnectionString = connectionString;
+            transportExtensions.Transport.ConnectionString = connectionString;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -182,29 +182,29 @@ namespace NServiceBus
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0")]
         public static TransportExtensions<SqlServerTransport> ConnectionString(
-            this TransportExtensions<SqlServerTransport> transport, Func<string> connectionString)
+            this TransportExtensions<SqlServerTransport> transportExtensions, Func<string> connectionString)
         {
-            transport.Transport.ConnectionString = connectionString.Invoke();
+            transportExtensions.Transport.ConnectionString = connectionString.Invoke();
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
         /// Specifies connection factory to be used by sql transport.
         /// </summary>
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "UseCustomSqlConnectionFactory has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory")]
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
-            this TransportExtensions<SqlServerTransport> transport,
+            this TransportExtensions<SqlServerTransport> transportExtensions,
             Func<Task<SqlConnection>> sqlConnectionFactory)
         {
-            transport.Transport.ConnectionFactory = async (_) => await sqlConnectionFactory().ConfigureAwait(false);
+            transportExtensions.Transport.ConnectionFactory = async (_) => await sqlConnectionFactory().ConfigureAwait(false);
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -220,21 +220,21 @@ namespace NServiceBus
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.TransactionScope")]
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(
-            this TransportExtensions<SqlServerTransport> transport,
+            this TransportExtensions<SqlServerTransport> transportExtensions,
             TimeSpan? timeout = null,
             IsolationLevel? isolationLevel = null)
         {
             if (timeout.HasValue)
             {
-                transport.Transport.TransactionScope.Timeout = timeout.Value;
+                transportExtensions.Transport.TransactionScope.Timeout = timeout.Value;
             }
 
             if (isolationLevel.HasValue)
             {
-                transport.Transport.TransactionScope.IsolationLevel = isolationLevel.Value;
+                transportExtensions.Transport.TransactionScope.IsolationLevel = isolationLevel.Value;
             }
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -242,24 +242,24 @@ namespace NServiceBus
         /// </summary>
         /// <param name="delay">The delay value</param>
         /// <param name="peekBatchSize">The peek batch size</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "QueuePeekerOptions has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.QueuePeeker")]
         public static TransportExtensions<SqlServerTransport> QueuePeekerOptions(
-            this TransportExtensions<SqlServerTransport> transport,
+            this TransportExtensions<SqlServerTransport> transportExtensions,
             TimeSpan? delay = null,
             int? peekBatchSize = null)
         {
             if (delay.HasValue)
             {
-                transport.Transport.QueuePeeker.Delay = delay.Value;
+                transportExtensions.Transport.QueuePeeker.Delay = delay.Value;
             }
 
-            transport.Transport.QueuePeeker.MaxRecordsToPeek = peekBatchSize;
+            transportExtensions.Transport.QueuePeeker.MaxRecordsToPeek = peekBatchSize;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -270,8 +270,8 @@ namespace NServiceBus
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery")]
         public static DelayedDeliverySettings NativeDelayedDelivery(
-            this TransportExtensions<SqlServerTransport> transport) =>
-            new DelayedDeliverySettings(transport.Transport.DelayedDelivery);
+            this TransportExtensions<SqlServerTransport> transportExtensions) =>
+            new DelayedDeliverySettings(transportExtensions.Transport.DelayedDelivery);
 
         /// <summary>
         /// Configures publish/subscribe behavior.
@@ -281,26 +281,26 @@ namespace NServiceBus
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.Subscriptions")]
         public static SubscriptionSettings
-            SubscriptionSettings(this TransportExtensions<SqlServerTransport> transport) =>
-            new SubscriptionSettings(transport.Transport.Subscriptions);
+            SubscriptionSettings(this TransportExtensions<SqlServerTransport> transportExtensions) =>
+            new SubscriptionSettings(transportExtensions.Transport.Subscriptions);
 
         /// <summary>
         /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
         /// </summary>
         /// <param name="purgeBatchSize">Size of the purge batch.</param>
-        /// <param name="transport">The transport settings to configure.</param>
+        /// <param name="transportExtensions">The transport settings to configure.</param>
         [PreObsolete(Message = "PurgeExpiredMessagesOnStartup has been obsoleted.",
             TreatAsErrorFromVersion = "8.0",
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup")]
         public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(
-            this TransportExtensions<SqlServerTransport> transport,
+            this TransportExtensions<SqlServerTransport> transportExtensions,
             int? purgeBatchSize)
         {
-            transport.Transport.ExpiredMessagesPurger.PurgeOnStartup = true;
-            transport.Transport.ExpiredMessagesPurger.PurgeBatchSize = purgeBatchSize;
+            transportExtensions.Transport.ExpiredMessagesPurger.PurgeOnStartup = true;
+            transportExtensions.Transport.ExpiredMessagesPurger.PurgeBatchSize = purgeBatchSize;
 
-            return transport;
+            return transportExtensions;
         }
 
         /// <summary>
@@ -311,10 +311,10 @@ namespace NServiceBus
             RemoveInVersion = "9.0",
             ReplacementTypeOrMember = "SqlServerTransport.CreateMessageBodyComputedColumn")]
         public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(
-            this TransportExtensions<SqlServerTransport> transport)
+            this TransportExtensions<SqlServerTransport> transportExtensions)
         {
-            transport.Transport.CreateMessageBodyComputedColumn = true;
-            return transport;
+            transportExtensions.Transport.CreateMessageBodyComputedColumn = true;
+            return transportExtensions;
         }
     }
 
@@ -326,16 +326,14 @@ namespace NServiceBus
         /// <summary>
         ///    Enables compatibility with endpoints running on message-driven pub-sub
         /// </summary>
-        /// <param name="transport">The transport to enable pub-sub compatibility on</param>
+        /// <param name="transportExtensions">The transport to enable pub-sub compatibility on</param>
         [PreObsolete(Message = "EnableMessageDrivenPubSubCompatibilityMode has been obsoleted.",
             ReplacementTypeOrMember = "RoutingSettings.EnableMessageDrivenPubSubCompatibilityMode",
             RemoveInVersion = "8.0", TreatAsErrorFromVersion = "7.0")]
-#pragma warning disable 618
         public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
-            this TransportExtensions<SqlServerTransport> transport)
-#pragma warning restore 618
+            this TransportExtensions<SqlServerTransport> transportExtensions)
         {
-            var subscriptionMigrationModeSettings = transport.Routing().EnableMessageDrivenPubSubCompatibilityMode();
+            var subscriptionMigrationModeSettings = transportExtensions.Routing().EnableMessageDrivenPubSubCompatibilityMode();
 
             return subscriptionMigrationModeSettings;
         }

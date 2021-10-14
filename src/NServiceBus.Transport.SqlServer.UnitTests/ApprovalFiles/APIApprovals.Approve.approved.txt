@@ -18,7 +18,7 @@ namespace NServiceBus
     public static class MessageDrivenPubSubCompatibilityModeConfiguration
     {
         public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.RoutingSettings routingSettings) { }
-        public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport) { }
+        public static NServiceBus.SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
     }
     public static class PublishOptionsExtensions
     {
@@ -55,24 +55,24 @@ namespace NServiceBus
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
         public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
-    public static class SqlServerTransportApiExtensions
+    public static class SqlServerTransportSettingsExtensions
     {
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, System.Func<string> connectionString) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string connectionString) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultCatalog(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string catalogName) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string schemaName) { }
-        public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, int? purgeBatchSize) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> QueuePeekerOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, System.TimeSpan? delay = default, int? peekBatchSize = default) { }
-        public static NServiceBus.Transport.SqlServer.SubscriptionSettings SubscriptionSettings(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, System.TimeSpan waitTime) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, System.TimeSpan? timeout = default, System.Transactions.IsolationLevel? isolationLevel = default) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string endpointName, string catalog) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string queueName, string catalog) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string endpointName, string schema) { }
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transport, string queueName, string schema) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<string> connectionString) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> ConnectionString(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string connectionString) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> CreateMessageBodyComputedColumn(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultCatalog(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string catalogName) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> DefaultSchema(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string schemaName) { }
+        public static NServiceBus.Transport.SqlServer.DelayedDeliverySettings NativeDelayedDelivery(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> PurgeExpiredMessagesOnStartup(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, int? purgeBatchSize) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> QueuePeekerOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default, int? peekBatchSize = default) { }
+        public static NServiceBus.Transport.SqlServer.SubscriptionSettings SubscriptionSettings(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan waitTime) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> TransactionScopeOptions(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? timeout = default, System.Transactions.IsolationLevel? isolationLevel = default) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string catalog) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCatalogForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string catalog) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseCustomSqlConnectionFactory(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.Func<System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> sqlConnectionFactory) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForEndpoint(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string endpointName, string schema) { }
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseTransport<T>(this NServiceBus.EndpointConfiguration config)
             where T : NServiceBus.SqlServerTransport { }
     }
