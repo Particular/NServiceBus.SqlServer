@@ -29,19 +29,19 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
             subscriptionSettings.CacheSubscriptionInformationFor(TimeSpan.FromSeconds(1));
             subscriptionSettings.DisableSubscriptionCache();
 
-            Assert.AreEqual("connectionString", transport.SqlTransport.ConnectionString);
-            Assert.AreEqual("schema", transport.SqlTransport.DefaultSchema);
-            Assert.AreEqual(true, transport.SqlTransport.ExpiredMessagesPurger.PurgeOnStartup);
-            Assert.AreEqual(100, transport.SqlTransport.ExpiredMessagesPurger.PurgeBatchSize);
-            Assert.AreEqual(TimeSpan.FromSeconds(1), transport.SqlTransport.QueuePeeker.Delay);
-            Assert.AreEqual(100, transport.SqlTransport.QueuePeeker.MaxRecordsToPeek);
+            Assert.AreEqual("connectionString", transport.Transport.ConnectionString);
+            Assert.AreEqual("schema", transport.Transport.DefaultSchema);
+            Assert.AreEqual(true, transport.Transport.ExpiredMessagesPurger.PurgeOnStartup);
+            Assert.AreEqual(100, transport.Transport.ExpiredMessagesPurger.PurgeBatchSize);
+            Assert.AreEqual(TimeSpan.FromSeconds(1), transport.Transport.QueuePeeker.Delay);
+            Assert.AreEqual(100, transport.Transport.QueuePeeker.MaxRecordsToPeek);
 
-            Assert.AreEqual("suffix", transport.SqlTransport.DelayedDelivery.TableSuffix);
-            Assert.AreEqual(100, transport.SqlTransport.DelayedDelivery.BatchSize);
+            Assert.AreEqual("suffix", transport.Transport.DelayedDelivery.TableSuffix);
+            Assert.AreEqual(100, transport.Transport.DelayedDelivery.BatchSize);
 
-            Assert.AreEqual(true, transport.SqlTransport.Subscriptions.DisableCaching);
-            Assert.AreEqual(TimeSpan.FromSeconds(1), transport.SqlTransport.Subscriptions.CacheInvalidationPeriod);
-            Assert.AreEqual("[catalog].[schema].[table]", transport.SqlTransport.Subscriptions.SubscriptionTableName.Qualify("dbo", "nsb").QuotedQualifiedName);
+            Assert.AreEqual(true, transport.Transport.Subscriptions.DisableCaching);
+            Assert.AreEqual(TimeSpan.FromSeconds(1), transport.Transport.Subscriptions.CacheInvalidationPeriod);
+            Assert.AreEqual("[catalog].[schema].[table]", transport.Transport.Subscriptions.SubscriptionTableName.Qualify("dbo", "nsb").QuotedQualifiedName);
         }
     }
 }
