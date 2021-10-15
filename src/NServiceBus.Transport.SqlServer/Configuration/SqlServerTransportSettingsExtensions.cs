@@ -324,12 +324,12 @@ namespace NServiceBus
     public static partial class MessageDrivenPubSubCompatibilityModeConfiguration
     {
         /// <summary>
-        ///    Enables compatibility with endpoints running on message-driven pub-sub
+        /// Enables compatibility with endpoints running on message-driven pub-sub
         /// </summary>
         /// <param name="transportExtensions">The transport to enable pub-sub compatibility on</param>
-        [PreObsolete(Message = "EnableMessageDrivenPubSubCompatibilityMode has been obsoleted.",
-            ReplacementTypeOrMember = "RoutingSettings.EnableMessageDrivenPubSubCompatibilityMode",
-            RemoveInVersion = "8.0", TreatAsErrorFromVersion = "7.0")]
+        [ObsoleteEx(Message = "Native publish/subscribe is always enabled in version 7. All endpoints must be updated to use native publish/subscribe before updating to this version.",
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
         public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
             this TransportExtensions<SqlServerTransport> transportExtensions)
         {
