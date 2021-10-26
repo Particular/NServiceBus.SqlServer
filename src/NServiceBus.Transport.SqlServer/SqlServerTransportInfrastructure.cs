@@ -132,7 +132,7 @@ namespace NServiceBus.Transport.SqlServer
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
-            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey))
+            if (settings.GetOrDefault<bool>(SettingsKeys.PurgeEnableKey) == false)
             {
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
