@@ -60,17 +60,6 @@ namespace NServiceBus
 
         void ValidateConfiguration()
         {
-            //This is needed due to legacy transport api support. It can be removed when the api is no longer supported.
-            if (ConnectionFactory == null && string.IsNullOrWhiteSpace(ConnectionString))
-            {
-                throw new Exception("SqlServer transport requires connection string or connection factory.");
-            }
-
-            if (ConnectionFactory != null && !string.IsNullOrWhiteSpace(ConnectionString))
-            {
-                throw new Exception(
-                    "ConnectionString() and UseCustomConnectionFactory() settings are exclusive and can't be used at the same time.");
-            }
         }
     }
 }

@@ -26,9 +26,11 @@
             return connection;
         }
 
-        public static SqlConnectionFactory Default(string connectionString)
+        public static SqlConnectionFactory Default(SqlServerTransport transportDefinition)
         {
-            return new SqlConnectionFactory(async (cancellationToken) =>
+            var connectionString = transportDefinition.ConnectionString ?? transportDefinition.SqlConnection.ConnectionString;
+
+            return new SqlConnectionFactory(async cancellationToken =>
             {
                 ValidateConnectionPool(connectionString);
 
@@ -36,6 +38,8 @@
                 try
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+                    transportDefinition.OnSqlConnectionConnected?.Invoke(connection);
                 }
 #pragma warning disable PS0019 // Do not catch Exception without considering OperationCanceledException
                 catch (Exception)

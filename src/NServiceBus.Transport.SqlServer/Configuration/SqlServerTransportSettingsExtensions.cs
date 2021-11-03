@@ -190,24 +190,6 @@ namespace NServiceBus
         }
 
         /// <summary>
-        /// Specifies connection factory to be used by sql transport.
-        /// </summary>
-        /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
-        /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseCustomSqlConnectionFactory has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory")]
-        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
-            this TransportExtensions<SqlServerTransport> transportExtensions,
-            Func<Task<SqlConnection>> sqlConnectionFactory)
-        {
-            transportExtensions.Transport.ConnectionFactory = async (_) => await sqlConnectionFactory().ConfigureAwait(false);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
         /// Allows the <see cref="IsolationLevel" /> and transaction timeout to be changed for the
         /// <see cref="TransactionScope" /> used to receive messages.
         /// </summary>

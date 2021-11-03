@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using System.Transactions;
     using Logging;
-    using NServiceBus.Transport.SqlServer.PubSub;
+    using PubSub;
     using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
@@ -46,12 +46,7 @@ namespace NServiceBus.Transport.SqlServer
 
         SqlConnectionFactory CreateConnectionFactory()
         {
-            if (transport.ConnectionFactory != null)
-            {
-                return new SqlConnectionFactory(transport.ConnectionFactory);
-            }
-
-            return SqlConnectionFactory.Default(transport.ConnectionString);
+            return SqlConnectionFactory.Default(transport);
         }
 
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken = default)

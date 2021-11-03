@@ -38,13 +38,10 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
-        public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
+        public SqlServerTransport(SqlConnection sqlConnection)
             : base(TransportTransactionMode.TransactionScope, true, true, true)
         {
-            Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
-
-            ConnectionFactory = connectionFactory;
+            SqlConnection = sqlConnection;
         }
 
         /// <summary>
@@ -111,32 +108,9 @@ namespace NServiceBus
 
         DbConnectionStringBuilder GetConnectionStringBuilder()
         {
-            if (ConnectionFactory != null)
+            if (SqlConnection != null)
             {
-                // TODO: CRUFT & CODE SMELLS
-                // SqlT is configured via this ConnectionFactory Func, but at startup time this needs to be
-                // executed once to get a connection string builder so that we can discover the catalog (database)
-                // name, and whether or not encryption is activated. As this is network I/O and is used at runtime,
-                // it should be async and accept a cancellation token. However, the catalog name is ALSO required
-                // by the ToTransportAddress method, which Core assumes should be static/deterministic. As a result,
-                // ToTransportAddress is called by Core before Initialize is called, which seems like a code smell.
-                // That means we have to call it here with .GetAwaiter.GetResult() and pass CancellationToken.None,
-                // for code smells #2 and #3. I tried making this part of the Initialize method, which would be
-                // async and provide a cancellation token, and throwing if ToTransportAddress is called before
-                // Initialize, but since Core is calling ToTransportAddress before Initialize, it causes every
-                // single acceptance test to fail. I'm sure we got into this situation because initiallly, we only
-                // accepted a connection string, which was easy to parse. But supporting both System.Data.SqlClient
-                // and Microsoft.Data.SqlClient led to us only accepting a ConnectionFactory func, but without
-                // CancellationToken in the API it didn't seem that bad. Now I'm adding CancellationToken support,
-                // which makes the problem obvious. At the moment I can't do a larger refactor to make this problem
-                // go away, but I did at least rewrite it so that the ConnectionFactory is only called ONCE at startup
-                // rather than once for each property. However, it will still be possible for a questionable connection
-                // to a SQL Server at startup to cause an endpoint to violate the SLA defined by the cancellation token
-                // passed to Endpoint.Start() becuase the code here won't be able to make a timely exit.
-                using (var connection = ConnectionFactory(CancellationToken.None).GetAwaiter().GetResult())
-                {
-                    return new DbConnectionStringBuilder { ConnectionString = connection.ConnectionString };
-                }
+                return new DbConnectionStringBuilder { ConnectionString = SqlConnection.ConnectionString };
             }
 
             return new DbConnectionStringBuilder { ConnectionString = ConnectionString };
@@ -181,7 +155,12 @@ namespace NServiceBus
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; internal set; }
+        public SqlConnection SqlConnection { get; internal set; }
+
+        /// <summary>
+        /// Callback.
+        /// </summary>
+        public Action<SqlConnection> OnSqlConnectionConnected { get; set; }
 
         /// <summary>
         /// Default address schema.
