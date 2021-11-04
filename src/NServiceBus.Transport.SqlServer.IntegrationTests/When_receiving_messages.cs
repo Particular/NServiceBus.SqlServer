@@ -28,7 +28,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
-            var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
+            var transport = new SqlServerTransport(connectionString)
             {
                 TransportTransactionMode = TransportTransactionMode.None,
                 TimeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.MaxValue,

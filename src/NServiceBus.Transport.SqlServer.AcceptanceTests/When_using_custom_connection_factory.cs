@@ -12,10 +12,10 @@
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
 
-    public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
+    public class When_using_custom_connection : NServiceBusAcceptanceTest
     {
         [Test]
-        public async Task Should_use_provided_ready_to_use_connection()
+        public async Task Should_use_provided_connection()
         {
             var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
@@ -32,14 +32,7 @@
         {
             public Endpoint()
             {
-                var transport = new SqlServerTransport(async cancellationToken =>
-                {
-                    var connection = new SqlConnection(GetConnectionString());
-
-                    await connection.OpenAsync(cancellationToken);
-
-                    return connection;
-                });
+                var transport = new SqlServerTransport(new SqlConnection(GetConnectionString()));
 
                 EndpointSetup(new CustomizedServer(transport), (c, sd) =>
                 {

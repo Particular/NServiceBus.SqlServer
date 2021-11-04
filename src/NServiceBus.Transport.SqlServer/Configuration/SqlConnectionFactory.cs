@@ -29,7 +29,11 @@
         public static SqlConnectionFactory Default(SqlServerTransport transportDefinition)
         {
             var connectionString = transportDefinition.ConnectionString ?? transportDefinition.SqlConnection.ConnectionString;
+            return SqlConnectionFactory.Default(connectionString, transportDefinition.OnSqlConnectionConnected);
+        }
 
+        public static SqlConnectionFactory Default(string connectionString, Action<SqlConnection> callback = null)
+        {
             return new SqlConnectionFactory(async cancellationToken =>
             {
                 ValidateConnectionPool(connectionString);
@@ -39,7 +43,7 @@
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-                    transportDefinition.OnSqlConnectionConnected?.Invoke(connection);
+                    callback?.Invoke(connection);
                 }
 #pragma warning disable PS0019 // Do not catch Exception without considering OperationCanceledException
                 catch (Exception)

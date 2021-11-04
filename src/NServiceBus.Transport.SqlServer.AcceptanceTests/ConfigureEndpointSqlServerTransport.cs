@@ -42,14 +42,9 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         Func<Task<SqlConnection>> factory = async () =>
         {
-            if (transport.ConnectionString != null)
-            {
-                var connection = new SqlConnection(transport.ConnectionString);
-                await connection.OpenAsync().ConfigureAwait(false);
-                return connection;
-            }
-
-            return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
+            var connection = new SqlConnection(transport.ConnectionString ?? transport.SqlConnection.ConnectionString);
+            await connection.OpenAsync().ConfigureAwait(false);
+            return connection;
         };
 
         using (var conn = await factory().ConfigureAwait(false))
