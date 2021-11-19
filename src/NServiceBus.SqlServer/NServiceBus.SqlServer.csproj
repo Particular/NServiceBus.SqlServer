@@ -25,7 +25,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\NServiceBus.Transport.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.Transport.SqlServer\InternalsVisibleTo.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer\**\*.cs" Exclude="**\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.SqlServer.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.SqlServer.IntegrationTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.SqlServer.TransportTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.SqlServer.UnitTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>
