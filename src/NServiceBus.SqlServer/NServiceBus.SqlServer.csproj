@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer\**\*.cs" Exclude="**\obj\**;..\NServiceBus.Transport.SqlServer\InternalsVisibleTo.cs" />
-    <Compile Update="..\NServiceBus.Transport.SqlServer\Configuration\DelayedDeliverySettings.cs" />
   </ItemGroup>
 
 </Project>
