@@ -12,7 +12,7 @@
 
     class MessageReceiver : IMessageReceiver
     {
-        public MessageReceiver(SqlServerTransport transport, ReceiveSettings receiveSettings, HostSettings hostSettings, Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
+        public MessageReceiver(SqlServerTransport transport, ReceiveSettings receiveSettings, string receiveAddress, HostSettings hostSettings, Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
         {
             this.transport = transport;
             this.receiveSettings = receiveSettings;
@@ -26,6 +26,7 @@
             this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             Subscriptions = subscriptionManager;
+            ReceiveAddress = receiveAddress;
         }
 
         public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
@@ -39,7 +40,7 @@
             messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
             messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
-            inputQueue = queueFactory(receiveSettings.ReceiveAddress);
+            inputQueue = queueFactory(ReceiveAddress);
             errorQueue = queueFactory(receiveSettings.ErrorQueue);
 
             processStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
@@ -234,5 +235,6 @@
 
         public ISubscriptionManager Subscriptions { get; }
         public string Id => receiveSettings.Id;
+        public string ReceiveAddress { get; }
     }
 }

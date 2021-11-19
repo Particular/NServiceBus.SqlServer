@@ -37,7 +37,7 @@
             transport.Testing.QueueFactoryOverride = qa =>
                 qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
-            var receiveSettings = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
+            var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueAddress), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
                 (_, __, ___) => { },
                 true);

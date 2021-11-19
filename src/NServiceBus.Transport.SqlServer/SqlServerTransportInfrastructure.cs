@@ -130,7 +130,10 @@ namespace NServiceBus.Transport.SqlServer
                 //delivery infrastructure, we assume that the first receiver address matches main input queue address
                 //from version 7 of Core. For raw usages this will still work but delayed-delivery messages
                 //might be moved to arbitrary picked receiver
-                var mainReceiverInputQueueAddress = receiveSettings[0].ReceiveAddress;
+#pragma warning disable CS0618 // Type or member is obsolete
+                var mainReceiverInputQueueAddress = transport.ToTransportAddress(receiveSettings[0].ReceiveAddress);
+#pragma warning restore CS0618 // Type or member is obsolete
+
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
@@ -141,11 +144,14 @@ namespace NServiceBus.Transport.SqlServer
 
             Receivers = receiveSettings.Select(s =>
             {
+#pragma warning disable CS0618 // Type or member is obsolete
+                var receiveAddress = transport.ToTransportAddress(s.ReceiveAddress);
+#pragma warning restore CS0618 // Type or member is obsolete
                 ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
-                    ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, s.ReceiveAddress)
+                    ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                     : new NoOpSubscriptionManager();
 
-                return new MessageReceiver(transport, s, hostSettings, processStrategyFactory, queueFactory, queuePurger,
+                return new MessageReceiver(transport, s, receiveAddress, hostSettings, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 
@@ -153,7 +159,7 @@ namespace NServiceBus.Transport.SqlServer
 
             await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
 
-            var receiveAddresses = receiveSettings.Select(r => r.ReceiveAddress).ToList();
+            var receiveAddresses = Receivers.Values.Select(r => r.ReceiveAddress).ToList();
 
             if (hostSettings.SetupInfrastructure)
             {
@@ -273,6 +279,8 @@ namespace NServiceBus.Transport.SqlServer
         {
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
+
+        public override string ToTransportAddress(Transport.QueueAddress address) => throw new NotImplementedException();
 
         class FakePromotableResourceManager : IEnlistmentNotification
         {

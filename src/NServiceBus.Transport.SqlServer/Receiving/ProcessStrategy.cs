@@ -66,7 +66,7 @@
             //Do not process expired messages
             if (message.Expired == false)
             {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, context);
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, inputQueue.Name, context);
                 await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
@@ -78,7 +78,7 @@
             message.ResetHeaders();
             try
             {
-                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, context);
+                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, inputQueue.Name, context);
                 errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);

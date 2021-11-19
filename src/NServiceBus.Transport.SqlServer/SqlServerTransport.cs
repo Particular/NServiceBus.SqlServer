@@ -145,6 +145,7 @@ namespace NServiceBus
         /// <summary>
         /// Translates a <see cref="QueueAddress"/> object into a transport specific queue address-string.
         /// </summary>
+        [Obsolete]
         public override string ToTransportAddress(Transport.QueueAddress address)
         {
             ParseConnectionAttributes();

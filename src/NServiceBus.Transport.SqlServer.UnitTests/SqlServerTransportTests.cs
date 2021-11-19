@@ -67,7 +67,9 @@
                 DefaultCatalog = defaultCatalog
             };
 
+#pragma warning disable CS0618 // Type or member is obsolete
             string transportAddress = transport.ToTransportAddress(new Transport.QueueAddress("endpointName", null, null, null));
+#pragma warning restore CS0618 // Type or member is obsolete
             var catalogName = transportAddress.Split('@').Last();
 
             Assert.AreEqual($"[{defaultCatalog}]", catalogName);
