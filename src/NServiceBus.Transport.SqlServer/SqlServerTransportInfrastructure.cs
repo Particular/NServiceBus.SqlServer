@@ -142,16 +142,16 @@ namespace NServiceBus.Transport.SqlServer
                 dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
             }
 
-            Receivers = receiveSettings.Select(s =>
+            Receivers = receiveSettings.Select(receiveSetting =>
             {
 #pragma warning disable CS0618 // Type or member is obsolete
-                var receiveAddress = transport.ToTransportAddress(s.ReceiveAddress);
+                var receiveAddress = transport.ToTransportAddress(receiveSetting.ReceiveAddress);
 #pragma warning restore CS0618 // Type or member is obsolete
                 ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
                     ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                     : new NoOpSubscriptionManager();
 
-                return new MessageReceiver(transport, s, receiveAddress, hostSettings, processStrategyFactory, queueFactory, queuePurger,
+                return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager);
 

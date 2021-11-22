@@ -12,10 +12,9 @@
 
     class MessageReceiver : IMessageReceiver
     {
-        public MessageReceiver(SqlServerTransport transport, ReceiveSettings receiveSettings, string receiveAddress, HostSettings hostSettings, Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
+        public MessageReceiver(SqlServerTransport transport, string receiverId, string receiveAddress, string errorQueueAddress, HostSettings hostSettings, Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
         {
             this.transport = transport;
-            this.receiveSettings = receiveSettings;
             this.hostSettings = hostSettings;
             this.processStrategyFactory = processStrategyFactory;
             this.queuePurger = queuePurger;
@@ -25,7 +24,9 @@
             this.queuePeekerOptions = queuePeekerOptions;
             this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
+            this.errorQueueAddress = errorQueueAddress;
             Subscriptions = subscriptionManager;
+            Id = receiverId;
             ReceiveAddress = receiveAddress;
         }
 
@@ -37,11 +38,11 @@
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
 
-            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
-            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + receiveSettings.ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(ReceiveAddress);
-            errorQueue = queueFactory(receiveSettings.ErrorQueue);
+            errorQueue = queueFactory(errorQueueAddress);
 
             processStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
 
@@ -51,7 +52,7 @@
                 {
                     var purgedRowsCount = await queuePurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
 
-                    Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, receiveSettings.ReceiveAddress);
+                    Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, ReceiveAddress);
                 }
                 catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                 {
@@ -210,7 +211,7 @@
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly SqlServerTransport transport;
-        readonly ReceiveSettings receiveSettings;
+        readonly string errorQueueAddress;
         readonly HostSettings hostSettings;
         readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
         readonly IPurgeQueues queuePurger;
@@ -234,7 +235,7 @@
 
 
         public ISubscriptionManager Subscriptions { get; }
-        public string Id => receiveSettings.Id;
+        public string Id { get; }
         public string ReceiveAddress { get; }
     }
 }
