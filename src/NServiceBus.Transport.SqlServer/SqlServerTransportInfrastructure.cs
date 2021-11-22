@@ -130,9 +130,7 @@ namespace NServiceBus.Transport.SqlServer
                 //delivery infrastructure, we assume that the first receiver address matches main input queue address
                 //from version 7 of Core. For raw usages this will still work but delayed-delivery messages
                 //might be moved to arbitrary picked receiver
-#pragma warning disable CS0618 // Type or member is obsolete
-                var mainReceiverInputQueueAddress = transport.ToTransportAddress(receiveSettings[0].ReceiveAddress);
-#pragma warning restore CS0618 // Type or member is obsolete
+                var mainReceiverInputQueueAddress = ToTransportAddress(receiveSettings[0].ReceiveAddress);
 
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
@@ -144,9 +142,7 @@ namespace NServiceBus.Transport.SqlServer
 
             Receivers = receiveSettings.Select(receiveSetting =>
             {
-#pragma warning disable CS0618 // Type or member is obsolete
-                var receiveAddress = transport.ToTransportAddress(receiveSetting.ReceiveAddress);
-#pragma warning restore CS0618 // Type or member is obsolete
+                var receiveAddress = ToTransportAddress(receiveSetting.ReceiveAddress);
                 ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
                     ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                     : new NoOpSubscriptionManager();
@@ -280,7 +276,9 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
-        public override string ToTransportAddress(Transport.QueueAddress address) => throw new NotImplementedException();
+#pragma warning disable CS0618 // Type or member is obsolete
+        public override string ToTransportAddress(Transport.QueueAddress address) => transport.ToTransportAddress(address);
+#pragma warning restore CS0618 // Type or member is obsolete
 
         class FakePromotableResourceManager : IEnlistmentNotification
         {
