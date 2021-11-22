@@ -145,8 +145,7 @@ namespace NServiceBus
         /// <summary>
         /// Translates a <see cref="QueueAddress"/> object into a transport specific queue address-string.
         /// </summary>
-        [ObsoleteEx(
-                    Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
+        [ObsoleteEx(Message = "Inject the ITransportAddressResolver type to access the address translation mechanism at runtime. See the NServiceBus version 8 upgrade guide for further details.",
                     TreatAsErrorFromVersion = "9",
                     RemoveInVersion = "10")]
 #pragma warning disable CS0672 // Member overrides obsolete member

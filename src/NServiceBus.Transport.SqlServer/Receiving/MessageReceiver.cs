@@ -12,10 +12,23 @@
 
     class MessageReceiver : IMessageReceiver
     {
-        public MessageReceiver(SqlServerTransport transport, string receiverId, string receiveAddress, string errorQueueAddress, HostSettings hostSettings, Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory, Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger, IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker, ISubscriptionManager subscriptionManager)
+        public MessageReceiver(
+            SqlServerTransport transport,
+            string receiverId,
+            string receiveAddress,
+            string errorQueueAddress,
+            Action<string, Exception, CancellationToken> criticalErrorAction,
+            Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
+            Func<string, TableBasedQueue> queueFactory,
+            IPurgeQueues queuePurger,
+            IExpiredMessagesPurger expiredMessagesPurger,
+            IPeekMessagesInQueue queuePeeker,
+            QueuePeekerOptions queuePeekerOptions,
+            SchemaInspector schemaInspector,
+            TimeSpan waitTimeCircuitBreaker,
+            ISubscriptionManager subscriptionManager)
         {
             this.transport = transport;
-            this.hostSettings = hostSettings;
             this.processStrategyFactory = processStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
@@ -25,6 +38,7 @@
             this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.errorQueueAddress = errorQueueAddress;
+            this.criticalErrorAction = criticalErrorAction;
             Subscriptions = subscriptionManager;
             Id = receiverId;
             ReceiveAddress = receiveAddress;
@@ -38,13 +52,13 @@
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
 
-            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
-            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => hostSettings.CriticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(ReceiveAddress);
             errorQueue = queueFactory(errorQueueAddress);
 
-            processStrategy.Init(inputQueue, errorQueue, onMessage, onError, hostSettings.CriticalErrorAction);
+            processStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalErrorAction);
 
             if (transport.ExpiredMessagesPurger.PurgeOnStartup)
             {
@@ -212,7 +226,7 @@
         TableBasedQueue errorQueue;
         readonly SqlServerTransport transport;
         readonly string errorQueueAddress;
-        readonly HostSettings hostSettings;
+        readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
         readonly IPurgeQueues queuePurger;
         readonly Func<string, TableBasedQueue> queueFactory;

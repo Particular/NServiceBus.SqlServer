@@ -23,9 +23,6 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        inputQueueName = transportDefinition.ToTransportAddress(queueAddress);
-#pragma warning restore CS0618 // Type or member is obsolete
         this.errorQueueName = errorQueueName;
 
 #if !NETFRAMEWORK
@@ -48,7 +45,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 errorQueueName)
         };
 
-        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
+        var transportInfrastructure = await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
+
+        inputQueueName = transportInfrastructure.ToTransportAddress(queueAddress);
+
+        return transportInfrastructure;
     }
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
