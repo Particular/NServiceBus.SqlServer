@@ -19,11 +19,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         return new SqlServerTransport(connectionString);
     }
 
-    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, string inputQueueName, string errorQueueName, CancellationToken cancellationToken = default)
+    public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
-        this.inputQueueName = inputQueueName;
+        inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
 
 #if !NETFRAMEWORK
@@ -40,7 +40,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         {
             new ReceiveSettings(
                 "mainReceiver",
-                inputQueueName,
+                queueAddress,
                 transportDefinition.SupportsPublishSubscribe,
                 true,
                 errorQueueName)

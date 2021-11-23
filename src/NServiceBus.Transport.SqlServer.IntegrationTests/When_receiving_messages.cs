@@ -22,8 +22,8 @@
             var queueSize = 1000;
 
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-
-            var inputQueueAddress = parser.Parse("input").Address;
+            var inputQueueName = "input";
+            var inputQueueAddress = parser.Parse(inputQueueName).Address;
             var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
@@ -37,7 +37,7 @@
             transport.Testing.QueueFactoryOverride = qa =>
                 qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
-            var receiveSettings = new ReceiveSettings("receiver", inputQueueAddress, true, false, "error");
+            var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
                 (_, __, ___) => { },
                 true);
