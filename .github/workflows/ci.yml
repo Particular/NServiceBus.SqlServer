@@ -62,8 +62,10 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Run tests
         uses: Particular/run-tests-action@v1.0.0
+        continue-on-error: true
       - name: Upload approval files
         uses: actions/upload-artifact@v2.2.4
+        if: ${{ always() }}
         continue-on-error: true
         with:
           name: NuGet packages
