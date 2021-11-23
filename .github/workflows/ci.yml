@@ -44,12 +44,6 @@ jobs:
           name: NuGet packages
           path: nugets/
           retention-days: 7
-      - name: Upload approval file
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: NuGet packages
-          path: src/NServiceBus.Transport.SqlServer.UnitTests/ApprovalFiles/
-          retention-days: 7
       - name: Install SQL Server
         uses: Particular/install-sql-server-action@v1.0.0
         with:
@@ -68,3 +62,9 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Run tests
         uses: Particular/run-tests-action@v1.0.0
+      - name: Upload approval files
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: NuGet packages
+          path: src/NServiceBus.Transport.SqlServer.UnitTests/ApprovalFiles/
+          retention-days: 7
