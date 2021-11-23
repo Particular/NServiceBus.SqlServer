@@ -23,6 +23,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
     {
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
+        inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
 
 #if !NETFRAMEWORK
@@ -45,11 +46,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 errorQueueName)
         };
 
-        var transportInfrastructure = await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
-
-        inputQueueName = transportInfrastructure.ToTransportAddress(queueAddress);
-
-        return transportInfrastructure;
+        return await sqlServerTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
