@@ -64,6 +64,7 @@ jobs:
         uses: Particular/run-tests-action@v1.0.0
       - name: Upload approval files
         uses: actions/upload-artifact@v2.2.4
+        continue-on-error: true
         with:
           name: NuGet packages
           path: src/NServiceBus.Transport.SqlServer.UnitTests/ApprovalFiles/
