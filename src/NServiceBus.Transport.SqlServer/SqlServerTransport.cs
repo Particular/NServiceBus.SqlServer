@@ -69,10 +69,7 @@ namespace NServiceBus
 
             await infrastructure.ConfigureSubscriptions(Catalog, cancellationToken).ConfigureAwait(false);
 
-            if (receivers.Length > 0)
-            {
-                await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses, cancellationToken).ConfigureAwait(false);
-            }
+            await infrastructure.ConfigureReceiveInfrastructure(receivers, sendingAddresses, cancellationToken).ConfigureAwait(false);
 
             infrastructure.ConfigureSendInfrastructure();
 
