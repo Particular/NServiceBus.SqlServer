@@ -56,6 +56,12 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
+            if (receiveSettings.Length == 0)
+            {
+                Receivers = new Dictionary<string, IMessageReceiver>();
+                return;
+            }
+
             var transactionOptions = transport.TransactionScope.TransactionOptions;
 
             diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
