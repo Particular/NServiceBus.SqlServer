@@ -51,13 +51,11 @@ jobs:
           # Set connection string as environment variable for the tests
           echo "SqlServerTransportConnectionString=Server=localhost;Database=nservicebus;User Id=sa;Password=$sa_pw;" >> $GITHUB_ENV  
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v1.8.2
+        uses: actions/setup-dotnet@v1.9.0
         with:
-          dotnet-version: 5.0.x
-      - name: Setup .NET Core 3.1 runtime
-        uses: actions/setup-dotnet@v1.8.2
-        with:
-          dotnet-version: 3.1.x
+          dotnet-version: |
+           6.0.x
+           3.1.x
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
