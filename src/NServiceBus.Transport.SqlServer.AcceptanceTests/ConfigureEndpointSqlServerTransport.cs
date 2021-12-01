@@ -19,7 +19,9 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         queueBindings = configuration.GetSettings().Get<QueueBindings>();
         settings = configuration.GetSettings();
+#pragma warning disable IDE0004 // Remove Unnecessary Cast
         settings.Set("SqlServer.SubscriptionTableQuotedQualifiedNameSetter", (Action<string>)SetSubscriptionTableName);
+#pragma warning restore IDE0004 // Remove Unnecessary Cast
 
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
         connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString");
