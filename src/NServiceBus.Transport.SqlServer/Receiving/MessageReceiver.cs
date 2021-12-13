@@ -91,6 +91,29 @@
             return Task.CompletedTask;
         }
 
+        public async Task ChangeConcurrency(PushRuntimeSettings newLimitations, CancellationToken cancellationToken = new CancellationToken())
+        {
+            var oldLimiter = concurrencyLimiter;
+            var oldMaxConcurrency = maxConcurrency;
+            concurrencyLimiter = new SemaphoreSlim(newLimitations.MaxConcurrency);
+            limitations = newLimitations;
+            maxConcurrency = limitations.MaxConcurrency;
+
+            try
+            {
+                //Drain and dispose of the old semaphore
+                while (oldLimiter.CurrentCount != oldMaxConcurrency)
+                {
+                    await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+                }
+                oldLimiter.Dispose();
+            }
+            catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
+            {
+                //Ignore, we are stopping anyway
+            }
+        }
+
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
             messageReceivingCancellationTokenSource?.Cancel();
@@ -166,13 +189,15 @@
                     break;
                 }
 
-                await concurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
+                var localConcurrencyLimiter = concurrencyLimiter;
 
-                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource, messageProcessingCancellationTokenSource.Token);
+                await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
+
+                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource, localConcurrencyLimiter, messageProcessingCancellationTokenSource.Token);
             }
         }
 
-        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken messageProcessingCancellationToken)
+        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -205,7 +230,7 @@
             }
             finally
             {
-                concurrencyLimiter.Release();
+                localConcurrencyLimiter.Release();
             }
         }
 
@@ -235,7 +260,7 @@
         readonly QueuePeekerOptions queuePeekerOptions;
         readonly SchemaInspector schemaInspector;
         TimeSpan waitTimeCircuitBreaker;
-        SemaphoreSlim concurrencyLimiter;
+        volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
         int maxConcurrency;
