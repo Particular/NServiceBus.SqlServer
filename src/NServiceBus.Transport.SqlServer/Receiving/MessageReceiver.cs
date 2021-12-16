@@ -91,7 +91,7 @@
             return Task.CompletedTask;
         }
 
-        public async Task ChangeConcurrency(PushRuntimeSettings newLimitations, CancellationToken cancellationToken = new CancellationToken())
+        public async Task ChangeConcurrency(PushRuntimeSettings newLimitations, CancellationToken cancellationToken = default)
         {
             var oldLimiter = concurrencyLimiter;
             var oldMaxConcurrency = maxConcurrency;
