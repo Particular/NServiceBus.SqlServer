@@ -10,6 +10,9 @@
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
+    using Unicast.Queuing;
+    using Faults;
+
 
     abstract class ProcessStrategy
     {
@@ -112,10 +115,21 @@
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
             }
-            var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
-
             var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
-            await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+            var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
+            try
+            {
+                await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+            }
+            catch (QueueNotFoundException e)
+            {
+                log.Error($"Message {message.TransportId} cannot be forwarded to its destination queue {e.Queue} because it does not exist.");
+
+                ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
+                outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
+                await errorQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+            }
+
             return true;
         }
 
