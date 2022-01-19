@@ -46,6 +46,28 @@ namespace NServiceBus
     using System;
 
     /// <summary>
+    /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
+    /// </summary>
+    public static partial class SqlServerTransportSettingsExtensions
+    {
+        /// <summary>
+        /// Allows changing the queue peek delay.
+        /// </summary>
+        /// <param name="transportExtensions">The <see cref="TransportExtensions{T}" /> to extend.</param>
+        /// <param name="delay">The delay value</param>
+        [ObsoleteEx(
+            ReplacementTypeOrMember = nameof(NServiceBus.QueuePeekerOptions),
+            TreatAsErrorFromVersion = "7",
+            RemoveInVersion = "8")]
+        public static TransportExtensions<SqlServerTransport> WithPeekDelay(
+            this TransportExtensions<SqlServerTransport> transportExtensions,
+            TimeSpan? delay = default)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
     /// SqlServer Transport
     /// </summary>
     public partial class SqlServerTransport
