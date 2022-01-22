@@ -82,6 +82,9 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseTransport<T>(this NServiceBus.EndpointConfiguration config)
             where T : NServiceBus.SqlServerTransport { }
+        [System.Obsolete("Use `QueuePeekerOptions` instead. The member currently throws a NotImplementedExc" +
+            "eption. Will be removed in version 8.0.0.", true)]
+        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default) { }
     }
     public class TransactionScopeOptions
     {
