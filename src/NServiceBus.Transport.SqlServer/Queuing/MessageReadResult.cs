@@ -27,5 +27,13 @@ namespace NServiceBus.Transport.SqlServer
         {
             return new MessageReadResult(message, null);
         }
+
+        public override bool Equals(object obj) => obj is MessageReadResult other && Equals(other);
+
+        public override int GetHashCode() => Message.GetHashCode() ^ PoisonMessage.GetHashCode();
+
+        public static bool operator ==(MessageReadResult a, MessageReadResult b) => a.Equals(b);
+
+        public static bool operator !=(MessageReadResult a, MessageReadResult b) => !(a == b);
     }
 }

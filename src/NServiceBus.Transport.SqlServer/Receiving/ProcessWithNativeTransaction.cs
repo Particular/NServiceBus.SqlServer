@@ -34,18 +34,26 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    message = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    var receiveResult = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
-                    if (message == null)
+                    if (receiveResult == MessageReadResult.NoMessage)
                     {
-                        // The message was received but is not fit for processing (e.g. was DLQd).
-                        // In such a case we still need to commit the transport tx to remove message
-                        // from the queue table.
+                        return;
+                    }
+
+                    if (receiveResult.IsPoison)
+                    {
                         transaction.Commit();
                         return;
                     }
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(connection, transaction), context, cancellationToken).ConfigureAwait(false))
+                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
+                    {
+                        transaction.Commit();
+                        return;
+                    }
+
+                    if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(connection, transaction), context, cancellationToken).ConfigureAwait(false))
                     {
                         transaction.Rollback();
                         return;

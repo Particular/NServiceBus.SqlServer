@@ -40,28 +40,21 @@
 
         public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
-        protected async Task<Message> TryGetMessage(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        protected async Task<MessageReadResult> TryGetMessage(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
             var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
             if (receiveResult.IsPoison)
             {
                 await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
-                return null;
             }
 
-            if (receiveResult.Successful)
+            if (receiveResult == MessageReadResult.NoMessage)
             {
-                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
-                {
-                    return null;
-                }
-
-                return receiveResult.Message;
+                stopBatchCancellationTokenSource.Cancel();
             }
 
-            stopBatchCancellationTokenSource.Cancel();
-            return null;
+            return receiveResult;
         }
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
@@ -98,7 +91,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {
