@@ -10,7 +10,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using IsolationLevel = System.Data.IsolationLevel;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ProcessWithNativeTransaction : ProcessStrategy
     {
@@ -34,15 +34,17 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    var receiveResult = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
+                        stopBatchCancellationTokenSource.Cancel();
                         return;
                     }
 
                     if (receiveResult.IsPoison)
                     {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
                         transaction.Commit();
                         return;
                     }

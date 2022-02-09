@@ -4,7 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ProcessWithTransactionScope : ProcessStrategy
     {
@@ -26,15 +26,17 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    var receiveResult = await TryGetMessage(connection, null, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
+                        stopBatchCancellationTokenSource.Cancel();
                         return;
                     }
 
                     if (receiveResult.IsPoison)
                     {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null, cancellationToken).ConfigureAwait(false);
                         scope.Complete();
                         return;
                     }

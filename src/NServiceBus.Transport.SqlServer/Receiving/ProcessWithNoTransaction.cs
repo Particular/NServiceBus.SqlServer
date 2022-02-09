@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ProcessWithNoTransaction : ProcessStrategy
     {
@@ -21,15 +21,17 @@ namespace NServiceBus.Transport.SqlServer
                 MessageReadResult receiveResult;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    receiveResult = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
+                        stopBatchCancellationTokenSource.Cancel();
                         return;
                     }
 
                     if (receiveResult.IsPoison)
                     {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
                         transaction.Commit();
                         return;
                     }

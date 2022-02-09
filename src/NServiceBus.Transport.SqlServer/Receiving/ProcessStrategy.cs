@@ -16,8 +16,8 @@
 
     abstract class ProcessStrategy
     {
-        TableBasedQueue inputQueue;
-        TableBasedQueue errorQueue;
+        protected TableBasedQueue InputQueue;
+        protected TableBasedQueue ErrorQueue;
 
         OnMessage onMessage;
         OnError onError;
@@ -30,8 +30,8 @@
 
         public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
         {
-            this.inputQueue = inputQueue;
-            this.errorQueue = errorQueue;
+            InputQueue = inputQueue;
+            ErrorQueue = errorQueue;
 
             this.onMessage = onMessage;
             this.onError = onError;
@@ -40,29 +40,12 @@
 
         public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
-        protected async Task<MessageReadResult> TryGetMessage(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
-        {
-            var receiveResult = await inputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-
-            if (receiveResult.IsPoison)
-            {
-                await errorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (receiveResult == MessageReadResult.NoMessage)
-            {
-                stopBatchCancellationTokenSource.Cancel();
-            }
-
-            return receiveResult;
-        }
-
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)
             {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, inputQueue.Name, context);
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, InputQueue.Name, context);
                 await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
@@ -74,7 +57,7 @@
             message.ResetHeaders();
             try
             {
-                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, inputQueue.Name, context);
+                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
                 errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
@@ -103,7 +86,7 @@
                 //This is not a delayed message. Process in local endpoint instance.
                 return false;
             }
-            if (forwardDestination == inputQueue.Name)
+            if (forwardDestination == InputQueue.Name)
             {
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
@@ -120,7 +103,7 @@
 
                 ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
                 outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
-                await errorQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+                await ErrorQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
             }
 
             return true;
