@@ -47,6 +47,8 @@
                         return;
                     }
 
+                    message = receiveResult.Message;
+
                     connection.Close();
 
                     if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))

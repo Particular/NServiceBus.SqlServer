@@ -55,6 +55,8 @@
                         return;
                     }
 
+                    message = receiveResult.Message;
+
                     if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(connection, transaction), context, cancellationToken).ConfigureAwait(false))
                     {
                         transaction.Rollback();
