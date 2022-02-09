@@ -45,13 +45,21 @@
 
         static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
         {
-            return new MessageRow
+            var row = new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
                 bodyBytes = isStreamSupported ? await GetBody(dataReader, 3, cancellationToken).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5, cancellationToken).ConfigureAwait(false)
             };
+
+            while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            { }
+
+            while (await dataReader.NextResultAsync(cancellationToken).ConfigureAwait(false))
+            { }
+
+            return row;
         }
 
         MessageReadResult TryParse()
