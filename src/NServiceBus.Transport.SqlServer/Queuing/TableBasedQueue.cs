@@ -84,6 +84,9 @@ namespace NServiceBus.Transport.SqlServer
 
                 var readResult = await MessageRow.Read(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
 
+                //HINT: Reading all pending results makes sure that any query execution error,
+                //      sent after the first result, are thrown by the SqlDataReader as SqlExceptions.
+                //      More details in: https://github.com/DapperLib/Dapper/issues/1210
                 while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
                 { }
 
