@@ -35,29 +35,6 @@
 
         public abstract Task ReceiveMessage(CancellationTokenSource receiveCancellationTokenSource);
 
-        protected async Task<Message> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationTokenSource receiveCancellationTokenSource)
-        {
-            var receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
-
-            if (receiveResult.IsPoison)
-            {
-                await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
-                return null;
-            }
-
-            if (receiveResult.Successful)
-            {
-                if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
-                {
-                    return null;
-                }
-
-                return receiveResult.Message;
-            }
-            receiveCancellationTokenSource.Cancel();
-            return null;
-        }
-
         protected async Task<bool> TryProcessingMessage(Message message, TransportTransaction transportTransaction)
         {
             if (message.Expired) //Do not process expired messages
@@ -99,7 +76,7 @@
             }
         }
 
-        async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
+        protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {
