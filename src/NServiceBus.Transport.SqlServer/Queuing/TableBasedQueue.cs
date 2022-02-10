@@ -82,7 +82,15 @@ namespace NServiceBus.Transport.SqlServer
                     return MessageReadResult.NoMessage;
                 }
 
-                return await MessageRow.Read(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
+                var readResult = await MessageRow.Read(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
+
+                while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                { }
+
+                while (await dataReader.NextResultAsync(cancellationToken).ConfigureAwait(false))
+                { }
+
+                return readResult;
             }
         }
 

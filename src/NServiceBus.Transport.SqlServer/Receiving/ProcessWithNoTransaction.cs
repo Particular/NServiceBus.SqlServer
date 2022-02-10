@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ProcessWithNoTransaction : ProcessStrategy
     {
@@ -18,16 +18,31 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
-                Message message;
+                MessageReadResult receiveResult;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryGetMessage(connection, transaction, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
-                    transaction.Commit();
-                }
+                    receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
-                if (message == null)
-                {
-                    return;
+                    if (receiveResult == MessageReadResult.NoMessage)
+                    {
+                        stopBatchCancellationTokenSource.Cancel();
+                        return;
+                    }
+
+                    if (receiveResult.IsPoison)
+                    {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        transaction.Commit();
+                        return;
+                    }
+
+                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
+                    {
+                        transaction.Commit();
+                        return;
+                    }
+
+                    transaction.Commit();
                 }
 
                 var context = new ContextBag();
@@ -36,12 +51,12 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+                    await TryHandleMessage(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
-                    _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
+                    _ = await HandleError(ex, receiveResult.Message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

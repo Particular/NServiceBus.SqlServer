@@ -4,7 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     class ProcessWithTransactionScope : ProcessStrategy
     {
@@ -26,20 +26,32 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    message = await TryGetMessage(connection, null, stopBatchCancellationTokenSource, cancellationToken).ConfigureAwait(false);
+                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
 
-                    if (message == null)
+                    if (receiveResult == MessageReadResult.NoMessage)
                     {
-                        // The message was received but is not fit for processing (e.g. was DLQd).
-                        // In such a case we still need to commit the transport tx to remove message
-                        // from the queue table.
+                        stopBatchCancellationTokenSource.Cancel();
+                        return;
+                    }
+
+                    if (receiveResult.IsPoison)
+                    {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null, cancellationToken).ConfigureAwait(false);
                         scope.Complete();
                         return;
                     }
 
+                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, null, cancellationToken).ConfigureAwait(false))
+                    {
+                        scope.Complete();
+                        return;
+                    }
+
+                    message = receiveResult.Message;
+
                     connection.Close();
 
-                    if (!await TryProcess(message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))
+                    if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
