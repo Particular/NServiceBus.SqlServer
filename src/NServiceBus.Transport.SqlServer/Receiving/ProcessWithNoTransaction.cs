@@ -17,16 +17,31 @@ namespace NServiceBus.Transport.SqlServer
         {
             using (var connection = await connectionFactory.OpenNewConnection().ConfigureAwait(false))
             {
-                Message message;
+                MessageReadResult receiveResult;
                 using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                 {
-                    message = await TryReceive(connection, transaction, receiveCancellationTokenSource).ConfigureAwait(false);
-                    transaction.Commit();
-                }
+                    receiveResult = await InputQueue.TryReceive(connection, transaction).ConfigureAwait(false);
 
-                if (message == null)
-                {
-                    return;
+                    if (receiveResult == MessageReadResult.NoMessage)
+                    {
+                        receiveCancellationTokenSource.Cancel();
+                        return;
+                    }
+
+                    if (receiveResult.IsPoison)
+                    {
+                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction).ConfigureAwait(false);
+                        transaction.Commit();
+                        return;
+                    }
+
+                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction).ConfigureAwait(false))
+                    {
+                        transaction.Commit();
+                        return;
+                    }
+
+                    transaction.Commit();
                 }
 
                 var transportTransaction = new TransportTransaction();
@@ -34,11 +49,12 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    await TryProcessingMessage(message, transportTransaction).ConfigureAwait(false);
+                    await TryProcessingMessage(receiveResult.Message, transportTransaction).ConfigureAwait(false);
                 }
-                catch (Exception exception)
+                catch (Exception ex)
                 {
-                    await HandleError(exception, message, transportTransaction, 1).ConfigureAwait(false);
+                    // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
+                    _ = await HandleError(ex, receiveResult.Message, transportTransaction, 1).ConfigureAwait(false);
                 }
             }
         }
