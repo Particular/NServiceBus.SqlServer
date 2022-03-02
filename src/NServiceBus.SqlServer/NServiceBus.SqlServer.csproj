@@ -20,7 +20,7 @@
     <PackageReference Include="Janitor.Fody" Version="1.9.0" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="1.4.0" PrivateAssets="All" />
-    <PackageReference Include="NServiceBus" Version="[8.0.0-alpha.3019, 9.0.0)" />
+    <PackageReference Include="NServiceBus" Version="[8.0.0-beta.1, 9.0.0)" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
   </ItemGroup>
 
