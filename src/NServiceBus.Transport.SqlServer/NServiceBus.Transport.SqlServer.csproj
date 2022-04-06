@@ -19,4 +19,10 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.IntegrationTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.TransportTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.UnitTests" Key="$(NServiceBusTestsKey)" />
+  </ItemGroup>
+
 </Project>
