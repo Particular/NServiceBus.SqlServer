@@ -10,8 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8C6EF3B-1488-44A7-BF9E-D85DB09B0FFE}"
 	ProjectSection(SolutionItems) = preProject
 		Scripts\Create-Databases.sql = Scripts\Create-Databases.sql
-		Directory.Build.props = Directory.Build.props
-		nuget.config = nuget.config
+		Custom.Build.props = Custom.Build.props
 		Scripts\Reset-Database.sql = Scripts\Reset-Database.sql
 	EndProjectSection
 EndProject
