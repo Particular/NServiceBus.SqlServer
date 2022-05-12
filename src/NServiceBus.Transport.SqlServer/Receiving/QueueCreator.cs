@@ -54,7 +54,7 @@ namespace NServiceBus.Transport.SqlServer
                     transaction.Commit();
                 }
             }
-            catch (SqlException e) when (e.Number == 2714 || e.Number == 1913) //Object already exists
+            catch (SqlException e) when (e.Number is 2714 or 1913) //Object already exists
             {
                 //Table creation scripts are based on sys.objects metadata views.
                 //It looks that these views are not fully transactional and might
