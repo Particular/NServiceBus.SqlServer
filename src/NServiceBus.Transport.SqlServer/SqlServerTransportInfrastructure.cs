@@ -150,7 +150,7 @@ namespace NServiceBus.Transport.SqlServer
             {
                 var receiveAddress = ToTransportAddress(receiveSetting.ReceiveAddress);
                 ISubscriptionManager subscriptionManager = transport.SupportsPublishSubscribe
-                    ? (ISubscriptionManager)new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
+                    ? new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                     : new NoOpSubscriptionManager();
 
                 return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,

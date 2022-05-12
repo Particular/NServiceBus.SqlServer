@@ -25,7 +25,7 @@ namespace NServiceBus.Transport.SqlServer
                 return default;
             }
 
-            if (!(obj is TScalar scalar))
+            if (obj is not TScalar scalar)
             {
                 onUnexpectedValueMessage?.Invoke($"{commandName} returned an unexpected value of type {obj.GetType()}.");
 
