@@ -50,7 +50,7 @@
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
-                bodyBytes = isStreamSupported ? await GetBody(dataReader, 3, cancellationToken).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 5, cancellationToken).ConfigureAwait(false)
+                bodyBytes = isStreamSupported ? await GetBody(dataReader, 3, cancellationToken).ConfigureAwait(false) : await GetNonStreamBody(dataReader, 3, cancellationToken).ConfigureAwait(false)
             };
         }
 
