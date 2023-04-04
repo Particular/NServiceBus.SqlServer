@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>TestAgent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V8.Framework\TestAgent.Framework.V8.csproj" />
+    <ProjectReference Include="..\WireCompatibilityTests.TestBehaviors.V8\WireCompatibilityTests.TestBehaviors.V8.csproj" />
+
+    <!--<PackageReference Include="TheTransportVersionToBeTested" Version="*.*.*" />-->
+    <PackageReference Include="NServiceBus" Version="8.0.0" /> <!--Reference the latest core minor because Nuget would bring the lowest-->
+	  
+  </ItemGroup>
+
+</Project>

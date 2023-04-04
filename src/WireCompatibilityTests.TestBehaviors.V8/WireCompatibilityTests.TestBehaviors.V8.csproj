@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V8.Framework\TestAgent.Framework.V8.csproj" />
+    <ProjectReference Include="..\WireCompatibilityTestsShared\TestComms\TestComms.csproj" />
+    <ProjectReference Include="..\WireCompatibilityTests.Messages\WireCompatibilityTests.Messages.csproj" />
+  </ItemGroup>
+
+</Project>
