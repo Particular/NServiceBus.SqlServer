@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PluginBase\PluginBase.csproj" >
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+
     <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V8.Framework\TestAgent.Framework.V8.csproj" />
     <ProjectReference Include="..\WireCompatibilityTests.TestBehaviors.V8\WireCompatibilityTests.TestBehaviors.V8.csproj" />
 

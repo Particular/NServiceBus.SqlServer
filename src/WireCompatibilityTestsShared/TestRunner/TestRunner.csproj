@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\PluginBase\PluginBase.csproj" />
     <ProjectReference Include="..\TestComms\TestComms.csproj" />
   </ItemGroup>
 
