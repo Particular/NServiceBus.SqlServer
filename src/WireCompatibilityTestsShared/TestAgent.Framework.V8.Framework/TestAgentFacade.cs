@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
     using NServiceBus;
@@ -10,9 +11,7 @@
 
     public class TestAgentFacade
     {
-#pragma warning disable PS0018
-        public static async Task Run(string[] args)
-#pragma warning restore PS0018
+        public static async Task Run(string[] args, CancellationToken cancellationToken = default)
         {
             var behaviorClassName = args[0];
             var mappedFileName = args[1];
@@ -32,15 +31,15 @@
                 cc.AddSingleton(typeof(ITestContextAccessor), contextAccessor);
             });
 
-            var instance = await Endpoint.Start(config).ConfigureAwait(false);
+            var instance = await Endpoint.Start(config, cancellationToken).ConfigureAwait(false);
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
             var succeededTask = contextAccessor.WaitUntilTrue("Success", TimeSpan.FromSeconds(30));
             var executionTask = behavior.Execute(instance);
 
             var firstCompleted = await Task.WhenAny(timeoutTask, succeededTask).ConfigureAwait(false);
 
-            await instance.Stop().ConfigureAwait(false);
+            await instance.Stop(cancellationToken).ConfigureAwait(false);
         }
     }
 }

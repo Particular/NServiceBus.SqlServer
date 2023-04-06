@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using TestComms;
 
-    public class TestScenarioRunner
+    public class TestScenarioProcessRunner
     {
 #pragma warning disable PS0018
         public static async Task<TestExecutionResult> Run(string scenarioName, AgentInfo[] agents)
@@ -17,7 +17,6 @@
             using var context = new MemoryMappedFileTestContext(uniqueName, true);
 
             var processes = agents.Select(x => new AgentProcess(x.Project, x.Behavior, uniqueName, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
-
 
             try
             {

@@ -3,6 +3,7 @@ namespace TestAgent.Framework
 {
     using System;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
     using TestComms;
@@ -10,9 +11,7 @@ namespace TestAgent.Framework
 
     public class TestAgentFacade
     {
-#pragma warning disable PS0018
-        public static async Task Run(string[] args)
-#pragma warning restore PS0018
+        public static async Task Run(string[] args, CancellationToken cancellationToken = default)
         {
             var behaviorClassName = args[0];
             var mappedFileName = args[1];
@@ -34,7 +33,7 @@ namespace TestAgent.Framework
 
             var instance = await Endpoint.Start(config).ConfigureAwait(false);
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
             var succeededTask = contextAccessor.WaitUntilTrue("Success", TimeSpan.FromSeconds(30));
             var executionTask = behavior.Execute(instance);
 

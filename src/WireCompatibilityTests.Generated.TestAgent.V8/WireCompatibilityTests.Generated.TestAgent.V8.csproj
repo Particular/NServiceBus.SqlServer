@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>TestAgent</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,8 +12,9 @@
     <ProjectReference Include="..\WireCompatibilityTests.TestBehaviors.V8\WireCompatibilityTests.TestBehaviors.V8.csproj" />
 
     <!--<PackageReference Include="TheTransportVersionToBeTested" Version="*.*.*" />-->
-    <PackageReference Include="NServiceBus" Version="8.0.0" /> <!--Reference the latest core minor because Nuget would bring the lowest-->
-	  
+    <PackageReference Include="NServiceBus" Version="8.0.0" />
+    <!--Reference the latest core minor because Nuget would bring the lowest-->
+
   </ItemGroup>
 
 </Project>

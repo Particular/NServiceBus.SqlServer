@@ -56,6 +56,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WireCompatibilityTests.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WireCompatibilityTests.TestBehaviors.V8", "WireCompatibilityTests.TestBehaviors.V8\WireCompatibilityTests.TestBehaviors.V8.csproj", "{77808F78-E186-4038-93E7-F26C09DBD510}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleRunner", "ConsoleRunner\ConsoleRunner.csproj", "{A0E35147-F6A2-4294-BDFB-12D6862E0AED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -142,6 +144,10 @@ Global
 		{77808F78-E186-4038-93E7-F26C09DBD510}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77808F78-E186-4038-93E7-F26C09DBD510}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77808F78-E186-4038-93E7-F26C09DBD510}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0E35147-F6A2-4294-BDFB-12D6862E0AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0E35147-F6A2-4294-BDFB-12D6862E0AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0E35147-F6A2-4294-BDFB-12D6862E0AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0E35147-F6A2-4294-BDFB-12D6862E0AED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -162,6 +168,7 @@ Global
 		{33A9A450-141B-4A84-BE4B-30CDDA2B0517} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 		{612CE335-BF76-459B-9783-5B52C7916FAA} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 		{77808F78-E186-4038-93E7-F26C09DBD510} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
+		{A0E35147-F6A2-4294-BDFB-12D6862E0AED} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40F170C2-9EAA-418C-840A-4D9C6D8BBC1F}
