@@ -20,6 +20,8 @@ namespace TestAgent.Framework
 
             var behaviorClass = Type.GetType(behaviorClassName, true);
 
+            Console.Out.WriteLine($">> Creating {behaviorClass}");
+
             var behavior = (ITestBehavior)Activator.CreateInstance(behaviorClass);
 
             var config = behavior.Configure(behaviorArgs);

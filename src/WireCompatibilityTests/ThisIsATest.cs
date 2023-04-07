@@ -13,8 +13,8 @@
         {
             var agents = new[]
             {
-                AgentInfo.Create(x),
-                AgentInfo.Create(y),
+                AgentInfo.Create(x, "Sender"),
+                AgentInfo.Create(y, "Receiver"),
             };
 
             var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents).ConfigureAwait(false);
