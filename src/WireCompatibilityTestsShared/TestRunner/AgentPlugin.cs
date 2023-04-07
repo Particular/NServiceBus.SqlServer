@@ -31,8 +31,8 @@
             process = CreateCommands(pluginAssembly).Single();
             var x = new List<string>
             {
-                $"\"{behaviorType}\"",
-                $"\"{mappedFileName}\""
+                behaviorType,
+                mappedFileName
             };
             x.AddRange(args.Select(kvp => FormatArgument(kvp)));
 
