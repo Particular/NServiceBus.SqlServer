@@ -15,7 +15,6 @@
         {
             var behaviorClassName = args[0];
             var mappedFileName = args[1];
-
             var behaviorArgs = args.Skip(2).Select(x => x.Split('=')).ToDictionary(x => x[0], x => x.Length > 1 ? x[1] : null);
 
             var behaviorClass = Type.GetType(behaviorClassName, true);
@@ -26,20 +25,16 @@
 
             var config = behavior.Configure(behaviorArgs);
 
-            var contextAccessor = new MemoryMappedFileTestContext(mappedFileName);
+            using var contextAccessor = new MemoryMappedFileTestContext(mappedFileName);
 
-            config.RegisterComponents(cc =>
-            {
-                cc.AddSingleton(typeof(ITestContextAccessor), contextAccessor);
-            });
+            config.RegisterComponents(cc => cc.AddSingleton(typeof(ITestContextAccessor), contextAccessor));
 
             var instance = await Endpoint.Start(config, cancellationToken).ConfigureAwait(false);
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-            var succeededTask = contextAccessor.WaitUntilTrue("Success", TimeSpan.FromSeconds(30));
-            var executionTask = behavior.Execute(instance);
+            // Not forking task, execute could fail, easier to debug when that happens
+            await behavior.Execute(instance).ConfigureAwait(false);
 
-            var firstCompleted = await Task.WhenAny(timeoutTask, succeededTask).ConfigureAwait(false);
+            _ = await contextAccessor.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
 
             await instance.Stop(cancellationToken).ConfigureAwait(false);
         }

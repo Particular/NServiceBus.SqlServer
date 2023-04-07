@@ -160,32 +160,22 @@
             throw new NotImplementedException();
         }
 
-#pragma warning disable PS0018
-        public async Task<bool> WaitUntilTrue(string flagName, TimeSpan timeout)
-#pragma warning restore PS0018
+        public async Task<bool> WaitUntilTrue(string flagName, CancellationToken cancellationToken = default)
         {
-            var delay = Task.Delay(timeout);
-            var tokenSource = new CancellationTokenSource();
-
-            var check = await Task.Factory.StartNew(async () =>
+            while (!cancellationToken.IsCancellationRequested)
             {
-                while (!tokenSource.IsCancellationRequested)
+                var value = GetFlag(flagName);
+                if (value)
                 {
-                    var value = GetFlag(flagName);
-                    if (value)
-                    {
-                        return true;
-                    }
-
-                    await Task.Delay(100).ConfigureAwait(false);
+                    return true;
                 }
 
-                return false;
-            }).ConfigureAwait(false);
-
-            await Task.WhenAny(delay, check).ConfigureAwait(false);
-            tokenSource.Cancel();
-            return await check.ConfigureAwait(false);
+                // Do not forward to prevent OperationCancelledException
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
+                await Task.Delay(100).ConfigureAwait(false);
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
+            }
+            return false;
         }
 
         public void Success()

@@ -1,8 +1,7 @@
-﻿
-namespace TestComms
+﻿namespace TestComms
 {
-    using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -15,9 +14,7 @@ namespace TestComms
         void Set(string name, int value);
         void Increment(string name, int value);
         int Get(string name);
-#pragma warning disable PS0018
-        Task<bool> WaitUntilTrue(string flagName, TimeSpan timeout);
-#pragma warning restore PS0018
+        Task<bool> WaitUntilTrue(string flagName, CancellationToken cancellationToken = default);
         void Success();
         void Failure();
         Dictionary<string, object> ToDictionary();

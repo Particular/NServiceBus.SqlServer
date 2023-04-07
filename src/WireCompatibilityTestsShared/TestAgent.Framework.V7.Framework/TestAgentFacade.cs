@@ -26,20 +26,16 @@ namespace TestAgent.Framework
 
             var config = behavior.Configure(behaviorArgs);
 
-            var contextAccessor = new MemoryMappedFileTestContext(mappedFileName);
+            using var contextAccessor = new MemoryMappedFileTestContext(mappedFileName);
 
-            config.RegisterComponents(cc =>
-            {
-                cc.RegisterSingleton(typeof(ITestContextAccessor), contextAccessor);
-            });
+            config.RegisterComponents(cc => cc.RegisterSingleton(typeof(ITestContextAccessor), contextAccessor));
 
             var instance = await Endpoint.Start(config).ConfigureAwait(false);
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-            var succeededTask = contextAccessor.WaitUntilTrue("Success", TimeSpan.FromSeconds(30));
-            var executionTask = behavior.Execute(instance);
+            // Not forking task, execute could fail, easier to debug when that happens
+            await behavior.Execute(instance).ConfigureAwait(false);
 
-            var firstCompleted = await Task.WhenAny(timeoutTask, succeededTask).ConfigureAwait(false);
+            _ = await contextAccessor.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
 
             await instance.Stop().ConfigureAwait(false);
         }

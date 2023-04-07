@@ -3,17 +3,17 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using TestComms;
 
     public class TestScenarioPluginRunner
     {
-#pragma warning disable PS0018
         public static async Task<TestExecutionResult> Run(
             string scenarioName,
-            AgentInfo[] agents
+            AgentInfo[] agents,
+            CancellationToken cancellationToken = default
             )
-#pragma warning restore PS0018
         {
             var uniqueName = scenarioName + Guid.NewGuid().ToString("N");
 
@@ -26,10 +26,12 @@
                 var tasks = new List<Task>();
                 foreach (var agent in processes)
                 {
-                    tasks.Add(agent.Start());
+                    tasks.Add(agent.Start(cancellationToken));
                 }
 
-                var finished = await context.WaitUntilTrue("Success", TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                var finished = await context.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
                 var variables = context.ToDictionary();
                 return new TestExecutionResult
                 {
@@ -41,7 +43,7 @@
             {
                 foreach (var agent in processes)
                 {
-                    await agent.Stop().ConfigureAwait(false);
+                    await agent.Stop(cancellationToken).ConfigureAwait(false);
                 }
             }
         }

@@ -3,14 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using TestComms;
 
     public class TestScenarioProcessRunner
     {
-#pragma warning disable PS0018
-        public static async Task<TestExecutionResult> Run(string scenarioName, AgentInfo[] agents)
-#pragma warning restore PS0018
+        public static async Task<TestExecutionResult> Run(string scenarioName, AgentInfo[] agents, CancellationToken cancellationToken = default)
         {
             var uniqueName = scenarioName + Guid.NewGuid().ToString("N");
 
@@ -25,7 +24,7 @@
                     agent.Start();
                 }
 
-                var finished = await context.WaitUntilTrue("Success", TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                var finished = await context.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
                 var variables = context.ToDictionary();
                 return new TestExecutionResult
                 {

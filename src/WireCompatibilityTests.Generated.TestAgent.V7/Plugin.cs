@@ -4,8 +4,8 @@ using TestAgent.Framework;
 
 public class Plugin : IPlugin
 {
-    public Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        return TestAgentFacade.Run(args, cancellationToken);
+        await TestAgentFacade.Run(args, cancellationToken).ConfigureAwait(false);
     }
 }

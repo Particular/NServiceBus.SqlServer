@@ -1,5 +1,7 @@
 ﻿namespace TestSuite
 {
+    using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using TestRunner;
@@ -11,13 +13,14 @@
         [TestCase("V7", "V8")]
         public async Task PingPong(string x, string y)
         {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var agents = new[]
             {
                 AgentInfo.Create(x, "Sender"),
                 AgentInfo.Create(y, "Receiver"),
             };
 
-            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents).ConfigureAwait(false);
+            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, cts.Token).ConfigureAwait(false);
 
             //var audit = auditSpy.ProcessAuditQueue();
 
