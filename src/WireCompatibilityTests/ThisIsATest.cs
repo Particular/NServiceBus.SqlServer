@@ -10,7 +10,11 @@
     public class ThisIsATest
     {
         [Test]
+        [TestCase("V8", "V8")]
+        [TestCase("V7", "V7")]
+        [TestCase("V8", "V7")]
         [TestCase("V7", "V8")]
+        [Repeat(3)]
         public async Task PingPong(string x, string y)
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
