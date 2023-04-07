@@ -6,6 +6,7 @@
     {
         static async Task Main()
         {
+            //LoadingLogger.Active = true;
             var agents = new[]
             {
                 AgentInfo.Create("V8", "Sender"),
