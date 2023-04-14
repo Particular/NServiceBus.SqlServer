@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using System.Reflection;
     using System.Threading;
+    using System.Diagnostics;
 
     class AgentPlugin
     {
@@ -17,6 +18,19 @@
         public AgentPlugin(string projectName, string behaviorType, string mappedFileName, Dictionary<string, string> args)
         {
             var projectFilePath = GetProjectFilePath(projectName);
+
+            var buildProcess = new Process();
+            buildProcess.StartInfo.FileName = @"dotnet";
+            buildProcess.StartInfo.Arguments = $"build --project \"{projectFilePath}\"";
+            buildProcess.StartInfo.UseShellExecute = false;
+            buildProcess.StartInfo.RedirectStandardOutput = true;
+            buildProcess.StartInfo.RedirectStandardError = true;
+            buildProcess.StartInfo.RedirectStandardInput = true;
+            buildProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            buildProcess.StartInfo.CreateNoWindow = true;
+
+            buildProcess.Start();
+            buildProcess.WaitForExit(10000);
 
             var folder = Path.GetDirectoryName(projectFilePath);
             //var pluginPath = "S:/NServiceBus.SqlServer/src/WireCompatibilityTests.Generated.TestAgent.V7/bin/Debug/net6.0";
