@@ -4,7 +4,6 @@ namespace WireCompatibilityTests.TestBehaviors.V8
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NServiceBus;
-    using TestComms;
     using TestLogicApi;
 
     class Sender : ITestBehavior
@@ -18,6 +17,8 @@ namespace WireCompatibilityTests.TestBehaviors.V8
             var routing = config.UseTransport(transportDefinition);
             routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
 
+            config.AuditProcessedMessagesTo("AuditSpy");
+
             return config;
         }
 
@@ -30,17 +31,8 @@ namespace WireCompatibilityTests.TestBehaviors.V8
 
         public class MyResponseHandler : IHandleMessages<MyResponse>
         {
-            ITestContextAccessor contextAccessor;
-
-            public MyResponseHandler(ITestContextAccessor contextAccessor)
-            {
-                this.contextAccessor = contextAccessor;
-            }
-
             public Task Handle(MyResponse message, IMessageHandlerContext context)
             {
-                contextAccessor.SetFlag("ResponseReceived", true);
-                contextAccessor.Success();
 
                 return Task.CompletedTask;
             }

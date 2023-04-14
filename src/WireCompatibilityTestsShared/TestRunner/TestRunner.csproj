@@ -6,7 +6,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\TestComms\TestComms.csproj" />
+    <PackageReference Include="NServiceBus.Raw" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NServiceBus;
-    using TestComms;
     using TestLogicApi;
 
     class Receiver : ITestBehavior
@@ -20,24 +19,17 @@
             var config = new EndpointConfiguration("Receiver");
 
             config.UseTransport<LearningTransport>();
+            config.AuditProcessedMessagesTo("AuditSpy");
 
             return config;
         }
 
         public class MyRequestHandler : IHandleMessages<MyRequest>
         {
-            ITestContextAccessor contextAccessor;
-
-            public MyRequestHandler(ITestContextAccessor contextAccessor)
-            {
-                this.contextAccessor = contextAccessor;
-            }
-
 #pragma warning disable PS0018
             public Task Handle(MyRequest message, IMessageHandlerContext context)
 #pragma warning restore PS0018
             {
-                contextAccessor.SetFlag("RequestReceived", true);
                 return context.Reply(new MyResponse());
             }
         }

@@ -9,8 +9,4 @@
 		<PackageReference Include="NServiceBus" Version="8.0.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\TestComms\TestComms.csproj" />
-	</ItemGroup>
-
 </Project>

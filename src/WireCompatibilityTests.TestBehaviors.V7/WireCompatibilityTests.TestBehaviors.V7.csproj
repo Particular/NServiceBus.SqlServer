@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V7.Framework\TestAgent.Framework.V7.csproj" />
-    <ProjectReference Include="..\WireCompatibilityTestsShared\TestComms\TestComms.csproj" />
     <ProjectReference Include="..\WireCompatibilityTests.Messages\WireCompatibilityTests.Messages.csproj" />
   </ItemGroup>
 
