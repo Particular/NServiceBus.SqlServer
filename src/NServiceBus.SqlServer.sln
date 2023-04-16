@@ -56,9 +56,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WireCompatibilityTests.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WireCompatibilityTests.TestBehaviors.V8", "WireCompatibilityTests.TestBehaviors.V8\WireCompatibilityTests.TestBehaviors.V8.csproj", "{77808F78-E186-4038-93E7-F26C09DBD510}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleRunner", "ConsoleRunner\ConsoleRunner.csproj", "{A0E35147-F6A2-4294-BDFB-12D6862E0AED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleRunner", "ConsoleRunner\ConsoleRunner.csproj", "{A0E35147-F6A2-4294-BDFB-12D6862E0AED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginBase", "PluginBase\PluginBase.csproj", "{C06CE6BD-9E22-4F84-8C18-CB43EB002343}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginBase", "PluginBase\PluginBase.csproj", "{C06CE6BD-9E22-4F84-8C18-CB43EB002343}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Transports", "Transports", "{D4EBB037-1378-4207-8E7D-7EE207D5E566}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -176,6 +178,7 @@ Global
 		{77808F78-E186-4038-93E7-F26C09DBD510} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 		{A0E35147-F6A2-4294-BDFB-12D6862E0AED} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 		{C06CE6BD-9E22-4F84-8C18-CB43EB002343} = {3B201594-A84B-4CB2-A630-F7B5D7DE060D}
+		{D4EBB037-1378-4207-8E7D-7EE207D5E566} = {6764F50A-AF5D-4484-8400-F04DDD043A96}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40F170C2-9EAA-418C-840A-4D9C6D8BBC1F}

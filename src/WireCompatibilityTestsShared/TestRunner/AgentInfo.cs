@@ -9,7 +9,7 @@ namespace TestRunner
         public string Behavior { get; set; }
         public Dictionary<string, string> BehaviorParameters { get; set; }
 
-        public static AgentInfo Create(string version, string behavior)
+        public static AgentInfo Create(int version, string behavior)
         {
             return new AgentInfo
             {
