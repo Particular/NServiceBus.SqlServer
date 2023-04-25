@@ -11,11 +11,11 @@
 
     class AgentPlugin
     {
-        readonly IPlugin process;
+        readonly IPlugin plugin;
         bool started;
         string[] pluginArgs;
 
-        public AgentPlugin(string projectName, string behaviorType, string mappedFileName, Dictionary<string, string> args)
+        public AgentPlugin(string projectName, string behaviorType, string pluginDll, Dictionary<string, string> args)
         {
             var projectFilePath = GetProjectFilePath(projectName);
 
@@ -34,7 +34,7 @@
 
             var folder = Path.GetDirectoryName(projectFilePath);
             //var pluginPath = "S:/NServiceBus.SqlServer/src/WireCompatibilityTests.Generated.TestAgent.V7/bin/Debug/net6.0";
-            var pluginPath = $"{folder}/bin/Debug/net6.0/{projectName}.dll";
+            var pluginPath = $"{folder}/bin/Debug/net6.0/{pluginDll}";
 
             if (!File.Exists(pluginPath))
             {
@@ -42,13 +42,12 @@
             }
 
             var pluginAssembly = LoadPlugin(pluginPath);
-            process = CreateCommands(pluginAssembly).Single();
+            plugin = CreateCommands(pluginAssembly).Single();
             var x = new List<string>
             {
                 behaviorType,
-                mappedFileName
             };
-            x.AddRange(args.Select(kvp => FormatArgument(kvp)));
+            x.AddRange(args.Select(FormatArgument));
 
             pluginArgs = x.ToArray();
         }
@@ -93,7 +92,7 @@
         public async Task Start(CancellationToken cancellationToken = default)
         {
             started = true;
-            await process.ExecuteAsync(pluginArgs, cancellationToken).ConfigureAwait(false);
+            await plugin.Start(pluginArgs, cancellationToken).ConfigureAwait(false);
         }
 
         public Task Stop(CancellationToken cancellationToken = default)
@@ -103,7 +102,7 @@
                 return Task.CompletedTask;
             }
 
-            return Task.CompletedTask;
+            return plugin.Stop(cancellationToken);
         }
 
         static Assembly LoadPlugin(string pluginLocation)

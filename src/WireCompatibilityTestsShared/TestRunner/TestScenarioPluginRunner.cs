@@ -5,38 +5,70 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using TestComms;
+    using NServiceBus.Raw;
+    using NServiceBus;
 
     public class TestScenarioPluginRunner
     {
         public static async Task<TestExecutionResult> Run(
             string scenarioName,
             AgentInfo[] agents,
+            Func<Dictionary<string, AuditMessage>, bool> doneCallback,
             CancellationToken cancellationToken = default
             )
         {
             var uniqueName = scenarioName + Guid.NewGuid().ToString("N");
 
-            using var context = new MemoryMappedFileTestContext(uniqueName, true);
+            var processes = agents.Select(x => new AgentPlugin(x.Project, x.Behavior, x.Plugin, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
 
-            var processes = agents.Select(x => new AgentPlugin(x.Project, x.Behavior, uniqueName, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
+            var auditedMessages = new Dictionary<string, AuditMessage>();
+
+            var sync = new object();
+
+            var done = new TaskCompletionSource<bool>();
+
+            var rawConfig = RawEndpointConfiguration.Create("AuditSpy", new LearningTransport(),
+                 (messageContext, dispatcher, token) =>
+                 {
+                     var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
+                         messageContext.Body);
+
+                     lock (sync)
+                     {
+                         auditedMessages[messageContext.NativeMessageId] = auditMessage;
+                         if (doneCallback(auditedMessages))
+                         {
+                             done.SetResult(true);
+                         }
+                     }
+
+                     return Task.CompletedTask;
+                 }, "poison");
+            IReceivingRawEndpoint endpoint = null;
 
             try
             {
-                var tasks = new List<Task>();
+                endpoint = await RawEndpoint.Start(rawConfig, CancellationToken.None).ConfigureAwait(false);
+
                 foreach (var agent in processes)
                 {
-                    tasks.Add(agent.Start(cancellationToken));
+                    await agent.Start(cancellationToken).ConfigureAwait(false);
                 }
 
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                var timeout = Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
 
-                var finished = await context.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
-                var variables = context.ToDictionary();
+                var finished = await Task.WhenAny(timeout, done.Task).ConfigureAwait(false);
+
+                if (finished == timeout)
+                {
+                    done.SetResult(false);
+                    throw new Exception("Time timed out");
+                }
+
                 return new TestExecutionResult
                 {
-                    Succeeded = finished,
-                    VariableValues = variables
+                    Succeeded = done.Task.IsCompleted,
+                    AuditedMessages = auditedMessages
                 };
             }
             finally
@@ -44,6 +76,10 @@
                 foreach (var agent in processes)
                 {
                     await agent.Stop(cancellationToken).ConfigureAwait(false);
+                }
+                if (endpoint != null)
+                {
+                    await endpoint.Stop(cancellationToken).ConfigureAwait(false);
                 }
             }
         }

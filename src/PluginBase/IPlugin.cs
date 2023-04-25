@@ -1,4 +1,5 @@
 ﻿public interface IPlugin
 {
-    Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default);
+    Task Start(string[] args, CancellationToken cancellationToken = default);
+    Task Stop(CancellationToken cancellationToken = default);
 }

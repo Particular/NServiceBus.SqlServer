@@ -6,15 +6,15 @@ namespace TestAgent.Framework
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
-    using TestComms;
     using TestLogicApi;
 
-    public class TestAgentFacade
+    public class Plugin : IPlugin
     {
-        public static async Task Run(string[] args, CancellationToken cancellationToken = default)
+        IEndpointInstance instance;
+
+        public async Task Start(string[] args, CancellationToken cancellationToken = default)
         {
             var behaviorClassName = args[0];
-            var mappedFileName = args[1];
 
             var behaviorArgs = args.Skip(2).Select(x => x.Split('=')).ToDictionary(x => x[0], x => x.Length > 1 ? x[1] : null);
 
@@ -26,14 +26,11 @@ namespace TestAgent.Framework
 
             var config = behavior.Configure(behaviorArgs);
 
-            var instance = await Endpoint.Start(config).ConfigureAwait(false);
+            instance = await Endpoint.Start(config).ConfigureAwait(false);
 
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
-            var executionTask = behavior.Execute(instance);
-
-            _ = await contextAccessor.WaitUntilTrue("Success", cancellationToken).ConfigureAwait(false);
-
-            await instance.Stop().ConfigureAwait(false);
+            await behavior.Execute(instance).ConfigureAwait(false);
         }
+
+        public Task Stop(CancellationToken cancellationToken = default) => instance.Stop();
     }
 }

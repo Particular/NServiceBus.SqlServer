@@ -23,7 +23,7 @@
 //            foreach (var command in commands)
 //            {
 //                await Console.Out.WriteLineAsync($"{command}").ConfigureAwait(false);
-//                tasks.Add(command.ExecuteAsync());
+//                tasks.Add(command.Start());
 //            }
 
 //            await Task.WhenAll(tasks).ConfigureAwait(false);

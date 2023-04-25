@@ -17,18 +17,16 @@
         [TestCase("V8", "V7")]
         [TestCase("V7", "V8")]
         [Repeat(3)]
-        public async Task PingPong(string x, string y)
+        public async Task PingPong(string v1, string v2)
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var agents = new[]
             {
-                AgentInfo.Create(x, "Sender"),
-                AgentInfo.Create(y, "Receiver"),
+                AgentInfo.Create(v1, "Sender"),
+                AgentInfo.Create(v2, "Receiver"),
             };
 
-            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, cts.Token).ConfigureAwait(false);
-
-            //var audit = auditSpy.ProcessAuditQueue();
+            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 
