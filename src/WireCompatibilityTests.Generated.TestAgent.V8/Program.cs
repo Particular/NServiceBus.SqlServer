@@ -1,13 +1,10 @@
-﻿namespace TestAgent.V8
-{
-    using System.Threading.Tasks;
-    using Framework;
+﻿using System.Threading.Tasks;
+using TestAgent.Framework;
 
-    class Program
+public class Program
+{
+    static Task Main(string[] args)
     {
-        static Task Main(string[] args)
-        {
-            return TestAgentFacade.Run(args);
-        }
+        return TestAgentFacade.Run(args);
     }
 }

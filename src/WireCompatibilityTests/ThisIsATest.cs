@@ -1,6 +1,8 @@
 ﻿namespace TestSuite
 {
     using System.Linq;
+    using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
     using NUnit.Framework;
@@ -10,21 +12,23 @@
     public class ThisIsATest
     {
         [Test]
-        public async Task PingPong()
+        [TestCase("V8", "V8")]
+        [TestCase("V7", "V7")]
+        [TestCase("V8", "V7")]
+        [TestCase("V7", "V8")]
+        [Repeat(3)]
+        public async Task PingPong(string x, string y)
         {
-            var result = await TestScenarioRunner.Run("Ping-Pong", new[]
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var agents = new[]
             {
-                new AgentInfo()
-                {
-                    Behavior = "WireCompatibilityTests.TestBehaviors.V7.Sender, WireCompatibilityTests.TestBehaviors.V7",
-                    Project = "WireCompatibilityTests.Generated.TestAgent.V7"
-                },
-                new AgentInfo()
-                {
-                    Behavior = "WireCompatibilityTests.TestBehaviors.V8.Receiver, WireCompatibilityTests.TestBehaviors.V8",
-                    Project = "WireCompatibilityTests.Generated.TestAgent.V8"
-                },
-            }, x => x.Count == 2).ConfigureAwait(false);
+                AgentInfo.Create(x, "Sender"),
+                AgentInfo.Create(y, "Receiver"),
+            };
+
+            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, cts.Token).ConfigureAwait(false);
+
+            //var audit = auditSpy.ProcessAuditQueue();
 
             Assert.True(result.Succeeded);
 

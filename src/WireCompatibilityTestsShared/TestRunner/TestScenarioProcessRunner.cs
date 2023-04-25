@@ -8,7 +8,7 @@
     using NServiceBus;
     using NServiceBus.Raw;
 
-    public class TestScenarioRunner
+    public class TestScenarioProcessRunner
     {
 #pragma warning disable PS0018
         public static async Task<TestExecutionResult> Run(string scenarioName, AgentInfo[] agents,

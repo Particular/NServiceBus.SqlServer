@@ -1,5 +1,4 @@
-﻿
-namespace WireCompatibilityTests.TestBehaviors.V7
+﻿namespace WireCompatibilityTests.TestBehaviors.V7
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
