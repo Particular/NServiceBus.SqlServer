@@ -1,12 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V7.Framework\TestAgent.Framework.V7.csproj" />
     <ProjectReference Include="..\WireCompatibilityTests.Messages\WireCompatibilityTests.Messages.csproj" />
+    <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V8\TestAgent.Framework.V8.csproj" />
+
+    <PackageReference Include="NServiceBus.Transport.SqlServer" Version="7.0.*" />
   </ItemGroup>
 
 </Project>

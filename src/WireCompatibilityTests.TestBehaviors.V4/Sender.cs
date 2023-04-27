@@ -7,12 +7,9 @@ class Sender : ITestBehavior
 {
     public EndpointConfiguration Configure(Dictionary<string, string> args)
     {
-        var connectionString = args["ConnectionString"];
-
         var config = new EndpointConfiguration("Sender");
 
-        var transport = new SqlServerTransport(connectionString);
-        var routing = config.UseTransport(transport);
+        var routing = config.UseTransport<LearningTransport>().Routing();
         routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
 
         config.AuditProcessedMessagesTo("AuditSpy");
@@ -29,9 +26,10 @@ class Sender : ITestBehavior
 
     public class MyResponseHandler : IHandleMessages<MyResponse>
     {
+#pragma warning disable PS0018
         public Task Handle(MyResponse message, IMessageHandlerContext context)
+#pragma warning restore PS0018
         {
-
             return Task.CompletedTask;
         }
     }

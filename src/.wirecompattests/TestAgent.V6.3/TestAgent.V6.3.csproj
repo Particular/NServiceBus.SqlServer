@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>TestAgent</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\PluginBase\PluginBase.csproj" >
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\WireCompatibilityTestsShared\TestAgent.Framework.V7\TestAgent.Framework.V7.csproj" />
+    <ProjectReference Include="..\..\WireCompatibilityTests.TestBehaviors.V6\WireCompatibilityTests.TestBehaviors.V6.csproj" />
+
+    <PackageReference Include="NServiceBus" Version="7.*" />
+    <PackageReference Include="NServiceBus.Transport.SqlServer" Version="6.3.*" />
+
+  </ItemGroup>
+
+</Project>

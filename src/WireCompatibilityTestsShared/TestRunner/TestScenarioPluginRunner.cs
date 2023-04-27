@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using NServiceBus.Raw;
     using NServiceBus;
+    using System.IO;
 
     public class TestScenarioPluginRunner
     {
@@ -17,9 +18,9 @@
             CancellationToken cancellationToken = default
             )
         {
-            var uniqueName = scenarioName + Guid.NewGuid().ToString("N");
+            var generatedFolderPath = FindGeneratedFolderPath();
 
-            var processes = agents.Select(x => new AgentPlugin(x.Project, x.Behavior, x.Plugin, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
+            var processes = agents.Select(x => new AgentPlugin(x.Major, x.Minor, x.CoreMajor, x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
 
             var auditedMessages = new Dictionary<string, AuditMessage>();
 
@@ -48,6 +49,11 @@
 
             try
             {
+                foreach (var agent in processes)
+                {
+                    await agent.Compile().ConfigureAwait(false);
+                }
+
                 endpoint = await RawEndpoint.Start(rawConfig, CancellationToken.None).ConfigureAwait(false);
 
                 foreach (var agent in processes)
@@ -55,7 +61,7 @@
                     await agent.Start(cancellationToken).ConfigureAwait(false);
                 }
 
-                var timeout = Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+                var timeout = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
 
                 var finished = await Task.WhenAny(timeout, done.Task).ConfigureAwait(false);
 
@@ -83,5 +89,32 @@
                 }
             }
         }
+
+        static string FindGeneratedFolderPath()
+        {
+            var directory = AppDomain.CurrentDomain.BaseDirectory;
+
+            while (true)
+            {
+                // Finding a solution file takes precedence
+                if (Directory.EnumerateFiles(directory).Any(file => file.EndsWith(".sln")))
+                {
+                    return Path.Combine(directory, DefaultDirectory);
+                }
+
+                // When no solution file was found try to find a learning transport directory
+                var learningTransportDirectory = Path.Combine(directory, DefaultDirectory);
+                if (Directory.Exists(learningTransportDirectory))
+                {
+                    return learningTransportDirectory;
+                }
+
+                var parent = Directory.GetParent(directory) ?? throw new Exception($"Unable to determine the storage directory path for the learning transport due to the absence of a solution file. Either create a '{DefaultDirectory}' directory in one of this project’s parent directories, or specify the path explicitly using the 'EndpointConfiguration.UseTransport<LearningTransport>().StorageDirectory()' API.");
+
+                directory = parent.FullName;
+            }
+        }
+
+        const string DefaultDirectory = ".wirecompattests";
     }
 }

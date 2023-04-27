@@ -1,22 +1,27 @@
 ﻿
 namespace TestRunner
 {
+    using System;
     using System.Collections.Generic;
 
     public class AgentInfo
     {
-        public string Project { get; set; }
+        public int Major { get; set; }
+        public int Minor { get; set; }
+        public int CoreMajor { get; set; }
         public string Behavior { get; set; }
-        public string Plugin { get; set; }
         public Dictionary<string, string> BehaviorParameters { get; set; }
 
-        public static AgentInfo Create(string version, string behavior)
+        public static AgentInfo Create(string behavior, string version, int coreMajor, Dictionary<string, string> behaviorParameters)
         {
+            var parts = version.Split(".", StringSplitOptions.RemoveEmptyEntries);
             return new AgentInfo
             {
-                Behavior = $"WireCompatibilityTests.TestBehaviors.{version}.{behavior}, WireCompatibilityTests.TestBehaviors.{version}",
-                Project = $"WireCompatibilityTests.Generated.TestAgent.{version}",
-                Plugin = $"TestAgent.Framework.{version}.dll"
+                Behavior = behavior,
+                Major = int.Parse(parts[0]),
+                Minor = int.Parse(parts[1]),
+                CoreMajor = coreMajor,
+                BehaviorParameters = behaviorParameters
             };
         }
     }

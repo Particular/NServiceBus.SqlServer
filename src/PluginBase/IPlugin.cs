@@ -1,5 +1,6 @@
-﻿public interface IPlugin
+﻿
+public interface IPlugin
 {
-    Task Start(string[] args, CancellationToken cancellationToken = default);
+    Task Start(string behaviorName, Dictionary<string, string> behaviorArguments, CancellationToken cancellationToken = default);
     Task Stop(CancellationToken cancellationToken = default);
 }

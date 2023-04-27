@@ -18,8 +18,8 @@ class Receiver : ITestBehavior
 
         var config = new EndpointConfiguration("Receiver");
 
-        var transport = new SqlServerTransport(connectionString);
-        config.UseTransport(transport);
+        var transport = config.UseTransport<SqlServerTransport>();
+        transport.ConnectionString(connectionString);
         config.AuditProcessedMessagesTo("AuditSpy");
 
         return config;
@@ -27,7 +27,9 @@ class Receiver : ITestBehavior
 
     public class MyRequestHandler : IHandleMessages<MyRequest>
     {
+#pragma warning disable PS0018
         public Task Handle(MyRequest message, IMessageHandlerContext context)
+#pragma warning restore PS0018
         {
             return context.Reply(new MyResponse());
         }

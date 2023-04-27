@@ -1,7 +1,8 @@
 ﻿namespace TestSuite
 {
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Linq;
-    using System;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
@@ -12,18 +13,18 @@
     public class ThisIsATest
     {
         [Test]
-        [TestCase("V8", "V8")]
-        [TestCase("V7", "V7")]
-        [TestCase("V8", "V7")]
-        [TestCase("V7", "V8")]
-        [Repeat(3)]
-        public async Task PingPong(string v1, string v2)
+        //[TestCase("6.3", 7, "7.0", 8)]
+        //[TestCase("7.0", 8, "6.3", 7)]
+        [TestCaseSource(typeof(TestCaseGenerator))]
+        public async Task PingPong(string v1, int core1, string v2, int core2)
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var settings = new Dictionary<string, string> { ["ConnectionString"] = "Data source = (local); Initial catalog = WireCompat; Integrated Security = true" };
+
+            using var cts = new CancellationTokenSource();
             var agents = new[]
             {
-                AgentInfo.Create(v1, "Sender"),
-                AgentInfo.Create(v2, "Receiver"),
+                AgentInfo.Create("Sender", v1, core1, settings),
+                AgentInfo.Create("Receiver", v2, core2, settings),
             };
 
             var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, x => x.Count == 2, cts.Token).ConfigureAwait(false);
@@ -36,6 +37,39 @@
             Assert.AreEqual(request.Headers[Headers.MessageId], response.Headers[Headers.RelatedTo]);
             Assert.AreEqual(request.Headers[Headers.ConversationId], response.Headers[Headers.ConversationId]);
             Assert.AreEqual(request.Headers[Headers.CorrelationId], response.Headers[Headers.CorrelationId]);
+        }
+    }
+
+#pragma warning disable CA1710
+    public class TestCaseGenerator : IEnumerable
+#pragma warning restore CA1710
+    {
+        readonly Dictionary<string, int> includedVersions = new()
+        {
+            //{"4.0", 7},
+            //{"4.1", 7},
+            //{"4.2", 7},
+            //{"4.3", 7},
+            //{"5.0", 7},
+            //{"6.0", 7},
+            //{"6.1", 7},
+            //{"6.2", 7},
+            {"6.3", 7},
+            {"7.0", 8},
+        };
+
+        public IEnumerator GetEnumerator()
+        {
+            foreach (var v1 in includedVersions)
+            {
+                foreach (var v2 in includedVersions)
+                {
+                    if (v1.Key != v2.Key)
+                    {
+                        yield return new object[] { v1.Key, v1.Value, v2.Key, v2.Value };
+                    }
+                }
+            }
         }
     }
 }
