@@ -9,6 +9,7 @@
     <ProjectReference Include="..\WireCompatibilityTestsShared\TestAgent.Framework.V7\TestAgent.Framework.V7.csproj" />
 
     <PackageReference Include="NServiceBus.Transport.SqlServer" Version="6.0.*" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.*" />
   </ItemGroup>
 
 </Project>

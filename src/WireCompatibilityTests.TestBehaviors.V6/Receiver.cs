@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
 class Receiver : ITestBehavior
 {
-#pragma warning disable PS0018
-    public Task Execute(IEndpointInstance endpointInstance)
-#pragma warning restore PS0018
+    public Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
@@ -17,9 +16,13 @@ class Receiver : ITestBehavior
         var connectionString = args["ConnectionString"];
 
         var config = new EndpointConfiguration("Receiver");
+        config.EnableInstallers();
+        config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
+        transport.Transactions(TransportTransactionMode.ReceiveOnly);
         transport.ConnectionString(connectionString);
+
         config.AuditProcessedMessagesTo("AuditSpy");
 
         return config;

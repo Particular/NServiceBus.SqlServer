@@ -9,26 +9,28 @@ namespace TestAgent.Framework
     using System.Threading.Tasks;
     using NServiceBus;
     using NServiceBus.AcceptanceTesting.Customization;
+    using NServiceBus.Transport;
     using TestLogicApi;
 
     public class Plugin : IPlugin
     {
         IEndpointInstance instance;
+        ITestBehavior behavior;
 
-        public async Task Start(string behaviorClassName, Dictionary<string, string> behaviorArgs, CancellationToken cancellationToken = default)
+        public async Task StartEndpoint(string behaviorClassName, Dictionary<string, string> behaviorArgs,
+            string transportVersionString, CancellationToken cancellationToken = default)
         {
             var behaviorClass = Type.GetType(behaviorClassName, true);
 
             Console.Out.WriteLine($">> Creating {behaviorClass}");
 
-            var behavior = (ITestBehavior)Activator.CreateInstance(behaviorClass);
+            behavior = (ITestBehavior)Activator.CreateInstance(behaviorClass);
 
             var config = behavior.Configure(behaviorArgs);
             config.TypesToIncludeInScan(GetTypesToScan(behaviorClass).ToList());
+            config.Pipeline.Register(b => new StampVersionBehavior(b.Build<IDispatchMessages>()), "Stamps version");
 
             instance = await Endpoint.Start(config).ConfigureAwait(false);
-
-            await behavior.Execute(instance).ConfigureAwait(false);
         }
 
         IEnumerable<Type> GetTypesToScan(Type behaviorType)
@@ -39,6 +41,8 @@ namespace TestAgent.Framework
                 yield return nested;
             }
         }
+
+        public Task StartTest(CancellationToken cancellationToken = default) => behavior.Execute(instance, cancellationToken);
 
         public Task Stop(CancellationToken cancellationToken = default) => instance.Stop();
     }

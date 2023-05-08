@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
@@ -7,9 +8,17 @@ class Sender : ITestBehavior
 {
     public EndpointConfiguration Configure(Dictionary<string, string> args)
     {
-        var config = new EndpointConfiguration("Sender");
+        var connectionString = args["ConnectionString"];
 
-        var routing = config.UseTransport<LearningTransport>().Routing();
+        var config = new EndpointConfiguration("Sender");
+        config.EnableInstallers();
+        config.UsePersistence<InMemoryPersistence>();
+
+        var transport = config.UseTransport<SqlServerTransport>();
+        transport.ConnectionString(connectionString);
+        transport.Transactions(TransportTransactionMode.ReceiveOnly);
+
+        var routing = transport.Routing();
         routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
 
         config.AuditProcessedMessagesTo("AuditSpy");
@@ -17,9 +26,7 @@ class Sender : ITestBehavior
         return config;
     }
 
-#pragma warning disable PS0018
-    public async Task Execute(IEndpointInstance endpointInstance)
-#pragma warning restore PS0018
+    public async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
         await endpointInstance.Send(new MyRequest()).ConfigureAwait(false);
     }

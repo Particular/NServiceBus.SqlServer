@@ -28,7 +28,11 @@
 
             var done = new TaskCompletionSource<bool>();
 
-            var rawConfig = RawEndpointConfiguration.Create("AuditSpy", new LearningTransport(),
+            var auditSpyTransport = new SqlServerTransport("Data source = (local); Initial catalog = WireCompat; Integrated Security = true; Encrypt=false")
+            {
+                TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
+            };
+            var rawConfig = RawEndpointConfiguration.Create("AuditSpy", auditSpyTransport,
                  (messageContext, dispatcher, token) =>
                  {
                      var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
@@ -45,6 +49,7 @@
 
                      return Task.CompletedTask;
                  }, "poison");
+            rawConfig.AutoCreateQueues();
             IReceivingRawEndpoint endpoint = null;
 
             try
@@ -58,7 +63,12 @@
 
                 foreach (var agent in processes)
                 {
-                    await agent.Start(cancellationToken).ConfigureAwait(false);
+                    await agent.StartEndpoint(cancellationToken).ConfigureAwait(false);
+                }
+
+                foreach (var agent in processes)
+                {
+                    await agent.StartTest(cancellationToken).ConfigureAwait(false);
                 }
 
                 var timeout = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);

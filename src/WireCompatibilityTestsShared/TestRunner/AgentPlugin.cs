@@ -21,6 +21,7 @@
         readonly string behaviorPackageName;
         readonly string coreVersionString;
         readonly string transportVersionString;
+        readonly string transportPackageName;
 
         public AgentPlugin(int majorVersionToTest, int minorVersionToTest, int coreMajorVersion, string behaviorType, string generatedProjectFolder, Dictionary<string, string> args)
         {
@@ -32,6 +33,7 @@
             this.generatedProjectFolder = generatedProjectFolder;
             this.args = args;
             coreVersionString = $"{coreMajorVersion}.*";
+            transportPackageName = majorVersionToTest > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
 
 #pragma warning disable PS0018
@@ -65,7 +67,7 @@
     <ProjectReference Include=""..\..\{behaviorPackageName}\{behaviorPackageName}.csproj"" />
 
     <PackageReference Include=""NServiceBus"" Version=""{coreVersionString}"" />
-    <PackageReference Include=""NServiceBus.Transport.SqlServer"" Version=""{transportVersionString}"" />
+    <PackageReference Include=""{transportPackageName}"" Version=""{transportVersionString}"" />
 
   </ItemGroup>
 
@@ -106,11 +108,13 @@
             plugin = CreateCommands(pluginAssembly).Single();
         }
 
-        public async Task Start(CancellationToken cancellationToken = default)
+        public async Task StartEndpoint(CancellationToken cancellationToken = default)
         {
-            await plugin.Start(behaviorType, args, cancellationToken).ConfigureAwait(false);
+            await plugin.StartEndpoint(behaviorType, args, transportVersionString, cancellationToken).ConfigureAwait(false);
             started = true;
         }
+
+        public Task StartTest(CancellationToken cancellationToken = default) => plugin.StartTest(cancellationToken);
 
         public Task Stop(CancellationToken cancellationToken = default)
         {
@@ -128,6 +132,7 @@
             //string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
             Console.WriteLine($"Loading commands from: {pluginLocation}");
             var loadContext = new PluginLoadContext(pluginLocation);
+
             return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(pluginLocation));
         }
 
