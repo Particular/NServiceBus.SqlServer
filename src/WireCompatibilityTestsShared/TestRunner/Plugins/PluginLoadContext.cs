@@ -48,12 +48,28 @@ class PluginLoadContext : AssemblyLoadContext
                     return dllPath;
                 }
             }
+            else
+            {
+                var dllPath = Path.Combine(pluginPath, "runtimes", "unix", "lib", "net6.0", "Microsoft.Data.SqlClient.dll");
+                if (File.Exists(dllPath))
+                {
+                    return dllPath;
+                }
+            }
         }
         if (assemblyName.Name == "System.Data.SqlClient")
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var dllPath = Path.Combine(pluginPath, "runtimes", "win", "lib", "netcoreapp2.1", "System.Data.SqlClient.dll");
+                if (File.Exists(dllPath))
+                {
+                    return dllPath;
+                }
+            }
+            else
+            {
+                var dllPath = Path.Combine(pluginPath, "runtimes", "unix", "lib", "netcoreapp2.1", "System.Data.SqlClient.dll");
                 if (File.Exists(dllPath))
                 {
                     return dllPath;
