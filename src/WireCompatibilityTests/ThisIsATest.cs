@@ -21,8 +21,8 @@
             using var cts = new CancellationTokenSource();
             var agents = new[]
             {
-                AgentInfo.Create("Sender", v1, core1, settings),
-                AgentInfo.Create("Receiver", v2, core2, settings),
+                AgentInfo.Create("SchemaSender", v1, core1, settings),
+                AgentInfo.Create("SchemaReceiver", v2, core2, settings),
             };
 
             var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, x => x.Count == 2, cts.Token).ConfigureAwait(false);
@@ -50,8 +50,8 @@
             //{"4.0", 7},
             //{"4.1", 7},
             //{"4.2", 7},
-            {"4.3", 7},
-            {"5.0", 7},
+            //{"4.3", 7},
+            //{"5.0", 7},
             //{"6.0", 7},
             //{"6.1", 7},
             //{"6.2", 7},

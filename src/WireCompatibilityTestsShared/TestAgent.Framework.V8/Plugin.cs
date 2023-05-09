@@ -40,6 +40,15 @@
             {
                 yield return nested;
             }
+
+            if (behaviorType.BaseType != null)
+            {
+                var baseTypes = GetTypesToScan(behaviorType.BaseType);
+                foreach (Type type in baseTypes)
+                {
+                    yield return type;
+                }
+            }
         }
 
         public Task StartTest(CancellationToken cancellationToken = default) =>
