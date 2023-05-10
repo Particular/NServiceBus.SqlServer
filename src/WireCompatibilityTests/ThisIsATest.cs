@@ -1,5 +1,6 @@
 ﻿namespace TestSuite
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
@@ -16,7 +17,9 @@
         [TestCaseSource(typeof(TestCaseGenerator))]
         public async Task PingPong(string v1, int core1, string v2, int core2)
         {
-            var settings = new Dictionary<string, string> { ["ConnectionString"] = "Data source = (local); Initial catalog = WireCompat; Integrated Security = true; Encrypt=false" };
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? "Data source = (local); Initial catalog = nservicebus; Integrated Security = true; Encrypt=false";
+
+            var settings = new Dictionary<string, string> { ["ConnectionString"] = connectionString };
 
             using var cts = new CancellationTokenSource();
             var agents = new[]
