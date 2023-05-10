@@ -19,6 +19,11 @@
         {
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? "Data source = (local); Initial catalog = nservicebus; Integrated Security = true; Encrypt=false";
 
+            var auditSpyTransport = new SqlServerTransport(connectionString)
+            {
+                TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
+            };
+
             var settings = new Dictionary<string, string> { ["ConnectionString"] = connectionString };
 
             using var cts = new CancellationTokenSource();
@@ -28,7 +33,7 @@
                 AgentInfo.Create("SchemaReceiver", v2, core2, settings),
             };
 
-            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, x => x.Count == 2, cts.Token).ConfigureAwait(false);
+            var result = await TestScenarioPluginRunner.Run("Ping-Pong", agents, auditSpyTransport, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 

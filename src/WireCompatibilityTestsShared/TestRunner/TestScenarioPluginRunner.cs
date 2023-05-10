@@ -8,12 +8,14 @@
     using NServiceBus.Raw;
     using NServiceBus;
     using System.IO;
+    using NServiceBus.Transport;
 
     public class TestScenarioPluginRunner
     {
         public static async Task<TestExecutionResult> Run(
             string scenarioName,
             AgentInfo[] agents,
+            TransportDefinition auditSpyTransport,
             Func<Dictionary<string, AuditMessage>, bool> doneCallback,
             CancellationToken cancellationToken = default
             )
@@ -28,10 +30,6 @@
 
             var done = new TaskCompletionSource<bool>();
 
-            var auditSpyTransport = new SqlServerTransport("Data source = (local); Initial catalog = WireCompat; Integrated Security = true; Encrypt=false")
-            {
-                TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
-            };
             var rawConfig = RawEndpointConfiguration.Create("AuditSpy", auditSpyTransport,
                  (messageContext, dispatcher, token) =>
                  {
