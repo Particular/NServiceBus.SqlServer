@@ -13,6 +13,7 @@
     {
         readonly string projectName;
         readonly string behaviorType;
+        readonly Dictionary<string, string> platformSpecificAssemblies;
         readonly string generatedProjectFolder;
         readonly Dictionary<string, string> args;
         IPlugin plugin;
@@ -23,13 +24,16 @@
         readonly string transportVersionString;
         readonly string transportPackageName;
 
-        public AgentPlugin(int majorVersionToTest, int minorVersionToTest, int coreMajorVersion, string behaviorType, string generatedProjectFolder, Dictionary<string, string> args)
+        public AgentPlugin(Dictionary<string, string> platformSpecificAssemblies, int majorVersionToTest,
+            int minorVersionToTest, int coreMajorVersion, string behaviorType, string generatedProjectFolder,
+            Dictionary<string, string> args)
         {
             projectName = $"TestAgent.V{majorVersionToTest}.{minorVersionToTest}"; //generated project depends on downstream minor
             transportVersionString = $"{majorVersionToTest}.{minorVersionToTest}.*";
             agentFrameworkPackageName = $"TestAgent.Framework.V{coreMajorVersion}"; //agent framework depends only on core major
             behaviorPackageName = $"WireCompatibilityTests.TestBehaviors.V{majorVersionToTest}"; //behaviors depend only on downstream major
             this.behaviorType = $"{behaviorType}, WireCompatibilityTests.TestBehaviors.V{majorVersionToTest}";
+            this.platformSpecificAssemblies = platformSpecificAssemblies;
             this.generatedProjectFolder = generatedProjectFolder;
             this.args = args;
             coreVersionString = $"{coreMajorVersion}.*";
@@ -126,12 +130,9 @@
             return plugin.Stop(cancellationToken);
         }
 
-        static Assembly LoadPlugin(string pluginLocation)
+        Assembly LoadPlugin(string pluginLocation)
         {
-            //var root = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-            //string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
-            Console.WriteLine($"Loading commands from: {pluginLocation}");
-            var loadContext = new PluginLoadContext(pluginLocation);
+            var loadContext = new PluginLoadContext(pluginLocation, platformSpecificAssemblies);
 
             return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(pluginLocation));
         }

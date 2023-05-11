@@ -6,23 +6,21 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Raw;
-    using NServiceBus;
     using System.IO;
     using NServiceBus.Transport;
 
     public class TestScenarioPluginRunner
     {
-        public static async Task<TestExecutionResult> Run(
-            string scenarioName,
+        public static async Task<TestExecutionResult> Run(string scenarioName,
             AgentInfo[] agents,
             TransportDefinition auditSpyTransport,
+            Dictionary<string, string> platformSpecificAssemblies,
             Func<Dictionary<string, AuditMessage>, bool> doneCallback,
-            CancellationToken cancellationToken = default
-            )
+            CancellationToken cancellationToken = default)
         {
             var generatedFolderPath = FindGeneratedFolderPath();
 
-            var processes = agents.Select(x => new AgentPlugin(x.Major, x.Minor, x.CoreMajor, x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
+            var processes = agents.Select(x => new AgentPlugin(platformSpecificAssemblies, x.Major, x.Minor, x.CoreMajor, x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
 
             var auditedMessages = new Dictionary<string, AuditMessage>();
 

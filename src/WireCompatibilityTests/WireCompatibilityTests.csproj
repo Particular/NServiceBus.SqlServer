@@ -5,6 +5,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\NServiceBus.SqlServer\NServiceBus.SqlServer.csproj" />
 	  <ProjectReference Include="..\WireCompatibilityTestsShared\TestRunner\TestRunner.csproj" />
 	</ItemGroup>
 

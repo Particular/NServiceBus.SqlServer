@@ -4,17 +4,6 @@ using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
-class SchemaReceiver : Receiver
-{
-    protected override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig)
-    {
-        base.Configure(args, endpointConfig, transportConfig);
-
-        transportConfig.DefaultSchema("receiver");
-        transportConfig.UseSchemaForQueue("AuditSpy", "dbo");
-    }
-}
-
 class Receiver : ITestBehavior
 {
     public Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)

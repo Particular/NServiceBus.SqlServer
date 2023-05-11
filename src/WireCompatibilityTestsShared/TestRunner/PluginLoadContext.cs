@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -6,13 +7,17 @@ using System.Runtime.Loader;
 
 class PluginLoadContext : AssemblyLoadContext
 {
+    readonly Dictionary<string, string> platformSpecificManagedAssemblies;
     readonly string pluginPath;
     readonly AssemblyDependencyResolver resolver;
+    readonly string os;
 
-    public PluginLoadContext(string pluginPath)
+    public PluginLoadContext(string pluginPath, Dictionary<string, string> platformSpecificManagedAssemblies)
     {
+        this.platformSpecificManagedAssemblies = platformSpecificManagedAssemblies;
         this.pluginPath = Path.GetDirectoryName(pluginPath);
         resolver = new AssemblyDependencyResolver(pluginPath);
+        os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" : "unix";
     }
 
     protected override Assembly Load(AssemblyName assemblyName)
@@ -38,46 +43,20 @@ class PluginLoadContext : AssemblyLoadContext
 
     string ResolveManagedDllPath(AssemblyName assemblyName)
     {
-        if (assemblyName.Name == "Microsoft.Data.SqlClient")
+        var name = assemblyName.Name;
+        if (platformSpecificManagedAssemblies.TryGetValue(name, out var framework))
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            var dllPath = BuildPlatformSpecificAssemblyPath(framework, name);
+            if (File.Exists(dllPath))
             {
-                var dllPath = Path.Combine(pluginPath, "runtimes", "win", "lib", "net6.0", "Microsoft.Data.SqlClient.dll");
-                if (File.Exists(dllPath))
-                {
-                    return dllPath;
-                }
-            }
-            else
-            {
-                var dllPath = Path.Combine(pluginPath, "runtimes", "unix", "lib", "net6.0", "Microsoft.Data.SqlClient.dll");
-                if (File.Exists(dllPath))
-                {
-                    return dllPath;
-                }
-            }
-        }
-        if (assemblyName.Name == "System.Data.SqlClient")
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var dllPath = Path.Combine(pluginPath, "runtimes", "win", "lib", "netcoreapp2.1", "System.Data.SqlClient.dll");
-                if (File.Exists(dllPath))
-                {
-                    return dllPath;
-                }
-            }
-            else
-            {
-                var dllPath = Path.Combine(pluginPath, "runtimes", "unix", "lib", "netcoreapp2.1", "System.Data.SqlClient.dll");
-                if (File.Exists(dllPath))
-                {
-                    return dllPath;
-                }
+                return dllPath;
             }
         }
         return resolver.ResolveAssemblyToPath(assemblyName);
     }
+
+    string BuildPlatformSpecificAssemblyPath(string framework, string assembly) => Path.Combine(pluginPath, "runtimes", os, "lib", framework,
+        $"{assembly}.dll");
 
     string ResolveUnmanagedDllPath(string unmanagedDllName)
     {
