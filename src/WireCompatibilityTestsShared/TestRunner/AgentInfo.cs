@@ -1,31 +1,28 @@
-﻿
-namespace TestRunner
+﻿namespace TestRunner
 {
-    using System;
     using System.Collections.Generic;
+    using NuGet.Versioning;
 
     public class AgentInfo
     {
-        public int Major { get; set; }
-        public int Minor { get; set; }
-        public int CoreMajor { get; set; }
+        public SemanticVersion Version { get; set; }
         public string Behavior { get; set; }
         public Dictionary<string, string> BehaviorParameters { get; set; }
 
-        public static AgentInfo Create(string behavior, string version, int coreMajor, Dictionary<string, string> behaviorParameters)
+        public static AgentInfo Create(
+            string behavior,
+            SemanticVersion version,
+            Dictionary<string, string> behaviorParameters)
         {
             if (behavior.StartsWith('I'))
             {
                 behavior = behavior.Substring(1);
             }
 
-            var parts = version.Split(".", StringSplitOptions.RemoveEmptyEntries);
             return new AgentInfo
             {
                 Behavior = behavior,
-                Major = int.Parse(parts[0]),
-                Minor = int.Parse(parts[1]),
-                CoreMajor = coreMajor,
+                Version = version,
                 BehaviorParameters = behaviorParameters
             };
         }

@@ -20,7 +20,10 @@
         {
             var generatedFolderPath = FindGeneratedFolderPath();
 
-            var processes = agents.Select(x => new AgentPlugin(platformSpecificAssemblies, x.Major, x.Minor, x.CoreMajor, x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
+            var processes = agents.Select(x => new AgentPlugin(
+                platformSpecificAssemblies,
+                x.Version,
+                x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
 
             var auditedMessages = new Dictionary<string, AuditMessage>();
 

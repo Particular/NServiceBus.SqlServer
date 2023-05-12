@@ -12,7 +12,7 @@ public class StampVersionBehavior : Behavior<IOutgoingPhysicalMessageContext>
     public StampVersionBehavior(IMessageDispatcher dispatcher)
     {
         var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(dispatcher.GetType().Assembly.Location);
-        versionString = $"{fileVersionInfo.FileMajorPart}.{fileVersionInfo.FileMinorPart}";
+        versionString = fileVersionInfo.ProductVersion;
     }
 
     public override Task Invoke(IOutgoingPhysicalMessageContext context, Func<Task> next)

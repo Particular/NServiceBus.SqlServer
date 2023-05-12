@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
+using NuGet.Versioning;
 using TestRunner;
 using TestSuite;
 
@@ -14,10 +15,8 @@ public static class ScenarioRunner
     public static async Task<TestExecutionResult> Run(
         string behavior1,
         string behavior2,
-        string v1,
-        int core1,
-        string v2,
-        int core2,
+        SemanticVersion v1,
+        SemanticVersion v2,
         Func<Dictionary<string, AuditMessage>, bool> doneCallback,
         CancellationToken cancellationToken = default
         )
@@ -45,8 +44,8 @@ public static class ScenarioRunner
 
         var agents = new[]
         {
-            AgentInfo.Create(behavior1, v1, core1, settings),
-            AgentInfo.Create(behavior2, v2, core2, settings),
+            AgentInfo.Create(behavior1, v1, settings),
+            AgentInfo.Create(behavior2, v2, settings),
         };
 
         var result = await TestScenarioPluginRunner

@@ -8,6 +8,7 @@
     using System.Reflection;
     using System.Threading;
     using System.Diagnostics;
+    using NuGet.Versioning;
 
     class AgentPlugin
     {
@@ -18,26 +19,28 @@
         readonly Dictionary<string, string> args;
         IPlugin plugin;
         bool started;
-        readonly string agentFrameworkPackageName;
+        //readonly string agentFrameworkPackageName;
         readonly string behaviorPackageName;
-        readonly string coreVersionString;
-        readonly string transportVersionString;
+        //readonly string coreVersionString;
+        readonly SemanticVersion versionToTest;
         readonly string transportPackageName;
 
-        public AgentPlugin(Dictionary<string, string> platformSpecificAssemblies, int majorVersionToTest,
-            int minorVersionToTest, int coreMajorVersion, string behaviorType, string generatedProjectFolder,
+        public AgentPlugin(
+            Dictionary<string, string> platformSpecificAssemblies,
+            SemanticVersion versionToTest,
+            string behaviorType, string generatedProjectFolder,
             Dictionary<string, string> args)
         {
-            projectName = $"TestAgent.V{majorVersionToTest}.{minorVersionToTest}"; //generated project depends on downstream minor
-            transportVersionString = $"{majorVersionToTest}.{minorVersionToTest}.*";
-            agentFrameworkPackageName = $"TestAgent.Framework.V{coreMajorVersion}"; //agent framework depends only on core major
-            behaviorPackageName = $"WireCompatibilityTests.TestBehaviors.V{majorVersionToTest}"; //behaviors depend only on downstream major
-            this.behaviorType = $"{behaviorType}, WireCompatibilityTests.TestBehaviors.V{majorVersionToTest}";
+            projectName = $"TestAgent.V{versionToTest.ToNormalizedString()}"; //generated project depends on downstream minor
+            this.versionToTest = versionToTest;
+            //agentFrameworkPackageName = $"TestAgent.Framework.V{coreMajorVersion}"; //agent framework depends only on core major
+            behaviorPackageName = $"WireCompatibilityTests.TestBehaviors.V{versionToTest.Major}"; //behaviors depend only on downstream major
+            this.behaviorType = $"{behaviorType}, WireCompatibilityTests.TestBehaviors.V{versionToTest.Major}";
             this.platformSpecificAssemblies = platformSpecificAssemblies;
             this.generatedProjectFolder = generatedProjectFolder;
             this.args = args;
-            coreVersionString = $"{coreMajorVersion}.*";
-            transportPackageName = majorVersionToTest > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
+            //coreVersionString = $"{coreMajorVersion}.*";
+            transportPackageName = versionToTest.Major > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
 
 #pragma warning disable PS0018
@@ -67,11 +70,9 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
 
-    <ProjectReference Include=""..\..\WireCompatibilityTestsShared\{agentFrameworkPackageName}\{agentFrameworkPackageName}.csproj"" />
     <ProjectReference Include=""..\..\{behaviorPackageName}\{behaviorPackageName}.csproj"" />
 
-    <PackageReference Include=""NServiceBus"" Version=""{coreVersionString}"" />
-    <PackageReference Include=""{transportPackageName}"" Version=""{transportVersionString}"" />
+    <PackageReference Include=""{transportPackageName}"" Version=""{versionToTest.ToNormalizedString()}"" />
 
   </ItemGroup>
 
@@ -101,7 +102,7 @@
             }
 
             var folder = Path.GetDirectoryName(projectFilePath);
-            var agentDllPath = $"{folder}/bin/Debug/net6.0/{agentFrameworkPackageName}.dll";
+            var agentDllPath = Directory.EnumerateFiles($"{folder}/bin/Debug/net6.0/", "TestAgent.Framework.V*.dll").Single();
 
             if (!File.Exists(agentDllPath))
             {
@@ -114,7 +115,7 @@
 
         public async Task StartEndpoint(CancellationToken cancellationToken = default)
         {
-            await plugin.StartEndpoint(behaviorType, args, transportVersionString, cancellationToken).ConfigureAwait(false);
+            await plugin.StartEndpoint(behaviorType, args, cancellationToken).ConfigureAwait(false);
             started = true;
         }
 

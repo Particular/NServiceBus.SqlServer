@@ -17,8 +17,10 @@
         IEndpointInstance instance;
         ITestBehavior behavior;
 
-        public async Task StartEndpoint(string behaviorClassName, Dictionary<string, string> behaviorArgs,
-            string transportVersionString, CancellationToken cancellationToken = default)
+        public async Task StartEndpoint(
+            string behaviorClassName,
+            Dictionary<string, string> behaviorArgs,
+            CancellationToken cancellationToken = default)
         {
             var behaviorClass = Type.GetType(behaviorClassName, true);
 

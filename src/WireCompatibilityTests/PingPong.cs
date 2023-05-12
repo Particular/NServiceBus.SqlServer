@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
+    using NuGet.Versioning;
     using NUnit.Framework;
     using WireCompatibilityTests;
 
@@ -11,11 +12,11 @@
     public class PingPong
     {
         [Test]
-        [TestCaseSource(typeof(TestCaseGenerator))]
-        public async Task SingleSchemaRequestReply(string v1, int core1, string v2, int core2)
+        [TestCaseSource(typeof(GeneratedVersionsSet))]
+        public async Task SingleSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
-            var result = await ScenarioRunner.Run("Sender", "Receiver", v1, core1, v2, core2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
+            var result = await ScenarioRunner.Run("Sender", "Receiver", v1, v2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 
@@ -27,17 +28,19 @@
             Assert.AreEqual(request.Headers[Headers.MessageId], response.Headers[Headers.RelatedTo]);
             Assert.AreEqual(request.Headers[Headers.ConversationId], response.Headers[Headers.ConversationId]);
             Assert.AreEqual(request.Headers[Headers.CorrelationId], response.Headers[Headers.CorrelationId]);
-            Assert.AreEqual(v1, request.Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v2, response.Headers[Keys.WireCompatVersion]);
+
+            var requestVersion = SemanticVersion.Parse(request.Headers[Keys.WireCompatVersion]);
+            var responseVersion = SemanticVersion.Parse(response.Headers[Keys.WireCompatVersion]);
+            Assert.AreEqual(v1, requestVersion);
+            Assert.AreEqual(v2, responseVersion);
         }
 
-
         [Test]
-        [TestCaseSource(typeof(TestCaseGenerator))]
-        public async Task MultiSchemaRequestReply(string v1, int core1, string v2, int core2)
+        [TestCaseSource(typeof(GeneratedVersionsSet))]
+        public async Task MultiSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
-            var result = await ScenarioRunner.Run("SchemaSender", "SchemaReceiver", v1, core1, v2, core2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
+            var result = await ScenarioRunner.Run("SchemaSender", "SchemaReceiver", v1, v2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 
@@ -47,8 +50,11 @@
             Assert.AreEqual(request.Headers[Headers.MessageId], response.Headers[Headers.RelatedTo]);
             Assert.AreEqual(request.Headers[Headers.ConversationId], response.Headers[Headers.ConversationId]);
             Assert.AreEqual(request.Headers[Headers.CorrelationId], response.Headers[Headers.CorrelationId]);
-            Assert.AreEqual(v1, request.Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v2, response.Headers[Keys.WireCompatVersion]);
+
+            var requestVersion = SemanticVersion.Parse(request.Headers[Keys.WireCompatVersion]);
+            var responseVersion = SemanticVersion.Parse(response.Headers[Keys.WireCompatVersion]);
+            Assert.AreEqual(v1, requestVersion);
+            Assert.AreEqual(v2, responseVersion);
         }
     }
 }
