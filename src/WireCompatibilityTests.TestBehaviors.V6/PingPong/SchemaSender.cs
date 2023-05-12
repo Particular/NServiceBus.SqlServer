@@ -3,7 +3,7 @@ using NServiceBus;
 
 class SchemaSender : Sender
 {
-    protected override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig)
+    public override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig)
     {
         base.Configure(args, endpointConfig, transportConfig);
 

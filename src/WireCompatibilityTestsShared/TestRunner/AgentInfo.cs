@@ -14,6 +14,11 @@ namespace TestRunner
 
         public static AgentInfo Create(string behavior, string version, int coreMajor, Dictionary<string, string> behaviorParameters)
         {
+            if (behavior.StartsWith('I'))
+            {
+                behavior = behavior.Substring(1);
+            }
+
             var parts = version.Split(".", StringSplitOptions.RemoveEmptyEntries);
             return new AgentInfo
             {
@@ -25,5 +30,4 @@ namespace TestRunner
             };
         }
     }
-
 }

@@ -11,7 +11,7 @@
 
     public class TestScenarioPluginRunner
     {
-        public static async Task<TestExecutionResult> Run(string scenarioName,
+        public static async Task<TestExecutionResult> Run(
             AgentInfo[] agents,
             TransportDefinition auditSpyTransport,
             Dictionary<string, string> platformSpecificAssemblies,
@@ -55,7 +55,7 @@
                     await agent.Compile().ConfigureAwait(false);
                 }
 
-                endpoint = await RawEndpoint.Start(rawConfig, CancellationToken.None).ConfigureAwait(false);
+                endpoint = await RawEndpoint.Start(rawConfig, cancellationToken).ConfigureAwait(false);
 
                 foreach (var agent in processes)
                 {
@@ -67,7 +67,7 @@
                     await agent.StartTest(cancellationToken).ConfigureAwait(false);
                 }
 
-                var timeout = Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                var timeout = Task.Delay(-1, cancellationToken);
 
                 var finished = await Task.WhenAny(timeout, done.Task).ConfigureAwait(false);
 

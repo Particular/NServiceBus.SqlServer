@@ -2,14 +2,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestRunner;
+using TestSuite;
 
 public static class ScenarioRunner
 {
-    public static async Task<TestExecutionResult> Run(string name, string behavior1, string behavior2, string v1, int core1, string v2, int core2, Func<Dictionary<string, AuditMessage>, bool> doneCallback, CancellationToken cancellationToken = default)
+    public static async Task<TestExecutionResult> Run(
+        string behavior1,
+        string behavior2,
+        string v1,
+        int core1,
+        string v2,
+        int core2,
+        Func<Dictionary<string, AuditMessage>, bool> doneCallback,
+        CancellationToken cancellationToken = default
+        )
     {
         var platformSpecificAssemblies = new Dictionary<string, string>
         {
@@ -17,15 +28,20 @@ public static class ScenarioRunner
             ["System.Data.SqlClient"] = "netcoreapp2.1"
         };
 
-        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString")
-                               ?? "Data source = (local); Initial catalog = nservicebus; Integrated Security = true; Encrypt=false";
+        var connectionString = Global.ConnectionString;
 
         var auditSpyTransport = new SqlServerTransport(connectionString)
         {
             TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
         };
 
-        var settings = new Dictionary<string, string> { ["ConnectionString"] = connectionString };
+        var testRunId = Guid.NewGuid().ToString();
+
+        var settings = new Dictionary<string, string>
+        {
+            [Keys.ConnectionString] = Global.ConnectionString,
+            [Keys.TestRunId] = testRunId,
+        };
 
         var agents = new[]
         {
@@ -34,8 +50,13 @@ public static class ScenarioRunner
         };
 
         var result = await TestScenarioPluginRunner
-            .Run(name, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
+            .Run(agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
             .ConfigureAwait(false);
+
+        result.AuditedMessages = result.AuditedMessages
+            .Where(m => m.Value.Headers[Keys.TestRunId] == testRunId)
+            .ToDictionary(x => x.Key, x => x.Value);
+
         return result;
     }
 }
