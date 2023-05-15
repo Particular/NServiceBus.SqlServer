@@ -11,6 +11,13 @@
     [TestFixture]
     public class PingPong
     {
+        [OneTimeSetUp]
+        public async Task SetUp()
+        {
+            await SqlHelper.CreateSchema(Global.ConnectionString, "receiver").ConfigureAwait(false);
+            await SqlHelper.CreateSchema(Global.ConnectionString, "sender").ConfigureAwait(false);
+        }
+
         [Test]
         [TestCaseSource(typeof(GeneratedVersionsSet))]
         public async Task SingleSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
