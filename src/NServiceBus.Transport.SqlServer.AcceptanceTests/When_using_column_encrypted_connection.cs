@@ -17,7 +17,7 @@
         [Test]
         public async Task Should_work()
         {
-#if SYSTEMDATASQLCLIENT
+#if SYSTEMDATASQLCLIENT && NET
             Assert.Ignore("System.Data.SqlClient doesn't support this setting on .NET (works on .NET Framework)");
 #endif
             var ctx = await Scenario.Define<Context>()
