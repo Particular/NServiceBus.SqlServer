@@ -12,7 +12,7 @@
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
 
-    public class When_using_encrypted_connection : NServiceBusAcceptanceTest
+    public class When_using_column_encrypted_connection : NServiceBusAcceptanceTest
     {
         [Test]
         public async Task Should_work()
