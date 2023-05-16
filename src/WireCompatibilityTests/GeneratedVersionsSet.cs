@@ -1,6 +1,5 @@
 ﻿namespace WireCompatibilityTests;
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,13 +8,13 @@ using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
-public class GeneratedVersionsSet : IEnumerable
+public static class GeneratedVersionsSet
 {
-    public readonly string PackageId = "NServiceBus.SqlServer";
-    public readonly SemanticVersion MinVersion = new(6, 0, 0);
+    public static readonly string PackageId = "NServiceBus.SqlServer";
 
-    public IEnumerator GetEnumerator()
+    public static IEnumerable<object[]> Get(string range)
     {
+        var versionRange = VersionRange.Parse(range);
         using var cache = new SourceCacheContext { NoCache = true };
 
         //string source = "https://www.myget.org/F/particular/api/v3/index.json";
@@ -26,7 +25,7 @@ public class GeneratedVersionsSet : IEnumerable
         var versions = resources.GetAllVersionsAsync(PackageId, cache, NullLogger.Instance, CancellationToken.None).GetAwaiter().GetResult();
 
         // Get all minors
-        versions = versions.Where(v => !v.IsPrerelease && v >= MinVersion).OrderBy(v => v);
+        versions = versions.Where(v => !v.IsPrerelease && versionRange.Satisfies(v)).OrderBy(v => v);
 
         NuGetVersion last = null;
 
