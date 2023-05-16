@@ -34,12 +34,16 @@
             {
                 var transport = new SqlServerTransport(async cancellationToken =>
                 {
-                    var sqlConnectionStringBuilder = new SqlConnectionStringBuilder(GetConnectionString())
-                    {
-                        ColumnEncryptionSetting = SqlConnectionColumnEncryptionSetting.Enabled
-                    };
+                    var connectionString = GetConnectionString();
 
-                    var connection = new SqlConnection(sqlConnectionStringBuilder.ToString());
+                    if (!connectionString.EndsWith(";"))
+                    {
+                        connectionString += ";";
+                    }
+
+                    connectionString += "Column Encryption Setting=enabled";
+
+                    var connection = new SqlConnection(connectionString);
 
                     await connection.OpenAsync(cancellationToken);
 
