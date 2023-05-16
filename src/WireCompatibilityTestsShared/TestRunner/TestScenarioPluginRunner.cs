@@ -22,7 +22,10 @@
             var processes = agents.Select(x => new AgentPlugin(
                 platformSpecificAssemblies,
                 x.Version,
-                x.Behavior, generatedFolderPath, x.BehaviorParameters ?? new Dictionary<string, string>())).ToArray();
+                x.Behavior,
+                generatedFolderPath,
+                x.BehaviorParameters
+                )).ToArray();
 
             var auditedMessages = new Dictionary<string, AuditMessage>();
 

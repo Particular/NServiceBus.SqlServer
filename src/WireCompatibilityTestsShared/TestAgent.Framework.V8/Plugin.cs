@@ -19,7 +19,7 @@
 
         public async Task StartEndpoint(
             string behaviorClassName,
-            Dictionary<string, string> behaviorArgs,
+            PluginOptions opts,
             CancellationToken cancellationToken = default)
         {
             var behaviorClass = Type.GetType(behaviorClassName, true);
@@ -28,7 +28,7 @@
 
             behavior = (ITestBehavior)Activator.CreateInstance(behaviorClass);
 
-            var config = behavior.Configure(behaviorArgs);
+            var config = behavior.Configure(opts);
             config.TypesToIncludeInScan(GetTypesToScan(behaviorClass).ToList());
             config.Pipeline.Register(b => new StampVersionBehavior(b.GetRequiredService<IMessageDispatcher>()), "Stamps version");
 

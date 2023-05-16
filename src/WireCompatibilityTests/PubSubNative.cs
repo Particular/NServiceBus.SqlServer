@@ -12,7 +12,7 @@
     public class PubSubNative
     {
         [Test]
-        [TestCaseSource(typeof(GeneratedVersionsSet))]
+        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[6.0.0,)" })]
         public async Task Simple(NuGetVersion v1, NuGetVersion v2)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);

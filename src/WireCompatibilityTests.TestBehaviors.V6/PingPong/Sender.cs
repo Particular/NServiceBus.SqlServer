@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
@@ -11,7 +10,7 @@ class Sender : Base, ITestBehavior
     }
 
     public override void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         TransportExtensions<SqlServerTransport> transportConfig
         )

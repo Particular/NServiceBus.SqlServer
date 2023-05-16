@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
@@ -11,19 +10,17 @@ class Receiver : ITestBehavior
         return Task.CompletedTask;
     }
 
-    public EndpointConfiguration Configure(Dictionary<string, string> args)
+    public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var connectionString = args["ConnectionString"];
-
         var config = new EndpointConfiguration("Receiver");
         config.EnableInstallers();
         config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
-        transport.ConnectionString(connectionString);
+        transport.ConnectionString(opts.ConnectionString);
 
-        config.AuditProcessedMessagesTo("AuditSpy");
+        config.AuditProcessedMessagesTo(opts.AuditQueue);
 
         return config;
     }

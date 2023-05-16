@@ -1,6 +1,5 @@
 ﻿namespace TestLogicApi
 {
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus;
@@ -11,6 +10,6 @@
     public interface ITestBehavior
     {
         Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default);
-        EndpointConfiguration Configure(Dictionary<string, string> args);
+        EndpointConfiguration Configure(PluginOptions opts);
     }
 }
