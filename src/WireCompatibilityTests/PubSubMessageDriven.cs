@@ -12,19 +12,15 @@
     public class PubSubMessageDriven
     {
         [Test]
-        //[TestCaseSource(typeof(GeneratedVersionsSet))]
-        //public async Task Simple(NuGetVersion v1, NuGetVersion v2)
-        public async Task Simple()
+        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[4,5)" })]
+        public async Task Simple(NuGetVersion a, NuGetVersion b)
         {
-            var v1 = new NuGetVersion(4, 0, 0);
-            var v2 = new NuGetVersion(4, 0, 0);
-
             using var cts = new CancellationTokenSource(Global.TestTimeout);
             var result = await ScenarioRunner.Run(
                 "MessageDrivenSubscriber",
                 "MessageDrivenPublisher",
-                v1,
-                v2,
+                a,
+                b,
                 x => x.Count == 1,
                 cts.Token
                 )
@@ -35,7 +31,7 @@
             Assert.True(result.AuditedMessages.Values.All(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Publish)), "No event message in audit queue");
 
             var eventVersion = SemanticVersion.Parse(result.AuditedMessages.Values.First().Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v2, eventVersion);
+            Assert.AreEqual(b, eventVersion);
         }
     }
 }

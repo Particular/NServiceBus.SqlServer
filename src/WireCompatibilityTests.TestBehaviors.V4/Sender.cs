@@ -9,8 +9,12 @@ class Sender : Base, ITestBehavior
     {
     }
 
-    protected override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig,
-        RoutingSettings<SqlServerTransport> routingConfig)
+    protected override void Configure(
+        PluginOptions opts,
+        EndpointConfiguration endpointConfig,
+        TransportExtensions<SqlServerTransport> transportConfig,
+        RoutingSettings<SqlServerTransport> routingConfig
+        )
     {
         routingConfig.RouteToEndpoint(typeof(MyRequest), "Receiver");
     }

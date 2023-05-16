@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
@@ -9,8 +8,12 @@ class MessageDrivenSubscriber : Base, ITestBehavior
     {
     }
 
-    protected override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig,
-        RoutingSettings<SqlServerTransport> routingConfig)
+    protected override void Configure(
+        PluginOptions args,
+        EndpointConfiguration endpointConfig,
+        TransportExtensions<SqlServerTransport> transportConfig,
+        RoutingSettings<SqlServerTransport> routingConfig
+        )
     {
         routingConfig.RegisterPublisher(typeof(MyEvent), "Publisher");
     }

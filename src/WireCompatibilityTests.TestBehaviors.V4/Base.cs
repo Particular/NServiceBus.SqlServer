@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 
@@ -12,29 +11,27 @@ class Base
         this.endpointName = endpointName;
     }
 
-    public EndpointConfiguration Configure(Dictionary<string, string> args)
+    public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var connectionString = args["ConnectionString"];
-
         var config = new EndpointConfiguration(endpointName);
         config.EnableInstallers();
         config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
-        transport.ConnectionString(connectionString);
+        transport.ConnectionString(opts.ConnectionString);
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
         config.AuditProcessedMessagesTo("AuditSpy");
-        config.AddHeaderToAllOutgoingMessages(Keys.TestRunId, args[Keys.TestRunId]);
-        config.Pipeline.Register(new DiscardBehavior(args[Keys.TestRunId]), nameof(DiscardBehavior));
+        config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);
+        config.Pipeline.Register(new DiscardBehavior(opts.TestRunId), nameof(DiscardBehavior));
 
-        Configure(args, config, transport, transport.Routing());
+        Configure(opts, config, transport, transport.Routing());
 
         return config;
     }
 
     protected virtual void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         TransportExtensions<SqlServerTransport> transportConfig,
         RoutingSettings<SqlServerTransport> routingConfig

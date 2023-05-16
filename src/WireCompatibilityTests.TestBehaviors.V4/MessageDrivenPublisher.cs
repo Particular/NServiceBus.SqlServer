@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -16,8 +15,12 @@ class MessageDrivenPublisher : Base, ITestBehavior
     {
     }
 
-    protected override void Configure(Dictionary<string, string> args, EndpointConfiguration endpointConfig, TransportExtensions<SqlServerTransport> transportConfig,
-        RoutingSettings<SqlServerTransport> routingConfig)
+    protected override void Configure(
+        PluginOptions opts,
+        EndpointConfiguration endpointConfig,
+        TransportExtensions<SqlServerTransport> transportConfig,
+        RoutingSettings<SqlServerTransport> routingConfig
+        )
     {
         var routing = transportConfig.Routing();
         routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
