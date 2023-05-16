@@ -1,31 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
-class Receiver : ITestBehavior
+class Receiver : Base, ITestBehavior
 {
-    public Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
+    protected Receiver() : base("Receiver")
     {
-        return Task.CompletedTask;
-    }
-
-    public EndpointConfiguration Configure(Dictionary<string, string> args)
-    {
-        var connectionString = args["ConnectionString"];
-
-        var config = new EndpointConfiguration("Receiver");
-        config.EnableInstallers();
-        config.UsePersistence<InMemoryPersistence>();
-
-        var transport = config.UseTransport<SqlServerTransport>();
-        transport.Transactions(TransportTransactionMode.ReceiveOnly);
-        transport.ConnectionString(connectionString);
-
-        config.AuditProcessedMessagesTo("AuditSpy");
-
-        return config;
     }
 
     public class MyRequestHandler : IHandleMessages<MyRequest>

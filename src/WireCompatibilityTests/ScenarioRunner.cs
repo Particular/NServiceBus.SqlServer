@@ -49,11 +49,10 @@ public static class ScenarioRunner
         };
 
         var result = await TestScenarioPluginRunner
-            .Run(agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
+            .Run(testRunId, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
             .ConfigureAwait(false);
 
         result.AuditedMessages = result.AuditedMessages
-            .Where(m => m.Value.Headers[Keys.TestRunId] == testRunId)
             .ToDictionary(x => x.Key, x => x.Value);
 
         return result;

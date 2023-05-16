@@ -11,8 +11,7 @@
 
     public class TestScenarioPluginRunner
     {
-        public static async Task<TestExecutionResult> Run(
-            AgentInfo[] agents,
+        public static async Task<TestExecutionResult> Run(string testRunId, AgentInfo[] agents,
             TransportDefinition auditSpyTransport,
             Dictionary<string, string> platformSpecificAssemblies,
             Func<Dictionary<string, AuditMessage>, bool> doneCallback,
@@ -34,18 +33,21 @@
             var rawConfig = RawEndpointConfiguration.Create("AuditSpy", auditSpyTransport,
                  (messageContext, dispatcher, token) =>
                  {
-                     var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
-                         messageContext.Body);
-
-                     lock (sync)
+                     if (messageContext.Headers.TryGetValue("TestRunId", out var testRunIdHeader) &&
+                         testRunIdHeader == testRunId)
                      {
-                         auditedMessages[messageContext.NativeMessageId] = auditMessage;
-                         if (doneCallback(auditedMessages))
+                         var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
+                             messageContext.Body);
+
+                         lock (sync)
                          {
-                             done.SetResult(true);
+                             auditedMessages[messageContext.NativeMessageId] = auditMessage;
+                             if (doneCallback(auditedMessages))
+                             {
+                                 done.SetResult(true);
+                             }
                          }
                      }
-
                      return Task.CompletedTask;
                  }, "poison");
             rawConfig.AutoCreateQueues();
@@ -65,12 +67,14 @@
                     await agent.StartEndpoint(cancellationToken).ConfigureAwait(false);
                 }
 
+                var tests = new List<Task>();
+
                 foreach (var agent in processes)
                 {
-                    await agent.StartTest(cancellationToken).ConfigureAwait(false);
+                    tests.Add(agent.StartTest(cancellationToken));
                 }
 
-                var timeout = Task.Delay(-1, cancellationToken);
+                var timeout = Task.Delay(30000, cancellationToken);
 
                 var finished = await Task.WhenAny(timeout, done.Task).ConfigureAwait(false);
 
