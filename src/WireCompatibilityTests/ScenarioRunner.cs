@@ -36,16 +36,16 @@ public static class ScenarioRunner
 
         var testRunId = Guid.NewGuid().ToString();
 
-        var settings = new Dictionary<string, string>
+        var opts = new PluginOptions
         {
-            [Keys.ConnectionString] = Global.ConnectionString,
-            [Keys.TestRunId] = testRunId,
+            ConnectionString = Global.ConnectionString,
+            TestRunId = testRunId,
         };
 
         var agents = new[]
         {
-            AgentInfo.Create(behavior1, v1, settings),
-            AgentInfo.Create(behavior2, v2, settings),
+            AgentInfo.Create(behavior1, v1, opts),
+            AgentInfo.Create(behavior2, v2, opts),
         };
 
         var result = await TestScenarioPluginRunner

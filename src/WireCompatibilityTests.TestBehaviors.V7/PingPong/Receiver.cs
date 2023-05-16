@@ -1,21 +1,20 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
 class SchemaReceiver : Receiver, ISchemaReceiver
 {
     protected override void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         SqlServerTransport transportConfig,
         RoutingSettings<SqlServerTransport> routingConfig
     )
     {
-        base.Configure(args, endpointConfig, transportConfig, routingConfig);
+        base.Configure(opts, endpointConfig, transportConfig, routingConfig);
 
         transportConfig.DefaultSchema = "receiver";
-        transportConfig.SchemaAndCatalog.UseSchemaForQueue(Keys.AuditQueue, "dbo");
+        transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.AuditQueue, "dbo");
     }
 }
 

@@ -1,27 +1,24 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
 class Sender : ITestBehavior
 {
-    public EndpointConfiguration Configure(Dictionary<string, string> args)
+    public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var connectionString = args["ConnectionString"];
-
         var config = new EndpointConfiguration("Sender");
         config.EnableInstallers();
         config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
-        transport.ConnectionString(connectionString);
+        transport.ConnectionString(opts.ConnectionString);
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
         var routing = transport.Routing();
         routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
 
-        config.AuditProcessedMessagesTo("AuditSpy");
+        config.AuditProcessedMessagesTo(opts.AuditQueue);
 
         return config;
     }

@@ -7,16 +7,16 @@ using TestLogicApi;
 class SchemaSender : Sender
 {
     protected override void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         SqlServerTransport transportConfig,
         RoutingSettings<SqlServerTransport> routingConfig
     )
     {
-        base.Configure(args, endpointConfig, transportConfig, routingConfig);
+        base.Configure(opts, endpointConfig, transportConfig, routingConfig);
 
         transportConfig.DefaultSchema = "sender";
-        transportConfig.SchemaAndCatalog.UseSchemaForQueue(Keys.AuditQueue, "dbo");
+        transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.AuditQueue, "dbo");
         transportConfig.SchemaAndCatalog.UseSchemaForQueue(nameof(Receiver), "receiver");
     }
 }
@@ -28,7 +28,7 @@ class Sender : Base, ITestBehavior
     }
 
     protected override void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         SqlServerTransport transportConfig,
         RoutingSettings<SqlServerTransport> routingConfig

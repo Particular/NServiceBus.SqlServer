@@ -1,17 +1,16 @@
-﻿using System.Collections.Generic;
-using NServiceBus;
+﻿using NServiceBus;
 
 class SchemaReceiver : Receiver, ISchemaReceiver
 {
     public override void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         TransportExtensions<SqlServerTransport> transportConfig
     )
     {
-        base.Configure(args, endpointConfig, transportConfig);
+        base.Configure(opts, endpointConfig, transportConfig);
 
         transportConfig.DefaultSchema(nameof(Receiver));
-        transportConfig.UseSchemaForQueue(Keys.AuditQueue, "dbo");
+        transportConfig.UseSchemaForQueue(opts.AuditQueue, "dbo");
     }
 }

@@ -2,7 +2,7 @@
 {
     Task StartEndpoint(
         string behaviorName,
-        Dictionary<string, string> behaviorArguments,
+        PluginOptions opts,
         CancellationToken cancellationToken = default
         );
     Task StartTest(CancellationToken cancellationToken = default);

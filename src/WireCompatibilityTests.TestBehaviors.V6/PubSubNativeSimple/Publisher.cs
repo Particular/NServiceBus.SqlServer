@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
 class Publisher : ITestBehavior, IPublisher
 {
-    public EndpointConfiguration Configure(Dictionary<string, string> args)
+    public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var connectionString = args[Keys.ConnectionString];
+        var connectionString = opts.ConnectionString;
 
         var config = new EndpointConfiguration("Publisher");
         config.EnableInstallers();
@@ -17,17 +16,17 @@ class Publisher : ITestBehavior, IPublisher
             .ConnectionString(connectionString)
             .Transactions(TransportTransactionMode.ReceiveOnly);
 
-        config.AuditProcessedMessagesTo(Keys.AuditQueue);
-        config.AddHeaderToAllOutgoingMessages(Keys.TestRunId, args[Keys.TestRunId]);
-        config.Pipeline.Register(new DiscardBehavior(args[Keys.TestRunId]), nameof(DiscardBehavior));
+        config.AuditProcessedMessagesTo(opts.AuditQueue);
+        config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);
+        config.Pipeline.Register(new DiscardBehavior(opts.TestRunId), nameof(DiscardBehavior));
 
-        Configure(args, config, transport);
+        Configure(opts, config, transport);
 
         return config;
     }
 
     protected virtual void Configure(
-        Dictionary<string, string> args,
+        PluginOptions opts,
         EndpointConfiguration endpointConfig,
         TransportExtensions<SqlServerTransport> transportConfig
         )

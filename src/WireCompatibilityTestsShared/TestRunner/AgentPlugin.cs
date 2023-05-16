@@ -16,7 +16,7 @@
         readonly string behaviorType;
         readonly Dictionary<string, string> platformSpecificAssemblies;
         readonly string generatedProjectFolder;
-        readonly Dictionary<string, string> args;
+        readonly PluginOptions opts;
         IPlugin plugin;
         bool started;
         //readonly string agentFrameworkPackageName;
@@ -28,8 +28,9 @@
         public AgentPlugin(
             Dictionary<string, string> platformSpecificAssemblies,
             SemanticVersion versionToTest,
-            string behaviorType, string generatedProjectFolder,
-            Dictionary<string, string> args)
+            string behaviorType,
+            string generatedProjectFolder,
+            PluginOptions opts)
         {
             projectName = $"TestAgent.V{versionToTest.ToNormalizedString()}"; //generated project depends on downstream minor
             this.versionToTest = versionToTest;
@@ -38,7 +39,7 @@
             this.behaviorType = $"{behaviorType}, WireCompatibilityTests.TestBehaviors.V{versionToTest.Major}";
             this.platformSpecificAssemblies = platformSpecificAssemblies;
             this.generatedProjectFolder = generatedProjectFolder;
-            this.args = args;
+            this.opts = opts;
             //coreVersionString = $"{coreMajorVersion}.*";
             transportPackageName = versionToTest.Major > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
@@ -115,7 +116,7 @@
 
         public async Task StartEndpoint(CancellationToken cancellationToken = default)
         {
-            await plugin.StartEndpoint(behaviorType, args, cancellationToken).ConfigureAwait(false);
+            await plugin.StartEndpoint(behaviorType, opts, cancellationToken).ConfigureAwait(false);
             started = true;
         }
 
