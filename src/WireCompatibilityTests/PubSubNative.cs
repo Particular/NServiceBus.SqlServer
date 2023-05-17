@@ -20,7 +20,7 @@
         }
 
         [Test]
-        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[5.0.0,)" })]
+        [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[5,)")]
         public async Task Simple(NuGetVersion v1, NuGetVersion v2)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);

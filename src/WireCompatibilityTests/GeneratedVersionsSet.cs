@@ -10,9 +10,7 @@ using NuGet.Versioning;
 
 public static class GeneratedVersionsSet
 {
-    public static readonly string PackageId = "NServiceBus.SqlServer";
-
-    public static IEnumerable<object[]> Get(string range)
+    public static IEnumerable<object[]> Get(string packageId, string range)
     {
         var versionRange = VersionRange.Parse(range);
         using var cache = new SourceCacheContext { NoCache = true };
@@ -22,7 +20,7 @@ public static class GeneratedVersionsSet
         var nuget = Repository.Factory.GetCoreV3(source);
         var resources = nuget.GetResource<FindPackageByIdResource>();
 
-        var versions = resources.GetAllVersionsAsync(PackageId, cache, NullLogger.Instance, CancellationToken.None).GetAwaiter().GetResult();
+        var versions = resources.GetAllVersionsAsync(packageId, cache, NullLogger.Instance, CancellationToken.None).GetAwaiter().GetResult();
 
         // Get all minors
         versions = versions.Where(v => !v.IsPrerelease && versionRange.Satisfies(v)).OrderBy(v => v);
