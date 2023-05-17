@@ -11,11 +11,14 @@
 
     public class TestScenarioPluginRunner
     {
-        public static async Task<TestExecutionResult> Run(string testRunId, AgentInfo[] agents,
+        public static async Task<TestExecutionResult> Run(
+            PluginOptions opts,
+            AgentInfo[] agents,
             TransportDefinition auditSpyTransport,
             Dictionary<string, string> platformSpecificAssemblies,
             Func<Dictionary<string, AuditMessage>, bool> doneCallback,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+            )
         {
             var generatedFolderPath = FindGeneratedFolderPath();
 
@@ -33,11 +36,11 @@
 
             var done = new TaskCompletionSource<bool>();
 
-            var rawConfig = RawEndpointConfiguration.Create("AuditSpy", auditSpyTransport,
+            var rawConfig = RawEndpointConfiguration.Create(opts.AuditQueue, auditSpyTransport,
                  (messageContext, dispatcher, token) =>
                  {
-                     if (messageContext.Headers.TryGetValue("TestRunId", out var testRunIdHeader) &&
-                         testRunIdHeader == testRunId)
+                     if (messageContext.Headers.TryGetValue(nameof(opts.TestRunId), out var testRunIdHeader) &&
+                         testRunIdHeader == opts.TestRunId)
                      {
                          var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
                              messageContext.Body);
@@ -52,7 +55,7 @@
                          }
                      }
                      return Task.CompletedTask;
-                 }, "poison");
+                 }, opts.AuditQueue + ".poison");
             rawConfig.AutoCreateQueues();
             IReceivingRawEndpoint endpoint = null;
 

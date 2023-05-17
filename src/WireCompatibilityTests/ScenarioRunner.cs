@@ -49,7 +49,7 @@ public static class ScenarioRunner
         };
 
         var result = await TestScenarioPluginRunner
-            .Run(testRunId, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
+            .Run(opts, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
             .ConfigureAwait(false);
 
         result.AuditedMessages = result.AuditedMessages
