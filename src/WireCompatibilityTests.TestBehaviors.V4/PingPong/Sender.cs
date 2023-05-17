@@ -5,7 +5,7 @@ using TestLogicApi;
 
 class Sender : Base, ITestBehavior
 {
-    protected Sender() : base("Sender")
+    public Sender() : base("Sender")
     {
     }
 

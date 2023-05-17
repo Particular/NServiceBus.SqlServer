@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
-using NServiceBus.AcceptanceTesting.Customization;
 
 class Base
 {
@@ -22,7 +21,7 @@ class Base
         transport.ConnectionString(opts.ConnectionString);
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
-        config.AuditProcessedMessagesTo(opts.AuditQueue);
+        config.AuditProcessedMessagesTo("AuditSpy");
         config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);
         config.Pipeline.Register(new DiscardBehavior(opts.TestRunId), nameof(DiscardBehavior));
 

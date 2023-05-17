@@ -19,7 +19,7 @@
         }
 
         [Test]
-        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[6.0.0,)" })]
+        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[4.0.0,)" })]
         public async Task SingleSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);

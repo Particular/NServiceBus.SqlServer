@@ -26,13 +26,26 @@ namespace TestAgent.Framework
 
             Console.Out.WriteLine($">> Creating {behaviorClass}");
 
-            behavior = (ITestBehavior)Activator.CreateInstance(behaviorClass);
+            behavior = CreateBehavior(behaviorClass);
 
             var config = behavior.Configure(opts);
             config.TypesToIncludeInScan(GetTypesToScan(behaviorClass).ToList());
             config.Pipeline.Register(b => new StampVersionBehavior(b.Build<IDispatchMessages>()), "Stamps version");
 
             instance = await Endpoint.Start(config).ConfigureAwait(false);
+        }
+
+        ITestBehavior CreateBehavior(Type behaviorClass)
+        {
+            try
+            {
+                return (ITestBehavior)Activator.CreateInstance(behaviorClass);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to create behavior for {behaviorClass.FullName}", ex);
+            }
+
         }
 
         IEnumerable<Type> GetTypesToScan(Type behaviorType)
