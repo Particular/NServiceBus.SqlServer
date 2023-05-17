@@ -1,11 +1,10 @@
 ﻿using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
-//using Microsoft.Data.SqlClient;
 
 public static class SqlHelper
 {
-    public static async Task ExecuteSql(string connectionString, string sql, CancellationToken cancellationToken = default)
+    public static async Task<int> ExecuteSql(string connectionString, string sql, CancellationToken cancellationToken = default)
     {
         await EnsureDatabaseExists(connectionString, cancellationToken).ConfigureAwait(false);
 
@@ -14,7 +13,7 @@ public static class SqlHelper
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
-        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public static async Task CreateSchema(string connectionString, string schema, CancellationToken cancellationToken = default)

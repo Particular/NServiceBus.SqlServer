@@ -1,5 +1,6 @@
 ﻿namespace TestSuite
 {
+    using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -11,6 +12,13 @@
     [TestFixture]
     public class PubSubNative
     {
+        [SetUp]
+        public async Task Setup()
+        {
+            var result = await SqlHelper.ExecuteSql(Global.ConnectionString, "DELETE FROM SubscriptionRouting").ConfigureAwait(false);
+            Console.WriteLine($"Deleted {result} rows from SubscriptionRouting");
+        }
+
         [Test]
         [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[5.0.0,)" })]
         public async Task Simple(NuGetVersion v1, NuGetVersion v2)
