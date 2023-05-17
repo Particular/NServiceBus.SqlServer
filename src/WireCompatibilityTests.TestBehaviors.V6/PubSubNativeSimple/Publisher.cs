@@ -40,9 +40,7 @@ class Publisher : ITestBehavior, IPublisher
 
     public class MyEventHandler : IHandleMessages<MyEvent>
     {
-#pragma warning disable PS0018
         public Task Handle(MyEvent message, IMessageHandlerContext context)
-#pragma warning restore PS0018
         {
             return Task.CompletedTask;
         }

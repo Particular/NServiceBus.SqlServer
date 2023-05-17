@@ -27,9 +27,7 @@ class Sender : Base, ITestBehavior
 
     public class MyResponseHandler : IHandleMessages<MyResponse>
     {
-#pragma warning disable PS0018
         public Task Handle(MyResponse message, IMessageHandlerContext context)
-#pragma warning restore PS0018
         {
             return Task.CompletedTask;
         }
