@@ -12,7 +12,7 @@
     public class PubSubMessageDriven
     {
         [Test]
-        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[4,5)" })]
+        [TestCaseSource(typeof(GeneratedVersionsSet), nameof(GeneratedVersionsSet.Get), new object[] { "[4,6)" })]
         public async Task Simple(NuGetVersion a, NuGetVersion b)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
