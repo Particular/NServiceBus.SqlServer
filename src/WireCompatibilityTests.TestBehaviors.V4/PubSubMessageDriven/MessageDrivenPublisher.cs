@@ -22,9 +22,6 @@ class MessageDrivenPublisher : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
         )
     {
-        var routing = transportConfig.Routing();
-        routing.RouteToEndpoint(typeof(MyRequest), "Receiver");
-
         endpointConfig.Pipeline.Register(new SubscriptionBehavior(eventArgs => subscribed.SetResult(true), MessageIntentEnum.Subscribe), "Detects subscription");
     }
 
