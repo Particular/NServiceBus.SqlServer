@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.5.2
         with:
           fetch-depth: 0     
       - name: Setup .NET SDK
@@ -28,13 +28,13 @@ jobs:
           client-secret: ${{ secrets.AZURE_KEY_VAULT_CLIENT_SECRET }}
           certificate-name: ${{ secrets.AZURE_KEY_VAULT_CERTIFICATE_NAME }}
       - name: Publish artifacts
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: nugets
           path: nugets/*
           retention-days: 1
       - name: Deploy
-        uses: Particular/push-octopus-package-action@v1.0.0
+        uses: Particular/push-octopus-package-action@v1.1.0
         with:
           octopus-deploy-api-key: ${{ secrets.OCTOPUS_DEPLOY_API_KEY }}	
           
