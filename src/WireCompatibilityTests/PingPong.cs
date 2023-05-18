@@ -42,6 +42,7 @@
             Assert.AreEqual(v2, responseVersion);
         }
 
+        [Parallelizable]
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[6,)")]
         public async Task MultiSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)

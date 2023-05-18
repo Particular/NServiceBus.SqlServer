@@ -15,7 +15,7 @@ class MessageDrivenSubscriber : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
         )
     {
-        routingConfig.RegisterPublisher(typeof(MyEvent), "Publisher");
+        routingConfig.RegisterPublisher(typeof(MyEvent), args.ApplyUniqueRunPrefix("Publisher"));
     }
 
     public class MyEventHandler : IHandleMessages<MyEvent>

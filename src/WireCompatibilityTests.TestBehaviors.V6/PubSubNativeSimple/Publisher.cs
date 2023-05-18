@@ -9,7 +9,7 @@ class Publisher : ITestBehavior, IPublisher
     {
         var connectionString = opts.ConnectionString;
 
-        var config = new EndpointConfiguration("Publisher");
+        var config = new EndpointConfiguration(opts.ApplyUniqueRunPrefix("Publisher"));
         config.EnableInstallers();
 
         var transport = config.UseTransport<SqlServerTransport>()

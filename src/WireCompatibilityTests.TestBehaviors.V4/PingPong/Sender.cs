@@ -16,7 +16,7 @@ class Sender : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
         )
     {
-        routingConfig.RouteToEndpoint(typeof(MyRequest), "Receiver");
+        routingConfig.RouteToEndpoint(typeof(MyRequest), opts.ApplyUniqueRunPrefix("Receiver"));
     }
 
     public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)

@@ -16,7 +16,7 @@ class Sender : Base, ITestBehavior
         )
     {
         var routing = transportConfig.Routing();
-        routing.RouteToEndpoint(typeof(MyRequest), nameof(Receiver));
+        routing.RouteToEndpoint(typeof(MyRequest), opts.ApplyUniqueRunPrefix(nameof(Receiver)));
     }
 
     public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
