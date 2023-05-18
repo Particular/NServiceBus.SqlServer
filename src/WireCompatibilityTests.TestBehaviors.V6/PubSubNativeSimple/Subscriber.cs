@@ -7,7 +7,7 @@ class Subscriber : ITestBehavior, ISubscriber
 {
     public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var config = new EndpointConfiguration("Subscriber");
+        var config = new EndpointConfiguration(opts.ApplyUniqueRunPrefix("Subscriber"));
         config.EnableInstallers();
 
         var transport = config.UseTransport<SqlServerTransport>()
@@ -38,9 +38,7 @@ class Subscriber : ITestBehavior, ISubscriber
 
     public class MyEventHandler : IHandleMessages<MyEvent>
     {
-#pragma warning disable PS0018
         public Task Handle(MyEvent message, IMessageHandlerContext context)
-#pragma warning restore PS0018
         {
             return Task.CompletedTask;
         }

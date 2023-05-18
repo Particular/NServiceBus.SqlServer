@@ -1,6 +1,7 @@
 ﻿namespace WireCompatibilityTests;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,8 +11,27 @@ using NuGet.Versioning;
 using TestRunner;
 using TestSuite;
 
+public class ObjectPool<T>
+{
+    readonly ConcurrentBag<T> _objects;
+    readonly Func<T> _objectGenerator;
+
+    public ObjectPool(Func<T> objectGenerator)
+    {
+        _objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
+        _objects = new ConcurrentBag<T>();
+    }
+
+    public T Get() => _objects.TryTake(out T item) ? item : _objectGenerator();
+
+    public void Return(T item) => _objects.Add(item);
+}
+
 public static class ScenarioRunner
 {
+    public static long RunCounter;
+    public static ObjectPool<long> pool = new(() => Interlocked.Increment(ref RunCounter));
+
     public static async Task<TestExecutionResult> Run(
         string behavior1,
         string behavior2,
@@ -31,30 +51,40 @@ public static class ScenarioRunner
 
         var auditSpyTransport = new SqlServerTransport(connectionString)
         {
-            TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
+            TransportTransactionMode = TransportTransactionMode.ReceiveOnly
         };
 
-        var testRunId = Guid.NewGuid().ToString();
-
-        var opts = new PluginOptions
+        var runCount = pool.Get();
+        try
         {
-            ConnectionString = Global.ConnectionString,
-            TestRunId = testRunId,
-        };
+            var testRunId = Guid.NewGuid().ToString();
 
-        var agents = new[]
-        {
+            var opts = new PluginOptions
+            {
+                ConnectionString = Global.ConnectionString,
+                TestRunId = testRunId,
+                RunCount = runCount,
+            };
+
+            opts.AuditQueue = opts.ApplyUniqueRunPrefix("AuditSpy");
+
+            var agents = new[]
+            {
             AgentInfo.Create(behavior1, v1, opts),
             AgentInfo.Create(behavior2, v2, opts),
         };
 
-        var result = await TestScenarioPluginRunner
-            .Run(opts, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
-            .ConfigureAwait(false);
+            var result = await TestScenarioPluginRunner
+                .Run(opts, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
+                .ConfigureAwait(false);
 
-        result.AuditedMessages = result.AuditedMessages
-            .ToDictionary(x => x.Key, x => x.Value);
-
-        return result;
+            result.AuditedMessages = result.AuditedMessages
+                .ToDictionary(x => x.Key, x => x.Value);
+            return result;
+        }
+        finally
+        {
+            pool.Return(runCount);
+        }
     }
 }

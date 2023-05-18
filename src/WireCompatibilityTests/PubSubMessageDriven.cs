@@ -8,6 +8,7 @@
     using NUnit.Framework;
     using WireCompatibilityTests;
 
+    [Parallelizable]
     [TestFixture]
     public class PubSubMessageDriven
     {
@@ -17,8 +18,8 @@
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
             var result = await ScenarioRunner.Run(
-                "MessageDrivenSubscriber",
                 "MessageDrivenPublisher",
+                "MessageDrivenSubscriber",
                 a,
                 b,
                 x => x.Count == 1,

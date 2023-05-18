@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Customization;
+using NServiceBus.Transport.SQLServer;
 
 class Base
 {
@@ -14,7 +15,7 @@ class Base
 
     public EndpointConfiguration Configure(PluginOptions opts)
     {
-        var config = new EndpointConfiguration(endpointName);
+        var config = new EndpointConfiguration(opts.ApplyUniqueRunPrefix(endpointName));
         config.EnableInstallers();
         config.UsePersistence<InMemoryPersistence>();
 
@@ -22,6 +23,9 @@ class Base
         transport.ConnectionString(opts.ConnectionString);
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
+        transport.SubscriptionSettings().SubscriptionTableName(opts.ApplyUniqueRunPrefix("SubscriptionRouting"));
+
+        config.SendFailedMessagesTo(opts.ApplyUniqueRunPrefix("error"));
         config.AuditProcessedMessagesTo(opts.AuditQueue);
         config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);
         config.Pipeline.Register(new DiscardBehavior(opts.TestRunId), nameof(DiscardBehavior));

@@ -12,6 +12,6 @@ class SchemaSender : Sender
 
         transportConfig.DefaultSchema("sender");
         transportConfig.UseSchemaForQueue(opts.AuditQueue, "dbo");
-        transportConfig.UseSchemaForEndpoint("Receiver", "receiver");
+        transportConfig.UseSchemaForEndpoint(opts.ApplyUniqueRunPrefix("Receiver"), "receiver");
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
@@ -17,7 +16,7 @@ class SchemaSender : Sender
 
         transportConfig.DefaultSchema = "sender";
         transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.AuditQueue, "dbo");
-        transportConfig.SchemaAndCatalog.UseSchemaForQueue(nameof(Receiver), "receiver");
+        transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.ApplyUniqueRunPrefix(nameof(Receiver)), "receiver");
     }
 }
 
@@ -34,7 +33,7 @@ class Sender : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
     )
     {
-        routingConfig.RouteToEndpoint(typeof(MyRequest), nameof(Receiver));
+        routingConfig.RouteToEndpoint(typeof(MyRequest), opts.ApplyUniqueRunPrefix(nameof(Receiver)));
     }
 
     public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
