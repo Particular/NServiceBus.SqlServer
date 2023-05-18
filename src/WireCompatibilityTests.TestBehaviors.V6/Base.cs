@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
 using NServiceBus;
+using System.Linq;
 
 abstract class Base
 {
@@ -20,6 +21,10 @@ abstract class Base
         TransportExtensions<SqlServerTransport> transport = config.UseTransport<SqlServerTransport>()
             .ConnectionString(opts.ConnectionString)
             .Transactions(TransportTransactionMode.ReceiveOnly);
+
+        config.Conventions().DefiningMessagesAs(t => t.GetInterfaces().Any(x => x.Name == "IMessage"));
+        config.Conventions().DefiningCommandsAs(t => t.GetInterfaces().Any(x => x.Name == "ICommand"));
+        config.Conventions().DefiningEventsAs(t => t.GetInterfaces().Any(x => x.Name == "IEvent"));
 
         config.AuditProcessedMessagesTo(opts.AuditQueue);
         config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);

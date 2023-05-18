@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
 using NServiceBus;
+using System.Linq;
 
 abstract class Base
 {
@@ -21,6 +22,10 @@ abstract class Base
         {
             TransportTransactionMode = TransportTransactionMode.ReceiveOnly
         };
+
+        config.Conventions().DefiningMessagesAs(t => t.GetInterfaces().Any(x => x.Name == "IMessage"));
+        config.Conventions().DefiningCommandsAs(t => t.GetInterfaces().Any(x => x.Name == "ICommand"));
+        config.Conventions().DefiningEventsAs(t => t.GetInterfaces().Any(x => x.Name == "IEvent"));
 
         var routingConfig = config.UseTransport(transport);
         config.AuditProcessedMessagesTo(opts.AuditQueue);

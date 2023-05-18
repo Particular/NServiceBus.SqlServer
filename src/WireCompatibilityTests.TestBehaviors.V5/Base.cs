@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Customization;
@@ -21,6 +22,10 @@ class Base
         var transport = config.UseTransport<SqlServerTransport>();
         transport.ConnectionString(opts.ConnectionString);
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
+
+        config.Conventions().DefiningMessagesAs(t => t.GetInterfaces().Any(x => x.Name == "IMessage"));
+        config.Conventions().DefiningCommandsAs(t => t.GetInterfaces().Any(x => x.Name == "ICommand"));
+        config.Conventions().DefiningEventsAs(t => t.GetInterfaces().Any(x => x.Name == "IEvent"));
 
         config.AuditProcessedMessagesTo(opts.AuditQueue);
         config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);

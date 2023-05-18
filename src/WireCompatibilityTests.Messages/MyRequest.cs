@@ -1,5 +1,7 @@
-﻿using NServiceBus;
+﻿public class MyRequest : ICommand
+{
+}
 
-public class MyRequest : ICommand
+public interface ICommand
 {
 }
