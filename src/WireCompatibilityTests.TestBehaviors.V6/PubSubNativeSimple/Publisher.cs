@@ -3,37 +3,13 @@ using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
-class Publisher : ITestBehavior, IPublisher
+class Publisher : Base, ITestBehavior, IPublisher
 {
-    public EndpointConfiguration Configure(PluginOptions opts)
-    {
-        var connectionString = opts.ConnectionString;
-
-        var config = new EndpointConfiguration(opts.ApplyUniqueRunPrefix("Publisher"));
-        config.EnableInstallers();
-
-        var transport = config.UseTransport<SqlServerTransport>()
-            .ConnectionString(connectionString)
-            .Transactions(TransportTransactionMode.ReceiveOnly);
-
-        config.AuditProcessedMessagesTo(opts.AuditQueue);
-        config.AddHeaderToAllOutgoingMessages(nameof(opts.TestRunId), opts.TestRunId);
-        config.Pipeline.Register(new DiscardBehavior(opts.TestRunId), nameof(DiscardBehavior));
-
-        Configure(opts, config, transport);
-
-        return config;
-    }
-
-    protected virtual void Configure(
-        PluginOptions opts,
-        EndpointConfiguration endpointConfig,
-        TransportExtensions<SqlServerTransport> transportConfig
-        )
+    public Publisher() : base("Publisher")
     {
     }
 
-    public async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
+    public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
         await endpointInstance.Publish(new MyEvent()).ConfigureAwait(false);
     }
