@@ -8,7 +8,7 @@
     using NUnit.Framework;
     using WireCompatibilityTests;
 
-    [Parallelizable]
+    [Parallelizable(ParallelScope.All)]
     [TestFixture]
     public class PubSubMessageDriven
     {
