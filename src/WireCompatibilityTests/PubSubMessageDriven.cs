@@ -32,7 +32,7 @@
             Assert.True(result.AuditedMessages.Values.All(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Publish)), "No event message in audit queue");
 
             var eventVersion = SemanticVersion.Parse(result.AuditedMessages.Values.First().Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(b, eventVersion);
+            Assert.AreEqual(a, eventVersion);
         }
     }
 }
