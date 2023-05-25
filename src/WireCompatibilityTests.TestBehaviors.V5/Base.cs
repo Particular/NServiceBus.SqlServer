@@ -20,7 +20,7 @@ class Base
         config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
-        transport.ConnectionString(opts.ConnectionString);
+        transport.ConnectionString(opts.ConnectionString + $";App={endpointName}");
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
         transport.SubscriptionSettings().SubscriptionTableName(opts.ApplyUniqueRunPrefix("SubscriptionRouting"));

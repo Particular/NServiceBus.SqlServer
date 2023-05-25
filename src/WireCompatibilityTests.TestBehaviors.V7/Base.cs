@@ -17,7 +17,7 @@ abstract class Base
         config.EnableInstallers();
         config.PurgeOnStartup(true);
 
-        var transport = new SqlServerTransport(opts.ConnectionString)
+        var transport = new SqlServerTransport(opts.ConnectionString + $";App={endpointName}")
         {
             TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
         };

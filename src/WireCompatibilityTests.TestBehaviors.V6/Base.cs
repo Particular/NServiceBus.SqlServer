@@ -18,7 +18,7 @@ abstract class Base
         config.PurgeOnStartup(true);
 
         TransportExtensions<SqlServerTransport> transport = config.UseTransport<SqlServerTransport>()
-            .ConnectionString(opts.ConnectionString)
+            .ConnectionString(opts.ConnectionString + $";App={endpointName}")
             .Transactions(TransportTransactionMode.ReceiveOnly);
 
         transport.SubscriptionSettings().SubscriptionTableName(opts.ApplyUniqueRunPrefix("SubscriptionRouting"));
