@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using NServiceBus;
 using NuGet.Versioning;
 using TestRunner;
@@ -49,11 +50,6 @@ public static class ScenarioRunner
 
         var connectionString = Global.ConnectionString;
 
-        var auditSpyTransport = new SqlServerTransport(connectionString)
-        {
-            TransportTransactionMode = TransportTransactionMode.ReceiveOnly
-        };
-
         var runCount = pool.Get();
         try
         {
@@ -69,6 +65,12 @@ public static class ScenarioRunner
             await SqlHelper.ExecuteSql(Global.ConnectionString, $"DROP TABLE IF EXISTS [dbo].[{opts.ApplyUniqueRunPrefix("SubscriptionRouting")}]", cancellationToken).ConfigureAwait(false);
 
             opts.AuditQueue = opts.ApplyUniqueRunPrefix("AuditSpy");
+
+            var auditSpyTransport = new SqlServerTransport(connectionString + ";App=AuditSpy")
+            {
+                TransportTransactionMode = TransportTransactionMode.ReceiveOnly,
+            };
+            auditSpyTransport.Subscriptions.SubscriptionTableName = new NServiceBus.Transport.SqlServer.SubscriptionTableName(opts.ApplyUniqueRunPrefix("SubscriptionRouting"));
 
             var agents = new[]
             {
