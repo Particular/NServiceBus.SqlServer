@@ -66,6 +66,8 @@ public static class ScenarioRunner
                 RunCount = runCount,
             };
 
+            await SqlHelper.ExecuteSql(Global.ConnectionString, $"DROP TABLE IF EXISTS [dbo].[{opts.ApplyUniqueRunPrefix("SubscriptionRouting")}]", cancellationToken).ConfigureAwait(false);
+
             opts.AuditQueue = opts.ApplyUniqueRunPrefix("AuditSpy");
 
             var agents = new[]

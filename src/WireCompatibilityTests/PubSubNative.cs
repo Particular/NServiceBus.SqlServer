@@ -12,13 +12,6 @@
     [TestFixture]
     public class PubSubNative
     {
-        [SetUp]
-        public async Task Setup()
-        {
-            var result = await SqlHelper.ExecuteSql(Global.ConnectionString, "DELETE FROM SubscriptionRouting").ConfigureAwait(false);
-            Console.WriteLine($"Deleted {result} rows from SubscriptionRouting");
-        }
-
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[5,)")]
         public async Task Simple(NuGetVersion v1, NuGetVersion v2)
