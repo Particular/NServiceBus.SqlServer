@@ -10,6 +10,7 @@
     using WireCompatibilityTests;
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class PubSubNative
     {
         [Test]
