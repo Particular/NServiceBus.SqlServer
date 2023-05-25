@@ -19,7 +19,7 @@ abstract class Base
         config.PurgeOnStartup(true);
 
         TransportExtensions<SqlServerTransport> transport = config.UseTransport<SqlServerTransport>()
-            .ConnectionString(opts.ConnectionString)
+            .ConnectionString(opts.ConnectionString + $";App={endpointName}")
             .Transactions(TransportTransactionMode.ReceiveOnly);
 
         config.Conventions().DefiningMessagesAs(t => t.GetInterfaces().Any(x => x.Name == "IMessage"));

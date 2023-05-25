@@ -20,7 +20,7 @@ class Base
         config.UsePersistence<InMemoryPersistence>();
 
         var transport = config.UseTransport<SqlServerTransport>();
-        transport.ConnectionString(opts.ConnectionString);
+        transport.ConnectionString(opts.ConnectionString + $";App={endpointName}");
         transport.Transactions(TransportTransactionMode.ReceiveOnly);
 
         config.Conventions().DefiningMessagesAs(t => t.GetInterfaces().Any(x => x.Name == "IMessage"));
