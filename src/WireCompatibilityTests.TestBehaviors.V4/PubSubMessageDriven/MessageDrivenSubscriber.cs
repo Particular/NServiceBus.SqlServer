@@ -4,10 +4,6 @@ using TestLogicApi;
 
 class MessageDrivenSubscriber : Base, ITestBehavior
 {
-    public MessageDrivenSubscriber() : base("Subscriber")
-    {
-    }
-
     protected override void Configure(
         PluginOptions args,
         EndpointConfiguration endpointConfig,
@@ -15,7 +11,7 @@ class MessageDrivenSubscriber : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
         )
     {
-        routingConfig.RegisterPublisher(typeof(MyEvent), args.ApplyUniqueRunPrefix("Publisher"));
+        routingConfig.RegisterPublisher(typeof(MyEvent), args.ApplyUniqueRunPrefix(nameof(MessageDrivenPublisher)));
     }
 
     public class MyEventHandler : IHandleMessages<MyEvent>

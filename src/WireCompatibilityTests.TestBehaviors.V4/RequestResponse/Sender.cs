@@ -4,10 +4,6 @@ using NServiceBus;
 
 class Sender : Base
 {
-    public Sender() : base("Sender")
-    {
-    }
-
     protected override void Configure(
         PluginOptions opts,
         EndpointConfiguration endpointConfig,

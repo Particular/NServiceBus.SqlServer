@@ -5,10 +5,6 @@ using TestLogicApi;
 
 class Sender : Base, ITestBehavior
 {
-    public Sender() : base("Sender")
-    {
-    }
-
     protected override void Configure(
         PluginOptions opts,
         EndpointConfiguration endpointConfig,

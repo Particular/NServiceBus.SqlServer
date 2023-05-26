@@ -5,10 +5,6 @@ using TestLogicApi;
 
 class Receiver : Base, ITestBehavior
 {
-    public Receiver() : base("Receiver")
-    {
-    }
-
     public override Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;

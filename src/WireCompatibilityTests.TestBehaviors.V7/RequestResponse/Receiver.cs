@@ -19,10 +19,6 @@ class SchemaReceiver : Receiver
 
 class Receiver : Base
 {
-    public Receiver() : base(nameof(Receiver))
-    {
-    }
-
     public class MyRequestHandler : IHandleMessages<MyRequest>
     {
         public Task Handle(MyRequest message, IMessageHandlerContext context)

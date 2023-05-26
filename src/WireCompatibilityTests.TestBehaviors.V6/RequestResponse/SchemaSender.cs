@@ -8,10 +8,12 @@ class SchemaSender : Sender
         TransportExtensions<SqlServerTransport> transportConfig
         )
     {
-        base.Configure(opts, endpointConfig, transportConfig);
 
         transportConfig.DefaultSchema("sender");
         transportConfig.UseSchemaForQueue(opts.AuditQueue, "dbo");
-        transportConfig.UseSchemaForEndpoint(opts.ApplyUniqueRunPrefix("Receiver"), "receiver");
+        transportConfig.UseSchemaForEndpoint(opts.ApplyUniqueRunPrefix(nameof(SchemaReceiver)), "receiver");
+
+        var routing = transportConfig.Routing();
+        routing.RouteToEndpoint(typeof(MyRequest), opts.ApplyUniqueRunPrefix(nameof(SchemaReceiver)));
     }
 }

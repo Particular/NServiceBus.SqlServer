@@ -4,10 +4,6 @@ using NServiceBus;
 
 class Publisher : Base
 {
-    public Publisher() : base(nameof(Publisher))
-    {
-    }
-
     public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
         await base.Execute(endpointInstance, cancellationToken).ConfigureAwait(false);

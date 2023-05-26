@@ -11,10 +11,6 @@ class MessageDrivenPublisher : Base, ITestBehavior
 {
     TaskCompletionSource<bool> subscribed = new();
 
-    public MessageDrivenPublisher() : base("Publisher")
-    {
-    }
-
     protected override void Configure(
         PluginOptions opts,
         EndpointConfiguration endpointConfig,

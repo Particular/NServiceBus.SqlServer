@@ -8,15 +8,10 @@ using TestLogicApi;
 
 class Base : ITestBehavior
 {
-    string endpointName;
-
-    protected Base(string endpointName)
-    {
-        this.endpointName = endpointName;
-    }
-
     public EndpointConfiguration Configure(PluginOptions opts)
     {
+        var endpointName = GetType().Name;
+
         var config = new EndpointConfiguration(opts.ApplyUniqueRunPrefix(endpointName));
         config.EnableInstallers();
         config.UsePersistence<InMemoryPersistence>();

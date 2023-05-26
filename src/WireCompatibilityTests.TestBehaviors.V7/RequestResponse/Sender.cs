@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
-using TestLogicApi;
 
 class SchemaSender : Sender
 {
@@ -12,20 +11,16 @@ class SchemaSender : Sender
         RoutingSettings<SqlServerTransport> routingConfig
     )
     {
-        base.Configure(opts, endpointConfig, transportConfig, routingConfig);
-
         transportConfig.DefaultSchema = "sender";
         transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.AuditQueue, "dbo");
-        transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.ApplyUniqueRunPrefix(nameof(Receiver)), "receiver");
+        transportConfig.SchemaAndCatalog.UseSchemaForQueue(opts.ApplyUniqueRunPrefix(nameof(SchemaReceiver)), "receiver");
+
+        routingConfig.RouteToEndpoint(typeof(MyRequest), opts.ApplyUniqueRunPrefix(nameof(SchemaReceiver)));
     }
 }
 
 class Sender : Base
 {
-    public Sender() : base(nameof(Sender))
-    {
-    }
-
     protected override void Configure(
         PluginOptions opts,
         EndpointConfiguration endpointConfig,

@@ -5,10 +5,6 @@ using TestLogicApi;
 
 class MessageDrivenSubscriber : Base, ITestBehavior
 {
-    public MessageDrivenSubscriber() : base("Subscriber")
-    {
-    }
-
     protected override void Configure(
         PluginOptions args,
         EndpointConfiguration endpointConfig,
@@ -17,7 +13,7 @@ class MessageDrivenSubscriber : Base, ITestBehavior
         )
     {
         var x = transportConfig.EnableMessageDrivenPubSubCompatibilityMode();
-        x.RegisterPublisher(typeof(MyEvent), args.ApplyUniqueRunPrefix("Publisher"));
+        x.RegisterPublisher(typeof(MyEvent), args.ApplyUniqueRunPrefix(nameof(MessageDrivenPublisher)));
     }
 
     public class MyEventHandler : IHandleMessages<MyEvent>

@@ -1,14 +1,11 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
 class Sender : Base, ITestBehavior
 {
-    public Sender() : base(nameof(Sender))
-    {
-    }
-
     public override void Configure(
         PluginOptions opts,
         EndpointConfiguration endpointConfig,
@@ -21,7 +18,16 @@ class Sender : Base, ITestBehavior
 
     public override async Task Execute(IEndpointInstance endpointInstance, CancellationToken cancellationToken = default)
     {
-        await endpointInstance.Send(new MyRequest()).ConfigureAwait(false);
+        try
+        {
+            await endpointInstance.Send(new MyRequest()).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("FAIL!" + ex);
+            throw;
+        }
+
     }
 
 
