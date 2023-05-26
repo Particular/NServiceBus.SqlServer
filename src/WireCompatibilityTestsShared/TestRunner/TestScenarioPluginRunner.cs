@@ -8,7 +8,6 @@
     using NServiceBus.Raw;
     using System.IO;
     using NServiceBus.Transport;
-    using NServiceBus;
 
     public class TestScenarioPluginRunner
     {
@@ -73,7 +72,7 @@
             {
                 foreach (var agent in processes)
                 {
-                    await agent.Compile().ConfigureAwait(false);
+                    await agent.Compile(cancellationToken).ConfigureAwait(false);
                 }
 
                 endpoint = await RawEndpoint.Start(rawConfig, cancellationToken).ConfigureAwait(false);

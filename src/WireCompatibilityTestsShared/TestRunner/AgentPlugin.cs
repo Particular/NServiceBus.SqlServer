@@ -46,11 +46,9 @@
             transportPackageName = versionToTest.Major > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
 
-#pragma warning disable PS0018
-        public async Task Compile()
-#pragma warning restore PS0018
+        public async Task Compile(CancellationToken cancellationToken = default)
         {
-            await sync.WaitAsync().ConfigureAwait(false);
+            await sync.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var projectFolder = Path.Combine(generatedProjectFolder, projectName);
@@ -83,7 +81,7 @@
   </ItemGroup>
 
 </Project>
-").ConfigureAwait(false);
+", cancellationToken).ConfigureAwait(false);
                 }
 
                 var buildProcess = new Process();
