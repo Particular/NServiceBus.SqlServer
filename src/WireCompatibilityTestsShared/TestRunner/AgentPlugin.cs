@@ -12,7 +12,7 @@
 
     class AgentPlugin
     {
-        static readonly SemaphoreSlim sync = new SemaphoreSlim(1);
+        static readonly AsyncDuplicateLock Locks = new AsyncDuplicateLock();
 
         readonly string projectName;
         readonly string behaviorType;
@@ -25,6 +25,7 @@
         readonly SemanticVersion versionToTest;
         readonly string transportPackageName;
 
+        static readonly List<string> projects = new List<string>();
         public AgentPlugin(
             Dictionary<string, string> platformSpecificAssemblies,
             SemanticVersion versionToTest,
@@ -42,10 +43,12 @@
             transportPackageName = versionToTest.Major > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
 
+
         public async Task Compile(CancellationToken cancellationToken = default)
         {
-            await sync.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
+            var disposable = await Locks.LockAsync(projectName, cancellationToken).ConfigureAwait(false);
+
+            using (disposable)
             {
                 var projectFolder = Path.Combine(generatedProjectFolder, projectName);
                 if (!Directory.Exists(projectFolder))
@@ -95,7 +98,7 @@
 
                 buildProcess.Start();
 
-                buildProcess.WaitForExit(30000);
+                await buildProcess.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
                 if (buildProcess.ExitCode != 0)
                 {
@@ -114,10 +117,7 @@
 
                 var pluginAssembly = LoadPlugin(agentDllPath);
                 plugin = CreateCommands(pluginAssembly).Single();
-            }
-            finally
-            {
-                sync.Release();
+                projects.Add(projectName);
             }
         }
 
