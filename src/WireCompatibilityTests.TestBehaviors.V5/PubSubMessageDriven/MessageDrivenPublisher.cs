@@ -39,9 +39,7 @@ class MessageDrivenPublisher : Base, ITestBehavior
             this.intentToHandle = intentToHandle;
         }
 
-#pragma warning disable PS0013 // A Func used as a method parameter with a Task, ValueTask, or ValueTask<T> return type argument should have at least one CancellationToken parameter type argument unless it has a parameter type argument implementing ICancellableContext
         public async Task Invoke(ITransportReceiveContext context, Func<ITransportReceiveContext, Task> next)
-#pragma warning restore PS0013 // A Func used as a method parameter with a Task, ValueTask, or ValueTask<T> return type argument should have at least one CancellationToken parameter type argument unless it has a parameter type argument implementing ICancellableContext
         {
             await next(context).ConfigureAwait(false);
             var subscriptionMessageType = GetSubscriptionMessageTypeFrom(context.Message);
