@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <NoWarn>PS0018</NoWarn>
+    <NoWarn>PS0018,PS0013</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
