@@ -12,6 +12,8 @@
 
     class AgentPlugin
     {
+        static readonly SemaphoreSlim sync = new SemaphoreSlim(1);
+
         readonly string projectName;
         readonly string behaviorType;
         readonly Dictionary<string, string> platformSpecificAssemblies;
@@ -48,16 +50,19 @@
         public async Task Compile()
 #pragma warning restore PS0018
         {
-            var projectFolder = Path.Combine(generatedProjectFolder, projectName);
-            if (!Directory.Exists(projectFolder))
+            await sync.WaitAsync().ConfigureAwait(false);
+            try
             {
-                Directory.CreateDirectory(projectFolder);
-            }
+                var projectFolder = Path.Combine(generatedProjectFolder, projectName);
+                if (!Directory.Exists(projectFolder))
+                {
+                    Directory.CreateDirectory(projectFolder);
+                }
 
-            var projectFilePath = Path.Combine(projectFolder, $"{projectName}.csproj");
-            if (!File.Exists(projectFilePath))
-            {
-                await File.AppendAllTextAsync(projectFilePath, @$"<Project Sdk=""Microsoft.NET.Sdk"">
+                var projectFilePath = Path.Combine(projectFolder, $"{projectName}.csproj");
+                if (!File.Exists(projectFilePath))
+                {
+                    await File.AppendAllTextAsync(projectFilePath, @$"<Project Sdk=""Microsoft.NET.Sdk"">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -79,39 +84,47 @@
 
 </Project>
 ").ConfigureAwait(false);
+                }
+
+                var buildProcess = new Process();
+                buildProcess.StartInfo.FileName = @"dotnet";
+                buildProcess.StartInfo.Arguments = $"build \"{projectFilePath}\"";
+#if !DEBUG
+                buildProcess.StartInfo.Arguments += " --configuration Release";
+#endif
+                buildProcess.StartInfo.UseShellExecute = false;
+                buildProcess.StartInfo.RedirectStandardOutput = true;
+                buildProcess.StartInfo.RedirectStandardError = true;
+                buildProcess.StartInfo.RedirectStandardInput = true;
+                buildProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                buildProcess.StartInfo.CreateNoWindow = true;
+
+                buildProcess.Start();
+
+                buildProcess.WaitForExit(30000);
+
+                if (buildProcess.ExitCode != 0)
+                {
+                    var buildOutput = await buildProcess.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                    await Console.Out.WriteLineAsync(buildOutput).ConfigureAwait(false);
+                    throw new Exception("Build failed");
+                }
+
+                var folder = Path.GetDirectoryName(projectFilePath);
+                var agentDllPath = Directory.EnumerateFiles($"{folder}/bin/Debug/net6.0/", "TestAgent.Framework.V*.dll").Single();
+
+                if (!File.Exists(agentDllPath))
+                {
+                    throw new FileNotFoundException();
+                }
+
+                var pluginAssembly = LoadPlugin(agentDllPath);
+                plugin = CreateCommands(pluginAssembly).Single();
             }
-
-            var buildProcess = new Process();
-            buildProcess.StartInfo.FileName = @"dotnet";
-            buildProcess.StartInfo.Arguments = $"build \"{projectFilePath}\"";
-            buildProcess.StartInfo.UseShellExecute = false;
-            buildProcess.StartInfo.RedirectStandardOutput = true;
-            buildProcess.StartInfo.RedirectStandardError = true;
-            buildProcess.StartInfo.RedirectStandardInput = true;
-            buildProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            buildProcess.StartInfo.CreateNoWindow = true;
-
-            buildProcess.Start();
-
-            buildProcess.WaitForExit(30000);
-
-            if (buildProcess.ExitCode != 0)
+            finally
             {
-                var buildOutput = await buildProcess.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                await Console.Out.WriteLineAsync(buildOutput).ConfigureAwait(false);
-                throw new Exception("Build failed");
+                sync.Release();
             }
-
-            var folder = Path.GetDirectoryName(projectFilePath);
-            var agentDllPath = Directory.EnumerateFiles($"{folder}/bin/Debug/net6.0/", "TestAgent.Framework.V*.dll").Single();
-
-            if (!File.Exists(agentDllPath))
-            {
-                throw new FileNotFoundException();
-            }
-
-            var pluginAssembly = LoadPlugin(agentDllPath);
-            plugin = CreateCommands(pluginAssembly).Single();
         }
 
         public async Task StartEndpoint(CancellationToken cancellationToken = default)
