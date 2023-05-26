@@ -108,7 +108,11 @@
                 }
 
                 var folder = Path.GetDirectoryName(projectFilePath);
+#if DEBUG
                 var agentDllPath = Directory.EnumerateFiles($"{folder}/bin/Debug/net6.0/", "TestAgent.Framework.V*.dll").Single();
+#else
+                var agentDllPath = Directory.EnumerateFiles($"{folder}/bin/Release/net6.0/", "TestAgent.Framework.V*.dll").Single();
+#endif
 
                 if (!File.Exists(agentDllPath))
                 {
