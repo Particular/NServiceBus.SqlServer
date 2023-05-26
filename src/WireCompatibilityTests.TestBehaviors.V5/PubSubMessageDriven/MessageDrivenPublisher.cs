@@ -5,6 +5,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.Pipeline;
 using NServiceBus.Transport;
+using NServiceBus.Transport.SQLServer;
 using TestLogicApi;
 
 class MessageDrivenPublisher : Base, ITestBehavior
@@ -22,6 +23,7 @@ class MessageDrivenPublisher : Base, ITestBehavior
         RoutingSettings<SqlServerTransport> routingConfig
         )
     {
+        _ = transportConfig.EnableMessageDrivenPubSubCompatibilityMode();
         endpointConfig.Pipeline.Register(new SubscriptionBehavior(eventArgs => subscribed.SetResult(true), MessageIntentEnum.Subscribe), "Detects subscription");
     }
 
