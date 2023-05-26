@@ -8,6 +8,7 @@
     using NServiceBus.Raw;
     using System.IO;
     using NServiceBus.Transport;
+    using NServiceBus;
 
     public class TestScenarioPluginRunner
     {
@@ -39,22 +40,31 @@
             var rawConfig = RawEndpointConfiguration.Create(opts.AuditQueue, auditSpyTransport,
                  (messageContext, dispatcher, token) =>
                  {
-                     if (messageContext.Headers.TryGetValue(nameof(opts.TestRunId), out var testRunIdHeader) &&
-                         testRunIdHeader == opts.TestRunId)
+                     try
                      {
-                         var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers,
-                             messageContext.Body);
-
-                         lock (sync)
+                         Console.WriteLine($"Incoming audit message: {messageContext.NativeMessageId}");
+                         if (messageContext.Headers.TryGetValue(nameof(opts.TestRunId), out var testRunIdHeader) &&
+                             testRunIdHeader == opts.TestRunId)
                          {
-                             auditedMessages[messageContext.NativeMessageId] = auditMessage;
-                             if (doneCallback(auditedMessages))
+                             var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body);
+
+                             lock (sync)
                              {
-                                 done.SetResult(true);
+                                 auditedMessages[messageContext.NativeMessageId] = auditMessage;
+                                 if (doneCallback(auditedMessages))
+                                 {
+                                     done.SetResult(true);
+                                 }
                              }
                          }
+                         return Task.CompletedTask;
                      }
-                     return Task.CompletedTask;
+                     catch (Exception ex)
+                     {
+                         Console.WriteLine("\n===== ERROR: =====\n" + ex);
+                         done.SetResult(false);
+                         throw;
+                     }
                  }, opts.AuditQueue + ".poison");
             rawConfig.AutoCreateQueues();
             IReceivingRawEndpoint endpoint = null;
