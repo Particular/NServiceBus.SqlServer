@@ -21,10 +21,10 @@
 
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[4,)")]
-        public async Task SingleSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
+        public async Task SingleSchemaRequestReply(NuGetVersion senderVersion, NuGetVersion receiverVersion)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
-            var result = await ScenarioRunner.Run("Sender", "Receiver", v1, v2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
+            var result = await ScenarioRunner.Run("Sender", "Receiver", senderVersion, receiverVersion, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 
@@ -39,16 +39,16 @@
 
             var requestVersion = SemanticVersion.Parse(request.Headers[Keys.WireCompatVersion]);
             var responseVersion = SemanticVersion.Parse(response.Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v1, requestVersion);
-            Assert.AreEqual(v2, responseVersion);
+            Assert.AreEqual(senderVersion, requestVersion);
+            Assert.AreEqual(receiverVersion, responseVersion);
         }
 
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[6,)")]
-        public async Task MultiSchemaRequestReply(NuGetVersion v1, NuGetVersion v2)
+        public async Task MultiSchemaRequestReply(NuGetVersion senderVersion, NuGetVersion receiverVersion)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
-            var result = await ScenarioRunner.Run("SchemaSender", "SchemaReceiver", v1, v2, x => x.Count == 2, cts.Token).ConfigureAwait(false);
+            var result = await ScenarioRunner.Run("SchemaSender", "SchemaReceiver", senderVersion, receiverVersion, x => x.Count == 2, cts.Token).ConfigureAwait(false);
 
             Assert.True(result.Succeeded);
 
@@ -61,8 +61,8 @@
 
             var requestVersion = SemanticVersion.Parse(request.Headers[Keys.WireCompatVersion]);
             var responseVersion = SemanticVersion.Parse(response.Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v1, requestVersion);
-            Assert.AreEqual(v2, responseVersion);
+            Assert.AreEqual(senderVersion, requestVersion);
+            Assert.AreEqual(receiverVersion, responseVersion);
         }
     }
 }

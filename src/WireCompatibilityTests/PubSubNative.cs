@@ -14,14 +14,14 @@
     {
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[5,)")]
-        public async Task Simple(NuGetVersion v1, NuGetVersion v2)
+        public async Task Simple(NuGetVersion subscriberVersion, NuGetVersion publisherVersion)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
             var result = await ScenarioRunner.Run(
                 "Subscriber",
                 "Publisher",
-                v1,
-                v2,
+                subscriberVersion,
+                publisherVersion,
                 x => x.Count == 2,
                 cts.Token
                 )
@@ -32,7 +32,7 @@
             Assert.True(result.AuditedMessages.Values.All(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Publish)), "No event message in audit queue");
 
             var eventVersion = SemanticVersion.Parse(result.AuditedMessages.Values.First().Headers[Keys.WireCompatVersion]);
-            Assert.AreEqual(v2, eventVersion);
+            Assert.AreEqual(publisherVersion, eventVersion);
         }
     }
 }

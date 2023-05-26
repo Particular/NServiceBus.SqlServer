@@ -16,10 +16,10 @@ public static class ScenarioRunner
     static readonly ObjectPool<long> Pool = new(() => Interlocked.Increment(ref RunCounter));
 
     public static async Task<TestExecutionResult> Run(
-        string behavior1,
-        string behavior2,
-        SemanticVersion v1,
-        SemanticVersion v2,
+        string aTypeNameBehavior,
+        string bTypeNameBehavior,
+        SemanticVersion a,
+        SemanticVersion b,
         Func<Dictionary<string, AuditMessage>, bool> doneCallback,
         CancellationToken cancellationToken = default
         )
@@ -56,8 +56,8 @@ public static class ScenarioRunner
 
             var agents = new[]
             {
-                AgentInfo.Create(behavior1, v1, opts),
-                AgentInfo.Create(behavior2, v2, opts),
+                AgentInfo.Create(aTypeNameBehavior, a, opts),
+                AgentInfo.Create(bTypeNameBehavior, b, opts),
             };
 
             var result = await TestScenarioPluginRunner
