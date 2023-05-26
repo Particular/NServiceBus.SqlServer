@@ -21,9 +21,7 @@
         readonly PluginOptions opts;
         IPlugin plugin;
         bool started;
-        //readonly string agentFrameworkPackageName;
         readonly string behaviorPackageName;
-        //readonly string coreVersionString;
         readonly SemanticVersion versionToTest;
         readonly string transportPackageName;
 
@@ -36,13 +34,11 @@
         {
             projectName = $"TestAgent.V{versionToTest.ToNormalizedString()}"; //generated project depends on downstream minor
             this.versionToTest = versionToTest;
-            //agentFrameworkPackageName = $"TestAgent.Framework.V{coreMajorVersion}"; //agent framework depends only on core major
             behaviorPackageName = $"WireCompatibilityTests.TestBehaviors.V{versionToTest.Major}"; //behaviors depend only on downstream major
             this.behaviorType = $"{behaviorType}, WireCompatibilityTests.TestBehaviors.V{versionToTest.Major}";
             this.platformSpecificAssemblies = platformSpecificAssemblies;
             this.generatedProjectFolder = generatedProjectFolder;
             this.opts = opts;
-            //coreVersionString = $"{coreMajorVersion}.*";
             transportPackageName = versionToTest.Major > 5 ? "NServiceBus.Transport.SqlServer" : "NServiceBus.SqlServer";
         }
 

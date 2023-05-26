@@ -55,8 +55,10 @@ class PluginLoadContext : AssemblyLoadContext
         return resolver.ResolveAssemblyToPath(assemblyName);
     }
 
-    string BuildPlatformSpecificAssemblyPath(string framework, string assembly) => Path.Combine(pluginPath, "runtimes", os, "lib", framework,
-        $"{assembly}.dll");
+    string BuildPlatformSpecificAssemblyPath(string framework, string assembly)
+    {
+        return Path.Combine(pluginPath, "runtimes", os, "lib", framework, $"{assembly}.dll");
+    }
 
     string ResolveUnmanagedDllPath(string unmanagedDllName)
     {

@@ -36,35 +36,42 @@
 
             var done = new TaskCompletionSource<bool>();
 
-            var rawConfig = RawEndpointConfiguration.Create(opts.AuditQueue, auditSpyTransport,
-                 (messageContext, dispatcher, token) =>
-                 {
-                     try
-                     {
-                         Console.WriteLine($"Incoming audit message: {messageContext.NativeMessageId}");
-                         if (messageContext.Headers.TryGetValue(nameof(opts.TestRunId), out var testRunIdHeader) &&
-                             testRunIdHeader == opts.TestRunId)
-                         {
-                             var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body);
+            Task OnMessage(MessageContext messageContext, IMessageDispatcher dispatcher, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    Console.WriteLine($"Incoming audit message: {messageContext.NativeMessageId}");
+                    if (messageContext.Headers.TryGetValue(nameof(opts.TestRunId), out var testRunIdHeader) &&
+                        testRunIdHeader == opts.TestRunId)
+                    {
+                        var auditMessage = new AuditMessage(messageContext.NativeMessageId, messageContext.Headers, messageContext.Body);
 
-                             lock (sync)
-                             {
-                                 auditedMessages[messageContext.NativeMessageId] = auditMessage;
-                                 if (doneCallback(auditedMessages))
-                                 {
-                                     done.SetResult(true);
-                                 }
-                             }
-                         }
-                         return Task.CompletedTask;
-                     }
-                     catch (Exception ex)
-                     {
-                         Console.WriteLine("\n===== ERROR: =====\n" + ex);
-                         done.SetResult(false);
-                         throw;
-                     }
-                 }, opts.AuditQueue + ".poison");
+                        lock (sync)
+                        {
+                            auditedMessages[messageContext.NativeMessageId] = auditMessage;
+                            if (doneCallback(auditedMessages))
+                            {
+                                done.SetResult(true);
+                            }
+                        }
+                    }
+                    return Task.CompletedTask;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("\n===== ERROR: =====\n" + ex);
+                    done.SetResult(false);
+                    throw;
+                }
+            }
+
+            var rawConfig = RawEndpointConfiguration.Create(
+                opts.AuditQueue,
+                auditSpyTransport,
+                 OnMessage,
+                 opts.AuditQueue + ".poison"
+                 );
+
             rawConfig.AutoCreateQueues();
             IReceivingRawEndpoint endpoint = null;
 
