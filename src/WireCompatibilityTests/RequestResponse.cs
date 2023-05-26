@@ -28,10 +28,10 @@
 
             Assert.True(result.Succeeded);
 
-            Assert.AreEqual(2, result.AuditedMessages.Values.Count, "Number of messages in audit queue");
+            Assert.AreEqual(2, result.AuditedMessages.Count, "Number of messages in audit queue");
 
-            var request = result.AuditedMessages.Values.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Send));
-            var response = result.AuditedMessages.Values.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Reply));
+            var request = result.AuditedMessages.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Send));
+            var response = result.AuditedMessages.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Reply));
 
             Assert.AreEqual(request.Headers[Headers.MessageId], response.Headers[Headers.RelatedTo]);
             Assert.AreEqual(request.Headers[Headers.ConversationId], response.Headers[Headers.ConversationId]);
@@ -52,8 +52,8 @@
 
             Assert.True(result.Succeeded);
 
-            var request = result.AuditedMessages.Values.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Send));
-            var response = result.AuditedMessages.Values.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Reply));
+            var request = result.AuditedMessages.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Send));
+            var response = result.AuditedMessages.Single(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Reply));
 
             Assert.AreEqual(request.Headers[Headers.MessageId], response.Headers[Headers.RelatedTo]);
             Assert.AreEqual(request.Headers[Headers.ConversationId], response.Headers[Headers.ConversationId]);

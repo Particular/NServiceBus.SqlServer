@@ -16,7 +16,7 @@
             AgentInfo[] agents,
             TransportDefinition auditSpyTransport,
             Dictionary<string, string> platformSpecificAssemblies,
-            Func<Dictionary<string, AuditMessage>, bool> doneCallback,
+            Func<List<AuditMessage>, bool> doneCallback,
             CancellationToken cancellationToken = default
             )
         {
@@ -30,7 +30,7 @@
                 x.BehaviorParameters
                 )).ToArray();
 
-            var auditedMessages = new Dictionary<string, AuditMessage>();
+            var auditedMessages = new List<AuditMessage>();
 
             var sync = new object();
 
@@ -48,7 +48,7 @@
 
                         lock (sync)
                         {
-                            auditedMessages[messageContext.NativeMessageId] = auditMessage;
+                            auditedMessages.Add(auditMessage);
                             if (doneCallback(auditedMessages))
                             {
                                 done.SetResult(true);

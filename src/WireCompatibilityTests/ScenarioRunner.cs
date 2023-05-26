@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -20,7 +19,7 @@ public static class ScenarioRunner
         string bTypeNameBehavior,
         SemanticVersion a,
         SemanticVersion b,
-        Func<Dictionary<string, AuditMessage>, bool> doneCallback,
+        Func<List<AuditMessage>, bool> doneCallback,
         CancellationToken cancellationToken = default
         )
     {
@@ -64,8 +63,7 @@ public static class ScenarioRunner
                 .Run(opts, agents, auditSpyTransport, platformSpecificAssemblies, doneCallback, cancellationToken)
                 .ConfigureAwait(false);
 
-            result.AuditedMessages = result.AuditedMessages
-                .ToDictionary(x => x.Key, x => x.Value);
+            result.AuditedMessages = result.AuditedMessages;
             return result;
         }
         finally

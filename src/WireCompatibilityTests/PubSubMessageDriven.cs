@@ -29,9 +29,9 @@
 
             Assert.True(result.Succeeded);
             Assert.AreEqual(1, result.AuditedMessages.Count, "Audit queue message count");
-            Assert.True(result.AuditedMessages.Values.All(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Publish)), "No event message in audit queue");
+            Assert.True(result.AuditedMessages.All(x => x.Headers[Headers.MessageIntent] == nameof(MessageIntent.Publish)), "No event message in audit queue");
 
-            var eventVersion = SemanticVersion.Parse(result.AuditedMessages.Values.First().Headers[Keys.WireCompatVersion]);
+            var eventVersion = SemanticVersion.Parse(result.AuditedMessages.First().Headers[Keys.WireCompatVersion]);
             Assert.AreEqual(publisherVersion, eventVersion);
         }
     }

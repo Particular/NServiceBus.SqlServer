@@ -7,7 +7,7 @@
         /// <summary>
         /// Holds values of variables defined in the test description (either bool or int)
         /// </summary>
-        public Dictionary<string, AuditMessage> AuditedMessages { get; set; }
+        public List<AuditMessage> AuditedMessages { get; set; }
         public bool Succeeded { get; set; }
     }
 }
