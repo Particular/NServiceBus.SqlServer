@@ -3,8 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Customization;
+using TestLogicApi;
 
-class Base
+class Base : ITestBehavior
 {
     string endpointName;
 

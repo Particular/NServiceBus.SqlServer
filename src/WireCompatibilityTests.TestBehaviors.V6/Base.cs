@@ -2,8 +2,9 @@
 using System.Threading;
 using NServiceBus;
 using System.Linq;
+using TestLogicApi;
 
-abstract class Base
+abstract class Base : ITestBehavior
 {
     readonly string endpointName;
 

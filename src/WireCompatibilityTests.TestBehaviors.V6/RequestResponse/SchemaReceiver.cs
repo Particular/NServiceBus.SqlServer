@@ -1,6 +1,6 @@
 ﻿using NServiceBus;
 
-class SchemaReceiver : Receiver, ISchemaReceiver
+class SchemaReceiver : Receiver
 {
     public override void Configure(
         PluginOptions opts,

@@ -1,9 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
-using TestLogicApi;
 
-class Sender : Base, ITestBehavior
+class Sender : Base
 {
     public Sender() : base("Sender")
     {

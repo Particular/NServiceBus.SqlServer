@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NServiceBus;
 using TestLogicApi;
 
-class Publisher : Base, ITestBehavior, IPublisher
+class Publisher : Base
 {
     public Publisher() : base("Publisher")
     {

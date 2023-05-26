@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NServiceBus;
-using TestLogicApi;
 
-class SchemaReceiver : Receiver, ISchemaReceiver
+class SchemaReceiver : Receiver
 {
     protected override void Configure(
         PluginOptions opts,
@@ -18,7 +17,7 @@ class SchemaReceiver : Receiver, ISchemaReceiver
     }
 }
 
-class Receiver : Base, ITestBehavior, IReceiver
+class Receiver : Base
 {
     public Receiver() : base(nameof(Receiver))
     {

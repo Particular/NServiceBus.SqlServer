@@ -20,7 +20,7 @@ class SchemaSender : Sender
     }
 }
 
-class Sender : Base, ITestBehavior
+class Sender : Base
 {
     public Sender() : base(nameof(Sender))
     {

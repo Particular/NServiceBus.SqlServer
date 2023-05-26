@@ -4,8 +4,9 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Customization;
 using NServiceBus.Transport.SQLServer;
+using TestLogicApi;
 
-class Base
+class Base : ITestBehavior
 {
     string endpointName;
 

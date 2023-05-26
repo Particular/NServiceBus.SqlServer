@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NServiceBus;
-using TestLogicApi;
 
-class Subscriber : Base, ITestBehavior, ISubscriber
+class Subscriber : Base
 {
     public Subscriber() : base(nameof(Subscriber))
     {

@@ -2,7 +2,7 @@
 using NServiceBus;
 using TestLogicApi;
 
-class Subscriber : Base, ITestBehavior, ISubscriber
+class Subscriber : Base
 {
     public Subscriber() : base("Subscriber")
     {
