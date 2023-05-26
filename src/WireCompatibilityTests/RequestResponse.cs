@@ -10,7 +10,7 @@
 
     [TestFixture]
     [Parallelizable(ParallelScope.All)]
-    public class PingPong
+    public class RequestResponse
     {
         [OneTimeSetUp]
         public async Task SetUp()
@@ -21,7 +21,7 @@
 
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[4,)")]
-        public async Task SingleSchemaRequestReply(NuGetVersion senderVersion, NuGetVersion receiverVersion)
+        public async Task SingleSchema(NuGetVersion senderVersion, NuGetVersion receiverVersion)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
             var result = await ScenarioRunner.Run("Sender", "Receiver", senderVersion, receiverVersion, x => x.Count == 2, cts.Token).ConfigureAwait(false);
@@ -45,7 +45,7 @@
 
         [Test]
         [TestCaseSourcePackageSupportedVersions("NServiceBus.SqlServer", "[6,)")]
-        public async Task MultiSchemaRequestReply(NuGetVersion senderVersion, NuGetVersion receiverVersion)
+        public async Task MultiSchema(NuGetVersion senderVersion, NuGetVersion receiverVersion)
         {
             using var cts = new CancellationTokenSource(Global.TestTimeout);
             var result = await ScenarioRunner.Run("SchemaSender", "SchemaReceiver", senderVersion, receiverVersion, x => x.Count == 2, cts.Token).ConfigureAwait(false);
