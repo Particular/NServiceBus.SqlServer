@@ -14,11 +14,6 @@
             PluginOptions opts
             )
         {
-            if (behavior.StartsWith('I'))
-            {
-                behavior = behavior.Substring(1);
-            }
-
             return new AgentInfo
             {
                 Behavior = behavior,
