@@ -96,6 +96,8 @@
                     tests.Add(agent.StartTest(cancellationToken));
                 }
 
+                await Task.WhenAll(tests).ConfigureAwait(false);
+
                 var timeout = Task.Delay(30000, cancellationToken);
 
                 var finished = await Task.WhenAny(timeout, done.Task).ConfigureAwait(false);
