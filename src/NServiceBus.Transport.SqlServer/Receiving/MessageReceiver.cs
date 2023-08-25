@@ -27,7 +27,7 @@
             SchemaInspector schemaInspector,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
-            bool purgeOnStartup)
+            bool purgeAllMessagesOnStartup)
         {
             this.transport = transport;
             this.processStrategyFactory = processStrategyFactory;
@@ -40,7 +40,7 @@
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.errorQueueAddress = errorQueueAddress;
             this.criticalErrorAction = criticalErrorAction;
-            this.purgeOnStartup = purgeOnStartup;
+            this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
             Subscriptions = subscriptionManager;
             Id = receiverId;
             ReceiveAddress = receiveAddress;
@@ -62,7 +62,7 @@
 
             processStrategy.Init(inputQueue, errorQueue, onMessage, onError, criticalErrorAction);
 
-            if (purgeOnStartup)
+            if (purgeAllMessagesOnStartup)
             {
                 try
                 {
@@ -261,7 +261,7 @@
         readonly IPeekMessagesInQueue queuePeeker;
         readonly QueuePeekerOptions queuePeekerOptions;
         readonly SchemaInspector schemaInspector;
-        readonly bool purgeOnStartup;
+        readonly bool purgeAllMessagesOnStartup;
         TimeSpan waitTimeCircuitBreaker;
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
