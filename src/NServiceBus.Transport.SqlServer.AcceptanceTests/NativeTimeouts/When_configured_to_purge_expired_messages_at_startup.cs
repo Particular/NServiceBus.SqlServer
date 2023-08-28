@@ -9,8 +9,8 @@
 #else
     using Microsoft.Data.SqlClient;
 #endif
+    using NServiceBus;
     using NServiceBus.AcceptanceTesting;
-    using NServiceBus.AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
@@ -61,7 +61,7 @@
             var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
             var queueCreator = new QueueCreator(connectionFactory, queueAddressTranslator);
 
-            var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
+            var endpoint = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
 
             var tableBasedQueueCache = new TableBasedQueueCache(queueAddressTranslator, true);
@@ -94,7 +94,7 @@
 
         bool QueueIsEmpty()
         {
-            var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
+            var endpoint = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();
