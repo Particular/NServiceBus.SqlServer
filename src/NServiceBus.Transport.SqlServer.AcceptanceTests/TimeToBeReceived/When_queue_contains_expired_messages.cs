@@ -20,11 +20,17 @@
         public void SetUpConnectionString() =>
             connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
+        [TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
         public Task Should_remove_expired_messages_from_queue(TransportTransactionMode transactionMode)
         {
+            if (transactionMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
+            {
+                Assert.Ignore("Transaction scope mode is only supported on windows");
+            }
+
             return Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b =>
                 {
