@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <!--<SignAssembly>true</SignAssembly>-->
-    <!--<AssemblyOriginatorKeyFile>..\NServiceBusTests.snk</AssemblyOriginatorKeyFile>-->
+    <TargetFramework>net8.0</TargetFramework>
     <NoWarn>PS0018</NoWarn>
   </PropertyGroup>
 

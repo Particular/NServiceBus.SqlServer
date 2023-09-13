@@ -76,7 +76,7 @@
 
             using (var textReader = dataReader.GetTextReader(headersIndex))
             {
-                return await textReader.ReadToEndAsync().ConfigureAwait(false);
+                return await textReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
