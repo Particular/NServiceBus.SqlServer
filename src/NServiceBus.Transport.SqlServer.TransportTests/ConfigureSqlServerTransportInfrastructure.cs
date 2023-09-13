@@ -26,9 +26,9 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
 
-        if (sqlServerTransport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
+        if (sqlServerTransport.TransportTransactionMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
         {
-            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET");
+            NUnit.Framework.Assert.Ignore("Transaction scope mode is only supported on windows");
         }
 
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
