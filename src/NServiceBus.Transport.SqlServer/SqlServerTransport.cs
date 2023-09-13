@@ -11,6 +11,7 @@ namespace NServiceBus
     using Transport.SqlServer;
     using System.Collections.Generic;
     using System.Threading;
+    using System.Transactions;
 
     /// <summary>
     /// SqlServer Transport
@@ -21,7 +22,7 @@ namespace NServiceBus
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
         public SqlServerTransport(string connectionString)
-            : base(TransportTransactionMode.TransactionScope, true, true, true)
+            : base(DefaultTransactionMode, true, true, true)
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
@@ -33,7 +34,7 @@ namespace NServiceBus
         /// </summary>
         /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
         public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
-            : base(TransportTransactionMode.TransactionScope, true, true, true)
+            : base(DefaultTransactionMode, true, true, true)
         {
             Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
 
@@ -44,7 +45,7 @@ namespace NServiceBus
         /// Used for backwards compatibility with the legacy transport api.
         /// </summary>
         internal SqlServerTransport()
-            : base(TransportTransactionMode.TransactionScope, true, true, true)
+            : base(DefaultTransactionMode, true, true, true)
         {
         }
 
@@ -52,7 +53,7 @@ namespace NServiceBus
         /// For the pub-sub migration tests only
         /// </summary>
         internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
-            : base(TransportTransactionMode.TransactionScope, supportsDelayedDelivery, supportsPublishSubscribe, true)
+            : base(DefaultTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, true)
         {
             ConnectionString = connectionString;
         }
@@ -63,6 +64,11 @@ namespace NServiceBus
         public override async Task<TransportInfrastructure> Initialize(HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses, CancellationToken cancellationToken = default)
         {
             ValidateConfiguration();
+
+            if (TransportTransactionMode == TransportTransactionMode.TransactionScope)
+            {
+                TransactionManager.ImplicitDistributedTransactions = true;
+            }
 
             var infrastructure = new SqlServerTransportInfrastructure(this, hostSettings, receivers, sendingAddresses);
 
@@ -91,13 +97,18 @@ namespace NServiceBus
         /// </summary>
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes()
         {
-            return new[]
-            {
+            var supportedModes = new List<TransportTransactionMode>(){
                 TransportTransactionMode.None,
                 TransportTransactionMode.ReceiveOnly,
-                TransportTransactionMode.SendsAtomicWithReceive,
-                TransportTransactionMode.TransactionScope
+                TransportTransactionMode.SendsAtomicWithReceive
             };
+
+            if (OperatingSystem.IsWindows())
+            {
+                supportedModes.Add(TransportTransactionMode.TransactionScope);
+            }
+
+            return supportedModes;
         }
 
         /// <summary>
@@ -167,6 +178,8 @@ namespace NServiceBus
         internal bool DisableDelayedDelivery { get; set; } = false;
 
         internal TestingInformation Testing { get; } = new TestingInformation();
+
+        static TransportTransactionMode DefaultTransactionMode => OperatingSystem.IsWindows() ? TransportTransactionMode.TransactionScope : TransportTransactionMode.SendsAtomicWithReceive;
 
         internal class TestingInformation
         {

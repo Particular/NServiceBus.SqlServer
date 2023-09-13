@@ -7,7 +7,6 @@ using Microsoft.Data.SqlClient;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 
@@ -28,11 +27,6 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            TransactionManager.ImplicitDistributedTransactions = true;
-        }
-
         doNotCleanNativeSubscriptions = runSettings.TryGet<bool>("DoNotCleanNativeSubscriptions", out _);
 
         configuration.UseTransport(transport);
