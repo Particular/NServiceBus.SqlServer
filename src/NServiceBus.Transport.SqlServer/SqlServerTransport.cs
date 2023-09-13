@@ -15,7 +15,7 @@ namespace NServiceBus
     /// <summary>
     /// SqlServer Transport
     /// </summary>
-    public partial class SqlServerTransport : TransportDefinition
+    public class SqlServerTransport : TransportDefinition
     {
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
