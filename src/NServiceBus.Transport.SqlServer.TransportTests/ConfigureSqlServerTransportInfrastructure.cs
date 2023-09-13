@@ -26,12 +26,10 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
 
-#if !NETFRAMEWORK
         if (sqlServerTransport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
         {
-            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
+            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET");
         }
-#endif
 
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableCaching = true;

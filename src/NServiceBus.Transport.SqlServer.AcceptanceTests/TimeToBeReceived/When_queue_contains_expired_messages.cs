@@ -20,9 +20,6 @@
         public void SetUpConnectionString() =>
             connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
-#if NETFRAMEWORK
-        [TestCase(TransportTransactionMode.TransactionScope)]
-#endif
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]

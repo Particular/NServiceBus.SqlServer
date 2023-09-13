@@ -24,9 +24,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
         transport = new SqlServerTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
 
-#if !NETFRAMEWORK
         transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
-#endif
     }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
