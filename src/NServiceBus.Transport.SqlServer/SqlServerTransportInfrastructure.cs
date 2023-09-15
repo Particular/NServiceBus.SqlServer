@@ -277,22 +277,15 @@ namespace NServiceBus.Transport.SqlServer
                         }
                     }
                 }
-                catch (NotSupportedException ex)
+                catch (NotSupportedException exception)
                 {
-                    message = "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions. " +
-                                  "Check original error message for details. " +
-                                  "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
-                                  "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
-                                  "transactions to atomically update the database and consume a message. Original error message: " + ex.Message;
+                    message = "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions."
+                        + DtcErrorMessage + "Original error message: " + exception.Message;
                 }
                 catch (Exception exception) when (!exception.IsCausedBy(cancellationToken))
                 {
-                    message = "Could not escalate to a distributed transaction while configured to use TransactionScope. Check original error message for details. " +
-                                  "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
-                                  "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
-                                  "transactions to atomically update the database and consume a message. Original error message: " + exception.Message;
+                    message = "Distributed transactions are not available."
+                        + DtcErrorMessage + "Original error message: " + exception.Message;
                 }
 
                 if (!string.IsNullOrWhiteSpace(message))
@@ -341,6 +334,10 @@ namespace NServiceBus.Transport.SqlServer
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
         TableBasedQueueCache tableBasedQueueCache;
+
+        static string DtcErrorMessage = @"
+Note that distributed transactions are not available on Linux but the transport can still used by configuring a lower transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the endpoint.
+Be aware that different transaction modes may affect consistency guarantees as you can't rely on distributed transactions to atomically update other resources together with consuming the incoming message.";
 
         static ILog _logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
