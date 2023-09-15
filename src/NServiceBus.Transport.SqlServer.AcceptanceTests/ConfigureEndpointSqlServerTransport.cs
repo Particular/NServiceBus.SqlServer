@@ -23,6 +23,12 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         transport = new SqlServerTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
+
+        //On Linux we need to explicitly set the transaction mode to SendsAtomicWithReceive since TransactionScope is not available thered
+        if (OperatingSystem.IsLinux())
+        {
+            transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
+        }
     }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)
