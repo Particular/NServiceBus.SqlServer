@@ -92,7 +92,8 @@ namespace NServiceBus
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[]{
                 TransportTransactionMode.None,
                 TransportTransactionMode.ReceiveOnly,
-                TransportTransactionMode.SendsAtomicWithReceive
+                TransportTransactionMode.SendsAtomicWithReceive,
+                TransportTransactionMode.TransactionScope
             };
 
         /// <summary>
