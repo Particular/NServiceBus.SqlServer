@@ -21,15 +21,15 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
+        if (transportDefinition.TransportTransactionMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
+        {
+            NUnit.Framework.Assert.Ignore("Transaction scope mode is only supported on windows");
+        }
+
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
         inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
-
-        if (sqlServerTransport.TransportTransactionMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
-        {
-            NUnit.Framework.Assert.Ignore("Transaction scope mode is only supported on windows");
-        }
 
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableCaching = true;
@@ -49,6 +49,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
     {
+        if (sqlServerTransport is null)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {
             var queues = new[]
