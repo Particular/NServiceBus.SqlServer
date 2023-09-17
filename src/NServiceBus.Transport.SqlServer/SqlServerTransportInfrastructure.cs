@@ -336,8 +336,8 @@ namespace NServiceBus.Transport.SqlServer
         TableBasedQueueCache tableBasedQueueCache;
 
         static string DtcErrorMessage = @"
-Note that distributed transactions are not available on Linux but the transport can still used by configuring a lower transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the endpoint.
-Be aware that different transaction modes may affect consistency guarantees as you can't rely on distributed transactions to atomically update other resources together with consuming the incoming message.";
+Distributed transactions are not available on Linux.  The other transaction modes can be used by setting the `SqlServerTransport.TransportTransactionMode` property when configuring the endpoint.
+Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
         static ILog _logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
