@@ -21,7 +21,7 @@ namespace NServiceBus
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
         public SqlServerTransport(string connectionString)
-            : base(TransportTransactionMode.SendsAtomicWithReceive, true, true, true)
+            : base(DefaultTransportTransactionMode, true, true, true)
         {
             Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
@@ -33,7 +33,7 @@ namespace NServiceBus
         /// </summary>
         /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
         public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
-            : base(TransportTransactionMode.SendsAtomicWithReceive, true, true, true)
+            : base(DefaultTransportTransactionMode, true, true, true)
         {
             Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
 
@@ -44,7 +44,7 @@ namespace NServiceBus
         /// Used for backwards compatibility with the legacy transport api.
         /// </summary>
         internal SqlServerTransport()
-            : base(TransportTransactionMode.SendsAtomicWithReceive, true, true, true)
+            : base(DefaultTransportTransactionMode, true, true, true)
         {
         }
 
@@ -52,7 +52,7 @@ namespace NServiceBus
         /// For the pub-sub migration tests only
         /// </summary>
         internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
-            : base(TransportTransactionMode.SendsAtomicWithReceive, supportsDelayedDelivery, supportsPublishSubscribe, true)
+            : base(DefaultTransportTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, true)
         {
             ConnectionString = connectionString;
         }
@@ -92,7 +92,9 @@ namespace NServiceBus
         public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[]{
                 TransportTransactionMode.None,
                 TransportTransactionMode.ReceiveOnly,
-                TransportTransactionMode.SendsAtomicWithReceive
+                TransportTransactionMode.SendsAtomicWithReceive,
+                //TODO: Add back once scopes work with DTC on .NET
+                //TransportTransactionMode.TransactionScope
             };
 
         /// <summary>
@@ -175,5 +177,8 @@ namespace NServiceBus
 
             internal string SubscriptionTable { get; set; }
         }
+
+        //TODO: Change this to TransportTransactionMode.TransactionScope once scopes work with DTC
+        static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
     }
 }
