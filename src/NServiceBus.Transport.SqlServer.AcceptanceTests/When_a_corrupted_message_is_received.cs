@@ -23,7 +23,8 @@
         public void SetConnectionString() =>
             connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
-        [TestCase(TransportTransactionMode.TransactionScope)]
+        //TODO: Add this back once distributed transactions are supported on .NET
+        ///[TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
