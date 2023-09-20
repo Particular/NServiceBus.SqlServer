@@ -23,7 +23,7 @@
         public void SetConnectionString() =>
             connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
 
-        //TODO: Add this back once distributed transactions are supported on .NET
+        //TODO: Enable once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
         ///[TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
