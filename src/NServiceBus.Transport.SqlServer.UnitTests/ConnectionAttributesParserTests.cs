@@ -9,7 +9,7 @@
         [Test]
         public void It_rejects_connection_string_without_catalog_property()
         {
-            var ex = Assert.Throws<Exception>(() => ConnectionAttributesParser.Parse(@"Data Source=.\SQLEXPRESS;Integrated Security=True"));
+            var ex = Assert.Throws<Exception>(() => ConnectionAttributesParser.Parse(@"Data Source=.\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=true"));
 
             StringAssert.Contains("Initial Catalog property is mandatory in the connection string.", ex.Message);
         }

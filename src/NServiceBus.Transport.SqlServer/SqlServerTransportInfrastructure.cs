@@ -22,6 +22,12 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
+            //TODO: Remove this once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
+            if (OperatingSystem.IsWindows())
+            {
+                TransactionManager.ImplicitDistributedTransactions = false;
+            }
+
             connectionFactory = CreateConnectionFactory();
 
             var connectionString = transport.ConnectionString;

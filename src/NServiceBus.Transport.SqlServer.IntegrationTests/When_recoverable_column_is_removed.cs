@@ -27,7 +27,7 @@
 
             var token = CancellationToken.None;
 
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
             sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
 
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);

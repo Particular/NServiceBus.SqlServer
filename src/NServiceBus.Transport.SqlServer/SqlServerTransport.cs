@@ -93,8 +93,7 @@ namespace NServiceBus
                 TransportTransactionMode.None,
                 TransportTransactionMode.ReceiveOnly,
                 TransportTransactionMode.SendsAtomicWithReceive,
-                //TODO: Add back once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
-                //TransportTransactionMode.TransactionScope
+                TransportTransactionMode.TransactionScope
             };
 
         /// <summary>
@@ -178,7 +177,6 @@ namespace NServiceBus
             internal string SubscriptionTable { get; set; }
         }
 
-        //TODO: Change to TransportTransactionMode.TransactionScope once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
-        static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
+        static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
     }
 }

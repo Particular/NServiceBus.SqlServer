@@ -12,7 +12,7 @@
     public class When_subscriber_runs_in_compat_mode : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
-        static readonly string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        static readonly string ConnectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         [Test]
         public async Task It_can_subscribe_for_event_published_by_legacy_publisher()
