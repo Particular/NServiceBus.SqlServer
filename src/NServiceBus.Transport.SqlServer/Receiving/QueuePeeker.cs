@@ -20,7 +20,6 @@
 
             try
             {
-#if NETFRAMEWORK
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
@@ -28,18 +27,6 @@
 
                     scope.Complete();
                 }
-
-#else
-                using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var tx = connection.BeginTransaction())
-                {
-                    messageCount = await inputQueue.TryPeek(connection, tx, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                    tx.Commit();
-                    scope.Complete();
-                }
-#endif
 
                 circuitBreaker.Success();
             }

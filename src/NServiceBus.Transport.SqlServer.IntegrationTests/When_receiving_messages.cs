@@ -26,7 +26,7 @@
             var inputQueueAddress = parser.Parse(inputQueueName).Address;
             var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
             var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
             {

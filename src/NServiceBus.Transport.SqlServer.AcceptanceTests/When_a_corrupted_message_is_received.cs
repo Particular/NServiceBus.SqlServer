@@ -21,16 +21,20 @@
     {
         [SetUp]
         public void SetConnectionString() =>
-            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-#if NETFRAMEWORK
-        [TestCase(TransportTransactionMode.TransactionScope)]
-#endif
+        //TODO: Enable once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
+        ///[TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
         public async Task Should_move_it_to_the_error_queue_when_headers_corrupted(TransportTransactionMode txMode)
         {
+            if (txMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
+            {
+                Assert.Ignore("Transaction scope mode is only supported on windows");
+            }
+
             PurgeQueues(connectionString);
             try
             {

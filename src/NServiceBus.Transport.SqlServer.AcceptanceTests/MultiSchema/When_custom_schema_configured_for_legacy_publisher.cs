@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 
     public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcceptanceTest
     {
-        static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         [Test]
         public Task Should_receive_event()

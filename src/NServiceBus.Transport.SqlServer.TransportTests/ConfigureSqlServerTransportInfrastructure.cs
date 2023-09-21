@@ -9,29 +9,29 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;
+using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public TransportDefinition CreateTransportDefinition()
     {
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         return new SqlServerTransport(connectionString);
     }
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
+        //TODO: Remove once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
+        if (transportDefinition.TransportTransactionMode == TransportTransactionMode.TransactionScope)
+        {
+            Assert.Ignore("TransactionScopes doesn't work with DTC on .NET yet, see https://github.com/Particular/NServiceBus.SqlServer/issues/1145");
+        }
+
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
         inputQueueName = queueAddress.ToString();
         this.errorQueueName = errorQueueName;
-
-#if !NETFRAMEWORK
-        if (sqlServerTransport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
-        {
-            NUnit.Framework.Assert.Ignore("TransactionScope not supported in .NET Core");
-        }
-#endif
 
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableCaching = true;
@@ -51,6 +51,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
     {
+        if (sqlServerTransport is null)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {
             var queues = new[]

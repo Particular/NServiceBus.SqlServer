@@ -4,11 +4,8 @@ namespace NServiceBus.AcceptanceTests
 
     public partial class TestSuiteConstraints
     {
-#if NETFRAMEWORK
-        public bool SupportsDtc => true;
-#else
+        //TODO: Change this to OperatingSystem.IsWindows() once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
         public bool SupportsDtc => false;
-#endif
         public bool SupportsCrossQueueTransactions => true;
         public bool SupportsNativePubSub => true;
         public bool SupportsDelayedDelivery => true;

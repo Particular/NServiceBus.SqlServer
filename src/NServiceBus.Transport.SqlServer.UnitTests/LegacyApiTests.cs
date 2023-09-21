@@ -1,8 +1,4 @@
-﻿#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable 618
-#pragma warning disable 619
-
-namespace NServiceBus.Transport.SqlServer.UnitTests
+﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using System;
     using NUnit.Framework;
@@ -45,6 +41,3 @@ namespace NServiceBus.Transport.SqlServer.UnitTests
         }
     }
 }
-#pragma warning restore 618
-#pragma warning restore 619
-#pragma warning restore IDE0079 // Remove unnecessary suppression

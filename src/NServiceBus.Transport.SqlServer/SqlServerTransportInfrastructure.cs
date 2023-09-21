@@ -12,22 +12,45 @@ namespace NServiceBus.Transport.SqlServer
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
     {
-        internal SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, QueueAddressTranslator addressTranslator, bool isEncrypted)
+        public SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
             this.transport = transport;
             this.hostSettings = hostSettings;
-            this.isEncrypted = isEncrypted;
-            this.addressTranslator = addressTranslator;
-
-            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !isEncrypted);
-            connectionFactory = CreateConnectionFactory();
+            this.receiveSettings = receiveSettings;
+            this.sendingAddresses = sendingAddresses;
         }
 
-        public async Task ConfigureSubscriptions(string catalog, CancellationToken cancellationToken = default)
+        public async Task Initialize(CancellationToken cancellationToken = default)
+        {
+            connectionFactory = CreateConnectionFactory();
+
+            var connectionString = transport.ConnectionString;
+
+            if (transport.ConnectionFactory != null)
+            {
+                using (var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false))
+                {
+                    connectionString = connection.ConnectionString;
+                }
+            }
+
+            connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
+
+            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
+            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !connectionAttributes.IsEncrypted);
+
+            await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
+
+            await ConfigureReceiveInfrastructure(cancellationToken).ConfigureAwait(false);
+
+            ConfigureSendInfrastructure();
+        }
+
+        async Task ConfigureSubscriptions(CancellationToken cancellationToken)
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
-            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, catalog);
+            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
 
@@ -44,17 +67,7 @@ namespace NServiceBus.Transport.SqlServer
             transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
         }
 
-        SqlConnectionFactory CreateConnectionFactory()
-        {
-            if (transport.ConnectionFactory != null)
-            {
-                return new SqlConnectionFactory(transport.ConnectionFactory);
-            }
-
-            return SqlConnectionFactory.Default(transport.ConnectionString);
-        }
-
-        public async Task ConfigureReceiveInfrastructure(ReceiveSettings[] receiveSettings, string[] sendingAddresses, CancellationToken cancellationToken = default)
+        async Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
         {
             if (receiveSettings.Length == 0)
             {
@@ -113,7 +126,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex);
 
-            var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !isEncrypted));
+            var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -182,6 +195,28 @@ namespace NServiceBus.Transport.SqlServer
             transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
         }
 
+        public override string ToTransportAddress(Transport.QueueAddress address)
+        {
+            if (addressTranslator == null)
+            {
+                throw new Exception("Initialize must be called before using ToTransportAddress");
+            }
+
+            var tableQueueAddress = addressTranslator.Generate(address);
+
+            return addressTranslator.GetCanonicalForm(tableQueueAddress).Address;
+        }
+
+        SqlConnectionFactory CreateConnectionFactory()
+        {
+            if (transport.ConnectionFactory != null)
+            {
+                return new SqlConnectionFactory(transport.ConnectionFactory);
+            }
+
+            return SqlConnectionFactory.Default(transport.ConnectionString);
+        }
+
         ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
@@ -242,22 +277,15 @@ namespace NServiceBus.Transport.SqlServer
                         }
                     }
                 }
-                catch (NotSupportedException ex)
+                catch (NotSupportedException exception)
                 {
-                    message = "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions. " +
-                                  "Check original error message for details. " +
-                                  "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
-                                  "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
-                                  "transactions to atomically update the database and consume a message. Original error message: " + ex.Message;
+                    message = "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions."
+                        + DtcErrorMessage + "Original error message: " + exception.Message;
                 }
                 catch (Exception exception) when (!exception.IsCausedBy(cancellationToken))
                 {
-                    message = "Could not escalate to a distributed transaction while configured to use TransactionScope. Check original error message for details. " +
-                                  "In case the problem is related to distributed transactions you can still use SQL Server transport but " +
-                                  "should specify a different transaction mode via the `SqlServerTransport.TransportTransactionMode` property when configuring the enpdoint. " +
-                                  "Note that different transaction modes may affect consistency guarantees as you can't rely on distributed " +
-                                  "transactions to atomically update the database and consume a message. Original error message: " + exception.Message;
+                    message = "Distributed transactions are not available."
+                        + DtcErrorMessage + "Original error message: " + exception.Message;
                 }
 
                 if (!string.IsNullOrWhiteSpace(message))
@@ -282,10 +310,6 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        public override string ToTransportAddress(Transport.QueueAddress address) => transport.ToTransportAddress(address);
-#pragma warning restore CS0618 // Type or member is obsolete
-
         class FakePromotableResourceManager : IEnlistmentNotification
         {
             public static readonly Guid Id = Guid.NewGuid();
@@ -297,16 +321,23 @@ namespace NServiceBus.Transport.SqlServer
             public static void ForceDtc() => Transaction.Current.EnlistDurable(Id, new FakePromotableResourceManager(), EnlistmentOptions.None);
         }
 
-        readonly QueueAddressTranslator addressTranslator;
         readonly SqlServerTransport transport;
         readonly HostSettings hostSettings;
+        readonly ReceiveSettings[] receiveSettings;
+        readonly string[] sendingAddresses;
+
+        ConnectionAttributes connectionAttributes;
+        QueueAddressTranslator addressTranslator;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         Dictionary<string, object> diagnostics = new Dictionary<string, object>();
         SqlConnectionFactory connectionFactory;
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
         TableBasedQueueCache tableBasedQueueCache;
-        bool isEncrypted;
+
+        static string DtcErrorMessage = @"
+Distributed transactions are not available on Linux. The other transaction modes can be used by setting the `SqlServerTransport.TransportTransactionMode` property when configuring the endpoint.
+Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
         static ILog _logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }

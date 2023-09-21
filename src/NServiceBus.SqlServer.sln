@@ -9,8 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.Accep
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8C6EF3B-1488-44A7-BF9E-D85DB09B0FFE}"
 	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\ci.yml = ..\.github\workflows\ci.yml
 		Scripts\Create-Databases.sql = Scripts\Create-Databases.sql
 		Custom.Build.props = Custom.Build.props
+		..\.github\workflows\release.yml = ..\.github\workflows\release.yml
 		Scripts\Reset-Database.sql = Scripts\Reset-Database.sql
 	EndProjectSection
 EndProject
@@ -31,11 +33,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.TransportTests", "NServiceBus.Transport.SqlServer.TransportTests\NServiceBus.Transport.SqlServer.TransportTests.csproj", "{9F898130-3550-49D3-9990-C11F192C9322}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.UnitTests", "NServiceBus.Transport.SqlServer.UnitTests\NServiceBus.Transport.SqlServer.UnitTests.csproj", "{F08C8BAB-C329-4F96-A6AF-F25419C623FD}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.CompatibilityTests", "NServiceBus.Transport.SqlServer.CompatibilityTests\NServiceBus.Transport.SqlServer.CompatibilityTests.csproj", "{A34A2296-D65D-49AF-ABCE-B712017FF92D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FA1193BF-325C-4201-BB78-484032E09809} = {FA1193BF-325C-4201-BB78-484032E09809}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,10 +80,6 @@ Global
 		{F08C8BAB-C329-4F96-A6AF-F25419C623FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F08C8BAB-C329-4F96-A6AF-F25419C623FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F08C8BAB-C329-4F96-A6AF-F25419C623FD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A34A2296-D65D-49AF-ABCE-B712017FF92D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A34A2296-D65D-49AF-ABCE-B712017FF92D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A34A2296-D65D-49AF-ABCE-B712017FF92D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A34A2296-D65D-49AF-ABCE-B712017FF92D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

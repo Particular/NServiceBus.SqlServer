@@ -53,11 +53,6 @@ namespace NServiceBus
         public NServiceBus.TransactionScopeOptions TransactionScope { get; }
         public override System.Collections.Generic.IReadOnlyCollection<NServiceBus.TransportTransactionMode> GetSupportedTransactionModes() { }
         public override System.Threading.Tasks.Task<NServiceBus.Transport.TransportInfrastructure> Initialize(NServiceBus.Transport.HostSettings hostSettings, NServiceBus.Transport.ReceiveSettings[] receivers, string[] sendingAddresses, System.Threading.CancellationToken cancellationToken = default) { }
-        [System.Obsolete("Inject the ITransportAddressResolver type to access the address translation mecha" +
-            "nism at runtime. See the NServiceBus version 8 upgrade guide for further details" +
-            ". Will be treated as an error from version 8.0.0. Will be removed in version 9.0" +
-            ".0.", false)]
-        public override string ToTransportAddress(NServiceBus.Transport.QueueAddress address) { }
     }
     public static class SqlServerTransportSettingsExtensions
     {
@@ -79,9 +74,6 @@ namespace NServiceBus
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseSchemaForQueue(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, string queueName, string schema) { }
         public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> UseTransport<T>(this NServiceBus.EndpointConfiguration config)
             where T : NServiceBus.SqlServerTransport { }
-        [System.Obsolete("Use `QueuePeekerOptions` instead. The member currently throws a NotImplementedExc" +
-            "eption. Will be removed in version 8.0.0.", true)]
-        public static NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> WithPeekDelay(this NServiceBus.TransportExtensions<NServiceBus.SqlServerTransport> transportExtensions, System.TimeSpan? delay = default) { }
     }
     public class TransactionScopeOptions
     {
@@ -94,22 +86,11 @@ namespace NServiceBus.Transport.SqlServer
     public class DelayedDeliveryOptions
     {
         public int BatchSize { get; set; }
-        [System.Obsolete("Delayed message polling now uses an adaptive delays and no longer needs a process" +
-            "ing interval. This setting is safe to remove. The member currently throws a NotI" +
-            "mplementedException. Will be removed in version 8.0.0.", true)]
-        public System.TimeSpan ProcessingInterval { get; set; }
         public string TableSuffix { get; set; }
     }
     public class DelayedDeliverySettings
     {
         public void BatchSize(int batchSize) { }
-        [System.Obsolete("Timeout manager has been removed from NServiceBus. See the upgrade guide for more" +
-            " details. Will be removed in version 8.0.0.", true)]
-        public void EnableTimeoutManagerCompatibility() { }
-        [System.Obsolete("Delayed message polling now uses an adaptive delays and no longer needs a process" +
-            "ing interval. This setting is safe to remove. The member currently throws a NotI" +
-            "mplementedException. Will be removed in version 8.0.0.", true)]
-        public void ProcessingInterval(System.TimeSpan interval) { }
         public void TableSuffix(string suffix) { }
     }
     public class QueueSchemaAndCatalogOptions

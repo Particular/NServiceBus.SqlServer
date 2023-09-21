@@ -13,7 +13,7 @@ Before doing anything else, make sure you have SQL Server up and running in your
 2. In your app.config make sure to provides the necessary connection information needed to communicate to SQL server. A typical setup would be:
    ```xml
    <connectionStrings>
-     <add name="NServiceBus/Transport" connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True"/>
+     <add name="NServiceBus/Transport" connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true"/>
    </connectionStrings>
    ```
 
@@ -25,7 +25,7 @@ Consider creating a RAM drive or using the temporaty drive when running in a clo
 
 The tests expect a SQL Server instance to be available.
 
-All tests use the default connection string `Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True`. This can be changed by setting the `SqlServerTransportConnectionString` environment variable. The initial catalog, `nservicebus`, is hardcoded in some tests and cannot be changed.
+All tests use the default connection string `Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true`. This can be changed by setting the `SqlServerTransportConnectionString` environment variable. The initial catalog, `nservicebus`, is hardcoded in some tests and cannot be changed.
 
 ### Requirements
 

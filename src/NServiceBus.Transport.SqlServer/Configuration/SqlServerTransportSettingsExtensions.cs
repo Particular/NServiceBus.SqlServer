@@ -20,10 +20,9 @@ namespace NServiceBus
         /// <summary>
         /// Configures NServiceBus to use the given transport.
         /// </summary>
-        [PreObsolete(
-            RemoveInVersion = "10",
-            TreatAsErrorFromVersion = "9",
-            ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseTransport<T>(this EndpointConfiguration config)
             where T : SqlServerTransport
         {
@@ -39,10 +38,9 @@ namespace NServiceBus
         /// <summary>
         ///     Sets a default schema for both input and output queues
         /// </summary>
-        [PreObsolete(Message = "DefaultSchema has been obsoleted.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9",
-            ReplacementTypeOrMember = "SqlServerTransport.DefaultSchema")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.DefaultSchema",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> DefaultSchema(
             this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
         {
@@ -54,10 +52,9 @@ namespace NServiceBus
         /// <summary>
         ///     Sets a default schema for both input and output queues
         /// </summary>
-        [PreObsolete(Message = "DefaultCatalog has been obsoleted.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9",
-            ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> DefaultCatalog(
             this TransportExtensions<SqlServerTransport> transportExtensions, string catalogName)
         {
@@ -72,10 +69,9 @@ namespace NServiceBus
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="schema">Custom schema value.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseSchemaForEndpoint has been obsoleted.",
-            TreatAsErrorFromVersion = "7",
-            RemoveInVersion = "9",
-            ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
             this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
         {
@@ -91,10 +87,9 @@ namespace NServiceBus
         /// <param name="queueName">Queue name.</param>
         /// <param name="schema">Custom schema value.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseSchemaForQueue has been obsoleted.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9",
-            ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(
             this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
         {
@@ -109,10 +104,9 @@ namespace NServiceBus
         /// <param name="endpointName">Endpoint name.</param>
         /// <param name="catalog">Custom catalog value.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseCatalogForEndpoint has been obsoleted.",
-            TreatAsErrorFromVersion = "7.0",
-            RemoveInVersion = "8.0",
-            ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
             this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
         {
@@ -127,10 +121,9 @@ namespace NServiceBus
         /// <param name="queueName">Queue name.</param>
         /// <param name="catalog">Custom catalog value.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseCatalogForQueue has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(
             this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)
         {
@@ -145,10 +138,9 @@ namespace NServiceBus
         /// </summary>
         /// <param name="waitTime">Time to wait before triggering the circuit breaker.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "TimeToWaitBeforeTriggeringCircuitBreaker has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
             this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
         {
@@ -162,10 +154,9 @@ namespace NServiceBus
         /// </summary>
         /// <param name="connectionString">Sql Server instance connection string.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "ConnectionString has been obsoleted.",
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "configuration.UseTransport(new SqlServerTransport(string connectionString))",
-            RemoveInVersion = "9.0",
-            TreatAsErrorFromVersion = "8.0")]
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> ConnectionString(
             this TransportExtensions<SqlServerTransport> transportExtensions, string connectionString)
         {
@@ -177,10 +168,9 @@ namespace NServiceBus
         /// <summary>
         /// Configures the transport to use the given func as the connection string.
         /// </summary>
-        [PreObsolete(
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             Message = "This transport does not support a connection string.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0")]
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> ConnectionString(
             this TransportExtensions<SqlServerTransport> transportExtensions, Func<string> connectionString)
         {
@@ -194,10 +184,9 @@ namespace NServiceBus
         /// </summary>
         /// <param name="sqlConnectionFactory">Factory that returns connection ready for usage.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "UseCustomSqlConnectionFactory has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             Func<Task<SqlConnection>> sqlConnectionFactory)
@@ -215,10 +204,9 @@ namespace NServiceBus
         /// If not specified the default transaction timeout of the machine will be used and the isolation level will be set to
         /// <see cref="IsolationLevel.ReadCommitted" />.
         /// </remarks>
-        [PreObsolete(Message = "TransactionScopeOptions has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.TransactionScope")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.TransactionScope",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             TimeSpan? timeout = null,
@@ -243,10 +231,9 @@ namespace NServiceBus
         /// <param name="delay">The delay value</param>
         /// <param name="peekBatchSize">The peek batch size</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "QueuePeekerOptions has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.QueuePeeker")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.QueuePeeker",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> QueuePeekerOptions(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             TimeSpan? delay = null,
@@ -265,10 +252,9 @@ namespace NServiceBus
         /// <summary>
         /// Configures native delayed delivery.
         /// </summary>
-        [PreObsolete(Message = "NativeDelayedDelivery has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static DelayedDeliverySettings NativeDelayedDelivery(
             this TransportExtensions<SqlServerTransport> transportExtensions) =>
             new DelayedDeliverySettings(transportExtensions.Transport.DelayedDelivery);
@@ -276,10 +262,9 @@ namespace NServiceBus
         /// <summary>
         /// Configures publish/subscribe behavior.
         /// </summary>
-        [PreObsolete(Message = "SubscriptionSettings has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.Subscriptions")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.Subscriptions",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static SubscriptionSettings
             SubscriptionSettings(this TransportExtensions<SqlServerTransport> transportExtensions) =>
             new SubscriptionSettings(transportExtensions.Transport.Subscriptions);
@@ -289,10 +274,9 @@ namespace NServiceBus
         /// </summary>
         /// <param name="purgeBatchSize">Size of the purge batch.</param>
         /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete(Message = "PurgeExpiredMessagesOnStartup has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(
             this TransportExtensions<SqlServerTransport> transportExtensions,
             int? purgeBatchSize)
@@ -306,10 +290,9 @@ namespace NServiceBus
         /// <summary>
         /// Instructs the transport to create a computed column for inspecting message body contents.
         /// </summary>
-        [PreObsolete(Message = "CreateMessageBodyComputedColumn has been obsoleted.",
-            TreatAsErrorFromVersion = "8.0",
-            RemoveInVersion = "9.0",
-            ReplacementTypeOrMember = "SqlServerTransport.CreateMessageBodyComputedColumn")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.CreateMessageBodyComputedColumn",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(
             this TransportExtensions<SqlServerTransport> transportExtensions)
         {
@@ -327,10 +310,9 @@ namespace NServiceBus
         /// Enables compatibility with endpoints running on message-driven pub-sub
         /// </summary>
         /// <param name="transportExtensions">The transport to enable pub-sub compatibility on</param>
-        [PreObsolete(Message = "Native publish/subscribe is always enabled in version 7. All endpoints must be updated to use native publish/subscribe before updating to this version.",
-            TreatAsErrorFromVersion = "8",
-            RemoveInVersion = "9",
-            Note = "As long as core supports message-driven publish/subscribe migration mode, then the transports must continue to support it too. Keep bumping the versions when working on a new major until core no longer supports message-driven publish/subscribe migration mode.")]
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6471",
+               Note = "Hybrid pub/sub support cannot be obsolete until there is a viable migration path to native pub/sub",
+               Message = "Hybrid pub/sub is no longer supported, use native pub/sub instead")]
         public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
             this TransportExtensions<SqlServerTransport> transportExtensions)
         {

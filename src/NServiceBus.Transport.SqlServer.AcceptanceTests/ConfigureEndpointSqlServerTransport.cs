@@ -19,14 +19,16 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
     public ConfigureEndpointSqlServerTransport()
     {
-        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         transport = new SqlServerTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
 
-#if !NETFRAMEWORK
-        transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
-#endif
+        //On non windows operating systems we need to explicitly set the transaction mode to SendsAtomicWithReceive since distributed transactions is not available there
+        if (!OperatingSystem.IsWindows() && transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
+        {
+            transport.TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
+        }
     }
 
     public Task Configure(string endpointName, EndpointConfiguration configuration, RunSettings runSettings, PublisherMetadata publisherMetadata)

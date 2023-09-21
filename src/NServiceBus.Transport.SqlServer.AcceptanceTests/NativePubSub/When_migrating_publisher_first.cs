@@ -16,7 +16,7 @@
     public class When_migrating_publisher_first : NServiceBusAcceptanceTest
     {
         static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
-        static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
+        static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         [Test]
         public async Task Should_not_lose_any_events()
