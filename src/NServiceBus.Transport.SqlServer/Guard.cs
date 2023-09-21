@@ -1,12 +1,10 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using JetBrains.Annotations;
 
     class Guard
     {
-        [ContractAnnotation("value: null => halt")]
-        public static void AgainstNull([InvokerParameterName] string argumentName, [NotNull] object value)
+        public static void AgainstNull(string argumentName, object value)
         {
             if (value == null)
             {
@@ -14,8 +12,7 @@
             }
         }
 
-        [ContractAnnotation("value: null => halt")]
-        public static void AgainstNullAndEmpty([InvokerParameterName] string argumentName, [NotNull] string value)
+        public static void AgainstNullAndEmpty(string argumentName, string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -23,7 +20,7 @@
             }
         }
 
-        public static void AgainstNegativeAndZero([InvokerParameterName] string argumentName, TimeSpan value)
+        public static void AgainstNegativeAndZero(string argumentName, TimeSpan value)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -31,7 +28,7 @@
             }
         }
 
-        public static void AgainstNegative([InvokerParameterName] string argumentName, TimeSpan value)
+        public static void AgainstNegative(string argumentName, TimeSpan value)
         {
             if (value < TimeSpan.Zero)
             {
