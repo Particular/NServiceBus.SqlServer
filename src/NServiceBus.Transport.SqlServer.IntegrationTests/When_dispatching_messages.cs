@@ -69,14 +69,14 @@
         [Test]
         public void Proper_exception_is_thrown_if_queue_does_not_exist()
         {
-            var operation = new TransportOperation(new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag("InvalidQueue"));
+            var operation = new TransportOperation(new OutgoingMessage("1", [], new byte[0]), new UnicastAddressTag("InvalidQueue"));
             Assert.That(async () => await dispatcher.Dispatch(new TransportOperations(operation), new TransportTransaction()), Throws.TypeOf<QueueNotFoundException>());
         }
 
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)
         {
             return new TransportOperation(
-                new OutgoingMessage(id, new Dictionary<string, string>(), new byte[0]),
+                new OutgoingMessage(id, [], new byte[0]),
                 new UnicastAddressTag(destination),
                 requiredDispatchConsistency: consistency
                 );

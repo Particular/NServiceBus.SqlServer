@@ -22,7 +22,7 @@
         void InitializeHeaders()
         {
             var parsedHeaders = string.IsNullOrEmpty(originalHeaders)
-                ? new Dictionary<string, string>()
+                ? []
                 : DictionarySerializer.DeSerialize(originalHeaders);
 
             LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);

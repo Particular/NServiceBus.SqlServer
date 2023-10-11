@@ -329,7 +329,7 @@ namespace NServiceBus.Transport.SqlServer
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
-        Dictionary<string, object> diagnostics = new Dictionary<string, object>();
+        Dictionary<string, object> diagnostics = [];
         SqlConnectionFactory connectionFactory;
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();

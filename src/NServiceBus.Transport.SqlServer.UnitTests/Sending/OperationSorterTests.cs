@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests.Sending
 {
-    using System.Collections.Generic;
     using System.Linq;
     using NUnit.Framework;
     using Routing;
@@ -75,7 +74,7 @@
 
         static TransportOperation CreateTransportOperations(string messageId, string destination, DispatchConsistency dispatchConsistency = DispatchConsistency.Default)
         {
-            return new TransportOperation(new OutgoingMessage(messageId, new Dictionary<string, string>(), new byte[0]), new UnicastAddressTag(destination), requiredDispatchConsistency: dispatchConsistency);
+            return new TransportOperation(new OutgoingMessage(messageId, [], new byte[0]), new UnicastAddressTag(destination), requiredDispatchConsistency: dispatchConsistency);
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -50,7 +49,7 @@
                 using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
-                    var message = new OutgoingMessage(Guid.NewGuid().ToString(), new Dictionary<string, string>(), new byte[0]);
+                    var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], new byte[0]);
                     await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, cancellationToken);
                     tx.Commit();
                     scope.Complete();
