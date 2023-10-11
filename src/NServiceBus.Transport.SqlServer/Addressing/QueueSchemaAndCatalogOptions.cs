@@ -31,7 +31,7 @@
             catalogs.TryGetValue(queueName, out catalog);
         }
 
-        Dictionary<string, string> schemas = new Dictionary<string, string>();
-        Dictionary<string, string> catalogs = new Dictionary<string, string>();
+        Dictionary<string, string> schemas = [];
+        Dictionary<string, string> catalogs = [];
     }
 }

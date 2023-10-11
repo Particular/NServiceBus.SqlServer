@@ -29,7 +29,7 @@
                     context.Set(transportTransaction);
 
                     var operation = new TransportOperation(
-                        new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]),
+                        new OutgoingMessage("1", [], new byte[0]),
                         new UnicastAddressTag(ValidAddress)
                     );
 
@@ -91,7 +91,7 @@
                     context.Set(transportTransaction);
 
                     var operation = new TransportOperation(
-                        new OutgoingMessage("1", new Dictionary<string, string>(), new byte[0]),
+                        new OutgoingMessage("1", [], new byte[0]),
                         new UnicastAddressTag(ValidAddress),
                         new DispatchProperties
                         {

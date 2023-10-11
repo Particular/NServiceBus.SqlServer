@@ -126,7 +126,7 @@ END";
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)
         {
             return new TransportOperation(
-                new OutgoingMessage(id, new Dictionary<string, string>(), new byte[0]),
+                new OutgoingMessage(id, [], new byte[0]),
                 new UnicastAddressTag(destination),
                 requiredDispatchConsistency: consistency
                 );
