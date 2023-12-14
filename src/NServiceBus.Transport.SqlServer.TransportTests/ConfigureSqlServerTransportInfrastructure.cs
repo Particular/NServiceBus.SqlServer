@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;
+using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
@@ -21,6 +22,11 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
+        if (!OperatingSystem.IsWindows() && transportDefinition.TransportTransactionMode == TransportTransactionMode.TransactionScope)
+        {
+            Assert.Ignore("DTC does not work on Linux.");
+        }
+
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
         inputQueueName = queueAddress.ToString();
