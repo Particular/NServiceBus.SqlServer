@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer", "NServiceBus.SqlServer\NServiceBus.SqlServer.csproj", "{FA1193BF-325C-4201-BB78-484032E09809}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.AcceptanceTests", "NServiceBus.SqlServer.AcceptanceTests\NServiceBus.SqlServer.AcceptanceTests.csproj", "{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8C6EF3B-1488-44A7-BF9E-D85DB09B0FFE}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\ci.yml = ..\.github\workflows\ci.yml
@@ -16,17 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Scripts\Reset-Database.sql = Scripts\Reset-Database.sql
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.UnitTests", "NServiceBus.SqlServer.UnitTests\NServiceBus.SqlServer.UnitTests.csproj", "{9FD87362-6F80-495C-B5F0-CA84CA40DE02}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.IntegrationTests", "NServiceBus.SqlServer.IntegrationTests\NServiceBus.SqlServer.IntegrationTests.csproj", "{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.TransportTests", "NServiceBus.SqlServer.TransportTests\NServiceBus.SqlServer.TransportTests.csproj", "{165C21AA-A7ED-48F2-A122-C2418B2DEB59}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer", "NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj", "{F24C4DFD-A8DF-4053-A367-DF80F601230F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.AcceptanceTests", "NServiceBus.Transport.SqlServer.AcceptanceTests\NServiceBus.Transport.SqlServer.AcceptanceTests.csproj", "{1AD1139F-771B-4993-8EFD-62600702DC54}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Legacy", "Legacy", "{9FC1126B-8F97-465D-8C1C-9279C46E87EA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.IntegrationTests", "NServiceBus.Transport.SqlServer.IntegrationTests\NServiceBus.Transport.SqlServer.IntegrationTests.csproj", "{A4E324C5-ADE4-411A-AFFC-5DD5F4DE8087}"
 EndProject
@@ -40,26 +28,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FA1193BF-325C-4201-BB78-484032E09809}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA1193BF-325C-4201-BB78-484032E09809}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA1193BF-325C-4201-BB78-484032E09809}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA1193BF-325C-4201-BB78-484032E09809}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9FD87362-6F80-495C-B5F0-CA84CA40DE02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9FD87362-6F80-495C-B5F0-CA84CA40DE02}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9FD87362-6F80-495C-B5F0-CA84CA40DE02}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9FD87362-6F80-495C-B5F0-CA84CA40DE02}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{165C21AA-A7ED-48F2-A122-C2418B2DEB59}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F24C4DFD-A8DF-4053-A367-DF80F601230F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F24C4DFD-A8DF-4053-A367-DF80F601230F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F24C4DFD-A8DF-4053-A367-DF80F601230F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -83,13 +51,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{FA1193BF-325C-4201-BB78-484032E09809} = {9FC1126B-8F97-465D-8C1C-9279C46E87EA}
-		{6A9E04E7-6229-4A3E-B94A-DA168E962B5A} = {9FC1126B-8F97-465D-8C1C-9279C46E87EA}
-		{9FD87362-6F80-495C-B5F0-CA84CA40DE02} = {9FC1126B-8F97-465D-8C1C-9279C46E87EA}
-		{BEFACD2C-02EC-488B-9FB7-696A5EAF4FEB} = {9FC1126B-8F97-465D-8C1C-9279C46E87EA}
-		{165C21AA-A7ED-48F2-A122-C2418B2DEB59} = {9FC1126B-8F97-465D-8C1C-9279C46E87EA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40F170C2-9EAA-418C-840A-4D9C6D8BBC1F}

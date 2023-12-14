@@ -1,1 +1,0 @@
-﻿// Needed to get editorconfig files working properly
