@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;
-using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
@@ -22,12 +21,6 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
-        //TODO: Remove once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
-        if (transportDefinition.TransportTransactionMode == TransportTransactionMode.TransactionScope)
-        {
-            Assert.Ignore("TransactionScopes doesn't work with DTC on .NET yet, see https://github.com/Particular/NServiceBus.SqlServer/issues/1145");
-        }
-
         sqlServerTransport = (SqlServerTransport)transportDefinition;
 
         inputQueueName = queueAddress.ToString();
