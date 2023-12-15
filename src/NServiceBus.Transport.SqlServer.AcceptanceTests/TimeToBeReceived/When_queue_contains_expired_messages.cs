@@ -20,8 +20,7 @@
         public void SetUpConnectionString() =>
             connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-        //TODO: Enable once scopes work with DTC on .NET - https://github.com/Particular/NServiceBus.SqlServer/issues/1145
-        ///[TestCase(TransportTransactionMode.TransactionScope)]
+        [TestCase(TransportTransactionMode.TransactionScope)]
         [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
         [TestCase(TransportTransactionMode.None)]
