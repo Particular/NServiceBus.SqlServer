@@ -1,6 +1,6 @@
 # NServiceBus.SqlServer 
 
-NServiceBus.SqlServer provides support for sending messages using Microsoft SQL Server without the use of a service broker.
+NServiceBus.SqlServer provides support for sending messages using [Microsoft SQL Server](http://www.microsoft.com/sqlserver) without the use of a service broker.
 
 It is part of the [Particular Service Platform](https://particular.net/service-platform), which includes [NServiceBus](https://particular.net/nservicebus) and tools to build, monitor, and debug distributed systems.
 
