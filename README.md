@@ -1,6 +1,10 @@
-# SQL Server Transport for NServiceBus
+# NServiceBus.SqlServer 
 
-Install this to enable NServiceBus to facilitate messaging over SQL Server
+NServiceBus.SqlServer provides support for sending messages using [Microsoft SQL Server](http://www.microsoft.com/sqlserver) without the use of a service broker.
+
+It is part of the [Particular Service Platform](https://particular.net/service-platform), which includes [NServiceBus](https://particular.net/nservicebus) and tools to build, monitor, and debug distributed systems.
+
+See the [SQL Server transport documentation](https://docs.particular.net/transports/sql/) for more details on how to use it.
 
 ## Installation
 
@@ -19,9 +23,9 @@ Before doing anything else, make sure you have SQL Server up and running in your
 
 ## Performance
 
-Consider creating a RAM drive or using the temporaty drive when running in a cloud vm and hosting your databases on it to reduce the time required to run acceptance tests.
+Consider creating a RAM drive or using the temporary drive when running in a cloud vm and hosting your databases on it to reduce the time required to run acceptance tests.
 
-## How to run tests
+## Running tests locally
 
 The tests expect a SQL Server instance to be available.
 
@@ -38,7 +42,3 @@ All tests use the default connection string `Data Source=.\SQLEXPRESS;Initial Ca
   - `receiver` owner `db_owner`
   - `sender` owner `db_owner`
   - `db@` owner `db_owner`
-
-## Samples
-
-See http://docs.particular.net/samples/
