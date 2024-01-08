@@ -2,16 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Linq;
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
     using System.Threading;
+    using Npgsql;
 
     class MessageDispatcher : IMessageDispatcher
     {
@@ -58,14 +54,14 @@
 
             if (userProvidedTransaction)
             {
-                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out NpgsqlTransaction sqlTransportTransaction);
                 if (sqlTransportTransaction != null)
                 {
                     await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
+                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out NpgsqlConnection sqlTransportConnection);
                 if (sqlTransportConnection != null)
                 {
                     await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
@@ -116,8 +112,8 @@
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out NpgsqlConnection sqlTransportConnection);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out NpgsqlTransaction sqlTransportTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
@@ -140,7 +136,7 @@
             }
         }
 
-        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
         {
             foreach (var operation in operations)
             {
@@ -148,7 +144,7 @@
             }
         }
 
-        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken)
+        Task Dispatch(NpgsqlConnection connection, NpgsqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken)
         {
             var discardIfNotReceivedBefore = operation.Properties.DiscardIfNotReceivedBefore;
             var doNotDeliverBefore = operation.Properties.DoNotDeliverBefore;
@@ -180,7 +176,7 @@
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction nativeTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out NpgsqlTransaction nativeTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;

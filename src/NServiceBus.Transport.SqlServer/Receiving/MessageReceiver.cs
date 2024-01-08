@@ -1,14 +1,10 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using Npgsql;
 
     class MessageReceiver : IMessageReceiver
     {
@@ -214,7 +210,7 @@
 
                     messageProcessingCircuitBreaker.Success();
                 }
-                catch (SqlException ex) when (ex.Number == 1205)
+                catch (NpgsqlException ex) when (ex.ErrorCode == 1205)
                 {
                     // getting the message was the victim of a lock resolution
                     Logger.Warn("Message processing failed", ex);
@@ -242,7 +238,7 @@
             {
                 await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
             }
-            catch (SqlException e) when (e.Number == 1205)
+            catch (NpgsqlException e) when (e.ErrorCode == 1205)
             {
                 //Purge has been victim of a lock resolution
                 Logger.Warn("Purger has been selected as a lock victim.", e);

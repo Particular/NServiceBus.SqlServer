@@ -1,13 +1,9 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using System.Threading;
+    using Npgsql;
 
     class QueueCreator
     {
@@ -34,7 +30,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, NpgsqlConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
         {
             try
             {
@@ -42,7 +38,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
                         canonicalQueueAddress.QuotedCatalogName);
-                    using (var command = new SqlCommand(sql, connection, transaction)
+                    using (var command = new NpgsqlCommand(sql, connection, transaction)
                     {
                         CommandType = CommandType.Text
                     })
@@ -54,7 +50,7 @@ namespace NServiceBus.Transport.SqlServer
                     transaction.Commit();
                 }
             }
-            catch (SqlException e) when (e.Number is 2714 or 1913) //Object already exists
+            catch (NpgsqlException e) when (e.ErrorCode is 2714 or 1913) //Object already exists
             {
                 //Table creation scripts are based on sys.objects metadata views.
                 //It looks that these views are not fully transactional and might
@@ -71,7 +67,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 using (var transaction = connection.BeginTransaction())
                 {
-                    using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                    using (var command = new NpgsqlCommand(bodyStringSql, connection, transaction)
                     {
                         CommandType = CommandType.Text
                     })

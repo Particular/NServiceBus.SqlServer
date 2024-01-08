@@ -1,17 +1,13 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
     using Unicast.Queuing;
     using Faults;
+    using Npgsql;
 
 
     abstract class ProcessStrategy
@@ -74,7 +70,7 @@
             }
         }
 
-        protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected async Task<bool> TryHandleDelayedMessage(Message message, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {

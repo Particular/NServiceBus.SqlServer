@@ -2,14 +2,10 @@
 
 namespace NServiceBus
 {
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Npgsql;
     using Transport.SqlServer;
 
     /// <summary>
@@ -189,7 +185,7 @@ namespace NServiceBus
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
             this TransportExtensions<SqlServerTransport> transportExtensions,
-            Func<Task<SqlConnection>> sqlConnectionFactory)
+            Func<Task<NpgsqlConnection>> sqlConnectionFactory)
         {
             transportExtensions.Transport.ConnectionFactory = async (_) => await sqlConnectionFactory().ConfigureAwait(false);
 

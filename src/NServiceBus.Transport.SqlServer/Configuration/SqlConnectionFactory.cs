@@ -1,23 +1,19 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
     using System.Threading;
+    using Npgsql;
 
     class SqlConnectionFactory
     {
-        public SqlConnectionFactory(Func<CancellationToken, Task<SqlConnection>> factory)
+        public SqlConnectionFactory(Func<CancellationToken, Task<NpgsqlConnection>> factory)
         {
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection(CancellationToken cancellationToken = default)
+        public async Task<NpgsqlConnection> OpenNewConnection(CancellationToken cancellationToken = default)
         {
             var connection = await openNewConnection(cancellationToken).ConfigureAwait(false);
 
@@ -32,7 +28,7 @@
             {
                 ValidateConnectionPool(connectionString);
 
-                var connection = new SqlConnection(connectionString);
+                var connection = new NpgsqlConnection(connectionString);
                 try
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -73,7 +69,7 @@
             hasValidated = true;
         }
 
-        Func<CancellationToken, Task<SqlConnection>> openNewConnection;
+        Func<CancellationToken, Task<NpgsqlConnection>> openNewConnection;
         static bool hasValidated;
 
         static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();

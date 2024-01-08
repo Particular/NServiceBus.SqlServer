@@ -2,22 +2,18 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.IO;
     using System.Threading.Tasks;
     using Logging;
     using System.Threading;
+    using Npgsql;
+    using NpgsqlTypes;
 
     class MessageRow
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
+        public static async Task<MessageReadResult> Read(NpgsqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
         {
             var row = await ReadRow(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
             return row.TryParse();
@@ -35,15 +31,15 @@
         }
 
 
-        public void PrepareSendCommand(SqlCommand command)
+        public void PrepareSendCommand(NpgsqlCommand command)
         {
-            AddParameter(command, "Id", SqlDbType.UniqueIdentifier, id);
-            AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
-            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
+            AddParameter(command, "Id", NpgsqlDbType.Uuid, id);
+            AddParameter(command, "TimeToBeReceivedMs", NpgsqlDbType.Integer, timeToBeReceived);
+            AddParameter(command, "Headers", NpgsqlDbType.Varchar, headers);
+            AddParameter(command, "Body", NpgsqlDbType.Bytea, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
+        static async Task<MessageRow> ReadRow(NpgsqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
         {
             return new MessageRow
             {
@@ -67,7 +63,7 @@
             }
         }
 
-        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
+        static async Task<string> GetHeaders(NpgsqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
         {
             if (await dataReader.IsDBNullAsync(headersIndex, cancellationToken).ConfigureAwait(false))
             {
@@ -80,7 +76,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
+        static async Task<byte[]> GetBody(NpgsqlDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
         {
             if (!isStreamSupported)
             {
@@ -97,12 +93,12 @@
             }
         }
 
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
+        void AddParameter(NpgsqlCommand command, string name, NpgsqlDbType type, object value)
         {
             command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
         }
 
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value, int size)
+        void AddParameter(NpgsqlCommand command, string name, NpgsqlDbType type, object value, int size)
         {
             command.Parameters.Add(name, type, size).Value = value ?? DBNull.Value;
         }

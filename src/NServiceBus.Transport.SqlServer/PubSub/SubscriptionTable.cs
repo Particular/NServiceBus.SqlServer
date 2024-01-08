@@ -6,6 +6,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using NpgsqlTypes;
 
     class SubscriptionTable
     {
@@ -30,9 +31,9 @@ namespace NServiceBus.Transport.SqlServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = queueAddress;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
+                    command.Parameters.Add("Endpoint", NpgsqlDbType.Varchar).Value = endpointName;
+                    command.Parameters.Add("QueueAddress", NpgsqlDbType.Varchar).Value = queueAddress;
+                    command.Parameters.Add("Topic", NpgsqlDbType.Varchar).Value = topic;
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -47,8 +48,8 @@ namespace NServiceBus.Transport.SqlServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = unsubscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
+                    command.Parameters.Add("Endpoint", NpgsqlDbType.Varchar).Value = endpointName;
+                    command.Parameters.Add("Topic", NpgsqlDbType.Varchar).Value = topic;
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -70,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
                     command.CommandText = getSubscribersCommand;
                     for (var i = 0; i < topics.Length; i++)
                     {
-                        command.Parameters.Add($"Topic_{i}", SqlDbType.VarChar).Value = topics[i];
+                        command.Parameters.Add($"Topic_{i}", NpgsqlDbType.Varchar).Value = topics[i];
                     }
 
                     using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))

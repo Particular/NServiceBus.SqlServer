@@ -1,18 +1,14 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
+    using Npgsql;
 
     class ConnectionPoolValidator
     {
         public static ValidationCheckResult Validate(string connectionString)
         {
             var keys = new DbConnectionStringBuilder { ConnectionString = connectionString };
-            var parsedConnection = new SqlConnectionStringBuilder(connectionString);
+            var parsedConnection = new NpgsqlConnectionStringBuilder(connectionString);
 
             if (keys.ContainsKey("Pooling") && !parsedConnection.Pooling)
             {

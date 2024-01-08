@@ -2,17 +2,13 @@
 {
     using System;
     using System.Threading;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
+    using Npgsql;
 
     class SchemaInspector
     {
-        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection, bool validateExpiredIndex)
+        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<NpgsqlConnection>> openConnection, bool validateExpiredIndex)
         {
             this.openConnection = openConnection;
             this.validateExpiredIndex = validateExpiredIndex;
@@ -29,7 +25,7 @@
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
+        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, NpgsqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -86,7 +82,7 @@
             }
         }
 
-        Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, CancellationToken, Task<NpgsqlConnection>> openConnection;
         readonly bool validateExpiredIndex;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

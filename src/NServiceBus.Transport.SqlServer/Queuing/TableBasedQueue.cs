@@ -2,15 +2,11 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using Unicast.Queuing;
     using Logging;
+    using Npgsql;
     using static System.String;
 
     class TableBasedQueue
@@ -30,9 +26,9 @@ namespace NServiceBus.Transport.SqlServer
             this.isStreamSupported = isStreamSupported;
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        public virtual async Task<int> TryPeek(NpgsqlConnection connection, NpgsqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(peekCommand, connection, transaction)
+            using (var command = new NpgsqlCommand(peekCommand, connection, transaction)
             {
                 CommandTimeout = timeoutInSeconds ?? 30
             })
@@ -47,27 +43,27 @@ namespace NServiceBus.Transport.SqlServer
             peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public virtual async Task<MessageReadResult> TryReceive(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(receiveCommand, connection, transaction))
+            using (var command = new NpgsqlCommand(receiveCommand, connection, transaction))
             {
                 return await ReadMessage(command, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task DeadLetter(MessageRow poisonMessage, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             return SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
         }
 
-        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction, cancellationToken);
         }
 
-        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken)
+        async Task<MessageReadResult> ReadMessage(NpgsqlCommand command, CancellationToken cancellationToken)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
@@ -97,13 +93,13 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task SendRawMessage(MessageRow message, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
         {
             try
             {
                 var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
 
-                using (var command = new SqlCommand(sendCommand, connection, transaction))
+                using (var command = new NpgsqlCommand(sendCommand, connection, transaction))
                 {
                     message.PrepareSendCommand(command);
 
@@ -112,12 +108,12 @@ namespace NServiceBus.Transport.SqlServer
             }
             // 207 = Invalid column name
             // 515 = Cannot insert the value NULL into column; column does not allow nulls
-            catch (SqlException ex) when ((ex.Number == 207 || ex.Number == 515) && ex.Message.Contains("Recoverable"))
+            catch (NpgsqlException ex) when (ex.ErrorCode == 207)
             {
                 cachedSendCommand = null;
                 throw new Exception($"Failed to send message to {qualifiedTableName} due to a change in the existence of the Recoverable column that is scheduled for removal. If the table schema has changed, this is expected. Retrying the message send will detect the new table structure and adapt to it.", ex);
             }
-            catch (SqlException ex) when (ex.Number == 208)
+            catch (NpgsqlException ex) when (ex.ErrorCode == 208)
             {
                 ThrowQueueNotFoundException(ex);
             }
@@ -127,7 +123,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task<string> GetSendCommandText(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task<string> GetSendCommandText(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
         {
             // Get a local reference because another thread could remove the cache between check and return
             var sendCommand = cachedSendCommand;
@@ -146,7 +142,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
 
                 var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
-                using (var command = new SqlCommand(commandText, connection, transaction))
+                using (var command = new NpgsqlCommand(commandText, connection, transaction))
                 {
                     using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                     {
@@ -170,7 +166,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        void ThrowQueueNotFoundException(SqlException ex)
+        void ThrowQueueNotFoundException(NpgsqlException ex)
         {
             throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
         }
@@ -180,44 +176,44 @@ namespace NServiceBus.Transport.SqlServer
             throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
 
-        public async Task<int> Purge(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<int> Purge(NpgsqlConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(purgeCommand, connection))
+            using (var command = new NpgsqlCommand(purgeCommand, connection))
             {
                 return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
+        public async Task<int> PurgeBatchOfExpiredMessages(NpgsqlConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(purgeExpiredCommand, connection))
+            using (var command = new NpgsqlCommand(purgeExpiredCommand, connection))
             {
                 command.Parameters.AddWithValue("@BatchSize", purgeBatchSize);
                 return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<bool> CheckExpiresIndexPresence(NpgsqlConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
+            using (var command = new NpgsqlCommand(checkExpiresIndexCommand, connection))
             {
                 var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(NpgsqlConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
+            using (var command = new NpgsqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
             {
                 var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<string> CheckHeadersColumnType(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<string> CheckHeadersColumnType(NpgsqlConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
+            using (var command = new NpgsqlCommand(checkHeadersColumnTypeCommand, connection))
             {
                 return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
             }

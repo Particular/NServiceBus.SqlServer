@@ -1,16 +1,12 @@
 namespace NServiceBus
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Transport;
     using Transport.SqlServer;
     using System.Collections.Generic;
     using System.Threading;
+    using Npgsql;
 
     /// <summary>
     /// SqlServer Transport
@@ -31,8 +27,8 @@ namespace NServiceBus
         /// <summary>
         /// Creates and instance of <see cref="SqlServerTransport"/>
         /// </summary>
-        /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="SqlConnection"/> in an Opened state.</param>
-        public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
+        /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="NpgsqlConnection"/> in an Opened state.</param>
+        public SqlServerTransport(Func<CancellationToken, Task<NpgsqlConnection>> connectionFactory)
             : base(DefaultTransportTransactionMode, true, true, true)
         {
             Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
@@ -104,7 +100,7 @@ namespace NServiceBus
         /// <summary>
         /// Connection string factory.
         /// </summary>
-        public Func<CancellationToken, Task<SqlConnection>> ConnectionFactory { get; internal set; }
+        public Func<CancellationToken, Task<NpgsqlConnection>> ConnectionFactory { get; internal set; }
 
         /// <summary>
         /// Default address schema.

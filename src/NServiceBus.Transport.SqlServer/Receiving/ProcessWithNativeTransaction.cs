@@ -1,16 +1,12 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using IsolationLevel = System.Data.IsolationLevel;
     using Extensibility;
+    using Npgsql;
 
     class ProcessWithNativeTransaction : ProcessStrategy
     {
@@ -78,7 +74,7 @@
             }
         }
 
-        TransportTransaction PrepareTransportTransaction(SqlConnection connection, SqlTransaction transaction)
+        TransportTransaction PrepareTransportTransaction(NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();
 
