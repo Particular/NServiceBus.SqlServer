@@ -17,10 +17,8 @@
             Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
             Func<string, TableBasedQueue> queueFactory,
             IPurgeQueues queuePurger,
-            IExpiredMessagesPurger expiredMessagesPurger,
             IPeekMessagesInQueue queuePeeker,
             QueuePeekerOptions queuePeekerOptions,
-            SchemaInspector schemaInspector,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
             bool purgeAllMessagesOnStartup)
@@ -29,10 +27,8 @@
             this.processStrategyFactory = processStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
-            this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
             this.queuePeekerOptions = queuePeekerOptions;
-            this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.errorQueueAddress = errorQueueAddress;
             this.criticalErrorAction = criticalErrorAction;
@@ -71,10 +67,8 @@
                     Logger.Warn("Failed to purge input queue on startup.", ex);
                 }
             }
-
-            await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
-
-            await schemaInspector.PerformInspection(inputQueue, cancellationToken).ConfigureAwait(false);
+            //TODO:
+            //await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
         }
 
         public Task StartReceive(CancellationToken cancellationToken = default)
@@ -232,19 +226,6 @@
             }
         }
 
-        async Task PurgeExpiredMessages(CancellationToken cancellationToken)
-        {
-            try
-            {
-                await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
-            }
-            catch (NpgsqlException e) when (e.ErrorCode == 1205)
-            {
-                //Purge has been victim of a lock resolution
-                Logger.Warn("Purger has been selected as a lock victim.", e);
-            }
-        }
-
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly SqlServerTransport transport;
@@ -253,10 +234,8 @@
         readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
         readonly IPurgeQueues queuePurger;
         readonly Func<string, TableBasedQueue> queueFactory;
-        readonly IExpiredMessagesPurger expiredMessagesPurger;
         readonly IPeekMessagesInQueue queuePeeker;
         readonly QueuePeekerOptions queuePeekerOptions;
-        readonly SchemaInspector schemaInspector;
         readonly bool purgeAllMessagesOnStartup;
         TimeSpan waitTimeCircuitBreaker;
         volatile SemaphoreSlim concurrencyLimiter;

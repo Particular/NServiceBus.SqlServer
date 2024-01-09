@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Threading;
-#if SYSTEMDATASQLCLIENT
-using System.Data.SqlClient;
-#else
-using Microsoft.Data.SqlClient;
-#endif
 using System.Threading.Tasks;
+using Npgsql;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;
@@ -15,7 +11,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 {
     public TransportDefinition CreateTransportDefinition()
     {
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
+        connectionString = Environment.GetEnvironmentVariable("NpgsqlTransportConnectionString") ?? @"Server=localhost;Port=54320;Database=user;User Id=user;Password=admin;";
 
         return new SqlServerTransport(connectionString);
     }
@@ -64,7 +60,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 sqlServerTransport.Testing.DelayedDeliveryQueue
             };
 
-            using (var conn = new SqlConnection(connectionString))
+            using (var conn = new NpgsqlConnection(connectionString))
             {
                 await conn.OpenAsync(cancellationToken);
 
@@ -74,7 +70,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                     {
                         using (var comm = conn.CreateCommand())
                         {
-                            comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
+                            comm.CommandText = $"DROP TABLE IF EXISTS {queue}";
 
                             await comm.ExecuteNonQueryAsync(cancellationToken);
                         }

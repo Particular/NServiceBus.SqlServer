@@ -44,28 +44,32 @@ namespace NServiceBus.Transport.SqlServer
         /// <returns>The time of the next timeout due</returns>
         public async Task<DateTime> MoveDueMessages(int batchSize, NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            using (var command = new NpgsqlCommand(moveDueCommand, connection, transaction))
-            {
-                command.Parameters.AddWithValue("BatchSize", batchSize);
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        // No timeouts waiting
-                        return DateTime.UtcNow.AddMinutes(1);
-                    }
+            //using (var command = new NpgsqlCommand(moveDueCommand, connection, transaction))
+            //{
+            //    command.Parameters.AddWithValue("BatchSize", batchSize);
+            //    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+            //    {
+            //        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            //        {
+            //            // No timeouts waiting
+            //            return DateTime.UtcNow.AddMinutes(1);
+            //        }
 
-                    // Normalizing in case of clock drift between executing machine and SQL Server instance
-                    var sqlNow = reader.GetDateTime(0);
-                    var sqlNextDue = reader.GetDateTime(1);
-                    if (sqlNextDue <= sqlNow)
-                    {
-                        return DateTime.UtcNow;
-                    }
+            //        // Normalizing in case of clock drift between executing machine and SQL Server instance
+            //        var sqlNow = reader.GetDateTime(0);
+            //        var sqlNextDue = reader.GetDateTime(1);
+            //        if (sqlNextDue <= sqlNow)
+            //        {
+            //            return DateTime.UtcNow;
+            //        }
 
-                    return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
-                }
-            }
+            //        return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
+            //    }
+            //}
+
+            //TODO
+            await Task.Delay(1).ConfigureAwait(false);
+            return DateTime.UtcNow.AddSeconds(5);
         }
 
         string storeCommand;

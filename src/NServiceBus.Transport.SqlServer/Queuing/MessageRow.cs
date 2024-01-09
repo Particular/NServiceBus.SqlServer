@@ -44,9 +44,9 @@
             return new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
-                expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
-                headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
+                expired = false, //TODO
+                headers = await GetHeaders(dataReader, 1, cancellationToken).ConfigureAwait(false),
+                bodyBytes = await GetBody(dataReader, 2, isStreamSupported, cancellationToken).ConfigureAwait(false)
             };
         }
 

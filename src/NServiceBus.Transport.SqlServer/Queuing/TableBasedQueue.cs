@@ -19,10 +19,8 @@ namespace NServiceBus.Transport.SqlServer
             Name = queueName;
             receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
             purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
+            cachedSendCommand = Format(SqlConstants.SendText, this.qualifiedTableName);
             purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-            checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-            checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
         }
 
@@ -97,21 +95,12 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
-
-                using (var command = new NpgsqlCommand(sendCommand, connection, transaction))
+                using (var command = new NpgsqlCommand(cachedSendCommand, connection, transaction))
                 {
                     message.PrepareSendCommand(command);
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
-            }
-            // 207 = Invalid column name
-            // 515 = Cannot insert the value NULL into column; column does not allow nulls
-            catch (NpgsqlException ex) when (ex.ErrorCode == 207)
-            {
-                cachedSendCommand = null;
-                throw new Exception($"Failed to send message to {qualifiedTableName} due to a change in the existence of the Recoverable column that is scheduled for removal. If the table schema has changed, this is expected. Retrying the message send will detect the new table structure and adapt to it.", ex);
             }
             catch (NpgsqlException ex) when (ex.ErrorCode == 208)
             {
@@ -120,49 +109,6 @@ namespace NServiceBus.Transport.SqlServer
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 ThrowFailedToSendException(ex);
-            }
-        }
-
-        async Task<string> GetSendCommandText(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
-        {
-            // Get a local reference because another thread could remove the cache between check and return
-            var sendCommand = cachedSendCommand;
-            if (sendCommand != null)
-            {
-                return sendCommand;
-            }
-
-            await sendCommandLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                sendCommand = cachedSendCommand;
-                if (sendCommand != null)
-                {
-                    return sendCommand;
-                }
-
-                var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
-                using (var command = new NpgsqlCommand(commandText, connection, transaction))
-                {
-                    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
-                        {
-                            if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
-                            {
-                                cachedSendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
-                                return cachedSendCommand;
-                            }
-                        }
-                    }
-
-                    cachedSendCommand = Format(SqlConstants.SendText, qualifiedTableName);
-                    return cachedSendCommand;
-                }
-            }
-            finally
-            {
-                sendCommandLock.Release();
             }
         }
 
@@ -193,32 +139,6 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public async Task<bool> CheckExpiresIndexPresence(NpgsqlConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = new NpgsqlCommand(checkExpiresIndexCommand, connection))
-            {
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
-                return rowsCount > 0;
-            }
-        }
-
-        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(NpgsqlConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = new NpgsqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
-            {
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
-                return rowsCount > 0;
-            }
-        }
-
-        public async Task<string> CheckHeadersColumnType(NpgsqlConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = new NpgsqlCommand(checkHeadersColumnTypeCommand, connection))
-            {
-                return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
-            }
-        }
-
         public override string ToString()
         {
             return qualifiedTableName;
@@ -230,12 +150,8 @@ namespace NServiceBus.Transport.SqlServer
         string cachedSendCommand;
         string purgeCommand;
         string purgeExpiredCommand;
-        string checkExpiresIndexCommand;
-        string checkNonClusteredRowVersionIndexCommand;
-        string checkHeadersColumnTypeCommand;
         bool isStreamSupported;
 
-        readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
         static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();
     }
 }

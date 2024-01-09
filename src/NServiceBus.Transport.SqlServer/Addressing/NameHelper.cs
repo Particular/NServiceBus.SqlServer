@@ -2,8 +2,8 @@
 {
     class NameHelper
     {
-        const string prefix = "[";
-        const string suffix = "]";
+        const string prefix = "\"";
+        const string suffix = "\"";
 
         public static string Quote(string unquotedName)
         {

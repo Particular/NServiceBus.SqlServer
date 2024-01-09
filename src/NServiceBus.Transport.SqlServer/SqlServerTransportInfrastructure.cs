@@ -36,7 +36,7 @@ namespace NServiceBus.Transport.SqlServer
 
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
-            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
+            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog);
             tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -49,7 +49,7 @@ namespace NServiceBus.Transport.SqlServer
         async Task ConfigureSubscriptions(CancellationToken cancellationToken)
         {
             var pubSubSettings = transport.Subscriptions;
-            var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
+            var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
             var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
@@ -99,16 +99,12 @@ namespace NServiceBus.Transport.SqlServer
             var queuePurger = new QueuePurger(connectionFactory);
             var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
 
-            IExpiredMessagesPurger expiredMessagesPurger;
-            bool validateExpiredIndex;
             if (transport.ExpiredMessagesPurger.PurgeOnStartup == false)
             {
                 diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
                 {
                     Enabled = false,
                 });
-                expiredMessagesPurger = new NoOpExpiredMessagesPurger();
-                validateExpiredIndex = false;
             }
             else
             {
@@ -119,12 +115,7 @@ namespace NServiceBus.Transport.SqlServer
                     Enabled = true,
                     BatchSize = purgeBatchSize
                 });
-
-                expiredMessagesPurger = new ExpiredMessagesPurger((_, token) => connectionFactory.OpenNewConnection(token), purgeBatchSize);
-                validateExpiredIndex = true;
             }
-
-            var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex);
 
             var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
 
@@ -167,8 +158,7 @@ namespace NServiceBus.Transport.SqlServer
                     : new NoOpSubscriptionManager();
 
                 return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-                    expiredMessagesPurger,
-                    queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup);
+                    queuePeeker, queuePeekerOptions, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup);
 
             }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
