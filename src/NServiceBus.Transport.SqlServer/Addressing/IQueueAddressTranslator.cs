@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer;
 
-internal interface IQueueAddressTranslator
+interface IQueueAddressTranslator
 {
     QueueAddress Generate(Transport.QueueAddress queueAddress);
     CanonicalQueueAddress Parse(string address);
