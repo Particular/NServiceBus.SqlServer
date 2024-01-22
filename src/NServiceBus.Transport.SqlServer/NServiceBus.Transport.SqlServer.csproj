@@ -27,6 +27,9 @@
     <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.IntegrationTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.TransportTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.UnitTests" Key="$(NServiceBusTestsKey)" />
+    
+    <!--TODO: this should be removed once we split the shared codebase into dedicated project-->
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>
