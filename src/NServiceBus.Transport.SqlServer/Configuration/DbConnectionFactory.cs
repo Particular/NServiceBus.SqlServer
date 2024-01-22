@@ -1,19 +1,24 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using System.Threading;
+    using System.Data.Common;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Threading.Tasks;
     using Logging;
     using Microsoft.Data.SqlClient;
 
-    class SqlConnectionFactory
+    class DbConnectionFactory
     {
-        public SqlConnectionFactory(Func<CancellationToken, Task<SqlConnection>> factory)
+        public DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory)
         {
             openNewConnection = factory;
         }
 
-        public async Task<SqlConnection> OpenNewConnection(CancellationToken cancellationToken = default)
+        public async Task<DbConnection> OpenNewConnection(CancellationToken cancellationToken = default)
         {
             var connection = await openNewConnection(cancellationToken).ConfigureAwait(false);
 
@@ -22,9 +27,9 @@
             return connection;
         }
 
-        public static SqlConnectionFactory Default(string connectionString)
+        public static DbConnectionFactory Default(string connectionString)
         {
-            return new SqlConnectionFactory(async (cancellationToken) =>
+            return new DbConnectionFactory(async (cancellationToken) =>
             {
                 ValidateConnectionPool(connectionString);
 
@@ -69,9 +74,9 @@
             hasValidated = true;
         }
 
-        Func<CancellationToken, Task<SqlConnection>> openNewConnection;
+        Func<CancellationToken, Task<DbConnection>> openNewConnection;
         static bool hasValidated;
 
-        static ILog Logger = LogManager.GetLogger<SqlConnectionFactory>();
+        static ILog Logger = LogManager.GetLogger<DbConnectionFactory>();
     }
 }

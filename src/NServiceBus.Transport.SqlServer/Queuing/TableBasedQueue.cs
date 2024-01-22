@@ -2,6 +2,12 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data;
+    using System.Data.Common;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -26,13 +32,15 @@ namespace NServiceBus.Transport.SqlServer
             this.isStreamSupported = isStreamSupported;
         }
 
-        public virtual async Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        public virtual async Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(peekCommand, connection, transaction)
+            using (var command = connection.CreateCommand())
             {
-                CommandTimeout = timeoutInSeconds ?? 30
-            })
-            {
+                command.CommandTimeout = timeoutInSeconds ?? 30;
+                command.CommandType = CommandType.Text;
+                command.Transaction = transaction;
+                command.CommandText = peekCommand;
+
                 var numberOfMessages = await command.ExecuteScalarAsyncOrDefault<int>(nameof(peekCommand), msg => log.Warn(msg), cancellationToken).ConfigureAwait(false);
                 return numberOfMessages;
             }
@@ -43,27 +51,31 @@ namespace NServiceBus.Transport.SqlServer
             peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(receiveCommand, connection, transaction))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = receiveCommand;
+                command.Transaction = transaction;
+                command.CommandType = CommandType.Text;
+
                 return await ReadMessage(command, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task DeadLetter(MessageRow poisonMessage, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             return SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
         }
 
-        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = MessageRow.From(message.Headers, message.Body, timeToBeReceived);
 
             return SendRawMessage(messageRow, connection, transaction, cancellationToken);
         }
 
-        async Task<MessageReadResult> ReadMessage(SqlCommand command, CancellationToken cancellationToken)
+        async Task<MessageReadResult> ReadMessage(DbCommand command, CancellationToken cancellationToken)
         {
             var behavior = CommandBehavior.SingleRow;
             if (isStreamSupported)
@@ -93,14 +105,18 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
         {
             try
             {
                 var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
 
-                using (var command = new SqlCommand(sendCommand, connection, transaction))
+                using (var command = connection.CreateCommand())
                 {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = sendCommand;
+                    command.Transaction = transaction;
+
                     message.PrepareSendCommand(command);
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
@@ -123,7 +139,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task<string> GetSendCommandText(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task<string> GetSendCommandText(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
         {
             // Get a local reference because another thread could remove the cache between check and return
             var sendCommand = cachedSendCommand;
@@ -142,8 +158,12 @@ namespace NServiceBus.Transport.SqlServer
                 }
 
                 var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
-                using (var command = new SqlCommand(commandText, connection, transaction))
+                using (var command = connection.CreateCommand())
                 {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = commandText;
+                    command.Transaction = transaction;
+
                     using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                     {
                         for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
@@ -176,45 +196,60 @@ namespace NServiceBus.Transport.SqlServer
             throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
 
-        public async Task<int> Purge(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<int> Purge(DbConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(purgeCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = purgeCommand;
+                command.CommandType = CommandType.Text;
+
                 return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<int> PurgeBatchOfExpiredMessages(SqlConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
+        public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(purgeExpiredCommand, connection))
+            using (var command = connection.CreateCommand())
             {
-                command.Parameters.AddWithValue("@BatchSize", purgeBatchSize);
+                command.CommandText = purgeExpiredCommand;
+                command.CommandType = CommandType.Text;
+                command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
+
                 return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public async Task<bool> CheckExpiresIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<bool> CheckExpiresIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkExpiresIndexCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkExpiresIndexCommand;
+                command.CommandType = CommandType.Text;
+
                 var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkNonClusteredRowVersionIndexCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkNonClusteredRowVersionIndexCommand;
+                command.CommandType = CommandType.Text;
+
                 var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
                 return rowsCount > 0;
             }
         }
 
-        public async Task<string> CheckHeadersColumnType(SqlConnection connection, CancellationToken cancellationToken = default)
+        public async Task<string> CheckHeadersColumnType(DbConnection connection, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(checkHeadersColumnTypeCommand, connection))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkHeadersColumnTypeCommand;
+                command.CommandType = CommandType.Text;
+
                 return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
             }
         }

@@ -1,8 +1,9 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Data.Common;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,7 +14,7 @@
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
+        public static async Task<MessageReadResult> Read(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
         {
             var row = await ReadRow(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
             return row.TryParse();
@@ -30,16 +31,15 @@
             };
         }
 
-
-        public void PrepareSendCommand(SqlCommand command)
+        public void PrepareSendCommand(DbCommand command)
         {
-            AddParameter(command, "Id", SqlDbType.UniqueIdentifier, id);
-            AddParameter(command, "TimeToBeReceivedMs", SqlDbType.Int, timeToBeReceived);
-            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes, -1);
+            command.AddParameter("Id", DbType.Guid, id);
+            command.AddParameter("TimeToBeReceivedMs", DbType.Int32, timeToBeReceived);
+            command.AddParameter("Headers", DbType.String, headers);
+            command.AddParameter("Body", DbType.Binary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(SqlDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
         {
             return new MessageRow
             {
@@ -63,7 +63,7 @@
             }
         }
 
-        static async Task<string> GetHeaders(SqlDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
+        static async Task<string> GetHeaders(DbDataReader dataReader, int headersIndex, CancellationToken cancellationToken)
         {
             if (await dataReader.IsDBNullAsync(headersIndex, cancellationToken).ConfigureAwait(false))
             {
@@ -76,7 +76,7 @@
             }
         }
 
-        static async Task<byte[]> GetBody(SqlDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
+        static async Task<byte[]> GetBody(DbDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
         {
             if (!isStreamSupported)
             {
@@ -91,16 +91,6 @@
                 await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
                 return outStream.ToArray();
             }
-        }
-
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
-        {
-            command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
-        }
-
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value, int size)
-        {
-            command.Parameters.Add(name, type, size).Value = value ?? DBNull.Value;
         }
 
         Guid id;

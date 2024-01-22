@@ -1,6 +1,7 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Faults;
@@ -69,7 +70,7 @@
             }
         }
 
-        protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected async Task<bool> TryHandleDelayedMessage(Message message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             _ = message.Headers.Remove(ForwardHeader, out var forwardDestination);
 

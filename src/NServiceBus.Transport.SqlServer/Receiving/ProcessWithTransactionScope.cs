@@ -8,7 +8,7 @@
 
     class ProcessWithTransactionScope : ProcessStrategy
     {
-        public ProcessWithTransactionScope(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
+        public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
          : base(tableBasedQueueCache)
         {
             this.transactionOptions = transactionOptions;
@@ -105,7 +105,7 @@
         }
 
         TransactionOptions transactionOptions;
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         FailureInfoStorage failureInfoStorage;
     }
 }

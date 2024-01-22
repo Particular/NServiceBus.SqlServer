@@ -1,6 +1,7 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -10,7 +11,7 @@
 
     class ProcessWithNativeTransaction : ProcessStrategy
     {
-        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, SqlConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
+        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
         : base(tableBasedQueueCache)
         {
             this.connectionFactory = connectionFactory;
@@ -74,7 +75,7 @@
             }
         }
 
-        TransportTransaction PrepareTransportTransaction(SqlConnection connection, SqlTransaction transaction)
+        TransportTransaction PrepareTransportTransaction(DbConnection connection, DbTransaction transaction)
         {
             var transportTransaction = new TransportTransaction();
 
@@ -115,7 +116,7 @@
         }
 
         IsolationLevel isolationLevel;
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         FailureInfoStorage failureInfoStorage;
         bool transactionForReceiveOnly;
         internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";

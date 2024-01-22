@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class DueDelayedMessageProcessor
     {
-        public DueDelayedMessageProcessor(DelayedMessageTable table, SqlConnectionFactory connectionFactory, int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
+        public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -122,7 +122,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly TimeSpan waitTimeCircuitBreaker;
         readonly HostSettings hostSettings;
         readonly DelayedMessageTable table;
-        readonly SqlConnectionFactory connectionFactory;
+        readonly DbConnectionFactory connectionFactory;
         readonly int batchSize;
 
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
