@@ -15,7 +15,7 @@
 
     class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(QueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, SqlConnectionFactory connectionFactory)
+        public MessageDispatcher(IQueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, SqlConnectionFactory connectionFactory)
         {
             this.addressTranslator = addressTranslator;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
@@ -194,7 +194,7 @@
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         SqlConnectionFactory connectionFactory;
-        QueueAddressTranslator addressTranslator;
+        IQueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }

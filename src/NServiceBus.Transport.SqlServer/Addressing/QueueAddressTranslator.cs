@@ -3,7 +3,7 @@
     using System.Collections.Concurrent;
     using System.Linq;
 
-    class QueueAddressTranslator
+    class QueueAddressTranslator : IQueueAddressTranslator
     {
         public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
@@ -28,7 +28,7 @@
             return physicalAddressCache.GetOrAdd(address, TranslatePhysicalAddress);
         }
 
-        CanonicalQueueAddress TranslatePhysicalAddress(string address)
+        public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
             var transportAddress = QueueAddress.Parse(address);
 

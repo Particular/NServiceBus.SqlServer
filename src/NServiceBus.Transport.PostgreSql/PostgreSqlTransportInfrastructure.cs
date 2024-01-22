@@ -3,14 +3,19 @@
 using System.Threading;
 using System.Threading.Tasks;
 using SqlServer;
-using QueueAddress = Transport.QueueAddress;
+using QueueAddress = QueueAddress;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
+#pragma warning disable IDE0052
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
     readonly ReceiveSettings[] receivers;
     readonly string[] sendingAddresses;
+#pragma warning restore IDE0052
+    PostgreSqlQueueAddressTranslator addressTranslator;
+    TableBasedQueueCache tableBasedQueueCache;
+    ISubscriptionStore subscriptionStore;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
     {
@@ -24,15 +29,14 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     public override string ToTransportAddress(QueueAddress address) => throw new System.NotImplementedException();
 
-    public async Task Initialize(CancellationToken cancellationToken)
+    public async Task Initialize(CancellationToken cancellationToken = new())
     {
-        var connectionString = transport.ConnectionString;
-
+        //var connectionString = transport.ConnectionString;
         //connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
         addressTranslator = new PostgreSqlQueueAddressTranslator();
-        //addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
-        tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !connectionAttributes.IsEncrypted);
+        //TODO: check if we can provide streaming capability with PostgreSql
+        tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, false);
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
 
@@ -47,8 +51,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             addressTranslator,
             new MulticastToUnicastConverter(subscriptionStore),
             tableBasedQueueCache,
-            delayedMessageStore,
-            connectionFactory);
+            null, //delayedMessageStore,
+            null);//connectionFactory);
     }
 
     Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
@@ -56,8 +60,15 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         throw new System.NotImplementedException();
     }
 
-    Task ConfigureSubscriptions(CancellationToken cancellationToken)
+    async Task ConfigureSubscriptions(CancellationToken cancellationToken)
     {
-        throw new System.NotImplementedException();
+        subscriptionStore = new SubscriptionStore();
+
+        if (hostSettings.SetupInfrastructure)
+        {
+            await new SubscriptionTableCreator(null, null).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
+        }
+
+        //transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
     }
 }
