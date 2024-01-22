@@ -1,14 +1,11 @@
 ﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
+    using System.Data.Common;
     using System.Linq;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
     using NUnit.Framework;
     using Transport;
     using SqlServer;
@@ -28,7 +25,14 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
+            var transport = new SqlServerTransport(async (ct) =>
+            {
+                var factory = DbConnectionFactory.Default(connectionString);
+                var connection = await factory.OpenNewConnection(ct);
+
+                //TODO: get rid of casting
+                return (SqlConnection)connection;
+            })
             {
                 TransportTransactionMode = TransportTransactionMode.None,
                 TimeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.MaxValue,
@@ -93,7 +97,7 @@
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 
@@ -104,7 +108,7 @@
                 return Task.FromResult(readResult);
             }
 
-            public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+            public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 

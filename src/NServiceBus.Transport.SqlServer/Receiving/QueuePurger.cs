@@ -5,7 +5,7 @@
 
     class QueuePurger : IPurgeQueues
     {
-        public QueuePurger(SqlConnectionFactory connectionFactory)
+        public QueuePurger(DbConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
@@ -18,6 +18,6 @@
             }
         }
 
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
     }
 }

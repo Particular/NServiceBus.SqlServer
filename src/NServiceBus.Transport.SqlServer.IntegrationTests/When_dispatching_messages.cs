@@ -24,7 +24,7 @@
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Isolated)]
         public async Task Outgoing_operations_are_stored_in_destination_queue(Type contextProviderType, DispatchConsistency dispatchConsistency)
         {
-            using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
+            using (var contextProvider = CreateContext(contextProviderType, dbConnectionFactory))
             {
                 var operations = new TransportOperations(
                     CreateTransportOperation(id: "1", destination: ValidAddress, consistency: dispatchConsistency),
@@ -47,7 +47,7 @@
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Isolated)]
         public async Task Outgoing_operations_are_stored_atomically(Type contextProviderType, DispatchConsistency dispatchConsistency)
         {
-            using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
+            using (var contextProvider = CreateContext(contextProviderType, dbConnectionFactory))
             {
                 var invalidOperations = new TransportOperations(
                     CreateTransportOperation(id: "3", destination: ValidAddress, consistency: dispatchConsistency),
@@ -82,9 +82,9 @@
                 );
         }
 
-        static IContextProvider CreateContext(Type contextType, SqlConnectionFactory sqlConnectionFactory)
+        static IContextProvider CreateContext(Type contextType, DbConnectionFactory dbConnectionFactory)
         {
-            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(sqlConnectionFactory);
+            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(dbConnectionFactory);
         }
 
         [SetUp]
@@ -92,7 +92,7 @@
         {
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
 
             PrepareAsync().GetAwaiter().GetResult();
         }
@@ -102,25 +102,25 @@
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var tableCache = new TableBasedQueueCache(addressParser, true);
 
-            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory, cancellationToken);
+            await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
 
             await PurgeOutputQueue(addressParser, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
+            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
         {
-            purger = new QueuePurger(sqlConnectionFactory);
+            purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
             queue = new TableBasedQueue(queueAddress, ValidAddress, true);
 
             return purger.Purge(queue, cancellationToken);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
@@ -131,7 +131,7 @@
         const string ValidAddress = "TableBasedQueueDispatcherTests";
         const string InvalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
-        SqlConnectionFactory sqlConnectionFactory;
+        DbConnectionFactory dbConnectionFactory;
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
@@ -164,9 +164,10 @@
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider(SqlConnectionFactory sqlConnectionFactory)
+            public HandlerContextProvider(DbConnectionFactory dbConnectionFactory)
             {
-                sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+                //TODO: get rid of this cast
+                sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
                 TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);

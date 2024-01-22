@@ -1,6 +1,7 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System.Data;
+    using System.Data.Common;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
@@ -11,7 +12,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class QueueCreator
     {
-        public QueueCreator(SqlConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
+        public QueueCreator(DbConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
         {
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
@@ -34,7 +35,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, SqlConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
+        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, DbConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
         {
             try
             {
@@ -42,11 +43,12 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
                         canonicalQueueAddress.QuotedCatalogName);
-                    using (var command = new SqlCommand(sql, connection, transaction)
+                    using (var command = connection.CreateCommand())
                     {
-                        CommandType = CommandType.Text
-                    })
-                    {
+                        command.Transaction = transaction;
+                        command.CommandText = sql;
+                        command.CommandType = CommandType.Text;
+
                         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
                     }
@@ -71,11 +73,12 @@ namespace NServiceBus.Transport.SqlServer
 
                 using (var transaction = connection.BeginTransaction())
                 {
-                    using (var command = new SqlCommand(bodyStringSql, connection, transaction)
+                    using (var command = connection.CreateCommand())
                     {
-                        CommandType = CommandType.Text
-                    })
-                    {
+                        command.Transaction = transaction;
+                        command.CommandText = bodyStringSql;
+                        command.CommandType = CommandType.Text;
+
                         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                     }
 
@@ -84,7 +87,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
         bool createMessageBodyColumn;
     }

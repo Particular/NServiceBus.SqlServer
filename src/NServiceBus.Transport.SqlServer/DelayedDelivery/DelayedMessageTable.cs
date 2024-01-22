@@ -1,23 +1,20 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
+    using System.Data;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Transport;
 
     interface IDelayedMessageStore
     {
-        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default);
+        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
     class SendOnlyDelayedMessageStore : IDelayedMessageStore
     {
-        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             throw new Exception("Delayed delivery is not supported for send-only endpoints.");
         }
@@ -33,11 +30,15 @@ namespace NServiceBus.Transport.SqlServer
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
-        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
-            using (var command = new SqlCommand(storeCommand, connection, transaction))
+            using (var command = connection.CreateCommand())
             {
+                command.Transaction = transaction;
+                command.CommandText = storeCommand;
+                command.CommandType = CommandType.Text;
+
                 messageRow.PrepareSendCommand(command);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -46,11 +47,15 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         /// <returns>The time of the next timeout due</returns>
-        public async Task<DateTime> MoveDueMessages(int batchSize, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
-            using (var command = new SqlCommand(moveDueCommand, connection, transaction))
+            using (var command = connection.CreateCommand())
             {
-                command.Parameters.AddWithValue("BatchSize", batchSize);
+                command.Transaction = transaction;
+                command.CommandText = moveDueCommand;
+                command.CommandType = CommandType.Text;
+
+                command.AddParameter("BatchSize", DbType.Int32, batchSize);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))

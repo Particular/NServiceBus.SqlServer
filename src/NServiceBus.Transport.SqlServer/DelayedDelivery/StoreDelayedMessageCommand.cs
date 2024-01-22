@@ -3,11 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
+    using System.Data.Common;
 
     class StoreDelayedMessageCommand
     {
@@ -27,20 +23,15 @@
         }
 
 
-        public void PrepareSendCommand(SqlCommand command)
+        public void PrepareSendCommand(DbCommand command)
         {
-            AddParameter(command, "Headers", SqlDbType.NVarChar, headers);
-            AddParameter(command, "Body", SqlDbType.VarBinary, bodyBytes);
-            AddParameter(command, "DueAfterDays", SqlDbType.Int, dueAfter.Days);
-            AddParameter(command, "DueAfterHours", SqlDbType.Int, dueAfter.Hours);
-            AddParameter(command, "DueAfterMinutes", SqlDbType.Int, dueAfter.Minutes);
-            AddParameter(command, "DueAfterSeconds", SqlDbType.Int, dueAfter.Seconds);
-            AddParameter(command, "DueAfterMilliseconds", SqlDbType.Int, dueAfter.Milliseconds);
-        }
-
-        void AddParameter(SqlCommand command, string name, SqlDbType type, object value)
-        {
-            command.Parameters.Add(name, type).Value = value ?? DBNull.Value;
+            command.AddParameter("Headers", DbType.String, headers);
+            command.AddParameter("Body", DbType.Binary, bodyBytes);
+            command.AddParameter("DueAfterDays", DbType.Int32, dueAfter.Days);
+            command.AddParameter("DueAfterHours", DbType.Int32, dueAfter.Hours);
+            command.AddParameter("DueAfterMinutes", DbType.Int32, dueAfter.Minutes);
+            command.AddParameter("DueAfterSeconds", DbType.Int32, dueAfter.Seconds);
+            command.AddParameter("DueAfterMilliseconds", DbType.Int32, dueAfter.Milliseconds);
         }
 
         string headers;

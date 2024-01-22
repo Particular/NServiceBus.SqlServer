@@ -1,11 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using NServiceBus.Extensibility;
@@ -74,7 +70,7 @@
             }
         }
 
-        protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
+        protected async Task<bool> TryHandleDelayedMessage(Message message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
             {

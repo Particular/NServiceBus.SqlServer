@@ -207,17 +207,17 @@ namespace NServiceBus.Transport.SqlServer
             return addressTranslator.GetCanonicalForm(tableQueueAddress).Address;
         }
 
-        SqlConnectionFactory CreateConnectionFactory()
+        DbConnectionFactory CreateConnectionFactory()
         {
             if (transport.ConnectionFactory != null)
             {
-                return new SqlConnectionFactory(transport.ConnectionFactory);
+                return new DbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false));
             }
 
-            return SqlConnectionFactory.Default(transport.ConnectionString);
+            return DbConnectionFactory.Default(transport.ConnectionString);
         }
 
-        ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, SqlConnectionFactory connectionFactory)
+        ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, DbConnectionFactory connectionFactory)
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
@@ -330,7 +330,7 @@ namespace NServiceBus.Transport.SqlServer
         QueueAddressTranslator addressTranslator;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         Dictionary<string, object> diagnostics = [];
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         ISubscriptionStore subscriptionStore;
         IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
         TableBasedQueueCache tableBasedQueueCache;

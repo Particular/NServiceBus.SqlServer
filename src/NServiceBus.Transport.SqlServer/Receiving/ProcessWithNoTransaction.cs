@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class ProcessWithNoTransaction : ProcessStrategy
     {
-        public ProcessWithNoTransaction(SqlConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
+        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
         : base(tableBasedQueueCache)
         {
             this.connectionFactory = connectionFactory;
@@ -61,6 +61,6 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
     }
 }

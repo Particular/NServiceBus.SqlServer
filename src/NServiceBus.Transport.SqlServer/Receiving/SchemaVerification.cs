@@ -1,18 +1,14 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using System.Data.Common;
     using System.Threading;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
 
     class SchemaInspector
     {
-        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection, bool validateExpiredIndex)
+        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex)
         {
             this.openConnection = openConnection;
             this.validateExpiredIndex = validateExpiredIndex;
@@ -29,7 +25,7 @@
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
+        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, DbConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -86,7 +82,7 @@
             }
         }
 
-        Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection;
+        Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
         readonly bool validateExpiredIndex;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
