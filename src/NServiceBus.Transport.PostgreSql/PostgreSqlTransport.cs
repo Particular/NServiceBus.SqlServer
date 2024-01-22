@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using SqlServer;
 
 /// <summary>
 /// PostgreSql Transport
@@ -59,5 +60,10 @@ public class PostgreSqlTransport : TransportDefinition
     /// </summary>
     public string ConnectionString { get; internal set; }
 
-    static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
+    /// <summary>
+    /// Subscription infrastructure settings.
+    /// </summary>
+    public SubscriptionOptions Subscriptions { get; } = new SubscriptionOptions();
+
+    //static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
 }
