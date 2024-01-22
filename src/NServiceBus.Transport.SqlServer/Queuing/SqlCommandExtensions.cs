@@ -1,13 +1,14 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
 
     static class SqlCommandExtensions
     {
-        public static async Task<TScalar> ExecuteScalarAsyncOrDefault<TScalar>(this SqlCommand command, string commandName, Action<string> onUnexpectedValueMessage, CancellationToken cancellationToken = default)
+        public static async Task<TScalar> ExecuteScalarAsyncOrDefault<TScalar>(this DbCommand command, string commandName, Action<string> onUnexpectedValueMessage, CancellationToken cancellationToken = default)
         {
             var obj = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
 
@@ -31,7 +32,7 @@ namespace NServiceBus.Transport.SqlServer
             return scalar;
         }
 
-        public static Task<TScalar> ExecuteScalarAsync<TScalar>(this SqlCommand command, string commandName, CancellationToken cancellationToken = default) =>
+        public static Task<TScalar> ExecuteScalarAsync<TScalar>(this DbCommand command, string commandName, CancellationToken cancellationToken = default) =>
             command.ExecuteScalarAsyncOrDefault<TScalar>(commandName, msg => throw new Exception(msg), cancellationToken);
     }
 }

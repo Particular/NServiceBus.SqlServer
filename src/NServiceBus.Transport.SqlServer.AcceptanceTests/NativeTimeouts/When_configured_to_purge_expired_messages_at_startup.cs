@@ -39,7 +39,7 @@
         // NOTE: The input queue must exist so that we can send messages to it
         async Task SetupInputQueue()
         {
-            var connectionFactory = new SqlConnectionFactory(async token =>
+            var connectionFactory = new DbConnectionFactory(async token =>
             {
                 var connection = new SqlConnection(connectionString);
 

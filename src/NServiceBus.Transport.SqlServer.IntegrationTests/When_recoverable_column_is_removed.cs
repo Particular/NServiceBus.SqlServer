@@ -1,8 +1,13 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
-    using System.Threading;
+    using System.Data;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Data.SqlClient;
@@ -24,18 +29,18 @@
             var token = CancellationToken.None;
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
-            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
 
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-            var purger = new QueuePurger(sqlConnectionFactory);
+            var purger = new QueuePurger(dbConnectionFactory);
 
             await RemoveQueueIfPresent(QueueName, token);
             await RemoveQueueIfPresent($"{QueueName}.Delayed", token);
-            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory);
+            await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory);
 
             var tableCache = new TableBasedQueueCache(addressParser, true);
             var queue = tableCache.Get(QueueName);
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
+            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
 
             // Run normally
             int messagesSent = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
@@ -64,7 +69,7 @@
 
         async Task<int> RunTest(Type contextProviderType, DispatchConsistency dispatchConsistency, TableBasedQueue queue, QueuePurger purger, CancellationToken cancellationToken)
         {
-            using (var contextProvider = CreateContext(contextProviderType, sqlConnectionFactory))
+            using (var contextProvider = CreateContext(contextProviderType, dbConnectionFactory))
             {
                 // Run with Recoverable column in place
 
@@ -79,9 +84,12 @@
         async Task DropRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} DROP COLUMN Recoverable";
-            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = new SqlCommand(cmdText, connection))
+            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
+            using (var cmd = connection.CreateCommand())
             {
+                cmd.CommandText = cmdText;
+                cmd.CommandType = CommandType.Text;
+
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -89,9 +97,12 @@
         async Task AddRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} ADD Recoverable bit NOT NULL";
-            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = new SqlCommand(cmdText, connection))
+            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
+            using (var cmd = connection.CreateCommand())
             {
+                cmd.CommandText = cmdText;
+                cmd.CommandType = CommandType.Text;
+
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -107,16 +118,19 @@ IF EXISTS (
 BEGIN
     DROP TABLE nservicebus.dbo.[{queueName}]
 END";
-            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = new SqlCommand(cmdText, connection))
+            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
+            using (var cmd = connection.CreateCommand())
             {
+                cmd.CommandText = cmdText;
+                cmd.CommandType = CommandType.Text;
+
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 
-        static IContextProvider CreateContext(Type contextType, SqlConnectionFactory sqlConnectionFactory)
+        static IContextProvider CreateContext(Type contextType, DbConnectionFactory dbConnectionFactory)
         {
-            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(sqlConnectionFactory);
+            return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(dbConnectionFactory);
         }
 
         static TransportOperation CreateTransportOperation(string id, string destination, DispatchConsistency consistency)
@@ -128,9 +142,9 @@ END";
                 );
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
@@ -138,7 +152,7 @@ END";
         MessageDispatcher dispatcher;
         const string QueueName = "RecoverableColumnRemovalTable";
 
-        SqlConnectionFactory sqlConnectionFactory;
+        DbConnectionFactory dbConnectionFactory;
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
@@ -171,9 +185,10 @@ END";
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider(SqlConnectionFactory sqlConnectionFactory)
+            public HandlerContextProvider(DbConnectionFactory dbConnectionFactory)
             {
-                sqlConnection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+                //TODO: get rid of this cast
+                sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
                 TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);

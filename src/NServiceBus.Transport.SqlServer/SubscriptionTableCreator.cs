@@ -8,9 +8,9 @@ namespace NServiceBus.Transport.SqlServer
     class SubscriptionTableCreator
     {
         QualifiedSubscriptionTableName tableName;
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(QualifiedSubscriptionTableName tableName, SqlConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
         {
             this.tableName = tableName;
             this.connectionFactory = connectionFactory;
@@ -25,11 +25,12 @@ namespace NServiceBus.Transport.SqlServer
                     {
                         var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 
-                        using (var command = new SqlCommand(sql, connection, transaction)
+                        using (var command = connection.CreateCommand())
                         {
-                            CommandType = CommandType.Text
-                        })
-                        {
+                            command.Transaction = transaction;
+                            command.CommandText = sql;
+                            command.CommandType = CommandType.Text;
+
                             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                         }
 

@@ -10,11 +10,11 @@ namespace NServiceBus.Transport.SqlServer
     class SubscriptionTable
     {
         string qualifiedTableName;
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         string subscribeCommand;
         string unsubscribeCommand;
 
-        public SubscriptionTable(string qualifiedTableName, SqlConnectionFactory connectionFactory)
+        public SubscriptionTable(string qualifiedTableName, DbConnectionFactory connectionFactory)
         {
             this.qualifiedTableName = qualifiedTableName;
             this.connectionFactory = connectionFactory;
@@ -30,9 +30,10 @@ namespace NServiceBus.Transport.SqlServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = subscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("QueueAddress", SqlDbType.VarChar).Value = queueAddress;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
+
+                    command.AddParameter("Endpoint", DbType.String, endpointName);
+                    command.AddParameter("QueueAddress", DbType.String, queueAddress);
+                    command.AddParameter("Topic", DbType.String, topic);
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -47,8 +48,8 @@ namespace NServiceBus.Transport.SqlServer
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = unsubscribeCommand;
-                    command.Parameters.Add("Endpoint", SqlDbType.VarChar).Value = endpointName;
-                    command.Parameters.Add("Topic", SqlDbType.VarChar).Value = topic;
+                    command.AddParameter("Endpoint", DbType.String, endpointName);
+                    command.AddParameter("Topic", DbType.String, topic);
 
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -70,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
                     command.CommandText = getSubscribersCommand;
                     for (var i = 0; i < topics.Length; i++)
                     {
-                        command.Parameters.Add($"Topic_{i}", SqlDbType.VarChar).Value = topics[i];
+                        command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
                     }
 
                     using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))

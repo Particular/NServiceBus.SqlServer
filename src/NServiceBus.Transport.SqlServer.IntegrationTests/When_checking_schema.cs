@@ -19,9 +19,9 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
 
-            await ResetQueue(addressParser, sqlConnectionFactory);
+            await ResetQueue(addressParser, dbConnectionFactory);
 
             queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
         }
@@ -29,20 +29,20 @@
         [Test]
         public async Task It_returns_type_for_headers_column()
         {
-            using (var connection = await sqlConnectionFactory.OpenNewConnection())
+            using (var connection = await dbConnectionFactory.OpenNewConnection())
             {
                 var type = await queue.CheckHeadersColumnType(connection);
                 Assert.AreEqual("nvarchar", type);
             }
         }
 
-        SqlConnectionFactory sqlConnectionFactory;
+        DbConnectionFactory dbConnectionFactory;
 
-        static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task ResetQueue(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
 
-            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 using (var comm = connection.CreateCommand())
                 {

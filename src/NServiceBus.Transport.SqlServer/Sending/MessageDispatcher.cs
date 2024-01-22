@@ -1,7 +1,13 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.Common;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -11,7 +17,7 @@
 
     class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(IQueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, SqlConnectionFactory connectionFactory)
+        public MessageDispatcher(IQueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {
             this.addressTranslator = addressTranslator;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
@@ -136,7 +142,7 @@
             }
         }
 
-        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
+        async Task Dispatch(IEnumerable<UnicastTransportOperation> operations, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
         {
             foreach (var operation in operations)
             {
@@ -144,7 +150,7 @@
             }
         }
 
-        Task Dispatch(SqlConnection connection, SqlTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken)
+        Task Dispatch(DbConnection connection, DbTransaction transaction, UnicastTransportOperation operation, CancellationToken cancellationToken)
         {
             var discardIfNotReceivedBefore = operation.Properties.DiscardIfNotReceivedBefore;
             var doNotDeliverBefore = operation.Properties.DoNotDeliverBefore;
@@ -189,7 +195,7 @@
 
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
-        SqlConnectionFactory connectionFactory;
+        DbConnectionFactory connectionFactory;
         IQueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];

@@ -8,7 +8,7 @@
 
     class QueuePeeker : IPeekMessagesInQueue
     {
-        public QueuePeeker(SqlConnectionFactory connectionFactory, QueuePeekerOptions settings)
+        public QueuePeeker(DbConnectionFactory connectionFactory, QueuePeekerOptions settings)
         {
             this.connectionFactory = connectionFactory;
             this.settings = settings;
@@ -49,7 +49,7 @@
             return messageCount;
         }
 
-        readonly SqlConnectionFactory connectionFactory;
+        readonly DbConnectionFactory connectionFactory;
         readonly QueuePeekerOptions settings;
 
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();
