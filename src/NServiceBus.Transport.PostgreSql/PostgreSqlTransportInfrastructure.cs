@@ -20,6 +20,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     ISubscriptionStore subscriptionStore;
     DelayedMessageStore delayedMessageStore;
     DbConnectionFactory connectionFactory;
+    ConnectionAttributes connectionAttributes;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
     {
@@ -44,7 +45,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             return connection;
         });
 
-        //connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
+        connectionAttributes = ConnectionAttributesParser.Parse(transport.ConnectionString, transport.DefaultCatalog);
 
         addressTranslator = new PostgreSqlQueueAddressTranslator();
         //TODO: check if we can provide streaming capability with PostgreSql
@@ -81,6 +82,22 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         if (hostSettings.SetupInfrastructure)
         {
             await new SubscriptionTableCreator(null, null).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
+        }
+
+        var pubSubSettings = transport.Subscriptions;
+        var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
+        var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
+
+        subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
+
+        if (pubSubSettings.DisableCaching == false)
+        {
+            subscriptionStore = new CachedSubscriptionStore(subscriptionStore, pubSubSettings.CacheInvalidationPeriod);
+        }
+
+        if (hostSettings.SetupInfrastructure)
+        {
+            await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
         }
 
         //transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
