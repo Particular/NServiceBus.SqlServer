@@ -1,7 +1,9 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Npgsql;
 using SqlServer;
 using QueueAddress = QueueAddress;
 
@@ -16,6 +18,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     PostgreSqlQueueAddressTranslator addressTranslator;
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
+    DelayedMessageStore delayedMessageStore;
+    DbConnectionFactory connectionFactory;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings, ReceiveSettings[] receivers, string[] sendingAddresses)
     {
@@ -25,18 +29,28 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         this.sendingAddresses = sendingAddresses;
     }
 
-    public override Task Shutdown(CancellationToken cancellationToken = default) => throw new System.NotImplementedException();
+    public override Task Shutdown(CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
-    public override string ToTransportAddress(QueueAddress address) => throw new System.NotImplementedException();
+    public override string ToTransportAddress(QueueAddress address) => throw new NotImplementedException();
 
     public async Task Initialize(CancellationToken cancellationToken = new())
     {
-        //var connectionString = transport.ConnectionString;
+        connectionFactory = new DbConnectionFactory(async ct =>
+        {
+            var connection = new NpgsqlConnection(transport.ConnectionString);
+
+            await connection.OpenAsync(ct).ConfigureAwait(false);
+
+            return connection;
+        });
+
         //connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
         addressTranslator = new PostgreSqlQueueAddressTranslator();
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, false);
+
+        delayedMessageStore = new DelayedMessageStore();
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
 
@@ -51,13 +65,13 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             addressTranslator,
             new MulticastToUnicastConverter(subscriptionStore),
             tableBasedQueueCache,
-            null, //delayedMessageStore,
-            null);//connectionFactory);
+            delayedMessageStore,
+            connectionFactory);
     }
 
     Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
     {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     async Task ConfigureSubscriptions(CancellationToken cancellationToken)
