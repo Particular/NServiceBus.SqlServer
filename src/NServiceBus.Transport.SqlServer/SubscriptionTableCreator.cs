@@ -7,11 +7,13 @@ namespace NServiceBus.Transport.SqlServer
 
     class SubscriptionTableCreator
     {
+        ISqlConstants sqlConstants;
         QualifiedSubscriptionTableName tableName;
         DbConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
         {
+            this.sqlConstants = sqlConstants;
             this.tableName = tableName;
             this.connectionFactory = connectionFactory;
         }
@@ -23,7 +25,7 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-                        var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
+                        var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 
                         using (var command = connection.CreateCommand())
                         {

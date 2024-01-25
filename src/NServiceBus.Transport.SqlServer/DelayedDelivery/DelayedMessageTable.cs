@@ -23,10 +23,10 @@ namespace NServiceBus.Transport.SqlServer
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        public DelayedMessageTable(string delayedQueueTable, string inputQueueTable)
+        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
         {
-            storeCommand = string.Format(SqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            moveDueCommand = string.Format(SqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
+            storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
+            moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
         }
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;

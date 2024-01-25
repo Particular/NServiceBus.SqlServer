@@ -13,6 +13,8 @@
 
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
+        ISqlConstants sqlConstants = new SqlServerConstants();
+
         [SetUp]
         public void SetUpConnectionString() =>
     connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
@@ -55,12 +57,12 @@
             }
 
             var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
-            var queueCreator = new QueueCreator(connectionFactory, queueAddressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, queueAddressTranslator);
 
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
 
-            var tableBasedQueueCache = new TableBasedQueueCache(queueAddressTranslator, true);
+            var tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, queueAddressTranslator, true);
             var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
             using (var connection = await connectionFactory.OpenNewConnection())

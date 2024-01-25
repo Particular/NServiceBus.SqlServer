@@ -13,6 +13,8 @@
 
     public class When_using_ttbr
     {
+        ISqlConstants sqlConstants = new SqlServerConstants();
+
         [Test]
         public async Task Defaults_to_no_ttbr()
         {
@@ -117,7 +119,7 @@
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
-            var tableCache = new TableBasedQueueCache(addressParser, true);
+            var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -134,14 +136,14 @@
         {
             purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressParser.Parse(ValidAddress);
-            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
+            queue = new TableBasedQueue(sqlConstants, queueAddress.QualifiedTableName, queueAddress.Address, true);
 
             return purger.Purge(queue, cancellationToken);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(dbConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser);
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }

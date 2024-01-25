@@ -14,6 +14,8 @@
 
     public class When_dispatching_messages
     {
+        ISqlConstants sqlConstants = new SqlServerConstants();
+
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Isolated)]
@@ -96,7 +98,7 @@
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-            var tableCache = new TableBasedQueueCache(addressParser, true);
+            var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
 
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
 
@@ -109,14 +111,14 @@
         {
             purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
-            queue = new TableBasedQueue(queueAddress, ValidAddress, true);
+            queue = new TableBasedQueue(sqlConstants, queueAddress, ValidAddress, true);
 
             return purger.Purge(queue, cancellationToken);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }

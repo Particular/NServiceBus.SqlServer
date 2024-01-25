@@ -12,6 +12,8 @@
 
     public class When_receiving_messages
     {
+        ISqlConstants sqlConstants = new SqlServerConstants();
+
         [Test]
         public async Task Should_stop_receiving_messages_after_first_unsuccessful_receive()
         {
@@ -21,7 +23,7 @@
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var inputQueueName = "input";
             var inputQueueAddress = parser.Parse(inputQueueName).Address;
-            var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
+            var inputQueue = new FakeTableBasedQueue(sqlConstants, inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -39,7 +41,7 @@
             };
 
             transport.Testing.QueueFactoryOverride = qa =>
-                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
+                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(sqlConstants, parser.Parse(qa).QualifiedTableName, qa, true);
 
             var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
@@ -91,7 +93,7 @@
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "", true)
+            public FakeTableBasedQueue(ISqlConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, address, "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;

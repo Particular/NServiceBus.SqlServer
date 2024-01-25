@@ -18,6 +18,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
     public class When_recoverable_column_is_removed
     {
+        ISqlConstants sqlConstants = new SqlServerConstants();
+
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Isolated)]
@@ -38,7 +40,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             await RemoveQueueIfPresent($"{QueueName}.Delayed", token);
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory);
 
-            var tableCache = new TableBasedQueueCache(addressParser, true);
+            var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
             var queue = tableCache.Get(QueueName);
             dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
 
@@ -142,9 +144,9 @@ END";
                 );
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }

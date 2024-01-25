@@ -19,16 +19,17 @@ namespace NServiceBus.Transport.SqlServer
     {
         public string Name { get; }
 
-        public TableBasedQueue(string qualifiedTableName, string queueName, bool isStreamSupported)
+        public TableBasedQueue(ISqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported)
         {
+            this.sqlConstants = sqlConstants;
             this.qualifiedTableName = qualifiedTableName;
             Name = queueName;
-            receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
-            purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
-            purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-            checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-            checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+            receiveCommand = Format(sqlConstants.ReceiveText, this.qualifiedTableName);
+            purgeCommand = Format(sqlConstants.PurgeText, this.qualifiedTableName);
+            purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
+            checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+            checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
+            checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
         }
 
@@ -48,7 +49,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public void FormatPeekCommand(int maxRecordsToPeek)
         {
-            peekCommand = Format(SqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
+            peekCommand = Format(sqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
         }
 
         public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
@@ -157,7 +158,7 @@ namespace NServiceBus.Transport.SqlServer
                     return sendCommand;
                 }
 
-                var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
+                var commandText = Format(sqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandType = CommandType.Text;
@@ -170,13 +171,13 @@ namespace NServiceBus.Transport.SqlServer
                         {
                             if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
                             {
-                                cachedSendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
+                                cachedSendCommand = Format(sqlConstants.SendTextWithRecoverable, qualifiedTableName);
                                 return cachedSendCommand;
                             }
                         }
                     }
 
-                    cachedSendCommand = Format(SqlConstants.SendText, qualifiedTableName);
+                    cachedSendCommand = Format(sqlConstants.SendText, qualifiedTableName);
                     return cachedSendCommand;
                 }
             }
@@ -259,6 +260,7 @@ namespace NServiceBus.Transport.SqlServer
             return qualifiedTableName;
         }
 
+        ISqlConstants sqlConstants;
         string qualifiedTableName;
         string peekCommand;
         string receiveCommand;

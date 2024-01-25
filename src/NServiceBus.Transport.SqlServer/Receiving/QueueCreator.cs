@@ -14,8 +14,9 @@ namespace NServiceBus.Transport.SqlServer
 
     class QueueCreator
     {
-        public QueueCreator(DbConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
+        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
         {
+            this.sqlConstants = sqlConstants;
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
             this.createMessageBodyColumn = createMessageBodyColumn;
@@ -27,17 +28,17 @@ namespace NServiceBus.Transport.SqlServer
             {
                 foreach (var address in queueAddresses)
                 {
-                    await CreateQueue(SqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+                    await CreateQueue(sqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (delayedQueueAddress != null)
                 {
-                    await CreateQueue(SqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+                    await CreateQueue(sqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
-        static async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, DbConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
+        async Task CreateQueue(string creationScript, CanonicalQueueAddress canonicalQueueAddress, DbConnection connection, bool createMessageBodyColumn, CancellationToken cancellationToken)
         {
             try
             {
@@ -70,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
 
             if (createMessageBodyColumn)
             {
-                var bodyStringSql = string.Format(SqlConstants.AddMessageBodyStringColumn,
+                var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn,
                     canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
 
                 using (var transaction = connection.BeginTransaction())
@@ -89,6 +90,7 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
+        ISqlConstants sqlConstants;
         DbConnectionFactory connectionFactory;
         QueueAddressTranslator addressTranslator;
         bool createMessageBodyColumn;
