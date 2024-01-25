@@ -9,17 +9,19 @@ namespace NServiceBus.Transport.SqlServer
 
     class SubscriptionTable
     {
+        ISqlConstants sqlConstants;
         string qualifiedTableName;
         DbConnectionFactory connectionFactory;
         string subscribeCommand;
         string unsubscribeCommand;
 
-        public SubscriptionTable(string qualifiedTableName, DbConnectionFactory connectionFactory)
+        public SubscriptionTable(ISqlConstants sqlConstants, string qualifiedTableName, DbConnectionFactory connectionFactory)
         {
+            this.sqlConstants = sqlConstants;
             this.qualifiedTableName = qualifiedTableName;
             this.connectionFactory = connectionFactory;
-            subscribeCommand = string.Format(SqlConstants.SubscribeText, qualifiedTableName);
-            unsubscribeCommand = string.Format(SqlConstants.UnsubscribeText, qualifiedTableName);
+            subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
+            unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
         }
 
         public async Task Subscribe(string endpointName, string queueAddress, string topic, CancellationToken cancellationToken = default)
@@ -61,7 +63,7 @@ namespace NServiceBus.Transport.SqlServer
             var results = new List<string>();
 
             var argumentsList = string.Join(", ", Enumerable.Range(0, topics.Length).Select(i => $"@Topic_{i}"));
-            var getSubscribersCommand = string.Format(SqlConstants.GetSubscribersText, qualifiedTableName, argumentsList);
+            var getSubscribersCommand = string.Format(sqlConstants.GetSubscribersText, qualifiedTableName, argumentsList);
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {

@@ -1,6 +1,28 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
-class PostgreSqlConstants
+using SqlServer;
+
+class PostgreSqlConstants : ISqlConstants
 {
-    public static readonly string CreateSubscriptionTableText = "";
+    public string PurgeText { get; set; }
+    public string SendTextWithRecoverable { get; set; }
+    public string SendText { get; set; }
+    public string CheckIfTableHasRecoverableText { get; set; }
+    public string StoreDelayedMessageText { get; set; }
+    public string ReceiveText { get; set; }
+    public string MoveDueDelayedMessageText { get; set; }
+    public string PeekText { get; set; }
+    public string AddMessageBodyStringColumn { get; set; }
+    public string CreateQueueText { get; set; }
+    public string CreateDelayedMessageStoreText { get; set; }
+    public string PurgeBatchOfExpiredMessagesText { get; set; }
+    public string CheckIfExpiresIndexIsPresent { get; set; }
+    public string CheckIfNonClusteredRowVersionIndexIsPresent { get; set; }
+    public string CheckHeadersColumnType { get; set; }
+
+    //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
+    public string CreateSubscriptionTableText { get; set; } = "CREATE TABLE IF NOT EXISTS myschema.mytable (i integer);";
+    public string SubscribeText { get; set; }
+    public string GetSubscribersText { get; set; }
+    public string UnsubscribeText { get; set; }
 }

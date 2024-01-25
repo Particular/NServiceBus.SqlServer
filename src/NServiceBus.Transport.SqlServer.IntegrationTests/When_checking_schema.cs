@@ -11,6 +11,7 @@
         const string QueueTableName = "CheckingSchema";
 
         TableBasedQueue queue;
+        ISqlConstants sqlConstants = new SqlServerConstants();
 
         [SetUp]
         public async Task SetUp()
@@ -23,7 +24,7 @@
 
             await ResetQueue(addressParser, dbConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
+            queue = new TableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
         }
 
         [Test]
@@ -38,9 +39,9 @@
 
         DbConnectionFactory dbConnectionFactory;
 
-        static async Task ResetQueue(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        async Task ResetQueue(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
             using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {

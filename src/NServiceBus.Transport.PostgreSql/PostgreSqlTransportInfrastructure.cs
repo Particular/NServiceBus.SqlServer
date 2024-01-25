@@ -9,12 +9,14 @@ using QueueAddress = QueueAddress;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
-#pragma warning disable IDE0052
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
+#pragma warning disable IDE0052
     readonly ReceiveSettings[] receivers;
     readonly string[] sendingAddresses;
 #pragma warning restore IDE0052
+    readonly PostgreSqlConstants sqlConstants;
+
     PostgreSqlQueueAddressTranslator addressTranslator;
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
@@ -28,6 +30,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         this.hostSettings = hostSettings;
         this.receivers = receivers;
         this.sendingAddresses = sendingAddresses;
+
+        sqlConstants = new PostgreSqlConstants();
     }
 
     public override Task Shutdown(CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -49,7 +53,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         addressTranslator = new PostgreSqlQueueAddressTranslator();
         //TODO: check if we can provide streaming capability with PostgreSql
-        tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, false);
+        tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, false);
 
         delayedMessageStore = new DelayedMessageStore();
 
@@ -81,14 +85,14 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         if (hostSettings.SetupInfrastructure)
         {
-            await new SubscriptionTableCreator(null, null).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
+            await new SubscriptionTableCreator(sqlConstants, null, null).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
         }
 
         var pubSubSettings = transport.Subscriptions;
         var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
         var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
-        subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
+        subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants, subscriptionTableName.QuotedQualifiedName, connectionFactory));
 
         if (pubSubSettings.DisableCaching == false)
         {
@@ -97,7 +101,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         if (hostSettings.SetupInfrastructure)
         {
-            await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
+            await new SubscriptionTableCreator(sqlConstants, subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
         }
 
         //transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;

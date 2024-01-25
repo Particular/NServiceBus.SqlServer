@@ -3,16 +3,18 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Data.SqlClient;
+    using Npgsql;
     using SqlServer;
 
     class SubscriptionTableCreator
     {
+        ISqlConstants sqlConstants;
         QualifiedSubscriptionTableName tableName;
         DbConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
         {
+            this.sqlConstants = sqlConstants;
             this.tableName = tableName;
             this.connectionFactory = connectionFactory;
         }
@@ -24,7 +26,7 @@ namespace NServiceBus.Transport.PostgreSql
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-                        var sql = string.Format(PostgreSqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
+                        var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 
                         using (var command = connection.CreateCommand())
                         {
@@ -38,7 +40,8 @@ namespace NServiceBus.Transport.PostgreSql
                         transaction.Commit();
                     }
                 }
-                catch (SqlException e) when (e.Number is 2714 or 1913) //Object already exists
+                //TODO: should figure out the error code or if we can prevent that altogether with PostreSQL
+                catch (NpgsqlException e) when (e.ErrorCode is 2714 or 1913) //Object already exists
                 {
                     //Table creation scripts are based on sys.objects metadata views.
                     //It looks that these views are not fully transactional and might

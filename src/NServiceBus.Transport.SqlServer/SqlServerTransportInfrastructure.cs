@@ -18,6 +18,8 @@ namespace NServiceBus.Transport.SqlServer
             this.hostSettings = hostSettings;
             this.receiveSettings = receiveSettings;
             this.sendingAddresses = sendingAddresses;
+
+            sqlConstants = new SqlServerConstants();
         }
 
         public async Task Initialize(CancellationToken cancellationToken = default)
@@ -37,7 +39,7 @@ namespace NServiceBus.Transport.SqlServer
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
             addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
-            tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !connectionAttributes.IsEncrypted);
+            tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
 
@@ -52,7 +54,7 @@ namespace NServiceBus.Transport.SqlServer
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
             var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
-            subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(subscriptionTableName.QuotedQualifiedName, connectionFactory));
+            subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants, subscriptionTableName.QuotedQualifiedName, connectionFactory));
 
             if (pubSubSettings.DisableCaching == false)
             {
@@ -61,7 +63,7 @@ namespace NServiceBus.Transport.SqlServer
 
             if (hostSettings.SetupInfrastructure)
             {
-                await new SubscriptionTableCreator(subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
+                await new SubscriptionTableCreator(sqlConstants, subscriptionTableName, connectionFactory).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
             }
 
             transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
@@ -126,7 +128,7 @@ namespace NServiceBus.Transport.SqlServer
 
             var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex);
 
-            var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
+            var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(sqlConstants, addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
 
             //Create delayed delivery infrastructure
             CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -152,7 +154,7 @@ namespace NServiceBus.Transport.SqlServer
                 var mainReceiverInputQueueAddress = ToTransportAddress(receiveSettings[0].ReceiveAddress);
 
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
-                var delayedMessageTable = new DelayedMessageTable(delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
+                var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
@@ -182,7 +184,7 @@ namespace NServiceBus.Transport.SqlServer
                 queuesToCreate.AddRange(sendingAddresses);
                 queuesToCreate.AddRange(receiveAddresses);
 
-                var queueCreator = new QueueCreator(connectionFactory, addressTranslator, createMessageBodyComputedColumn);
+                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator, createMessageBodyComputedColumn);
 
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);
@@ -325,6 +327,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly HostSettings hostSettings;
         readonly ReceiveSettings[] receiveSettings;
         readonly string[] sendingAddresses;
+        readonly SqlServerConstants sqlConstants;
 
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;
