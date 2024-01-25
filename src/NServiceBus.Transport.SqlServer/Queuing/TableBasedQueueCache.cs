@@ -5,8 +5,9 @@ namespace NServiceBus.Transport.SqlServer
 
     class TableBasedQueueCache
     {
-        public TableBasedQueueCache(IQueueAddressTranslator addressTranslator, bool isStreamSupported)
+        public TableBasedQueueCache(ISqlConstants sqlConstants, IQueueAddressTranslator addressTranslator, bool isStreamSupported)
         {
+            this.sqlConstants = sqlConstants;
             this.addressTranslator = addressTranslator;
             this.isStreamSupported = isStreamSupported;
         }
@@ -15,11 +16,12 @@ namespace NServiceBus.Transport.SqlServer
         {
             var address = addressTranslator.Parse(destination);
             var key = Tuple.Create(address.QualifiedTableName, address.Address);
-            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(x.Item1, x.Item2, isStreamSupported));
+            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(sqlConstants, x.Item1, x.Item2, isStreamSupported));
 
             return queue;
         }
 
+        ISqlConstants sqlConstants;
         IQueueAddressTranslator addressTranslator;
         ConcurrentDictionary<Tuple<string, string>, TableBasedQueue> cache = new ConcurrentDictionary<Tuple<string, string>, TableBasedQueue>();
         bool isStreamSupported;

@@ -15,6 +15,7 @@
         const int PeekTimeoutInSeconds = 2;
 
         TableBasedQueue queue;
+        ISqlConstants sqlConstants = new SqlServerConstants();
 
         [SetUp]
         public async Task SetUp()
@@ -27,7 +28,7 @@
 
             await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
+            queue = new TableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
         }
 
         [Test]
@@ -88,9 +89,9 @@
 
         DbConnectionFactory dbConnectionFactory;
 
-        static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(dbConnectionFactory, addressTranslator, false);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator, false);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
