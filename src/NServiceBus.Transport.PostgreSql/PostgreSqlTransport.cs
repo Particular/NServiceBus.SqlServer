@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NServiceBus.Transport.SqlServer;
 
 /// <summary>
 /// PostgreSql Transport
@@ -13,8 +14,17 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(TransportTransactionMode defaultTransactionMode, bool supportsDelayedDelivery, bool supportsPublishSubscribe, bool supportsTTBR)
-        : base(defaultTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTTBR)
+    public PostgreSqlTransport(string connectionString) :base(TransportTransactionMode.TransactionScope, true, true, true)
+    {
+        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+        ConnectionString = connectionString;
+    }
+    /// <summary>
+    /// Creates and instance of <see cref="PostgreSqlTransport"/>
+    /// </summary>
+    public PostgreSqlTransport(TransportTransactionMode defaultTransactionMode, bool supportsDelayedDelivery, bool supportsPublishSubscribe, bool supportsTtbr)
+        : base(defaultTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTtbr)
     {
     }
 
@@ -73,6 +83,18 @@ public class PostgreSqlTransport : TransportDefinition
     /// Default address catalog.
     /// </summary>
     public string DefaultCatalog { get; set; }
+
+    /// <summary>
+    /// Delayed delivery infrastructure configuration
+    /// </summary>
+    public DelayedDeliveryOptions DelayedDelivery { get; set; }
+
+    /// <summary>
+    /// Subscription infrastructure settings.
+    /// </summary>
+    public SubscriptionOptions SubscriptionOptions { get; set; }
+
+    SqlServerTransport.TestingInformation TestingInformation { get; set; }
 
     //static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
 }
