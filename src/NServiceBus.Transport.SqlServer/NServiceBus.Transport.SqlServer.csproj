@@ -30,6 +30,7 @@
     
     <!--TODO: this should be removed once we split the shared codebase into dedicated project-->
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql" Key="$(NServiceBusKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.TransportTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
 </Project>
