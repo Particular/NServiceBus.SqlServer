@@ -21,8 +21,8 @@ class PostgreSqlConstants : ISqlConstants
     public string CheckHeadersColumnType { get; set; }
 
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
-    public string CreateSubscriptionTableText { get; set; } = "CREATE TABLE IF NOT EXISTS myschema.mytable (i integer);";
-    public string SubscribeText { get; set; }
+    public string CreateSubscriptionTableText { get; set; } = "CREATE TABLE IF NOT EXISTS public.mytable (i integer);";
+    public string SubscribeText { get; set; } = string.Empty;
     public string GetSubscribersText { get; set; }
-    public string UnsubscribeText { get; set; }
+    public string UnsubscribeText { get; set; } = string.Empty;
 }
