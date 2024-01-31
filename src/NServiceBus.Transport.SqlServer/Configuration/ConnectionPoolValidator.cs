@@ -1,24 +1,19 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
+
 
     class ConnectionPoolValidator
     {
         public static ValidationCheckResult Validate(string connectionString)
         {
             var keys = new DbConnectionStringBuilder { ConnectionString = connectionString };
-            var parsedConnection = new SqlConnectionStringBuilder(connectionString);
-
-            if (keys.ContainsKey("Pooling") && !parsedConnection.Pooling)
+            var hasPoolingValue = keys.TryGetValue("Pooling", out object poolingValue);
+            if (hasPoolingValue && string.Equals(poolingValue.ToString(), "true", StringComparison.InvariantCultureIgnoreCase))
             {
                 return ValidationCheckResult.Valid();
             }
-
             if (keys.ContainsKey("Max Pool Size"))
             {
                 return ValidationCheckResult.Valid();

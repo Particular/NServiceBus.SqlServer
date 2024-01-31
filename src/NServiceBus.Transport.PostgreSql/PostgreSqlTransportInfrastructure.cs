@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -76,18 +77,16 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (receivers.Length == 0)
+        {
+            Receivers = new Dictionary<string, IMessageReceiver>();
+            return;
+        }
     }
 
     async Task ConfigureSubscriptions(CancellationToken cancellationToken)
     {
         subscriptionStore = new SubscriptionStore();
-
-        if (hostSettings.SetupInfrastructure)
-        {
-            await new SubscriptionTableCreator(sqlConstants, null, null).CreateIfNecessary(cancellationToken).ConfigureAwait(false);
-        }
-
         var pubSubSettings = transport.Subscriptions;
         var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
         var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);

@@ -14,7 +14,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(string connectionString) :base(TransportTransactionMode.TransactionScope, true, true, true)
+    public PostgreSqlTransport(string connectionString) : base(TransportTransactionMode.TransactionScope, true, true, true)
     {
         Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
 
@@ -87,14 +87,22 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Delayed delivery infrastructure configuration
     /// </summary>
-    public DelayedDeliveryOptions DelayedDelivery { get; set; }
+    public DelayedDeliveryOptions DelayedDelivery { get; set; } = new DelayedDeliveryOptions();
 
-    /// <summary>
-    /// Subscription infrastructure settings.
-    /// </summary>
-    public SubscriptionOptions SubscriptionOptions { get; set; }
+    internal TestingInformation Testing { get; } = new TestingInformation();
 
-    SqlServerTransport.TestingInformation TestingInformation { get; set; }
+    internal class TestingInformation
+    {
+        internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
+
+        internal string[] ReceiveAddresses { get; set; }
+
+        internal string[] SendingAddresses { get; set; }
+
+        internal string DelayedDeliveryQueue { get; set; }
+
+        internal string SubscriptionTable { get; set; }
+    }
 
     //static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
 }

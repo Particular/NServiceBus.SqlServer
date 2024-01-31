@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 #endif
 using System.Threading.Tasks;
+using Npgsql;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.Transport.PostgreSql;
@@ -16,7 +17,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 {
     public TransportDefinition CreateTransportDefinition()
     {
-        connectionString = Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ?? @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Lifetime=0;";
+        connectionString = Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ?? @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Connection Lifetime=0;";
 
         return new PostgreSqlTransport(connectionString);
     }
@@ -65,20 +66,18 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
                 postgreSqlTransport.Testing.DelayedDeliveryQueue
             };
 
-            using (var conn = new SqlConnection(connectionString))
+            using var conn = new NpgsqlConnection(connectionString);
+            await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var queue in queues)
             {
-                await conn.OpenAsync(cancellationToken);
-
-                foreach (var queue in queues)
+                if (string.IsNullOrWhiteSpace(queue) == false)
                 {
-                    if (string.IsNullOrWhiteSpace(queue) == false)
+                    using (var comm = conn.CreateCommand())
                     {
-                        using (var comm = conn.CreateCommand())
-                        {
-                            comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
+                        comm.CommandText = $"DROP TABLE IF EXISTS {queue}";
 
-                            await comm.ExecuteNonQueryAsync(cancellationToken);
-                        }
+                        await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                     }
                 }
             }

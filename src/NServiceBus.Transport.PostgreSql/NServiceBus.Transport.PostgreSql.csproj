@@ -18,6 +18,10 @@
     <PackageReference Include="NServiceBus" Version="9.0.0-alpha.9" />
     <PackageReference Include="Npgsql" Version="8.0.1" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.TransportTests" Key="$(NServiceBusTestsKey)" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj" />
