@@ -97,7 +97,7 @@
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressParser = new SqlServerQueueAddressTranslator("nservicebus", "dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
 
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
@@ -107,7 +107,7 @@
             dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
-        Task PurgeOutputQueue(SqlServerQueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
+        Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
         {
             purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
@@ -116,7 +116,7 @@
             return purger.Purge(queue, cancellationToken);
         }
 
-        Task CreateOutputQueueIfNecessary(SqlServerQueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 

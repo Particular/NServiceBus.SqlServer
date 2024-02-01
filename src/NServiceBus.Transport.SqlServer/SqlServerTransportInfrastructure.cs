@@ -39,7 +39,7 @@ namespace NServiceBus.Transport.SqlServer
 
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
-            addressTranslator = new SqlServerQueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
+            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
             tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -321,7 +321,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly SqlServerConstants sqlConstants;
 
         ConnectionAttributes connectionAttributes;
-        SqlServerQueueAddressTranslator addressTranslator;
+        QueueAddressTranslator addressTranslator;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         Dictionary<string, object> diagnostics = [];
         DbConnectionFactory connectionFactory;

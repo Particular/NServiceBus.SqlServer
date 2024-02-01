@@ -17,7 +17,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(IQueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        public MessageDispatcher(QueueAddressTranslator addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {
             this.addressTranslator = addressTranslator;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
@@ -196,7 +196,7 @@ namespace NServiceBus.Transport.SqlServer
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         DbConnectionFactory connectionFactory;
-        IQueueAddressTranslator addressTranslator;
+        QueueAddressTranslator addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }

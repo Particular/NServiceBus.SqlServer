@@ -56,7 +56,7 @@
                 throw new Exception("Database is not configured on connection string");
             }
 
-            var queueAddressTranslator = new SqlServerQueueAddressTranslator((string)catalogSetting, "dbo", null, null);
+            var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, queueAddressTranslator);
 
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
