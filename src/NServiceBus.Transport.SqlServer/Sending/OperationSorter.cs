@@ -16,7 +16,7 @@
 
     static class OperationSorter
     {
-        public static SortingResult SortAndDeduplicate(this IEnumerable<UnicastTransportOperation> source, IQueueAddressTranslator addressTranslator)
+        public static SortingResult SortAndDeduplicate(this IEnumerable<UnicastTransportOperation> source, QueueAddressTranslator addressTranslator)
         {
             Dictionary<DeduplicationKey, UnicastTransportOperation> isolatedDispatch = null;
             Dictionary<DeduplicationKey, UnicastTransportOperation> defaultDispatch = null;

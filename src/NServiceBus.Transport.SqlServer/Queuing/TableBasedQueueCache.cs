@@ -5,7 +5,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class TableBasedQueueCache
     {
-        public TableBasedQueueCache(ISqlConstants sqlConstants, IQueueAddressTranslator addressTranslator, bool isStreamSupported)
+        public TableBasedQueueCache(ISqlConstants sqlConstants, QueueAddressTranslator addressTranslator, bool isStreamSupported)
         {
             this.sqlConstants = sqlConstants;
             this.addressTranslator = addressTranslator;
@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         ISqlConstants sqlConstants;
-        IQueueAddressTranslator addressTranslator;
+        QueueAddressTranslator addressTranslator;
         ConcurrentDictionary<Tuple<string, string>, TableBasedQueue> cache = new ConcurrentDictionary<Tuple<string, string>, TableBasedQueue>();
         bool isStreamSupported;
     }

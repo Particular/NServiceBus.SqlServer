@@ -24,7 +24,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     readonly PostgreSqlConstants sqlConstants;
 
     DueDelayedMessageProcessor dueDelayedMessageProcessor;
-    PostgreSqlQueueAddressTranslator addressTranslator;
+    QueueAddressTranslator addressTranslator;
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
     IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
@@ -79,7 +79,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
         connectionAttributes = ConnectionAttributesParser.Parse(transport.ConnectionString, transport.DefaultCatalog);
 
-        addressTranslator = new PostgreSqlQueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog);
+        addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog);
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, false);
 
