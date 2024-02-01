@@ -13,7 +13,17 @@ class PostgreSqlConstants : ISqlConstants
     public string MoveDueDelayedMessageText { get; set; } = string.Empty;
     public string PeekText { get; set; } = string.Empty;
     public string AddMessageBodyStringColumn { get; set; } = string.Empty;
-    public string CreateQueueText { get; set; } = string.Empty;
+    public string CreateQueueText { get; set; } = @"
+    CREATE TABLE IF NOT EXISTS {0} (
+        Id uuid NOT NULL,
+        CorrelationId varchar(255),
+        ReplyToAddress varchar(255),
+        Recoverable bit NOT NULL,
+        Expires TIMESTAMP,
+        Headers TEXT NOT NULL,
+        Body BYTEA,
+        RowVersion serial NOT NULL
+    );";
     public string CreateDelayedMessageStoreText { get; set; } = string.Empty;
     public string PurgeBatchOfExpiredMessagesText { get; set; } = string.Empty;
     public string CheckIfExpiresIndexIsPresent { get; set; } = string.Empty;
