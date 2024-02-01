@@ -20,7 +20,9 @@
 
         public QueueAddress Generate(Transport.QueueAddress queueAddress)
         {
-            return logicalAddressCache.GetOrAdd(queueAddress, TranslateLogicalAddress);
+            // AddressKey has a GetHashCode implementation and can be used as a dictionary key, Transport.QueueAddress (from Core) does not (at this time)
+            var key = AddressKey.Create(queueAddress);
+            return logicalAddressCache.GetOrAdd(key, key => key.ToSqlQueueAddress());
         }
 
         public CanonicalQueueAddress Parse(string address)
@@ -50,32 +52,37 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        public static QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        QueueSchemaAndCatalogOptions queueOptions;
+        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
+        ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+
+        record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
         {
-            var nonEmptyParts = new[]
+            public static AddressKey Create(Transport.QueueAddress a)
             {
-                queueAddress.BaseAddress,
-                queueAddress.Qualifier,
-                queueAddress.Discriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var tableName = string.Join(".", nonEmptyParts);
-
-
-            string schemaName = null;
-            string catalogName = null;
-
-            if (queueAddress.Properties != null)
-            {
-                queueAddress?.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
-                queueAddress?.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
+                string schema = null;
+                string catalog = null;
+                if (a.Properties is not null)
+                {
+                    a.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schema);
+                    a.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalog);
+                }
+                return new AddressKey(a.BaseAddress, a.Discriminator, a.Qualifier, schema, catalog);
             }
 
-            return new QueueAddress(tableName, schemaName, catalogName);
-        }
+            public QueueAddress ToSqlQueueAddress()
+            {
+                var nonEmptyParts = new[]
+                {
+                    BaseAddress,
+                    Qualifier,
+                    Discriminator
+                }.Where(p => !string.IsNullOrEmpty(p));
 
-        QueueSchemaAndCatalogOptions queueOptions;
-        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
-        ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
+                var tableName = string.Join(".", nonEmptyParts);
+
+                return new QueueAddress(tableName, Schema, Catalog);
+            }
+        }
     }
 }
