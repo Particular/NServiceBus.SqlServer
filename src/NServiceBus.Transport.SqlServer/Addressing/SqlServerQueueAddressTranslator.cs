@@ -3,9 +3,9 @@
     using System.Collections.Concurrent;
     using System.Linq;
 
-    class QueueAddressTranslator : IQueueAddressTranslator
+    class SqlServerQueueAddressTranslator : IQueueAddressTranslator
     {
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
+        public SqlServerQueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 

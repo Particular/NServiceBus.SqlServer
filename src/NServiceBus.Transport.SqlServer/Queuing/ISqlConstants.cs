@@ -1,5 +1,6 @@
 namespace NServiceBus.Transport.SqlServer;
 
+// TODO: Move to NServiceBus.Transport.Sql assembly
 interface ISqlConstants
 {
     string PurgeText { get; set; }

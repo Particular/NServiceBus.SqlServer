@@ -8,6 +8,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Transactions;
     using Logging;
     using NServiceBus.Transport.SqlServer.PubSub;
+    using Sql;
     using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
@@ -38,7 +39,7 @@ namespace NServiceBus.Transport.SqlServer
 
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
-            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
+            addressTranslator = new SqlServerQueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
             tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -168,7 +169,7 @@ namespace NServiceBus.Transport.SqlServer
                     ? new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                     : new NoOpSubscriptionManager();
 
-                return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
+                return new SqlServerMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
                     queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup);
 
@@ -312,16 +313,6 @@ namespace NServiceBus.Transport.SqlServer
             return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
         }
 
-        class FakePromotableResourceManager : IEnlistmentNotification
-        {
-            public static readonly Guid Id = Guid.NewGuid();
-            public void Prepare(PreparingEnlistment preparingEnlistment) => preparingEnlistment.Prepared();
-            public void Commit(Enlistment enlistment) => enlistment.Done();
-            public void Rollback(Enlistment enlistment) => enlistment.Done();
-            public void InDoubt(Enlistment enlistment) => enlistment.Done();
-
-            public static void ForceDtc() => Transaction.Current.EnlistDurable(Id, new FakePromotableResourceManager(), EnlistmentOptions.None);
-        }
 
         readonly SqlServerTransport transport;
         readonly HostSettings hostSettings;
@@ -330,7 +321,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly SqlServerConstants sqlConstants;
 
         ConnectionAttributes connectionAttributes;
-        QueueAddressTranslator addressTranslator;
+        SqlServerQueueAddressTranslator addressTranslator;
         DueDelayedMessageProcessor dueDelayedMessageProcessor;
         Dictionary<string, object> diagnostics = [];
         DbConnectionFactory connectionFactory;
