@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.SqlServer
 
     class QueueCreator
     {
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
+        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, IQueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
         {
             this.sqlConstants = sqlConstants;
             this.connectionFactory = connectionFactory;
@@ -92,7 +92,7 @@ namespace NServiceBus.Transport.SqlServer
 
         ISqlConstants sqlConstants;
         DbConnectionFactory connectionFactory;
-        QueueAddressTranslator addressTranslator;
+        IQueueAddressTranslator addressTranslator;
         bool createMessageBodyColumn;
     }
 }

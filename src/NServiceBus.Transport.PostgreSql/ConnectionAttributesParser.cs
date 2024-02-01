@@ -2,6 +2,7 @@
 {
     using System;
     using System.Data.Common;
+    using Sql;
 
     class ConnectionAttributesParser
     {
@@ -9,7 +10,7 @@
         {
             var dbConnectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            var connectionAttributes = new ConnectionAttributes("");
+            var connectionAttributes = new ConnectionAttributes("", false);
 
             if (defaultCatalog is not null)
             {

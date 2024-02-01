@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Threading;
@@ -6,10 +6,11 @@
     using Logging;
     using Microsoft.Data.SqlClient;
 
-    class MessageReceiver : IMessageReceiver
+    // TODO: Move to NServiceBus.Transport.Sql assembly
+    abstract class MessageReceiver : IMessageReceiver
     {
         public MessageReceiver(
-            SqlServerTransport transport,
+            TransportDefinition transport,
             string receiverId,
             string receiveAddress,
             string errorQueueAddress,
@@ -17,10 +18,8 @@
             Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
             Func<string, TableBasedQueue> queueFactory,
             IPurgeQueues queuePurger,
-            IExpiredMessagesPurger expiredMessagesPurger,
             IPeekMessagesInQueue queuePeeker,
             QueuePeekerOptions queuePeekerOptions,
-            SchemaInspector schemaInspector,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
             bool purgeAllMessagesOnStartup)
@@ -29,10 +28,8 @@
             this.processStrategyFactory = processStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
-            this.expiredMessagesPurger = expiredMessagesPurger;
             this.queuePeeker = queuePeeker;
             this.queuePeekerOptions = queuePeekerOptions;
-            this.schemaInspector = schemaInspector;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.errorQueueAddress = errorQueueAddress;
             this.criticalErrorAction = criticalErrorAction;
@@ -42,11 +39,21 @@
             ReceiveAddress = receiveAddress;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
+        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
+            CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
+
+            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving",
+                waitTimeCircuitBreaker,
+                ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex,
+                    messageProcessingCancellationTokenSource.Token));
+            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing",
+                waitTimeCircuitBreaker,
+                ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex,
+                    messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(ReceiveAddress);
             errorQueue = queueFactory(errorQueueAddress);
@@ -67,14 +74,21 @@
                 }
             }
 
-            await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
+            await PurgeExpiredMessages(inputQueue, cancellationToken).ConfigureAwait(false);
 
-            await schemaInspector.PerformInspection(inputQueue, cancellationToken).ConfigureAwait(false);
+            await PerformSchemaInspection(inputQueue, cancellationToken).ConfigureAwait(false);
         }
+
+        protected abstract Task PerformSchemaInspection(TableBasedQueue inputQueue,
+            CancellationToken cancellationToken = default);
+
+        protected abstract Task PurgeExpiredMessages(TableBasedQueue inputQueue,
+            CancellationToken cancellationToken = default);
 
         public Task StartReceive(CancellationToken cancellationToken = default)
         {
-            inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
+            inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ??
+                                         Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
@@ -84,12 +98,15 @@
             messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
-            messageReceivingTask = Task.Run(() => ReceiveMessagesAndSwallowExceptions(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
+            messageReceivingTask =
+                Task.Run(() => ReceiveMessagesAndSwallowExceptions(messageReceivingCancellationTokenSource.Token),
+                    CancellationToken.None);
 
             return Task.CompletedTask;
         }
 
-        public async Task ChangeConcurrency(PushRuntimeSettings newLimitations, CancellationToken cancellationToken = default)
+        public async Task ChangeConcurrency(PushRuntimeSettings newLimitations,
+            CancellationToken cancellationToken = default)
         {
             var oldLimiter = concurrencyLimiter;
             var oldMaxConcurrency = maxConcurrency;
@@ -104,6 +121,7 @@
                 {
                     await Task.Delay(50, cancellationToken).ConfigureAwait(false);
                 }
+
                 oldLimiter.Dispose();
             }
             catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
@@ -151,7 +169,8 @@
                     catch (Exception ex) when (!ex.IsCausedBy(messageReceivingCancellationToken))
                     {
                         Logger.Error("Message receiving failed", ex);
-                        await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken).ConfigureAwait(false);
+                        await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken)
+                            .ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex) when (ex.IsCausedBy(messageReceivingCancellationToken))
@@ -165,7 +184,9 @@
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            var messageCount = await queuePeeker.Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken).ConfigureAwait(false);
+            var messageCount = await queuePeeker
+                .Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
+                .ConfigureAwait(false);
 
             if (messageCount == 0)
             {
@@ -178,7 +199,10 @@
             var stopBatchCancellationSource = new CancellationTokenSource();
 
             // If either the receiving or processing circuit breakers are triggered, start only one message processing task at a time.
-            var maximumConcurrentProcessing = messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered ? 1 : messageCount;
+            var maximumConcurrentProcessing =
+                messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered
+                    ? 1
+                    : messageCount;
 
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
@@ -191,11 +215,14 @@
 
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
-                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource, localConcurrencyLimiter, messageProcessingCancellationTokenSource.Token);
+                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
+                    localConcurrencyLimiter, messageProcessingCancellationTokenSource.Token);
             }
         }
 
-        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter, CancellationToken messageProcessingCancellationToken)
+        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
+            CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
+            CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -205,7 +232,8 @@
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, messageProcessingCancellationToken)
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource,
+                            messageProcessingCancellationToken)
                         .ConfigureAwait(false);
 
                     messageProcessingCircuitBreaker.Success();
@@ -219,7 +247,8 @@
                 {
                     Logger.Warn("Message processing failed", ex);
 
-                    await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken).ConfigureAwait(false);
+                    await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken)
+                        .ConfigureAwait(false);
                 }
             }
             catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationToken))
@@ -232,31 +261,16 @@
             }
         }
 
-        async Task PurgeExpiredMessages(CancellationToken cancellationToken)
-        {
-            try
-            {
-                await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
-            }
-            catch (SqlException e) when (e.Number == 1205)
-            {
-                //Purge has been victim of a lock resolution
-                Logger.Warn("Purger has been selected as a lock victim.", e);
-            }
-        }
-
         TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
-        readonly SqlServerTransport transport;
+        readonly TransportDefinition transport;
         readonly string errorQueueAddress;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
         readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
         readonly IPurgeQueues queuePurger;
         readonly Func<string, TableBasedQueue> queueFactory;
-        readonly IExpiredMessagesPurger expiredMessagesPurger;
         readonly IPeekMessagesInQueue queuePeeker;
         readonly QueuePeekerOptions queuePeekerOptions;
-        readonly SchemaInspector schemaInspector;
         readonly bool purgeAllMessagesOnStartup;
         TimeSpan waitTimeCircuitBreaker;
         volatile SemaphoreSlim concurrencyLimiter;
