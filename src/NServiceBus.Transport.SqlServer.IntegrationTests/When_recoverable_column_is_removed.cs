@@ -33,7 +33,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
             dbConnectionFactory = DbConnectionFactory.Default(connectionString);
 
-            var addressParser = new SqlServerQueueAddressTranslator("nservicebus", "dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var purger = new QueuePurger(dbConnectionFactory);
 
             await RemoveQueueIfPresent(QueueName, token);
@@ -144,7 +144,7 @@ END";
                 );
         }
 
-        Task CreateOutputQueueIfNecessary(SqlServerQueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
