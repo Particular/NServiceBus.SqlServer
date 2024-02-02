@@ -37,6 +37,7 @@ Distributed transactions are not available on Linux. The other transaction modes
 Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
     static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
+    readonly PostgreSqlNameHelper nameHelper;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
         ReceiveSettings[] receiveSettings, string[] sendingAddresses)
@@ -47,6 +48,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         this.sendingAddresses = sendingAddresses;
 
         sqlConstants = new PostgreSqlConstants();
+        nameHelper = new PostgreSqlNameHelper();
     }
 
     public override Task Shutdown(CancellationToken cancellationToken = default)
@@ -79,7 +81,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
         connectionAttributes = ConnectionAttributesParser.Parse(transport.ConnectionString, transport.DefaultCatalog);
 
-        addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog);
+        addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, false);
 
@@ -330,7 +332,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         var subscriptionStoreSchema =
             string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
         var subscriptionTableName =
-            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
+            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog, nameHelper);
 
         subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants,
             subscriptionTableName.QuotedQualifiedName, connectionFactory));

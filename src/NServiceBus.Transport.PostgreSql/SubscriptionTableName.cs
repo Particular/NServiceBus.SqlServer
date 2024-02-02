@@ -1,6 +1,7 @@
 namespace NServiceBus.Transport.PostgreSql
 {
     using System;
+    using SqlServer;
 
     /// <summary>
     /// Subscription table name.
@@ -24,9 +25,9 @@ namespace NServiceBus.Transport.PostgreSql
             this.catalog = catalog;
         }
 
-        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog)
+        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog, INameHelper nameHelper)
         {
-            return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema, catalog ?? defaultCatalog);
+            return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema, catalog ?? defaultCatalog, nameHelper);
         }
     }
 }
