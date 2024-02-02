@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Concurrent;
@@ -6,9 +6,11 @@
 
     class QueueAddressTranslator
     {
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
+
+        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions, INameHelper nameHelper)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
+            this.nameHelper = nameHelper;
+            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             DefaultCatalog = defaultCatalog;
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -33,7 +35,7 @@
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
-            var transportAddress = QueueAddress.Parse(address);
+            var transportAddress = QueueAddress.Parse(address, nameHelper);
 
             return GetCanonicalForm(transportAddress);
         }
@@ -45,7 +47,7 @@
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
             var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
 
-            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
+            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog, nameHelper);
         }
 
         static string Override(string configuredValue, string addressValue, string defaultValue)
@@ -53,11 +55,7 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        readonly QueueSchemaAndCatalogOptions queueOptions;
-        readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
-        readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
-
-        record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
+        QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
         {
             public static AddressKey Create(Transport.QueueAddress a)
             {
@@ -84,6 +82,13 @@
 
                 return new QueueAddress(tableName, Schema, Catalog);
             }
+
+            return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
         }
+
+        INameHelper nameHelper;
+        QueueSchemaAndCatalogOptions queueOptions;
+        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
+        ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
     }
 }

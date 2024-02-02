@@ -21,6 +21,7 @@ namespace NServiceBus.Transport.SqlServer
             this.sendingAddresses = sendingAddresses;
 
             sqlConstants = new SqlServerConstants();
+            nameHelper = new SqlServerNameHelper();
         }
 
         public async Task Initialize(CancellationToken cancellationToken = default)
@@ -39,7 +40,7 @@ namespace NServiceBus.Transport.SqlServer
 
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
-            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
+            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
             tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -53,7 +54,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
-            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
+            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog, nameHelper);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants, subscriptionTableName.QuotedQualifiedName, connectionFactory));
 
@@ -319,6 +320,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly ReceiveSettings[] receiveSettings;
         readonly string[] sendingAddresses;
         readonly SqlServerConstants sqlConstants;
+        readonly SqlServerNameHelper nameHelper;
 
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;

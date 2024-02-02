@@ -5,14 +5,14 @@
 
     class QueueAddress
     {
-        public QueueAddress(string table, string schemaName, string catalogName)
+        public QueueAddress(string table, string schemaName, string catalogName, INameHelper nameHelper)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(table);
 
             Table = table;
-            Catalog = SafeUnquote(catalogName);
-            Schema = SafeUnquote(schemaName);
-            Value = GetStringForm();
+            Catalog = SafeUnquote(catalogName, nameHelper);
+            Schema = SafeUnquote(schemaName, nameHelper);
+            Value = GetStringForm(nameHelper);
         }
 
         public string Catalog { get; }
@@ -30,13 +30,13 @@
         //         algorithm assumes that those parts are specified in brackets delimited format
         //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id>
         //         or <catalog_id> parts.
-        public static QueueAddress Parse(string address)
+        public static QueueAddress Parse(string address, INameHelper nameHelper)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
 
             if (firstAtIndex == -1)
             {
-                return new QueueAddress(address, null, null);
+                return new QueueAddress(address, null, null, nameHelper);
             }
 
             var tableName = address.Substring(0, firstAtIndex);
@@ -50,10 +50,10 @@
             {
                 ExtractNextPart(address, out catalogName);
             }
-            return new QueueAddress(tableName, schemaName, catalogName);
+            return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
         }
 
-        string GetStringForm()
+        string GetStringForm(INameHelper nameHelper)
         {
             var result = new StringBuilder();
             var optionalParts = new[] { Catalog, Schema };
@@ -61,7 +61,7 @@
             {
                 if (part != null)
                 {
-                    result.Insert(0, $"@{Quote(part)}");
+                    result.Insert(0, $"@{Quote(part, nameHelper)}");
                 }
                 else if (result.Length > 0)
                 {
@@ -100,14 +100,14 @@
             }
         }
 
-        static string Quote(string name)
+        static string Quote(string name, INameHelper nameHelper)
         {
-            return NameHelper.Quote(name);
+            return nameHelper.Quote(name);
         }
 
-        static string SafeUnquote(string name)
+        static string SafeUnquote(string name, INameHelper nameHelper)
         {
-            var result = NameHelper.Unquote(name);
+            var result = nameHelper.Unquote(name);
             return string.IsNullOrWhiteSpace(result)
                 ? null
                 : result;
