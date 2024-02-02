@@ -5,8 +5,10 @@
 
     class QueueAddressTranslator
     {
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
+
+        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions, INameHelper nameHelper)
         {
+            this.nameHelper = nameHelper;
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             DefaultCatalog = defaultCatalog;
@@ -30,7 +32,7 @@
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
-            var transportAddress = QueueAddress.Parse(address);
+            var transportAddress = QueueAddress.Parse(address, nameHelper);
 
             return GetCanonicalForm(transportAddress);
         }
@@ -42,7 +44,7 @@
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
             var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
 
-            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
+            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog, nameHelper);
         }
 
         static string Override(string configuredValue, string addressValue, string defaultValue)
@@ -50,7 +52,7 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        public static QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
         {
             var nonEmptyParts = new[]
             {
@@ -71,9 +73,10 @@
                 queueAddress?.Properties.TryGetValue(SettingsKeys.CatalogPropertyKey, out catalogName);
             }
 
-            return new QueueAddress(tableName, schemaName, catalogName);
+            return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
         }
 
+        INameHelper nameHelper;
         QueueSchemaAndCatalogOptions queueOptions;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();

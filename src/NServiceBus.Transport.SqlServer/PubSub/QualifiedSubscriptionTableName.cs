@@ -1,14 +1,13 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using static NameHelper;
 
     class QualifiedSubscriptionTableName
     {
         public string QuotedCatalog;
         public string QuotedQualifiedName;
 
-        public QualifiedSubscriptionTableName(string table, string schema, string catalog)
+        public QualifiedSubscriptionTableName(string table, string schema, string catalog, INameHelper nameHelper)
         {
             if (table == null)
             {
@@ -25,8 +24,8 @@
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            QuotedCatalog = Quote(catalog);
-            QuotedQualifiedName = $"{Quote(catalog)}.{Quote(schema)}.{Quote(table)}";
+            QuotedCatalog = nameHelper.Quote(catalog);
+            QuotedQualifiedName = $"{nameHelper.Quote(catalog)}.{nameHelper.Quote(schema)}.{nameHelper.Quote(table)}";
         }
     }
 }
