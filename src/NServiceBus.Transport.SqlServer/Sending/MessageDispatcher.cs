@@ -118,8 +118,8 @@ namespace NServiceBus.Transport.SqlServer
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out SqlConnection sqlTransportConnection);
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out DbConnection sqlTransportConnection);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out DbTransaction sqlTransportTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
@@ -182,7 +182,7 @@ namespace NServiceBus.Transport.SqlServer
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out SqlTransaction nativeTransaction);
+            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out DbTransaction nativeTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;
