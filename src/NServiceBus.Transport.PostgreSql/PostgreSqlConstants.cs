@@ -34,7 +34,16 @@ USING (
 ) q
 WHERE q.id = {0}.id RETURNING q.Id, q.Expired, q.Headers, q.Body;
 ";
-    public string MoveDueDelayedMessageText { get; set; } = "select 1=1;";
+    public string MoveDueDelayedMessageText { get; set; } = @"
+CREATE EXTENSION IF NOT EXISTS ""uuid-ossp""; 
+	
+WITH message as (DELETE FROM {0} WHERE rowversion in (SELECT rowversion from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
+RETURNING headers, body)
+INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT  uuid_generate_v4(), NULL, NULL, NULL, headers, body FROM message;
+
+SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
+FROM {0} 
+ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
     public string PeekText { get; set; } = @"
 SELECT COALESCE(cast(max(RowVersion) - min(RowVersion) + 1 AS int), 0) Id FROM {0}";
 
