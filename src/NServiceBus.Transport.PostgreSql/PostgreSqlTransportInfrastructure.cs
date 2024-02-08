@@ -200,6 +200,11 @@ Be aware that different transaction modes affect consistency guarantees since di
                 ? new SubscriptionManager(subscriptionStore, hostSettings.Name, receiveAddress)
                 : new NoOpSubscriptionManager();
 
+            if (receiveSetting.PurgeOnStartup)
+            {
+                _logger.Warn($"The {receiveSetting.PurgeOnStartup} should only be used in the development environment.");
+            }
+
             return new PostgreSqlMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
                 hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                 queuePeeker, queuePeekerOptions, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
