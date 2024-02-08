@@ -4,8 +4,12 @@ using SqlServer;
 
 class PostgreSqlConstants : ISqlConstants
 {
-    public string PurgeText { get; set; } = "DELETE FROM {0}";
-    public string SendTextWithRecoverable { get; set; } = string.Empty; //It should never be used because PostgreSQL dialect does not have Recoverable column
+    //TODO this is leaky abstraction! Needs fixing
+    public string PurgeText { get; set; } = string.Empty;
+
+    //TODO Not needed for PostgreSQL, needs to be removed from ISqlConstants. It should never be used because PostgreSQL dialect does not have Recoverable column
+    public string SendTextWithRecoverable { get; set; } = string.Empty;
+
     public string SendText { get; set; } = @"
 INSERT INTO {0} (
     Id,
@@ -19,8 +23,21 @@ VALUES (
     @Body);
 ";
 
-    public string CheckIfTableHasRecoverableText { get; set; } = "SELECT * FROM {0} LIMIT 0 FOR UPDATE SKIP LOCKED;";
-    public string StoreDelayedMessageText { get; set; } = string.Empty;
+// TODO Not needed for PostgreSQL, needs to be removed from ISqlConstants
+    public string CheckIfTableHasRecoverableText { get; set; } = string.Empty;
+    public string StoreDelayedMessageText { get; set; } = @"
+WITH params (DueDate) as (
+   values (timestamptz (now() AT TIME ZONE 'UTC') + interval '@DueAfterDays days @DueAfterHours hours @DueAfterMinutes mins @DueAfterSeconds s @DueAfterMilliseconds ms')
+)
+INSERT INTO {0} (
+    Headers,
+    Body,
+    Due)
+VALUES (
+    @Headers,
+    @Body,
+    Select DueDate from params);";
+
     public string ReceiveText { get; set; } = @"
 DELETE FROM
     {0}
@@ -34,6 +51,8 @@ USING (
 ) q
 WHERE q.id = {0}.id RETURNING q.Id, q.Expired, q.Headers, q.Body;
 ";
+
+    //TODO investigate the purpose and meaning of this extension, can it be bootstrapped, can dbas turn it off, potential prerequisite for us?
     public string MoveDueDelayedMessageText { get; set; } = @"
 CREATE EXTENSION IF NOT EXISTS ""uuid-ossp""; 
 	
@@ -44,10 +63,12 @@ INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELE
 SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
 FROM {0} 
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
+
     public string PeekText { get; set; } = @"
 SELECT COALESCE(cast(max(RowVersion) - min(RowVersion) + 1 AS int), 0) Id FROM {0}";
 
     public string AddMessageBodyStringColumn { get; set; } = string.Empty;
+
     public string CreateQueueText { get; set; } = @"
     CREATE TABLE IF NOT EXISTS {0} (
         Id uuid NOT NULL,
@@ -85,6 +106,7 @@ CREATE TABLE IF NOT EXISTS {0} (
     )
 )
 ";
+
     public string SubscribeText { get; set; } = @"
 INSERT INTO {0}
 (
@@ -106,6 +128,7 @@ SELECT DISTINCT QueueAddress
 FROM {0}
 WHERE Topic IN ({1})
 ";
+
     public string UnsubscribeText { get; set; } = @"
 DELETE FROM {0}
 WHERE
