@@ -3,11 +3,6 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Data;
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -15,7 +10,8 @@ namespace NServiceBus.Transport.SqlServer
     using Unicast.Queuing;
     using static System.String;
 
-    class TableBasedQueue
+    //TODO: move to the abstraction layer
+    abstract class TableBasedQueue
     {
         public string Name { get; }
 
@@ -106,96 +102,9 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
+        protected abstract Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
+            CancellationToken cancellationToken = default);
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = sendCommand;
-                    command.Transaction = transaction;
-
-                    message.PrepareSendCommand(command);
-
-                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                }
-            }
-            // 207 = Invalid column name
-            // 515 = Cannot insert the value NULL into column; column does not allow nulls
-            catch (SqlException ex) when ((ex.Number == 207 || ex.Number == 515) && ex.Message.Contains("Recoverable"))
-            {
-                cachedSendCommand = null;
-                throw new Exception($"Failed to send message to {qualifiedTableName} due to a change in the existence of the Recoverable column that is scheduled for removal. If the table schema has changed, this is expected. Retrying the message send will detect the new table structure and adapt to it.", ex);
-            }
-            catch (SqlException ex) when (ex.Number == 208)
-            {
-                ThrowQueueNotFoundException(ex);
-            }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
-            {
-                ThrowFailedToSendException(ex);
-            }
-        }
-
-        async Task<string> GetSendCommandText(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
-        {
-            // Get a local reference because another thread could remove the cache between check and return
-            var sendCommand = cachedSendCommand;
-            if (sendCommand != null)
-            {
-                return sendCommand;
-            }
-
-            await sendCommandLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                sendCommand = cachedSendCommand;
-                if (sendCommand != null)
-                {
-                    return sendCommand;
-                }
-
-                var commandText = Format(sqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandType = CommandType.Text;
-                    command.CommandText = commandText;
-                    command.Transaction = transaction;
-
-                    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
-                        {
-                            if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
-                            {
-                                cachedSendCommand = Format(sqlConstants.SendTextWithRecoverable, qualifiedTableName);
-                                return cachedSendCommand;
-                            }
-                        }
-                    }
-
-                    cachedSendCommand = Format(sqlConstants.SendText, qualifiedTableName);
-                    return cachedSendCommand;
-                }
-            }
-            finally
-            {
-                sendCommandLock.Release();
-            }
-        }
-
-        void ThrowQueueNotFoundException(SqlException ex)
-        {
-            throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
-        }
-
-        void ThrowFailedToSendException(Exception ex)
-        {
-            throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
-        }
 
         public async Task<int> Purge(DbConnection connection, CancellationToken cancellationToken = default)
         {
@@ -261,10 +170,9 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         ISqlConstants sqlConstants;
-        string qualifiedTableName;
+        protected string qualifiedTableName;
         string peekCommand;
         string receiveCommand;
-        string cachedSendCommand;
         string purgeCommand;
         string purgeExpiredCommand;
         string checkExpiresIndexCommand;
@@ -272,7 +180,6 @@ namespace NServiceBus.Transport.SqlServer
         string checkHeadersColumnTypeCommand;
         bool isStreamSupported;
 
-        readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
         static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();
     }
 }
