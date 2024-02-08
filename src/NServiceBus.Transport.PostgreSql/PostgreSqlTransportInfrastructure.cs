@@ -17,10 +17,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
-#pragma warning disable IDE0052
     readonly ReceiveSettings[] receiveSettings;
     readonly string[] sendingAddresses;
-#pragma warning restore IDE0052
     readonly PostgreSqlConstants sqlConstants;
 
     DueDelayedMessageProcessor dueDelayedMessageProcessor;
@@ -83,7 +81,10 @@ Be aware that different transaction modes affect consistency guarantees since di
 
         addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
         //TODO: check if we can provide streaming capability with PostgreSql
-        tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, addressTranslator, false);
+        tableBasedQueueCache = new TableBasedQueueCache(
+            (qualifiedTableName, queueName, isStreamSupported) => new PostgreSqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
+            addressTranslator,
+            false);
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
 
@@ -160,7 +161,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token),
             validateExpiredIndex);
 
-        var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new TableBasedQueue(sqlConstants,
+        var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
 
         //Create delayed delivery infrastructure
@@ -172,7 +173,7 @@ Be aware that different transaction modes affect consistency guarantees since di
             // diagnostics.Add("NServiceBus.Transport.SqlServer.DelayedDelivery",
             //     new { Native = true, Suffix = delayedDelivery.TableSuffix, delayedDelivery.BatchSize, });
 
-            var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
+            var queueAddress = new QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
                 delayedDelivery.TableSuffix);
 
             delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
