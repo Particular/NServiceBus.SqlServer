@@ -6,9 +6,6 @@ class PostgreSqlConstants : ISqlConstants
 {
     public string PurgeText { get; set; } = "DELETE FROM {0}";
 
-    //TODO Not needed for PostgreSQL, needs to be removed from ISqlConstants. It should never be used because PostgreSQL dialect does not have Recoverable column
-    public string SendTextWithRecoverable { get; set; } = string.Empty;
-
     public string SendText { get; set; } = @"
 INSERT INTO {0} (
     Id,
@@ -22,8 +19,6 @@ VALUES (
     @Body);
 ";
 
-    // TODO Not needed for PostgreSQL, needs to be removed from ISqlConstants
-    public string CheckIfTableHasRecoverableText { get; set; } = "SELECT * FROM {0} LIMIT 0";
     public string StoreDelayedMessageText { get; set; } = @"
 WITH params (DueDate) as (
    values (timestamptz (now() AT TIME ZONE 'UTC') + interval '@DueAfterDays days @DueAfterHours hours @DueAfterMinutes mins @DueAfterSeconds s @DueAfterMilliseconds ms')

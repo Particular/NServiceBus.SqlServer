@@ -3,11 +3,12 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Collections.Concurrent;
 
+    //TODO: can be moved to the abstraction layer
     class TableBasedQueueCache
     {
-        public TableBasedQueueCache(ISqlConstants sqlConstants, QueueAddressTranslator addressTranslator, bool isStreamSupported)
+        public TableBasedQueueCache(Func<string, string, bool, TableBasedQueue> queueFactory, QueueAddressTranslator addressTranslator, bool isStreamSupported)
         {
-            this.sqlConstants = sqlConstants;
+            this.queueFactory = queueFactory;
             this.addressTranslator = addressTranslator;
             this.isStreamSupported = isStreamSupported;
         }
@@ -16,12 +17,12 @@ namespace NServiceBus.Transport.SqlServer
         {
             var address = addressTranslator.Parse(destination);
             var key = Tuple.Create(address.QualifiedTableName, address.Address);
-            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(sqlConstants, x.Item1, x.Item2, isStreamSupported));
+            var queue = cache.GetOrAdd(key, x => queueFactory(x.Item1, x.Item2, isStreamSupported));
 
             return queue;
         }
 
-        ISqlConstants sqlConstants;
+        Func<string, string, bool, TableBasedQueue> queueFactory;
         QueueAddressTranslator addressTranslator;
         ConcurrentDictionary<Tuple<string, string>, TableBasedQueue> cache = new ConcurrentDictionary<Tuple<string, string>, TableBasedQueue>();
         bool isStreamSupported;

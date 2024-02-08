@@ -4,9 +4,7 @@ namespace NServiceBus.Transport.SqlServer;
 interface ISqlConstants
 {
     string PurgeText { get; set; }
-    string SendTextWithRecoverable { get; set; }
     string SendText { get; set; }
-    string CheckIfTableHasRecoverableText { get; set; }
     string StoreDelayedMessageText { get; set; }
     string ReceiveText { get; set; }
     string MoveDueDelayedMessageText { get; set; }
