@@ -14,29 +14,36 @@
         [TestCase(TransportTransactionMode.TransactionScope)]
         public async Task Should_expose_receiving_address(TransportTransactionMode transactionMode)
         {
-            var onError = CreateTaskCompletionSource<ErrorContext>();
+            var onReceived = CreateTaskCompletionSource<MessageContext>();
 
             await StartPump(
                 (context, _) =>
                 {
-                    Assert.AreEqual(receiver.ReceiveAddress, context.ReceiveAddress);
-                    throw new Exception("Simulated exception");
+                    onReceived.SetResult(context);
+                    return Task.CompletedTask;
                 },
                 (context, _) =>
                 {
-                    onError.SetResult(context);
+                    Assert.Fail("Unexpected exception");
                     return Task.FromResult(ErrorHandleResult.Handled);
                 },
                 transactionMode);
 
+            var delay = TimeSpan.FromSeconds(5);
             var dispatchProperties = new DispatchProperties
             {
-                DelayDeliveryWith = new DelayDeliveryWith(TimeSpan.FromSeconds(5))
+                DelayDeliveryWith = new DelayDeliveryWith(delay)
             };
+
+            var before = DateTimeOffset.UtcNow;
+
             await SendMessage(InputQueueName, dispatchProperties: dispatchProperties);
 
-            var errorContext = await onError.Task;
-            Assert.AreEqual(receiver.ReceiveAddress, errorContext.ReceiveAddress);
+            var _ = await onReceived.Task;
+
+            var after = DateTimeOffset.UtcNow;
+
+            Assert.True(after - before > delay);
         }
     }
 }

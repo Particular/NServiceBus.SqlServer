@@ -72,7 +72,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
                     {
                         comm.CommandText = $"DROP TABLE IF EXISTS {queue}";
 
-                        await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                        //await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
