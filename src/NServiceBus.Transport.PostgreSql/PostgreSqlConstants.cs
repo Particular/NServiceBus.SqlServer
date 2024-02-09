@@ -21,16 +21,14 @@ VALUES (
 
     public string StoreDelayedMessageText { get; set; } = @"
 WITH params (DueDate) as (
-   values (timestamptz (now() AT TIME ZONE 'UTC') + interval '@DueAfterDays days @DueAfterHours hours @DueAfterMinutes mins @DueAfterSeconds s @DueAfterMilliseconds ms')
+   values (timestamptz (now() AT TIME ZONE 'UTC') + (@DueAfterDays || ' days ')::INTERVAL + (@DueAfterHours || ' hours ')::INTERVAL + (@DueAfterMinutes || ' mins ')::INTERVAL + (@DueAfterSeconds || ' s ')::INTERVAL + (@DueAfterMilliseconds || ' ms')::INTERVAL)
 )
 INSERT INTO {0} (
     Headers,
     Body,
     Due)
-VALUES (
-    @Headers,
-    @Body,
-    Select DueDate from params);";
+SELECT @Headers, @Body, DueDate
+FROM params;";
 
     public string ReceiveText { get; set; } = @"
 DELETE FROM
