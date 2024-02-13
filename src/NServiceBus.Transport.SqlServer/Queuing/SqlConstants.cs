@@ -48,7 +48,7 @@ VALUES (
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        public static readonly string CheckIfTableHasRecoverableText = "SELECT TOP (0) * FROM {0} WITH (NOLOCK);";
+        public static readonly string CheckIfTableHasRecoverableText = "SELECT TOP (0) * FROM {0} WITH (READPAST, READCOMMITTEDLOCK);";
 
         public static readonly string StoreDelayedMessageText =
 @"
@@ -121,7 +121,7 @@ FROM {0} WITH (READPAST)
 ORDER BY Due";
 
         public static readonly string PeekText = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST)";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
 
         public static readonly string AddMessageBodyStringColumn = @"
 IF NOT EXISTS (
