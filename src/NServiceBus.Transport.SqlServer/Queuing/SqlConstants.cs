@@ -104,7 +104,7 @@ FROM {0} WITH (READPAST)
 ORDER BY Due";
 
         public static readonly string PeekText = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (nolock)";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
 
         public static readonly string AddMessageBodyStringColumn = @"
 IF NOT EXISTS (
