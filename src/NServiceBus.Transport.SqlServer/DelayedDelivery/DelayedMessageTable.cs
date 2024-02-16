@@ -69,7 +69,6 @@ namespace NServiceBus.Transport.SqlServer
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
                     {
                         // No timeouts waiting
-                        //return DateTime.UtcNow.AddMinutes(1);
                         return DateTime.MinValue;
                     }
 
