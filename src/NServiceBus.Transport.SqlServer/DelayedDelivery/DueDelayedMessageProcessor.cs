@@ -111,6 +111,8 @@ namespace NServiceBus.Transport.SqlServer
             }
 
             whenToRunNext.CalculateNextExecutionTime();
+            // While running this loop, a new delayed message can be stored
+            // and NextExecutionTime could be set to a new (sooner) time.
             while (DateTime.UtcNow < whenToRunNext.NextExecutionTime)
             {
                 await Task.Delay(1000, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
@@ -122,7 +124,7 @@ namespace NServiceBus.Transport.SqlServer
         /// </summary>
         void OnDelayedMessageStored(object sender, DateTime dueTime)
         {
-            Logger.Debug($"Whoa, delayed messages stored! {dueTime} | {nextExecution}");
+            Logger.Debug($"Delayed messages stored which is due at {dueTime}");
 
             if (dueTime < nextExecution)
             {

@@ -28,7 +28,7 @@
                 transactionMode);
 
             var before = DateTimeOffset.UtcNow;
-            var delay = TimeSpan.FromSeconds(5);
+            var delay = TimeSpan.FromSeconds(2);
             var dispatchProperties = new DispatchProperties { DelayDeliveryWith = new DelayDeliveryWith(delay) };
 
             await SendMessage(InputQueueName, dispatchProperties: dispatchProperties);
