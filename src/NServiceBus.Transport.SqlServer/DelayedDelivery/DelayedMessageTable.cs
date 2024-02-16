@@ -10,12 +10,14 @@ namespace NServiceBus.Transport.SqlServer
 
     interface IDelayedMessageStore
     {
-        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default);
+        Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
+            DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
     class SendOnlyDelayedMessageStore : IDelayedMessageStore
     {
-        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+        public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
+            DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             throw new Exception("Delayed delivery is not supported for send-only endpoints.");
         }
@@ -31,7 +33,11 @@ namespace NServiceBus.Transport.SqlServer
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
-        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Stores the message into the delayed queue instead of input queue
+        /// </summary>
+        public async Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
+            DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
             using (var command = connection.CreateCommand())
@@ -48,7 +54,8 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         /// <returns>The time of the next timeout due</returns>
-        public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+        public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
+            CancellationToken cancellationToken = default)
         {
             using (var command = connection.CreateCommand())
             {
@@ -62,12 +69,14 @@ namespace NServiceBus.Transport.SqlServer
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
                     {
                         // No timeouts waiting
-                        return DateTime.UtcNow.AddMinutes(1);
+                        //return DateTime.UtcNow.AddMinutes(1);
+                        return DateTime.MinValue;
                     }
 
-                    // Normalizing in case of clock drift between executing machine and SQL Server instance
+                    // Normalizing in case of clock drift between executing machine and database instance
                     var sqlNow = reader.GetDateTime(0);
                     var sqlNextDue = reader.GetDateTime(1);
+
                     if (sqlNextDue <= sqlNow)
                     {
                         return DateTime.UtcNow;
