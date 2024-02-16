@@ -16,32 +16,25 @@
         {
             var onReceived = CreateTaskCompletionSource<MessageContext>();
 
+            DateTimeOffset after = DateTimeOffset.MinValue;
+
             await StartPump(
                 (context, _) =>
                 {
                     onReceived.SetResult(context);
                     return Task.CompletedTask;
                 },
-                (context, _) =>
-                {
-                    Assert.Fail("Unexpected exception");
-                    return Task.FromResult(ErrorHandleResult.Handled);
-                },
+                (_, __) => Task.FromResult(ErrorHandleResult.Handled),
                 transactionMode);
 
-            var delay = TimeSpan.FromSeconds(5);
-            var dispatchProperties = new DispatchProperties
-            {
-                DelayDeliveryWith = new DelayDeliveryWith(delay)
-            };
-
             var before = DateTimeOffset.UtcNow;
+            var delay = TimeSpan.FromSeconds(5);
+            var dispatchProperties = new DispatchProperties { DelayDeliveryWith = new DelayDeliveryWith(delay) };
 
             await SendMessage(InputQueueName, dispatchProperties: dispatchProperties);
 
-            var _ = await onReceived.Task;
-
-            var after = DateTimeOffset.UtcNow;
+            _ = await onReceived.Task;
+            after = DateTimeOffset.UtcNow;
 
             Assert.True(after - before > delay);
         }
