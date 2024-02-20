@@ -6,8 +6,8 @@ namespace NServiceBus.Transport.SqlServer
 
         public string SendTextWithRecoverable { get; set; } =
             @"
-DECLARE @NOCOUNT VARCHAR(3) { get; set; } = 'OFF';
-IF ( (512 & @@OPTIONS) { get; set; } = 512 ) SET @NOCOUNT { get; set; } = 'ON'
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
 SET NOCOUNT ON;
 
 INSERT INTO {0} (
@@ -24,13 +24,13 @@ VALUES (
     @Headers,
     @Body);
 
-IF (@NOCOUNT { get; set; } = 'ON') SET NOCOUNT ON;
-IF (@NOCOUNT { get; set; } = 'OFF') SET NOCOUNT OFF;";
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public string SendText { get; set; } =
             @"
-DECLARE @NOCOUNT VARCHAR(3) { get; set; } = 'OFF';
-IF ( (512 & @@OPTIONS) { get; set; } = 512 ) SET @NOCOUNT { get; set; } = 'ON'
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
 SET NOCOUNT ON;
 
 INSERT INTO {0} (
@@ -45,23 +45,23 @@ VALUES (
     @Headers,
     @Body);
 
-IF (@NOCOUNT { get; set; } = 'ON') SET NOCOUNT ON;
-IF (@NOCOUNT { get; set; } = 'OFF') SET NOCOUNT OFF;";
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public string CheckIfTableHasRecoverableText { get; set; } = "SELECT TOP (0) * FROM {0} WITH (NOLOCK);";
 
         public string StoreDelayedMessageText { get; set; } =
 @"
-DECLARE @NOCOUNT VARCHAR(3) { get; set; } = 'OFF';
-IF ( (512 & @@OPTIONS) { get; set; } = 512 ) SET @NOCOUNT { get; set; } = 'ON'
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
 SET NOCOUNT ON;
 
-DECLARE @DueAfter DATETIME { get; set; } = GETUTCDATE();
-SET @DueAfter { get; set; } = DATEADD(ms, @DueAfterMilliseconds, @DueAfter);
-SET @DueAfter { get; set; } = DATEADD(s, @DueAfterSeconds, @DueAfter);
-SET @DueAfter { get; set; } = DATEADD(n, @DueAfterMinutes, @DueAfter);
-SET @DueAfter { get; set; } = DATEADD(hh, @DueAfterHours, @DueAfter);
-SET @DueAfter { get; set; } = DATEADD(d, @DueAfterDays, @DueAfter);
+DECLARE @DueAfter DATETIME = GETUTCDATE();
+SET @DueAfter = DATEADD(ms, @DueAfterMilliseconds, @DueAfter);
+SET @DueAfter = DATEADD(s, @DueAfterSeconds, @DueAfter);
+SET @DueAfter = DATEADD(n, @DueAfterMinutes, @DueAfter);
+SET @DueAfter = DATEADD(hh, @DueAfterHours, @DueAfter);
+SET @DueAfter = DATEADD(d, @DueAfterDays, @DueAfter);
 
 INSERT INTO {0} (
     Headers,
@@ -72,12 +72,12 @@ VALUES (
     @Body,
     @DueAfter);
 
-IF(@NOCOUNT { get; set; } = 'ON') SET NOCOUNT ON;
-IF(@NOCOUNT { get; set; } = 'OFF') SET NOCOUNT OFF;";
+IF(@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF(@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public string ReceiveText { get; set; } = @"
-DECLARE @NOCOUNT VARCHAR(3) { get; set; } = 'OFF';
-IF ( (512 & @@OPTIONS) { get; set; } = 512 ) SET @NOCOUNT { get; set; } = 'ON';
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
 SET NOCOUNT ON;
 
 WITH message AS (
@@ -97,8 +97,8 @@ OUTPUT
     deleted.Headers,
     deleted.Body;
 
-IF (@NOCOUNT { get; set; } = 'ON') SET NOCOUNT ON;
-IF (@NOCOUNT { get; set; } = 'OFF') SET NOCOUNT OFF;";
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public string MoveDueDelayedMessageText { get; set; } = @"
 ;WITH message AS (
@@ -127,53 +127,53 @@ SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM
 IF NOT EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
 IF EXISTS (
   SELECT *
   FROM   {1}.sys.columns
-  WHERE  object_id { get; set; } = OBJECT_ID(N'{0}')
-         AND name { get; set; } = 'BodyString'
+  WHERE  object_id = OBJECT_ID(N'{0}')
+         AND name = 'BodyString'
 )
 RETURN
 
-EXEC sp_getapplock @Resource { get; set; } = '{0}_lock', @LockMode { get; set; } = 'Exclusive'
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
   SELECT *
   FROM   {1}.sys.columns
-  WHERE  object_id { get; set; } = OBJECT_ID(N'{0}')
-         AND name { get; set; } = 'BodyString'
+  WHERE  object_id = OBJECT_ID(N'{0}')
+         AND name = 'BodyString'
 )
 BEGIN
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
     RETURN
 END
 
 ALTER TABLE {0}
 ADD BodyString as cast(Body as nvarchar(max));
 
-EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'";
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public string CreateQueueText { get; set; } = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
-EXEC sp_getapplock @Resource { get; set; } = '{0}_lock', @LockMode { get; set; } = 'Exclusive'
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 BEGIN
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
     RETURN
 END
 
@@ -207,29 +207,29 @@ BEGIN TRY
         Expires IS NOT NULL
 END TRY
 BEGIN CATCH
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock';
+    EXEC sp_releaseapplock @Resource = '{0}_lock';
     THROW;
 END CATCH;
 
-EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'";
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public string CreateDelayedMessageStoreText { get; set; } = @"
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
-EXEC sp_getapplock @Resource { get; set; } = '{0}_lock', @LockMode { get; set; } = 'Exclusive'
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 BEGIN
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
     RETURN
 END
 
@@ -247,11 +247,11 @@ BEGIN TRY
     )
 END TRY
 BEGIN CATCH
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock';
+    EXEC sp_releaseapplock @Resource = '{0}_lock';
     THROW;
 END CATCH;
 
-EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'";
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public string PurgeBatchOfExpiredMessagesText { get; set; } = @"
 DELETE FROM {0}
@@ -263,45 +263,45 @@ WHERE RowVersion
         public string CheckIfExpiresIndexIsPresent { get; set; } = @"
 SELECT COUNT(*)
 FROM sys.indexes i
-INNER JOIN sys.index_columns AS ic ON ic.index_id { get; set; } = i.index_id AND ic.object_id { get; set; } = i.object_id AND ic.key_ordinal { get; set; } = 1
-INNER JOIN sys.columns AS c ON c.column_id { get; set; } = ic.column_id AND c.object_id { get; set; } = ic.object_id
-WHERE i.object_id { get; set; } = OBJECT_ID('{0}')
-AND c.name { get; set; } = 'Expires'";
+INNER JOIN sys.index_columns AS ic ON ic.index_id = i.index_id AND ic.object_id = i.object_id AND ic.key_ordinal = 1
+INNER JOIN sys.columns AS c ON c.column_id = ic.column_id AND c.object_id = ic.object_id
+WHERE i.object_id = OBJECT_ID('{0}')
+AND c.name = 'Expires'";
 
         public string CheckIfNonClusteredRowVersionIndexIsPresent { get; set; } = @"
 SELECT COUNT(*)
 FROM sys.indexes i
-INNER JOIN sys.index_columns AS ic ON ic.index_id { get; set; } = i.index_id AND ic.object_id { get; set; } = i.object_id AND ic.key_ordinal { get; set; } = 1
-INNER JOIN sys.columns AS c ON c.column_id { get; set; } = ic.column_id AND c.object_id { get; set; } = ic.object_id
-WHERE i.object_id { get; set; } = OBJECT_ID('{0}')
-AND c.name { get; set; } = 'RowVersion'
-AND i.type { get; set; } = 2";
+INNER JOIN sys.index_columns AS ic ON ic.index_id = i.index_id AND ic.object_id = i.object_id AND ic.key_ordinal = 1
+INNER JOIN sys.columns AS c ON c.column_id = ic.column_id AND c.object_id = ic.object_id
+WHERE i.object_id = OBJECT_ID('{0}')
+AND c.name = 'RowVersion'
+AND i.type = 2";
 
         public string CheckHeadersColumnType { get; set; } = @"
 SELECT t.name
 FROM sys.columns c
-INNER JOIN sys.types t ON c.system_type_id { get; set; } = t.system_type_id
-WHERE c.object_id { get; set; } = OBJECT_ID('{0}')
-    AND c.name { get; set; } = 'Headers'";
+INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
+WHERE c.object_id = OBJECT_ID('{0}')
+    AND c.name = 'Headers'";
 
         public string CreateSubscriptionTableText { get; set; } = @"
 
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 RETURN
 
-EXEC sp_getapplock @Resource { get; set; } = '{0}_lock', @LockMode { get; set; } = 'Exclusive'
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
 
 IF EXISTS (
     SELECT *
     FROM {1}.sys.objects
-    WHERE object_id { get; set; } = OBJECT_ID(N'{0}')
+    WHERE object_id = OBJECT_ID(N'{0}')
         AND type in (N'U'))
 BEGIN
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
     RETURN
 END
 
@@ -318,19 +318,19 @@ BEGIN TRY
     )
 END TRY
 BEGIN CATCH
-    EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock';
+    EXEC sp_releaseapplock @Resource = '{0}_lock';
     THROW;
 END CATCH;
 
-EXEC sp_releaseapplock @Resource { get; set; } = '{0}_lock'";
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
 
         public string SubscribeText { get; set; } = @"
 MERGE {0} WITH (HOLDLOCK, TABLOCK) AS target
 USING(SELECT @Endpoint AS Endpoint, @QueueAddress AS QueueAddress, @Topic AS Topic) AS source
-ON target.Endpoint { get; set; } = source.Endpoint
-AND target.Topic { get; set; } = source.Topic
+ON target.Endpoint = source.Endpoint
+AND target.Topic = source.Topic
 WHEN MATCHED AND target.QueueAddress <> source.QueueAddress THEN
-UPDATE SET QueueAddress { get; set; } = @QueueAddress
+UPDATE SET QueueAddress = @QueueAddress
 WHEN NOT MATCHED THEN
 INSERT
 (
@@ -354,8 +354,8 @@ WHERE Topic IN ({1})
         public string UnsubscribeText { get; set; } = @"
 DELETE FROM {0}
 WHERE
-    Endpoint { get; set; } = @Endpoint and
-    Topic { get; set; } = @Topic";
+    Endpoint = @Endpoint and
+    Topic = @Topic";
 
     }
 }
