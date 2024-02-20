@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             var keys = new DbConnectionStringBuilder { ConnectionString = connectionString };
             var hasPoolingValue = keys.TryGetValue("Pooling", out object poolingValue);
-            if (hasPoolingValue && string.Equals(poolingValue.ToString(), "true", StringComparison.InvariantCultureIgnoreCase))
+            if (hasPoolingValue && !string.Equals(poolingValue.ToString(), "true", StringComparison.InvariantCultureIgnoreCase))
             {
                 return ValidationCheckResult.Valid();
             }
