@@ -37,7 +37,7 @@
 
             Assert.AreEqual(true, transport.Transport.Subscriptions.DisableCaching);
             Assert.AreEqual(TimeSpan.FromSeconds(1), transport.Transport.Subscriptions.CacheInvalidationPeriod);
-            Assert.AreEqual("[catalog].[schema].[table]", transport.Transport.Subscriptions.SubscriptionTableName.Qualify("dbo", "nsb").QuotedQualifiedName);
+            Assert.AreEqual("[catalog].[schema].[table]", transport.Transport.Subscriptions.SubscriptionTableName.Qualify("dbo", "nsb", new SqlServerNameHelper()).QuotedQualifiedName);
         }
     }
 }

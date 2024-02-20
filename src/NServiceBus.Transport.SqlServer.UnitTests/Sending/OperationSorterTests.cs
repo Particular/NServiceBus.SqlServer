@@ -12,7 +12,7 @@
         [TestCaseSource(nameof(TestCases))]
         public void It_deduplicates_based_on_message_id_and_address(TransportOperations transportOperations, int expectedDispatchedMessageCount)
         {
-            var queueAddressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var queueAddressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
 
             var sortResult = transportOperations.UnicastTransportOperations.SortAndDeduplicate(queueAddressTranslator);
 
@@ -60,7 +60,7 @@
         [Test]
         public void It_sorts_isolated_and_default_dispatch()
         {
-            var queueAddressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var queueAddressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
 
             var operations = new TransportOperations(
                 CreateTransportOperations("1", "dest", DispatchConsistency.Default),
