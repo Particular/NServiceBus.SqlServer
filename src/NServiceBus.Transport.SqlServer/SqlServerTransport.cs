@@ -177,6 +177,6 @@ namespace NServiceBus
             internal string SubscriptionTable { get; set; }
         }
 
-        static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
+        static readonly TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
     }
 }

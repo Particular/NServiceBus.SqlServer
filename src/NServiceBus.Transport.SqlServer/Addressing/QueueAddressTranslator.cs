@@ -53,9 +53,9 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        QueueSchemaAndCatalogOptions queueOptions;
-        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
-        ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly QueueSchemaAndCatalogOptions queueOptions;
+        readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
 
         record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
         {

@@ -62,10 +62,9 @@
                     weOpenedTheConnection = true;
                 }
 
-                using (var command = connection.CreateCommand())
-                {
-                    return await action(command, cancellationToken);
-                }
+                using var command = connection.CreateCommand();
+
+                return await action(command, cancellationToken);
             }
             finally
             {
