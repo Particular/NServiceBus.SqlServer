@@ -1,5 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using Sql.Shared.Addressing;
+
     class SqlServerNameHelper : INameHelper
     {
         const string prefix = "[";

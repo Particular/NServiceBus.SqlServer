@@ -9,6 +9,7 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using NServiceBus.Transport.SqlServer.PubSub;
     using Sql;
+    using Sql.Shared.Addressing;
     using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure

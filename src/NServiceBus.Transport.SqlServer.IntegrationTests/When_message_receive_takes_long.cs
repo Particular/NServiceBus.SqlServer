@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
+    using Sql.Shared.Addressing;
     using SqlServer;
     using Transport;
 
@@ -15,12 +16,12 @@
         const int PeekTimeoutInSeconds = 2;
 
         TableBasedQueue queue;
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [SetUp]
         public async Task SetUp()
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -28,7 +29,7 @@
 
             await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
-            queue = new TableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
+            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
         }
 
         [Test]
@@ -93,7 +94,7 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator, false);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }
     }
 }

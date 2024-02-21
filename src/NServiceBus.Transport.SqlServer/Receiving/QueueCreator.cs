@@ -9,6 +9,7 @@ namespace NServiceBus.Transport.SqlServer
 #endif
     using System.Threading.Tasks;
     using System.Threading;
+    using Sql.Shared.Addressing;
 
     class QueueCreator
     {

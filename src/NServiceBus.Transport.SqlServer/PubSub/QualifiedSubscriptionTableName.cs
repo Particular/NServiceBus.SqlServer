@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using Sql.Shared.Addressing;
 
     class QualifiedSubscriptionTableName
     {

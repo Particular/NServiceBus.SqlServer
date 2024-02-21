@@ -14,10 +14,11 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
+    using Sql.Shared.Addressing;
 
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [SetUp]
         public void SetUpConnectionString() =>
@@ -66,7 +67,11 @@
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
 
-            var tableBasedQueueCache = new TableBasedQueueCache(sqlConstants, queueAddressTranslator, true);
+            var tableBasedQueueCache = new TableBasedQueueCache(
+                (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
+                queueAddressTranslator,
+                true);
+
             var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
             using (var connection = await connectionFactory.OpenNewConnection())

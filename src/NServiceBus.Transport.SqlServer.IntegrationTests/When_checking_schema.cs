@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
+    using Sql.Shared.Addressing;
     using SqlServer;
 
     public class When_checking_schema
@@ -11,12 +12,12 @@
         const string QueueTableName = "CheckingSchema";
 
         TableBasedQueue queue;
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [SetUp]
         public async Task SetUp()
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -24,7 +25,7 @@
 
             await ResetQueue(addressParser, dbConnectionFactory);
 
-            queue = new TableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
+            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
         }
 
         [Test]
@@ -51,7 +52,7 @@
                     comm.ExecuteNonQuery();
                 }
             }
-            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken).ConfigureAwait(false);
+            await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken).ConfigureAwait(false);
         }
     }
 }
