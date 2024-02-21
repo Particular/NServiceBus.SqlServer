@@ -7,7 +7,8 @@
     {
         public QueueAddress(string table, string schemaName, string catalogName)
         {
-            Guard.AgainstNullAndEmpty(nameof(table), table);
+            ArgumentException.ThrowIfNullOrWhiteSpace(table);
+
             Table = table;
             Catalog = SafeUnquote(catalogName);
             Schema = SafeUnquote(schemaName);

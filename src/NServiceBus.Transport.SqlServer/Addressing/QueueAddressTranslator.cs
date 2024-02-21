@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Linq;
 
@@ -7,7 +8,7 @@
     {
         public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
-            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
+            ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
 
             DefaultCatalog = defaultCatalog;
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;

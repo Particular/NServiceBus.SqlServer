@@ -23,7 +23,7 @@ namespace NServiceBus
         public SqlServerTransport(string connectionString)
             : base(DefaultTransportTransactionMode, true, true, true)
         {
-            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
             ConnectionString = connectionString;
         }
@@ -35,7 +35,7 @@ namespace NServiceBus
         public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
             : base(DefaultTransportTransactionMode, true, true, true)
         {
-            Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+            ArgumentNullException.ThrowIfNull(connectionFactory);
 
             ConnectionFactory = connectionFactory;
         }

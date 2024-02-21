@@ -20,7 +20,8 @@
             get => tableSuffix;
             set
             {
-                Guard.AgainstNullAndEmpty(nameof(tableSuffix), value);
+                ArgumentException.ThrowIfNullOrWhiteSpace(value);
+
                 tableSuffix = value;
             }
         }

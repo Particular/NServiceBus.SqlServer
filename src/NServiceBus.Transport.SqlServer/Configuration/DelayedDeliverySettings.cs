@@ -23,7 +23,7 @@
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public void TableSuffix(string suffix)
         {
-            Guard.AgainstNullAndEmpty(nameof(suffix), suffix);
+            ArgumentException.ThrowIfNullOrWhiteSpace(suffix);
 
             options.TableSuffix = suffix;
         }
@@ -77,7 +77,8 @@
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public void CacheSubscriptionInformationFor(TimeSpan timeSpan)
         {
-            Guard.AgainstNegativeAndZero(nameof(timeSpan), timeSpan);
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeSpan, TimeSpan.Zero);
+
             options.CacheInvalidationPeriod = timeSpan;
         }
 

@@ -13,10 +13,10 @@
     {
         public static Task<bool> CheckIfTableExists(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            Guard.AgainstNull("catalogName", catalogName);
-            Guard.AgainstNull("schemaName", schemaName);
-            Guard.AgainstNull("tableName", tableName);
-            Guard.AgainstNull("connection", connection);
+            ArgumentException.ThrowIfNullOrWhiteSpace(catalogName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+            ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>
             {
@@ -31,10 +31,10 @@
 
         public static Task DropTable(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            Guard.AgainstNull("catalogName", catalogName);
-            Guard.AgainstNull("schemaName", schemaName);
-            Guard.AgainstNull("tableName", tableName);
-            Guard.AgainstNull("connection", connection);
+            ArgumentException.ThrowIfNullOrWhiteSpace(catalogName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+            ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>
             {
@@ -49,8 +49,8 @@
 
         static async Task<T> RunCommand<T>(SqlConnection connection, Func<SqlCommand, CancellationToken, Task<T>> action, CancellationToken cancellationToken)
         {
-            Guard.AgainstNull("connetion", connection);
-            Guard.AgainstNull("action", action);
+            ArgumentNullException.ThrowIfNull(connection);
+            ArgumentNullException.ThrowIfNull(action);
 
             bool weOpenedTheConnection = false;
 

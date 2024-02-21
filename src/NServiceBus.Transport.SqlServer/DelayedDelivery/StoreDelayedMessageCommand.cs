@@ -15,7 +15,7 @@
 
         public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan dueAfter, string destination)
         {
-            Guard.AgainstNull(nameof(destination), destination);
+            ArgumentException.ThrowIfNullOrWhiteSpace(destination);
 
             var row = new StoreDelayedMessageCommand();
 
