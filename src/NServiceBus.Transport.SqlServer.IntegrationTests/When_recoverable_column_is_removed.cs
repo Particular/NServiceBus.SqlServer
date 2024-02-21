@@ -14,11 +14,12 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using NUnit.Framework;
     using Routing;
     using SqlServer;
-    using Transport;
+    using System.Threading;
+    using Sql.Shared.Addressing;
 
     public class When_recoverable_column_is_removed
     {
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Default)]
@@ -33,14 +34,17 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
             dbConnectionFactory = DbConnectionFactory.Default(connectionString);
 
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
             var purger = new QueuePurger(dbConnectionFactory);
 
             await RemoveQueueIfPresent(QueueName, token);
             await RemoveQueueIfPresent($"{QueueName}.Delayed", token);
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory);
 
-            var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
+            var tableCache = new TableBasedQueueCache(
+                (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
+                addressParser,
+                true);
             var queue = tableCache.Get(QueueName);
             dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
 
@@ -148,7 +152,7 @@ END";
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }
 
         MessageDispatcher dispatcher;

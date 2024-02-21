@@ -12,7 +12,7 @@
 
     public class When_receiving_messages
     {
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [Test]
         public async Task Should_stop_receiving_messages_after_first_unsuccessful_receive()
@@ -20,7 +20,7 @@
             var successfulReceives = 46;
             var queueSize = 1000;
 
-            var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
             var inputQueueName = "input";
             var inputQueueAddress = parser.Parse(inputQueueName).Address;
             var inputQueue = new FakeTableBasedQueue(sqlConstants, inputQueueAddress, queueSize, successfulReceives);
@@ -41,7 +41,9 @@
             };
 
             transport.Testing.QueueFactoryOverride = qa =>
-                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(sqlConstants, parser.Parse(qa).QualifiedTableName, qa, true);
+                qa == inputQueueAddress
+                    ? inputQueue
+                    : new SqlTableBasedQueue(sqlConstants, parser.Parse(qa).QualifiedTableName, qa, true);
 
             var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
@@ -109,6 +111,10 @@
 
                 return Task.FromResult(readResult);
             }
+
+            protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
+                CancellationToken cancellationToken = default) =>
+                throw new NotImplementedException(); //TODO: implement :)
 
             public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {

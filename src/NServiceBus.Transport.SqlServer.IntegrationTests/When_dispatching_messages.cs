@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -11,10 +11,12 @@
     using SqlServer;
     using Transport;
     using Unicast.Queuing;
+    using System.Threading;
+    using Sql.Shared.Addressing;
 
     public class When_dispatching_messages
     {
-        ISqlConstants sqlConstants = new SqlServerConstants();
+        SqlServerConstants sqlConstants = new();
 
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Default)]
@@ -97,8 +99,8 @@
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-            var tableCache = new TableBasedQueueCache(sqlConstants, addressParser, true);
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser, true);
 
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
 
@@ -111,7 +113,7 @@
         {
             purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
-            queue = new TableBasedQueue(sqlConstants, queueAddress, ValidAddress, true);
+            queue = new SqlTableBasedQueue(sqlConstants, queueAddress, ValidAddress, true);
 
             return purger.Purge(queue, cancellationToken);
         }
@@ -120,7 +122,7 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }
 
         QueuePurger purger;
