@@ -22,9 +22,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.SqlServer.UnitTests", "NServiceBus.Transport.SqlServer.UnitTests\NServiceBus.Transport.SqlServer.UnitTests.csproj", "{F08C8BAB-C329-4F96-A6AF-F25419C623FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.PostgreSql", "NServiceBus.Transport.PostgreSql\NServiceBus.Transport.PostgreSql.csproj", "{926EFB58-F51F-4BF8-9625-A11F53950FA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.PostgreSql", "NServiceBus.Transport.PostgreSql\NServiceBus.Transport.PostgreSql.csproj", "{926EFB58-F51F-4BF8-9625-A11F53950FA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.PostgreSql.TransportTests", "NServiceBus.Transport.PostgreSql.TransportTests\NServiceBus.Transport.PostgreSql.TransportTests.csproj", "{76B19C3B-7AB6-4BB7-AF39-03F76701521F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.Transport.PostgreSql.TransportTests", "NServiceBus.Transport.PostgreSql.TransportTests\NServiceBus.Transport.PostgreSql.TransportTests.csproj", "{76B19C3B-7AB6-4BB7-AF39-03F76701521F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.Transport.Sql.Shared", "NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj", "{8028DDF3-7565-49B8-B71C-F321A1755C51}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,6 +62,10 @@ Global
 		{76B19C3B-7AB6-4BB7-AF39-03F76701521F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76B19C3B-7AB6-4BB7-AF39-03F76701521F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76B19C3B-7AB6-4BB7-AF39-03F76701521F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8028DDF3-7565-49B8-B71C-F321A1755C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8028DDF3-7565-49B8-B71C-F321A1755C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8028DDF3-7565-49B8-B71C-F321A1755C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8028DDF3-7565-49B8-B71C-F321A1755C51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

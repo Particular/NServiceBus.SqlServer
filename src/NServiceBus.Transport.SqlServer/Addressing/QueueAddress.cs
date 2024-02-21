@@ -2,6 +2,7 @@
 {
     using System;
     using System.Text;
+    using Sql.Shared.Addressing;
 
     class QueueAddress
     {

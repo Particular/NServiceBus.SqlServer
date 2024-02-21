@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
     using System;
-    using SqlServer;
+    using Sql.Shared.Addressing;
 
     class QualifiedSubscriptionTableName
     {

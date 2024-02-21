@@ -1,6 +1,6 @@
-namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.Sql.Shared.Addressing
 {
-    class CanonicalQueueAddress
+    public class CanonicalQueueAddress
     {
         public CanonicalQueueAddress(string table, string schemaName, string catalogName, INameHelper nameHelper)
         {
