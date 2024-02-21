@@ -34,10 +34,7 @@
             get => batchSize;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentException("Batch size has to be a positive number", nameof(batchSize));
-                }
+                ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
 
                 batchSize = value;
             }
