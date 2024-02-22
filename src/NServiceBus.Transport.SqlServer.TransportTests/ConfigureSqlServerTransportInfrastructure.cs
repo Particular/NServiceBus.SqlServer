@@ -41,7 +41,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 "mainReceiver",
                 queueAddress,
                 transportDefinition.SupportsPublishSubscribe,
-                true,
+                false,
                 errorQueueName)
         };
 
