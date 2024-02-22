@@ -29,7 +29,7 @@
 
             var transport = new SqlServerTransport(async (ct) =>
             {
-                var factory = DbConnectionFactory.Default(connectionString);
+                var factory = new SqlServerDbConnectionFactory(connectionString);
                 var connection = await factory.OpenNewConnection(ct);
 
                 //TODO: get rid of casting

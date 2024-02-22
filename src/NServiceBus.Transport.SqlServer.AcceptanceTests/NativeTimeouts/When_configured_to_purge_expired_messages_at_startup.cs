@@ -14,7 +14,6 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
-    using Sql.Shared.Addressing;
 
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
@@ -46,7 +45,7 @@
         // NOTE: The input queue must exist so that we can send messages to it
         async Task SetupInputQueue()
         {
-            var connectionFactory = new DbConnectionFactory(async token =>
+            var connectionFactory = new SqlServerDbConnectionFactory(async token =>
             {
                 var connection = new SqlConnection(connectionString);
 

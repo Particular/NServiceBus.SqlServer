@@ -21,7 +21,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             await ResetQueue(addressParser, dbConnectionFactory);
 
@@ -38,9 +38,9 @@
             }
         }
 
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
-        async Task ResetQueue(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 

@@ -85,7 +85,7 @@
                 );
         }
 
-        static IContextProvider CreateContext(Type contextType, DbConnectionFactory dbConnectionFactory)
+        static IContextProvider CreateContext(Type contextType, SqlServerDbConnectionFactory dbConnectionFactory)
         {
             return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(dbConnectionFactory);
         }
@@ -95,7 +95,7 @@
         {
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             PrepareAsync().GetAwaiter().GetResult();
         }
@@ -121,7 +121,7 @@
             return purger.Purge(queue, cancellationToken);
         }
 
-        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
@@ -134,7 +134,7 @@
         const string ValidAddress = "TableBasedQueueDispatcherTests";
         const string InvalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
@@ -167,7 +167,7 @@
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider(DbConnectionFactory dbConnectionFactory)
+            public HandlerContextProvider(SqlServerDbConnectionFactory dbConnectionFactory)
             {
                 //TODO: get rid of this cast
                 sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();

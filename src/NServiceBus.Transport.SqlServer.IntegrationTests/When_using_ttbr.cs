@@ -124,7 +124,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
 
@@ -142,7 +142,7 @@
             return purger.Purge(queue, cancellationToken);
         }
 
-        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser);
 
@@ -152,7 +152,7 @@
         QueuePurger purger;
         MessageDispatcher dispatcher;
         TableBasedQueue queue;
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
         const string ValidAddress = "TTBRTests";
 
