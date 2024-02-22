@@ -27,7 +27,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
     IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
-    DbConnectionFactory connectionFactory;
+    SqlServerDbConnectionFactory connectionFactory;
     ConnectionAttributes connectionAttributes;
 
     // TODO: Figure out if we should share this between SqlServer and PostgreSql in some static consts class or whatever
@@ -69,7 +69,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
     public async Task Initialize(CancellationToken cancellationToken = new())
     {
-        connectionFactory = new DbConnectionFactory(async ct =>
+        connectionFactory = new SqlServerDbConnectionFactory(async ct =>
         {
             var connection = new NpgsqlConnection(transport.ConnectionString);
 
@@ -308,7 +308,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
     // TODO: Make this thing shared for both transports
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee,
-        TransactionOptions options, DbConnectionFactory connectionFactory)
+        TransactionOptions options, SqlServerDbConnectionFactory connectionFactory)
     {
         if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
         {

@@ -32,7 +32,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var token = CancellationToken.None;
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
             var purger = new QueuePurger(dbConnectionFactory);
@@ -134,7 +134,7 @@ END";
             }
         }
 
-        static IContextProvider CreateContext(Type contextType, DbConnectionFactory dbConnectionFactory)
+        static IContextProvider CreateContext(Type contextType, SqlServerDbConnectionFactory dbConnectionFactory)
         {
             return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(dbConnectionFactory);
         }
@@ -148,7 +148,7 @@ END";
                 );
         }
 
-        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
@@ -158,7 +158,7 @@ END";
         MessageDispatcher dispatcher;
         const string QueueName = "RecoverableColumnRemovalTable";
 
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
@@ -191,7 +191,7 @@ END";
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider(DbConnectionFactory dbConnectionFactory)
+            public HandlerContextProvider(SqlServerDbConnectionFactory dbConnectionFactory)
             {
                 //TODO: get rid of this cast
                 sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
