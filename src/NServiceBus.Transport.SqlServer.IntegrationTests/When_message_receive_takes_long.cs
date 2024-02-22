@@ -25,7 +25,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
@@ -44,7 +44,7 @@
             await receiveTask;
         }
 
-        static async Task SendMessage(TableBasedQueue tableBasedQueue, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -59,7 +59,7 @@
             }
         }
 
-        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -73,7 +73,7 @@
             }
         }
 
-        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -88,9 +88,9 @@
             }
         }
 
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
-        Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator, false);
 

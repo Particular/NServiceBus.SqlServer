@@ -10,9 +10,9 @@ namespace NServiceBus.Transport.PostgreSql
     {
         ISqlConstants sqlConstants;
         QualifiedSubscriptionTableName tableName;
-        DbConnectionFactory connectionFactory;
+        SqlServerDbConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, SqlServerDbConnectionFactory connectionFactory)
         {
             this.sqlConstants = sqlConstants;
             this.tableName = tableName;

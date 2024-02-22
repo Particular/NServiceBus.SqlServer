@@ -11,25 +11,16 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using Microsoft.Data.SqlClient;
 
-    class DbConnectionFactory
+    class SqlServerDbConnectionFactory : DbConnectionFactory
     {
-        public DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory)
+        public SqlServerDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) : base(factory)
         {
-            openNewConnection = factory;
         }
 
-        public async Task<DbConnection> OpenNewConnection(CancellationToken cancellationToken = default)
+
+        public SqlServerDbConnectionFactory(string connectionString)
         {
-            var connection = await openNewConnection(cancellationToken).ConfigureAwait(false);
-
-            ValidateConnectionPool(connection.ConnectionString);
-
-            return connection;
-        }
-
-        public static DbConnectionFactory Default(string connectionString)
-        {
-            return new DbConnectionFactory(async (cancellationToken) =>
+            openNewConnection = async cancellationToken =>
             {
                 ValidateConnectionPool(connectionString);
 
@@ -55,10 +46,10 @@ namespace NServiceBus.Transport.SqlServer
                 }
 
                 return connection;
-            });
+            };
         }
 
-        static void ValidateConnectionPool(string connectionString)
+        protected override void ValidateConnectionPool(string connectionString)
         {
             if (hasValidated)
             {
@@ -74,7 +65,6 @@ namespace NServiceBus.Transport.SqlServer
             hasValidated = true;
         }
 
-        Func<CancellationToken, Task<DbConnection>> openNewConnection;
         static bool hasValidated;
 
         static ILog Logger = LogManager.GetLogger<DbConnectionFactory>();

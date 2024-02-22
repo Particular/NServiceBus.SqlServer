@@ -82,7 +82,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 );
         }
 
-        static IContextProvider CreateContext(Type contextType, DbConnectionFactory dbConnectionFactory)
+        static IContextProvider CreateContext(Type contextType, SqlServerDbConnectionFactory dbConnectionFactory)
         {
             return contextType == typeof(SendOnlyContextProvider) ? new SendOnlyContextProvider() : new HandlerContextProvider(dbConnectionFactory);
         }
@@ -92,7 +92,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         {
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = DbConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             PrepareAsync().GetAwaiter().GetResult();
         }
@@ -118,7 +118,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             return purger.Purge(queue, cancellationToken);
         }
 
-        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, DbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
 
@@ -131,7 +131,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         const string ValidAddress = "TableBasedQueueDispatcherTests";
         const string InvalidAddress = "TableBasedQueueDispatcherTests.Invalid";
 
-        DbConnectionFactory dbConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
         class NoOpMulticastToUnicastConverter : IMulticastToUnicastConverter
         {
@@ -164,7 +164,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         class HandlerContextProvider : SendOnlyContextProvider
         {
-            public HandlerContextProvider(DbConnectionFactory dbConnectionFactory)
+            public HandlerContextProvider(SqlServerDbConnectionFactory dbConnectionFactory)
             {
                 //TODO: get rid of this cast
                 sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
