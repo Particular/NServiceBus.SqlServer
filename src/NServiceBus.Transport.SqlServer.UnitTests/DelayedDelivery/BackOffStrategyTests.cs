@@ -101,6 +101,17 @@ public class BackOffStrategyTests
         Assert.AreEqual(5, RoundOff(beforeWaiting, afterWaiting));
     }
 
+    [Test]
+    public void When_AfterWaiting_Takes_Little_Over_A_Second_Should_Still_Count_As_Second()
+    {
+        var now = DateTime.UtcNow;
+        var x = RoundOff(now, now.AddMilliseconds(999));
+        var y = RoundOff(now, now.AddMilliseconds(1001));
+
+        Assert.AreEqual(0, x);
+        Assert.AreEqual(1, y);
+    }
+
     /// <summary>
     /// Prevent flaky tests by allowing 999ms offset
     /// </summary>

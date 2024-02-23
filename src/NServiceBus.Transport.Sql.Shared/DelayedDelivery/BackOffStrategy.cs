@@ -30,37 +30,19 @@ public class BackOffStrategy
         DelayedMessageAvailable = true;
     }
 
-    void ResetExecutionTimeIfInThePast()
-    {
-        NextExecutionTime = DateTime.MaxValue;
-        // TODO: potentially remove following lines
-        if (NextExecutionTime < DateTime.UtcNow)
-        {
-            NextExecutionTime = DateTime.MaxValue;
-        }
-    }
-
-
     public async Task WaitForNextExecution(CancellationToken cancellationToken = new())
     {
-        // Whoops, we should've already moved the delayed message! Quickly, move on! :-)
-        // TODO: This will likely never happen anymore because we now reset NextExecutionTime;
-        if (AreDelayedMessagesMatured)
-        {
-            Logger.Debug(
-                "Scheduling next attempt to move matured delayed messages immediately because a full batch was detected.");
-            return;
-        }
-
         CalculateNextExecutionTime();
 
         // While running this loop, a new delayed message can be stored
         // and NextExecutionTime could be set to a new (sooner) time.
         while (DateTime.UtcNow < NextExecutionTime)
         {
-            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+            int waitTime = (int)(NextExecutionTime - DateTime.UtcNow).TotalMilliseconds;
+            waitTime = waitTime < 1000 ? waitTime : 1000;
+            await Task.Delay(waitTime, cancellationToken).ConfigureAwait(false);
         }
-        ResetExecutionTimeIfInThePast();
+        NextExecutionTime = DateTime.MaxValue;
     }
 
     void CalculateNextExecutionTime()
@@ -96,8 +78,6 @@ public class BackOffStrategy
 
     const int MaximumDelayUntilNextPeek = 60000;
     const int InitialBackOffTime = 500;
-
-    bool AreDelayedMessagesMatured => DelayedMessageAvailable && NextExecutionTime < DateTime.UtcNow;
 
     internal DateTime NextDelayedMessage { get; set; } = DateTime.UtcNow;
     internal DateTime NextExecutionTime { get; set; } = DateTime.UtcNow.AddSeconds(2);
