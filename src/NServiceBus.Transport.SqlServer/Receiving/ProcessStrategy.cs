@@ -99,7 +99,13 @@
             }
             catch (QueueNotFoundException e)
             {
-                log.Error($"Message {message.TransportId} cannot be forwarded to its destination queue {e.Queue} because it does not exist.");
+                var hasEnclosedMessageTypeHeader = message.Headers.TryGetValue(EnclosedMessageTypesHeader,
+                    out var enclosedMessageTypeHeader);
+
+                log.Error(
+                    hasEnclosedMessageTypeHeader
+                        ? $"Message {message.TransportId} of type {enclosedMessageTypeHeader} cannot be forwarded to its destination queue {e.Queue} because it does not exist."
+                        : $"Message {message.TransportId} cannot be forwarded to its destination queue {e.Queue} because it does not exist.");
 
                 ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
                 outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
@@ -110,6 +116,7 @@
         }
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
+        const string EnclosedMessageTypesHeader ="NServiceBus.EnclosedMessageTypes"
         TableBasedQueueCache tableBasedQueueCache;
         Action<string, Exception, CancellationToken> criticalError;
         protected ILog log;
