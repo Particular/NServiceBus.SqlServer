@@ -99,7 +99,7 @@
             }
             catch (QueueNotFoundException e)
             {
-                var hasEnclosedMessageTypeHeader = message.Headers.TryGetValue(EnclosedMessageTypesHeader,
+                var hasEnclosedMessageTypeHeader = message.Headers.TryGetValue(Headers.EnclosedMessageTypes,
                     out var enclosedMessageTypeHeader);
 
                 log.Error(
@@ -116,7 +116,6 @@
         }
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
-        const string EnclosedMessageTypesHeader ="NServiceBus.EnclosedMessageTypes"
         TableBasedQueueCache tableBasedQueueCache;
         Action<string, Exception, CancellationToken> criticalError;
         protected ILog log;
