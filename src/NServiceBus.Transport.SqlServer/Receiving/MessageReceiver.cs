@@ -49,13 +49,8 @@
         public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError, CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
-            messageReceivingCancellationTokenSource = new CancellationTokenSource();
-            messageProcessingCancellationTokenSource = new CancellationTokenSource();
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
-
-            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
-            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             inputQueue = queueFactory(ReceiveAddress);
             errorQueue = queueFactory(errorQueueAddress);
@@ -86,6 +81,11 @@
             inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ?? Math.Min(100, 10 * limitations.MaxConcurrency));
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
+
+            messageReceivingCancellationTokenSource = new CancellationTokenSource();
+            messageProcessingCancellationTokenSource = new CancellationTokenSource();
+            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
+            messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
             // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
             messageReceivingTask = Task.Run(() => ReceiveMessagesAndSwallowExceptions(messageReceivingCancellationTokenSource.Token), CancellationToken.None);
