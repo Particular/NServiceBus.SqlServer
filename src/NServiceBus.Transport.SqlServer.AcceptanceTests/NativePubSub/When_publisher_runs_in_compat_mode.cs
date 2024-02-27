@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativePubSub
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
@@ -60,10 +59,10 @@
                 EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
                     //SqlServerTransport no longer implements message-driven pub sub interface so we need to configure Publishers "manually"
-                    c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig", new List<PublisherTableEntry>
-                    {
+                    c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig",
+                    [
                         new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
-                    });
+                    ]);
                     c.DisableFeature<AutoSubscribe>();
                 });
             }

@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using Configuration.AdvancedExtensibility;
@@ -37,10 +36,10 @@
 
                     c.GetSettings()
                     .GetOrCreate<UnicastRoutingTable>()
-                    .AddOrReplaceRoutes("Custom", new List<RouteTableEntry>
-                    {
+                    .AddOrReplaceRoutes("Custom",
+                    [
                         new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
-                    });
+                    ]);
                 });
             }
         }
