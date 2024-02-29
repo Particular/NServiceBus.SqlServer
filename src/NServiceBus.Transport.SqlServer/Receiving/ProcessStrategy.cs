@@ -13,7 +13,6 @@
     using Unicast.Queuing;
     using Faults;
 
-
     abstract class ProcessStrategy
     {
         protected TableBasedQueue InputQueue;
@@ -58,7 +57,7 @@
             try
             {
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
-                errorContext.Message.Headers.Remove(ForwardHeader);
+                _ = errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
             }
@@ -81,10 +80,7 @@
 
         protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
-            {
-                message.Headers.Remove(ForwardHeader);
-            }
+            _ = message.Headers.Remove(ForwardHeader, out var forwardDestination);
 
             if (forwardDestination == null)
             {
