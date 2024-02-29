@@ -104,8 +104,8 @@
 
                 log.Error(
                     hasEnclosedMessageTypeHeader
-                        ? $"Message {message.TransportId} of type {enclosedMessageTypeHeader} cannot be forwarded to its destination queue {e.Queue} because it does not exist."
-                        : $"Message {message.TransportId} cannot be forwarded to its destination queue {e.Queue} because it does not exist.");
+                        ? $"Message with ID '{message.TransportId}' of type '{enclosedMessageTypeHeader}' cannot be forwarded to its destination queue '{e.Queue}' because it does not exist."
+                        : $"Message with ID '{message.TransportId}' cannot be forwarded to its destination queue '{e.Queue}' because it does not exist.");
 
                 ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
                 outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
