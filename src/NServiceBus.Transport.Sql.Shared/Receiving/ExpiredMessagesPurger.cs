@@ -1,12 +1,13 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System;
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using NServiceBus.Transport.Sql.Shared.Queuing;
 
-    class ExpiredMessagesPurger : IExpiredMessagesPurger
+    public class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
         public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, int? purgeBatchSize)
         {
