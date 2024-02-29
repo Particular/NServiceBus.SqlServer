@@ -46,7 +46,7 @@ namespace NServiceBus.Transport.SqlServer
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
 
-            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving",
+            messageReceivingCircuitBreaker = new Sql.Shared.Receiving.RepeatedFailuresOverTimeCircuitBreaker("message receiving",
                 waitTimeCircuitBreaker,
                 ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex,
                     messageProcessingCancellationTokenSource.Token));
@@ -277,7 +277,7 @@ namespace NServiceBus.Transport.SqlServer
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
         int maxConcurrency;
-        RepeatedFailuresOverTimeCircuitBreaker messageReceivingCircuitBreaker;
+        Sql.Shared.Receiving.RepeatedFailuresOverTimeCircuitBreaker messageReceivingCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker messageProcessingCircuitBreaker;
         Task messageReceivingTask;
         ProcessStrategy processStrategy;

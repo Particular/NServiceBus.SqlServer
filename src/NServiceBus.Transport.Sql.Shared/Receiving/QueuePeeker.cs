@@ -1,17 +1,19 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using Configuration;
     using Logging;
+    using Queuing;
 
-    class QueuePeeker : IPeekMessagesInQueue
+    public class QueuePeeker : IPeekMessagesInQueue
     {
-        public QueuePeeker(DbConnectionFactory connectionFactory, QueuePeekerOptions settings)
+        public QueuePeeker(DbConnectionFactory connectionFactory, TimeSpan peekDelay)
         {
             this.connectionFactory = connectionFactory;
-            this.settings = settings;
+            this.peekDelay = peekDelay;
         }
 
         public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
@@ -40,17 +42,17 @@
             {
                 if (Logger.IsDebugEnabled)
                 {
-                    Logger.Debug($"Input queue empty. Next peek operation will be delayed for {settings.Delay}.");
+                    Logger.Debug($"Input queue empty. Next peek operation will be delayed for {peekDelay}.");
                 }
 
-                await Task.Delay(settings.Delay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
             }
 
             return messageCount;
         }
 
         readonly DbConnectionFactory connectionFactory;
-        readonly QueuePeekerOptions settings;
+        readonly TimeSpan peekDelay;
 
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }

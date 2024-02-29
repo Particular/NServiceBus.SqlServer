@@ -6,7 +6,7 @@ using System.Threading;
 using System;
 
 //TODO: this is duplicated in the sql server project
-class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
+public class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
 {
     public RepeatedFailuresOverTimeCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<Exception> triggerAction)
     {
