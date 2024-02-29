@@ -66,8 +66,8 @@
                 var hasEnclosedMessageTypeHeader = message.Headers.TryGetValue(Headers.EnclosedMessageTypes,
                     out var enclosedMessageTypeHeader);
 
-                criticalError(hasEnclosedMessageTypeHeader ? 
-                    $"Failed to execute recoverability policy for message with native ID '{message.TransportId}' and type '{enclosedMessageTypeHeader}'" : 
+                criticalError(hasEnclosedMessageTypeHeader ?
+                    $"Failed to execute recoverability policy for message with native ID '{message.TransportId}' and type '{enclosedMessageTypeHeader}'" :
                     $"Failed to execute recoverability policy for message with native ID '{message.TransportId}'", ex, cancellationToken);
 
                 return ErrorHandleResult.RetryRequired;
