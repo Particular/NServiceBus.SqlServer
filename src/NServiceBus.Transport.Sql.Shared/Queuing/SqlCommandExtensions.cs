@@ -1,0 +1,37 @@
+namespace NServiceBus.Transport.Sql.Shared.Queuing
+{
+    using System;
+    using System.Data.Common;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    static class SqlCommandExtensions
+    {
+        public static async Task<TScalar> ExecuteScalarAsyncOrDefault<TScalar>(this DbCommand command, string commandName, Action<string> onUnexpectedValueMessage, CancellationToken cancellationToken = default)
+        {
+            var obj = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+
+            if (obj is null || Convert.IsDBNull(obj))
+            {
+                if (default(TScalar) != null)
+                {
+                    onUnexpectedValueMessage?.Invoke($"{commandName} returned a null value.");
+                }
+
+                return default;
+            }
+
+            if (obj is not TScalar scalar)
+            {
+                onUnexpectedValueMessage?.Invoke($"{commandName} returned an unexpected value of type {obj.GetType()}.");
+
+                return default;
+            }
+
+            return scalar;
+        }
+
+        public static Task<TScalar> ExecuteScalarAsync<TScalar>(this DbCommand command, string commandName, CancellationToken cancellationToken = default) =>
+            command.ExecuteScalarAsyncOrDefault<TScalar>(commandName, msg => throw new Exception(msg), cancellationToken);
+    }
+}

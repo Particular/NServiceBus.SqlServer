@@ -53,7 +53,7 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        public QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
         {
             var nonEmptyParts = new[]
             {

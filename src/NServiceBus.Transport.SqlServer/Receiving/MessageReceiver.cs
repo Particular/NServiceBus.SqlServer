@@ -9,6 +9,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using Sql.Shared.Receiving;
 
     // TODO: Move to NServiceBus.Transport.Sql assembly
     abstract class MessageReceiver : IMessageReceiver

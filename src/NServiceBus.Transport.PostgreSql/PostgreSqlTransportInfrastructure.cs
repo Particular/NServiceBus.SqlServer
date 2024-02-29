@@ -13,6 +13,12 @@ using SqlServer.PubSub;
 using QueueAddress = QueueAddress;
 using NServiceBus.Transport.Sql;
 using Sql.Shared.Addressing;
+using Sql.Shared.DelayedDelivery;
+using Sql.Shared.PubSub;
+using Sql.Shared.Queuing;
+using Sql.Shared.Receiving;
+using Sql.Shared.Sending;
+using SqlTransport.DelayedDelivery;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
