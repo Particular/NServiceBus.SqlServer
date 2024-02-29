@@ -9,6 +9,7 @@ using Npgsql;
 using SqlServer;
 using static System.String;
 using NServiceBus.Unicast.Queuing;
+using Sql.Shared.Queuing;
 
 class PostgreSqlTableBasedQueue : TableBasedQueue
 {

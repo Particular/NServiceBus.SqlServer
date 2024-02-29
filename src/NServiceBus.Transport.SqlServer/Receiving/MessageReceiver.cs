@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Microsoft.Data.SqlClient;
+    using Sql.Shared.Receiving;
 
     // TODO: Move to NServiceBus.Transport.Sql assembly
     abstract class MessageReceiver : IMessageReceiver
