@@ -1,10 +1,10 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System.Threading;
     using System.Threading.Tasks;
-    using Sql.Shared.Receiving;
+    using Queuing;
 
-    class NoOpExpiredMessagesPurger : IExpiredMessagesPurger
+    public class NoOpExpiredMessagesPurger : IExpiredMessagesPurger
     {
         public Task Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {

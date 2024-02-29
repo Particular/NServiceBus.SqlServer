@@ -139,7 +139,7 @@ Be aware that different transaction modes affect consistency guarantees since di
             guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
         var queuePurger = new QueuePurger(connectionFactory);
-        var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions);
+        var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions.Delay);
 
         IExpiredMessagesPurger expiredMessagesPurger;
         bool validateExpiredIndex;

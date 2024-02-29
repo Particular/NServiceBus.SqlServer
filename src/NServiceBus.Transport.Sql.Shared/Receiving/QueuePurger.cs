@@ -1,9 +1,11 @@
-﻿namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System.Threading;
     using System.Threading.Tasks;
+    using Shared.Configuration;
+    using Shared.Queuing;
 
-    class QueuePurger : IPurgeQueues
+    public class QueuePurger : IPurgeQueues
     {
         public QueuePurger(DbConnectionFactory connectionFactory)
         {
