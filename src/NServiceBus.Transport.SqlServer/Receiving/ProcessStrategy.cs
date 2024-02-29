@@ -9,7 +9,6 @@
     using NServiceBus.Logging;
     using Unicast.Queuing;
 
-
     abstract class ProcessStrategy
     {
         protected TableBasedQueue InputQueue;
@@ -54,7 +53,7 @@
             try
             {
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
-                errorContext.Message.Headers.Remove(ForwardHeader);
+                _ = errorContext.Message.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
             }
@@ -72,10 +71,7 @@
 
         protected async Task<bool> TryHandleDelayedMessage(Message message, SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
         {
-            if (message.Headers.TryGetValue(ForwardHeader, out var forwardDestination))
-            {
-                message.Headers.Remove(ForwardHeader);
-            }
+            _ = message.Headers.Remove(ForwardHeader, out var forwardDestination);
 
             if (forwardDestination == null)
             {
@@ -95,7 +91,17 @@
             }
             catch (QueueNotFoundException e)
             {
-                log.Error($"Message {message.TransportId} cannot be forwarded to its destination queue {e.Queue} because it does not exist.");
+                var hasEnclosedMessageTypeHeader = message.Headers.TryGetValue(Headers.EnclosedMessageTypes,
+                    out var enclosedMessageTypeHeader);
+
+                if (hasEnclosedMessageTypeHeader)
+                {
+                    log.ErrorFormat("Message with ID '{0}' of type '{1}' cannot be forwarded to its destination queue '{2}' because it does not exist.", message.TransportId, enclosedMessageTypeHeader, e.Queue);
+                }
+                else
+                {
+                    log.ErrorFormat("Message with ID '{0}' cannot be forwarded to its destination queue '{1}' because it does not exist.", message.TransportId, e.Queue);
+                }
 
                 ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
                 outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
