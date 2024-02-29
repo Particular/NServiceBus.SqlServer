@@ -18,7 +18,7 @@
         /// <param name="schema">Custom schema value.</param>
         public static void UseSchemaForEndpoint(this RoutingSettings settings, string endpointName, string schema)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(endpointName);
+            ArgumentNullException.ThrowIfNull(endpointName);
 
             var localEndpointName = settings.GetSettings().EndpointName();
 
@@ -43,7 +43,7 @@
         /// <param name="catalog">Custom catalog value.</param>
         public static void UseCatalogForEndpoint(this RoutingSettings settings, string endpointName, string catalog)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(endpointName);
+            ArgumentNullException.ThrowIfNull(endpointName);
 
             var localEndpointName = settings.GetSettings().EndpointName();
 

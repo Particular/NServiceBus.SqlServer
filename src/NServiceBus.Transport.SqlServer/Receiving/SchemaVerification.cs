@@ -2,13 +2,9 @@
 {
     using System;
     using System.Threading;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
+    using Microsoft.Data.SqlClient;
 
     class SchemaInspector
     {

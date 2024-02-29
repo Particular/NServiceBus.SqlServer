@@ -1,21 +1,17 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System;
-    using System.Threading.Tasks;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
 
     public static class SqlUtilities
     {
         public static Task<bool> CheckIfTableExists(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(catalogName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+            ArgumentNullException.ThrowIfNull(catalogName);
+            ArgumentNullException.ThrowIfNull(schemaName);
+            ArgumentNullException.ThrowIfNull(tableName);
             ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>
@@ -31,9 +27,9 @@
 
         public static Task DropTable(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(catalogName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+            ArgumentNullException.ThrowIfNull(catalogName);
+            ArgumentNullException.ThrowIfNull(schemaName);
+            ArgumentNullException.ThrowIfNull(tableName);
             ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>

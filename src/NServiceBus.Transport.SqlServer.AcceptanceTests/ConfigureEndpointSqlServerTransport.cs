@@ -1,12 +1,8 @@
 ﻿using System;
-#if SYSTEMDATASQLCLIENT
-using System.Data.SqlClient;
-#else
-using Microsoft.Data.SqlClient;
-#endif
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 

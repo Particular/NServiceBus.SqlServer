@@ -4,11 +4,7 @@
     using System.Collections.Generic;
     using System.Data.Common;
     using System.Threading.Tasks;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
     using NServiceBus.AcceptanceTesting;
     using NServiceBus.AcceptanceTesting.Customization;
     using NServiceBus.AcceptanceTests;

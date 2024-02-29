@@ -2,15 +2,11 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
-    using Unicast.Queuing;
     using Logging;
+    using Microsoft.Data.SqlClient;
+    using Unicast.Queuing;
     using static System.String;
 
     class TableBasedQueue

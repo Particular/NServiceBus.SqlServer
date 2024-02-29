@@ -1,16 +1,12 @@
 namespace NServiceBus
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
-    using System.Threading.Tasks;
-    using Transport;
-    using Transport.SqlServer;
     using System.Collections.Generic;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Transport;
+    using Transport.SqlServer;
 
     /// <summary>
     /// SqlServer Transport

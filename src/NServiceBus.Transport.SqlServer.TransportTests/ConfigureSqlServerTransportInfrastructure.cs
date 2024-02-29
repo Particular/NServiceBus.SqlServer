@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Threading;
-#if SYSTEMDATASQLCLIENT
-using System.Data.SqlClient;
-#else
-using Microsoft.Data.SqlClient;
-#endif
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.TransportTests;

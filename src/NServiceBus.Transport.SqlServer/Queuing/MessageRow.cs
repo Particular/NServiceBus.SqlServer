@@ -3,15 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using System.Threading;
+    using Microsoft.Data.SqlClient;
 
     class MessageRow
     {
