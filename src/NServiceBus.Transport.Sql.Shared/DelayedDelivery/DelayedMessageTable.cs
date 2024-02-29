@@ -8,6 +8,7 @@ namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery
     using Queuing;
     using Transport;
 
+    //TODO: do we even need this interface?
     public interface IDelayedMessageStore
     {
         Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,

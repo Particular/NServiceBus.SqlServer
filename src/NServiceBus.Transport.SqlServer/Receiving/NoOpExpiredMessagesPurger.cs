@@ -2,6 +2,7 @@
 {
     using System.Threading;
     using System.Threading.Tasks;
+    using Sql.Shared.Receiving;
 
     class NoOpExpiredMessagesPurger : IExpiredMessagesPurger
     {
