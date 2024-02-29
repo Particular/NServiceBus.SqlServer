@@ -85,6 +85,6 @@
 
         Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
         readonly bool validateExpiredIndex;
-        static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
+        static ILog Logger = LogManager.GetLogger<SchemaInspector>();
     }
 }
