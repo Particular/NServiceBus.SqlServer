@@ -112,8 +112,8 @@ VALUES
     @Topic,
     @Endpoint
 )
-ON CONFLICT DO NOTHING
-;"; //TODO: Probably need to do update
+ON CONFLICT (Endpoint, Topic) DO UPDATE SET QueueAddress = @QueueAddress
+;";
 
     public string GetSubscribersText { get; set; } = @"
 SELECT DISTINCT QueueAddress

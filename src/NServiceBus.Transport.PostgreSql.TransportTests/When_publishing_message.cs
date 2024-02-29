@@ -2,11 +2,12 @@
 {
     using System;
     using System.Threading.Tasks;
-    using DelayedDelivery;
+    using Extensibility;
     using NUnit.Framework;
     using Transport;
+    using Unicast.Messages;
 
-    public class When_receiving_delayed_message : NServiceBusTransportTest
+    public class When_publishing_message : NServiceBusTransportTest
     {
         [TestCase(TransportTransactionMode.None)]
         [TestCase(TransportTransactionMode.ReceiveOnly)]
@@ -18,7 +19,7 @@
 
             DateTimeOffset after = DateTimeOffset.MinValue;
 
-            await Initialize(
+            await StartPump(
                 (context, _) =>
                 {
                     onReceived.SetResult(context);
@@ -27,21 +28,18 @@
                 (_, __) => Task.FromResult(ErrorHandleResult.Handled),
                 transactionMode);
 
-            var before = DateTimeOffset.UtcNow;
-            var delay = TimeSpan.FromSeconds(2);
-            var dispatchProperties = new DispatchProperties { DelayDeliveryWith = new DelayDeliveryWith(delay) };
+            await receiver.Subscriptions.SubscribeAll([new MessageMetadata(typeof(MyEvent))],
+                new ContextBag());
 
-            //We send the message _before_ we start receiving to avoid a race condition between the first delayed message poll request
-            //and the event that is triggered when the dispatcher stores a delayed message
-            //that leads to setting the next poll time 1 minute into the future.
-            await SendMessage(InputQueueName, dispatchProperties: dispatchProperties);
+            await PublishMessage(typeof(MyEvent));
 
-            await receiver.StartReceive();
+            var ctx = await onReceived.Task;
 
-            _ = await onReceived.Task;
-            after = DateTimeOffset.UtcNow;
-
-            Assert.True(after - before > delay);
+            Assert.NotNull(ctx);
         }
+    }
+
+    public class MyEvent : IEvent
+    {
     }
 }
