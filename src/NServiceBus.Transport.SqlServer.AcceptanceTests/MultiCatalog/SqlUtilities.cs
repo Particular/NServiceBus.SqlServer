@@ -1,22 +1,18 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System;
-    using System.Threading.Tasks;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
 
     public static class SqlUtilities
     {
         public static Task<bool> CheckIfTableExists(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            Guard.AgainstNull("catalogName", catalogName);
-            Guard.AgainstNull("schemaName", schemaName);
-            Guard.AgainstNull("tableName", tableName);
-            Guard.AgainstNull("connection", connection);
+            ArgumentNullException.ThrowIfNull(catalogName);
+            ArgumentNullException.ThrowIfNull(schemaName);
+            ArgumentNullException.ThrowIfNull(tableName);
+            ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>
             {
@@ -31,10 +27,10 @@
 
         public static Task DropTable(string catalogName, string schemaName, string tableName, SqlConnection connection, CancellationToken cancellationToken = default)
         {
-            Guard.AgainstNull("catalogName", catalogName);
-            Guard.AgainstNull("schemaName", schemaName);
-            Guard.AgainstNull("tableName", tableName);
-            Guard.AgainstNull("connection", connection);
+            ArgumentNullException.ThrowIfNull(catalogName);
+            ArgumentNullException.ThrowIfNull(schemaName);
+            ArgumentNullException.ThrowIfNull(tableName);
+            ArgumentNullException.ThrowIfNull(connection);
 
             return RunCommand(connection, async (command, token) =>
             {
@@ -49,8 +45,8 @@
 
         static async Task<T> RunCommand<T>(SqlConnection connection, Func<SqlCommand, CancellationToken, Task<T>> action, CancellationToken cancellationToken)
         {
-            Guard.AgainstNull("connetion", connection);
-            Guard.AgainstNull("action", action);
+            ArgumentNullException.ThrowIfNull(connection);
+            ArgumentNullException.ThrowIfNull(action);
 
             bool weOpenedTheConnection = false;
 
@@ -62,10 +58,9 @@
                     weOpenedTheConnection = true;
                 }
 
-                using (var command = connection.CreateCommand())
-                {
-                    return await action(command, cancellationToken);
-                }
+                using var command = connection.CreateCommand();
+
+                return await action(command, cancellationToken);
             }
             finally
             {

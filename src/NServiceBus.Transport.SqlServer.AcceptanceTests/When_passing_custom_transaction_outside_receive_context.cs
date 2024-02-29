@@ -1,13 +1,9 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using AcceptanceTesting;
+    using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;

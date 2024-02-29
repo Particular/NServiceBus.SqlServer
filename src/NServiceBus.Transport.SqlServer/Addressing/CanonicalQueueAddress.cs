@@ -1,14 +1,16 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using static NameHelper;
 
     class CanonicalQueueAddress
     {
         public CanonicalQueueAddress(string table, string schemaName, string catalogName)
         {
-            Guard.AgainstNullAndEmpty(nameof(table), table);
-            Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
-            Guard.AgainstNullAndEmpty(nameof(catalogName), catalogName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(table);
+            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(catalogName);
+
             Table = table;
             Catalog = catalogName;
             Schema = schemaName;

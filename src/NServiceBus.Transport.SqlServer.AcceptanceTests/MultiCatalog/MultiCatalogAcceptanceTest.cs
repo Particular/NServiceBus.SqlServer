@@ -1,11 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
     using NServiceBus.AcceptanceTests;
 
     public class MultiCatalogAcceptanceTest : NServiceBusAcceptanceTest

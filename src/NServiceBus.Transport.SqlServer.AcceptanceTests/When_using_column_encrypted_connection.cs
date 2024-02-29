@@ -1,14 +1,10 @@
 ﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
+    using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
 
@@ -17,9 +13,6 @@
         [Test]
         public async Task Should_work()
         {
-#if SYSTEMDATASQLCLIENT && NET
-            Assert.Ignore("System.Data.SqlClient doesn't support this setting on .NET (works on .NET Framework)");
-#endif
             var ctx = await Scenario.Define<Context>()
                 .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
                 .Done(c => c.MessageReceived)

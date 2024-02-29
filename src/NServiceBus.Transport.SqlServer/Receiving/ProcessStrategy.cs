@@ -1,17 +1,13 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
+    using Faults;
+    using Microsoft.Data.SqlClient;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
     using Unicast.Queuing;
-    using Faults;
 
 
     abstract class ProcessStrategy

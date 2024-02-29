@@ -1,16 +1,12 @@
 namespace NServiceBus
 {
     using System;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
-    using System.Threading.Tasks;
-    using Transport;
-    using Transport.SqlServer;
     using System.Collections.Generic;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Transport;
+    using Transport.SqlServer;
 
     /// <summary>
     /// SqlServer Transport
@@ -23,7 +19,7 @@ namespace NServiceBus
         public SqlServerTransport(string connectionString)
             : base(DefaultTransportTransactionMode, true, true, true)
         {
-            Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
             ConnectionString = connectionString;
         }
@@ -35,7 +31,7 @@ namespace NServiceBus
         public SqlServerTransport(Func<CancellationToken, Task<SqlConnection>> connectionFactory)
             : base(DefaultTransportTransactionMode, true, true, true)
         {
-            Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+            ArgumentNullException.ThrowIfNull(connectionFactory);
 
             ConnectionFactory = connectionFactory;
         }
@@ -177,6 +173,6 @@ namespace NServiceBus
             internal string SubscriptionTable { get; set; }
         }
 
-        static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
+        static readonly TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
     }
 }

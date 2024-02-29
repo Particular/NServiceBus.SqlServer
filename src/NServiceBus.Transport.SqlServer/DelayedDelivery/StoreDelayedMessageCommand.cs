@@ -3,11 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
 
     class StoreDelayedMessageCommand
     {
@@ -15,7 +11,7 @@
 
         public static StoreDelayedMessageCommand From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan dueAfter, string destination)
         {
-            Guard.AgainstNull(nameof(destination), destination);
+            ArgumentNullException.ThrowIfNull(destination);
 
             var row = new StoreDelayedMessageCommand();
 

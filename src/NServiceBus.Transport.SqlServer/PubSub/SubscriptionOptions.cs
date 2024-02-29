@@ -30,7 +30,8 @@
             get => cacheInvalidationPeriod;
             set
             {
-                Guard.AgainstNegativeAndZero(nameof(CacheInvalidationPeriod), value);
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
+
                 cacheInvalidationPeriod = value;
             }
         }

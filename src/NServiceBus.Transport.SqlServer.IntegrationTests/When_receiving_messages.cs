@@ -2,16 +2,12 @@
 {
     using System;
     using System.Linq;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
     using NUnit.Framework;
-    using Transport;
     using SqlServer;
+    using Transport;
 
     public class When_receiving_messages
     {

@@ -1,11 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
 
     class ConnectionPoolValidator
     {

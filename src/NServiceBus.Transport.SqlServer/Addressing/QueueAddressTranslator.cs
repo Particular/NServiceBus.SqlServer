@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Linq;
 
@@ -7,7 +8,7 @@
     {
         public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
-            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
+            ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
 
             DefaultCatalog = defaultCatalog;
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -52,9 +53,9 @@
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        QueueSchemaAndCatalogOptions queueOptions;
-        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
-        ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly QueueSchemaAndCatalogOptions queueOptions;
+        readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
 
         record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
         {
