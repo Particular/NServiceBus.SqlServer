@@ -37,4 +37,8 @@
     <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Legacy\" />
+  </ItemGroup>
+
 </Project>

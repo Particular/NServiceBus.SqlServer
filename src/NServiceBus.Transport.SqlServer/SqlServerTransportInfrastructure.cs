@@ -10,6 +10,10 @@ namespace NServiceBus.Transport.SqlServer
     using NServiceBus.Transport.SqlServer.PubSub;
     using Sql;
     using Sql.Shared.Addressing;
+    using Sql.Shared.PubSub;
+    using Sql.Shared.Receiving;
+    using Sql.Shared.Sending;
+    using SqlTransport.DelayedDelivery;
     using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure
@@ -44,7 +48,7 @@ namespace NServiceBus.Transport.SqlServer
             addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
             tableBasedQueueCache = new TableBasedQueueCache(
                 (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-                addressTranslator,
+                addressTranslator.Parse,
                 !connectionAttributes.IsEncrypted);
 
             await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -306,7 +310,7 @@ namespace NServiceBus.Transport.SqlServer
         public void ConfigureSendInfrastructure()
         {
             Dispatcher = new MessageDispatcher(
-                addressTranslator,
+                addressTranslator.Parse,
                 new MulticastToUnicastConverter(subscriptionStore),
                 tableBasedQueueCache,
                 delayedMessageStore,

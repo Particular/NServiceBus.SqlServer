@@ -56,7 +56,7 @@ namespace NServiceBus.Transport.SqlServer
             return configuredValue ?? addressValue ?? defaultValue;
         }
 
-        QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        public QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
         {
             public static AddressKey Create(Transport.QueueAddress a)
             {
