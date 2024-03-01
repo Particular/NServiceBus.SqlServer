@@ -3,9 +3,15 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+#if SYSTEMDATASQLCLIENT
+    using System.Data.SqlClient;
+#else
+    using Microsoft.Data.SqlClient;
+#endif
     using Logging;
     using NServiceBus.Transport.SqlServer.PubSub;
     using Transport;
@@ -21,6 +27,18 @@ namespace NServiceBus.Transport.SqlServer
 
             tableBasedQueueCache = new TableBasedQueueCache(addressTranslator, !isEncrypted);
             connectionFactory = CreateConnectionFactory();
+
+            if (typeof(SqlConnection).Namespace != "Microsoft.Data.SqlClient")
+            {
+                return;
+            }
+
+            var informationalVersion = typeof(SqlConnection).Assembly.GetCustomAttributes().OfType<AssemblyInformationalVersionAttribute>().Single();
+            var currentClientVersion = new Version(informationalVersion.InformationalVersion.Split('+').First());
+            if (currentClientVersion < new Version(5, 2, 0))
+            {
+                _logger.WarnFormat("You are using an outdated version '{0}' of Microsoft.Data.SqlClient. We recommend using version 5.2.0 or later by taking an explicit package dependency to avoid issues with memory leaks or transactions running on .NET in the driver.", currentClientVersion);
+            }
         }
 
         public async Task ConfigureSubscriptions(string catalog, CancellationToken cancellationToken = default)
