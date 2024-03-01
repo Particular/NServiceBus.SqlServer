@@ -1,13 +1,12 @@
-namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Sql.Shared.Receiving;
+    using Queuing;
 
-    // TODO: Move to NServiceBus.Transport.Sql assembly
-    abstract class MessageReceiver : IMessageReceiver
+    public abstract class MessageReceiver : IMessageReceiver
     {
         public MessageReceiver(
             TransportDefinition transport,
@@ -19,21 +18,21 @@ namespace NServiceBus.Transport.SqlServer
             Func<string, TableBasedQueue> queueFactory,
             IPurgeQueues queuePurger,
             IPeekMessagesInQueue queuePeeker,
-            QueuePeekerOptions queuePeekerOptions,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
-            bool purgeAllMessagesOnStartup)
+            bool purgeAllMessagesOnStartup,
+            IExceptionClassifier exceptionClassifier)
         {
             this.transport = transport;
             this.processStrategyFactory = processStrategyFactory;
             this.queuePurger = queuePurger;
             this.queueFactory = queueFactory;
             this.queuePeeker = queuePeeker;
-            this.queuePeekerOptions = queuePeekerOptions;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.errorQueueAddress = errorQueueAddress;
             this.criticalErrorAction = criticalErrorAction;
             this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
+            this.exceptionClassifier = exceptionClassifier;
             Subscriptions = subscriptionManager;
             Id = receiverId;
             ReceiveAddress = receiveAddress;
@@ -46,7 +45,7 @@ namespace NServiceBus.Transport.SqlServer
 
             processStrategy = processStrategyFactory(transport.TransportTransactionMode);
 
-            messageReceivingCircuitBreaker = new Sql.Shared.Receiving.RepeatedFailuresOverTimeCircuitBreaker("message receiving",
+            messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving",
                 waitTimeCircuitBreaker,
                 ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex,
                     messageProcessingCancellationTokenSource.Token));
@@ -68,7 +67,7 @@ namespace NServiceBus.Transport.SqlServer
 
                     Logger.InfoFormat("{0:N0} messages purged from queue {1}", purgedRowsCount, ReceiveAddress);
                 }
-                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+                catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
                 {
                     Logger.Warn("Failed to purge input queue on startup.", ex);
                 }
@@ -87,8 +86,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public Task StartReceive(CancellationToken cancellationToken = default)
         {
-            inputQueue.FormatPeekCommand(queuePeekerOptions.MaxRecordsToPeek ??
-                                         Math.Min(100, 10 * limitations.MaxConcurrency));
+            inputQueue.FormatPeekCommand();
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
@@ -124,7 +122,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 oldLimiter.Dispose();
             }
-            catch (Exception ex) when (ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 //Ignore, we are stopping anyway
             }
@@ -166,14 +164,14 @@ namespace NServiceBus.Transport.SqlServer
                     {
                         await ReceiveMessages(messageReceivingCancellationToken).ConfigureAwait(false);
                     }
-                    catch (Exception ex) when (!ex.IsCausedBy(messageReceivingCancellationToken))
+                    catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, messageReceivingCancellationToken))
                     {
                         Logger.Error("Message receiving failed", ex);
                         await messageReceivingCircuitBreaker.Failure(ex, messageReceivingCancellationToken)
                             .ConfigureAwait(false);
                     }
                 }
-                catch (Exception ex) when (ex.IsCausedBy(messageReceivingCancellationToken))
+                catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, messageReceivingCancellationToken))
                 {
                     // private token, receiver is being stopped, log the exception in case the stack trace is ever needed for debugging
                     Logger.Debug("Operation canceled while stopping the message receiver.", ex);
@@ -238,20 +236,18 @@ namespace NServiceBus.Transport.SqlServer
 
                     messageProcessingCircuitBreaker.Success();
                 }
-                catch (SqlException ex) when (ex.Number == 1205)
-                {
-                    // getting the message was the victim of a lock resolution
-                    Logger.Warn("Message processing failed", ex);
-                }
-                catch (Exception ex) when (!ex.IsCausedBy(messageProcessingCancellationToken))
+                catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
                 {
                     Logger.Warn("Message processing failed", ex);
 
-                    await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken)
-                        .ConfigureAwait(false);
+                    if (!exceptionClassifier.IsDeadlockException(ex))
+                    {
+                        await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken)
+                            .ConfigureAwait(false);
+                    }
                 }
             }
-            catch (Exception ex) when (ex.IsCausedBy(messageProcessingCancellationToken))
+            catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
             {
                 Logger.Debug("Message processing canceled.", ex);
             }
@@ -270,14 +266,14 @@ namespace NServiceBus.Transport.SqlServer
         readonly IPurgeQueues queuePurger;
         readonly Func<string, TableBasedQueue> queueFactory;
         readonly IPeekMessagesInQueue queuePeeker;
-        readonly QueuePeekerOptions queuePeekerOptions;
         readonly bool purgeAllMessagesOnStartup;
+        readonly IExceptionClassifier exceptionClassifier;
         TimeSpan waitTimeCircuitBreaker;
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
         int maxConcurrency;
-        Sql.Shared.Receiving.RepeatedFailuresOverTimeCircuitBreaker messageReceivingCircuitBreaker;
+        RepeatedFailuresOverTimeCircuitBreaker messageReceivingCircuitBreaker;
         RepeatedFailuresOverTimeCircuitBreaker messageProcessingCircuitBreaker;
         Task messageReceivingTask;
         ProcessStrategy processStrategy;

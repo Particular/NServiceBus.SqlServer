@@ -13,11 +13,12 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
     public class ProcessWithNativeTransaction : ProcessStrategy
     {
-        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, bool transactionForReceiveOnly = false)
-        : base(tableBasedQueueCache)
+        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
+        : base(tableBasedQueueCache, exceptionClassifier)
         {
             this.connectionFactory = connectionFactory;
             this.failureInfoStorage = failureInfoStorage;
+            this.exceptionClassifier = exceptionClassifier;
             this.transactionForReceiveOnly = transactionForReceiveOnly;
 
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
@@ -67,7 +68,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 if (message == null)
                 {
@@ -110,7 +111,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             {
                 return await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
                 return false;
@@ -120,6 +121,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
         IsolationLevel isolationLevel;
         DbConnectionFactory connectionFactory;
         FailureInfoStorage failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier;
         bool transactionForReceiveOnly;
         internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
