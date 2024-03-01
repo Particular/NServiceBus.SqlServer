@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.SqlServer
             var currentClientVersion = new Version(informationalVersion.InformationalVersion.Split('+').First());
             if (currentClientVersion < new Version(5, 2, 0))
             {
-                _logger.WarnFormat("You are using an outdated version '{0}' of Microsoft.Data.SqlClient. We recommend using version 5.2.0 or later by taking an explicit package dependency to avoid issues with memory leaks or transactions running on .NET in the driver.", currentClientVersion);
+                _logger.WarnFormat("You are using an outdated version '{0}' of Microsoft.Data.SqlClient. We recommend using version 5.2.0 or later by adding a top-level package reference to avoid known problems in older versions of the client. See https://github.com/dotnet/SqlClient/blob/main/release-notes/5.0/5.0.0.md#breaking-changes for details on breaking changes before ugprading.", currentClientVersion);
             }
         }
 
