@@ -22,9 +22,10 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
         OnMessage onMessage;
         OnError onError;
 
-        protected ProcessStrategy(TableBasedQueueCache tableBasedQueueCache)
+        protected ProcessStrategy(TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
         {
             this.tableBasedQueueCache = tableBasedQueueCache;
+            this.exceptionClassifier = exceptionClassifier;
             log = LogManager.GetLogger(GetType());
         }
 
@@ -62,7 +63,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 criticalError($"Failed to execute recoverability policy for message with native ID: `{message.TransportId}`", ex, cancellationToken);
 
@@ -118,6 +119,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
+        readonly IExceptionClassifier exceptionClassifier;
         Action<string, Exception, CancellationToken> criticalError;
         protected ILog log;
     }

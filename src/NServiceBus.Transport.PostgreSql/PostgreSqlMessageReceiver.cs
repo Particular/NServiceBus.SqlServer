@@ -3,7 +3,7 @@
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using NServiceBus.Transport.SqlServer;
+    using Sql.Shared;
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
 
@@ -13,12 +13,11 @@
             string errorQueueAddress, Action<string, Exception, CancellationToken> criticalErrorAction,
             Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
             Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger,
-            IPeekMessagesInQueue queuePeeker,
-            QueuePeekerOptions queuePeekerOptions, TimeSpan waitTimeCircuitBreaker,
-            ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup) : base(transport, receiverId,
+            IPeekMessagesInQueue queuePeeker, TimeSpan waitTimeCircuitBreaker,
+            ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup, IExceptionClassifier exceptionClassifier) : base(transport, receiverId,
             receiveAddress, errorQueueAddress, criticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-            queuePeeker, queuePeekerOptions, waitTimeCircuitBreaker,
-            subscriptionManager, purgeAllMessagesOnStartup)
+            queuePeeker, waitTimeCircuitBreaker,
+            subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier)
         {
         }
 

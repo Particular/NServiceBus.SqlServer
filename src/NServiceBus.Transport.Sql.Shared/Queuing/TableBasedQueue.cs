@@ -44,9 +44,9 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
             }
         }
 
-        public void FormatPeekCommand(int maxRecordsToPeek)
+        public void FormatPeekCommand()
         {
-            peekCommand = Format(sqlConstants.PeekText, qualifiedTableName, maxRecordsToPeek);
+            peekCommand = Format(sqlConstants.PeekText, qualifiedTableName);
         }
 
         public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)

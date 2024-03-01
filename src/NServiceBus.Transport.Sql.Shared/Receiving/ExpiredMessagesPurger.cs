@@ -9,9 +9,10 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
     public class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, int? purgeBatchSize)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, int? purgeBatchSize, IExceptionClassifier exceptionClassifier)
         {
             this.openConnection = openConnection;
+            this.exceptionClassifier = exceptionClassifier;
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
 
@@ -39,7 +40,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
                 Logger.DebugFormat("{0} expired messages were successfully purged from table {1}", totalPurgedRowsCount, queue);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 Logger.WarnFormat("Purging expired messages from table {0} failed after purging {1} messages.", queue, totalPurgedRowsCount);
                 throw;
@@ -48,6 +49,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
         int purgeBatchSize;
         Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
+        readonly IExceptionClassifier exceptionClassifier;
         const int DefaultPurgeBatchSize = 10000;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

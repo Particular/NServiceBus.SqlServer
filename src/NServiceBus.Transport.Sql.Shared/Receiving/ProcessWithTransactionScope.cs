@@ -10,12 +10,13 @@
 
     public class ProcessWithTransactionScope : ProcessStrategy
     {
-        public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache)
-         : base(tableBasedQueueCache)
+        public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+         : base(tableBasedQueueCache, exceptionClassifier)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
             this.failureInfoStorage = failureInfoStorage;
+            this.exceptionClassifier = exceptionClassifier;
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
@@ -63,7 +64,7 @@
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 if (message == null)
                 {
@@ -99,7 +100,7 @@
             {
                 return await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
                 return false;
@@ -109,5 +110,6 @@
         TransactionOptions transactionOptions;
         DbConnectionFactory connectionFactory;
         FailureInfoStorage failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier;
     }
 }

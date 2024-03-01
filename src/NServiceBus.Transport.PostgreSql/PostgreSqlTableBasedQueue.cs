@@ -6,9 +6,8 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
-using SqlServer;
 using static System.String;
-using NServiceBus.Unicast.Queuing;
+using Unicast.Queuing;
 using Sql.Shared.Queuing;
 
 class PostgreSqlTableBasedQueue : TableBasedQueue
