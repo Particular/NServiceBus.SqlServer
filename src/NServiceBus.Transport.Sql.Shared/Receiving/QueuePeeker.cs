@@ -10,9 +10,10 @@
 
     public class QueuePeeker : IPeekMessagesInQueue
     {
-        public QueuePeeker(DbConnectionFactory connectionFactory, TimeSpan peekDelay)
+        public QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay)
         {
             this.connectionFactory = connectionFactory;
+            this.exceptionClassifier = exceptionClassifier;
             this.peekDelay = peekDelay;
         }
 
@@ -32,7 +33,7 @@
 
                 circuitBreaker.Success();
             }
-            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
                 Logger.Warn("Sql peek operation failed", ex);
                 await circuitBreaker.Failure(ex, cancellationToken).ConfigureAwait(false);
@@ -52,6 +53,7 @@
         }
 
         readonly DbConnectionFactory connectionFactory;
+        readonly IExceptionClassifier exceptionClassifier;
         readonly TimeSpan peekDelay;
 
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();

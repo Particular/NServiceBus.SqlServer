@@ -25,6 +25,7 @@ namespace NServiceBus.Transport.SqlServer
             this.sendingAddresses = sendingAddresses;
 
             sqlConstants = new SqlServerConstants();
+            exceptionClassifier = new SqlServerExceptionClassifier();
             nameHelper = new SqlServerNameHelper();
         }
 
@@ -108,7 +109,7 @@ namespace NServiceBus.Transport.SqlServer
                 guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
-            var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions.Delay);
+            var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
@@ -131,7 +132,7 @@ namespace NServiceBus.Transport.SqlServer
                     BatchSize = purgeBatchSize
                 });
 
-                expiredMessagesPurger = new ExpiredMessagesPurger((_, token) => connectionFactory.OpenNewConnection(token), purgeBatchSize);
+                expiredMessagesPurger = new ExpiredMessagesPurger((_, token) => connectionFactory.OpenNewConnection(token), purgeBatchSize, exceptionClassifier);
                 validateExpiredIndex = true;
             }
 
@@ -167,7 +168,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
-                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier, delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
             }
 
             Receivers = receiveSettings.Select(receiveSetting =>
@@ -179,7 +180,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 return new SqlServerMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
-                    queuePeeker, queuePeekerOptions, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup);
+                    queuePeeker, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
 
             }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
@@ -232,20 +233,20 @@ namespace NServiceBus.Transport.SqlServer
         {
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache);
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, transactionForReceiveOnly: true);
+                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
             }
 
-            return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
+            return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache, exceptionClassifier);
         }
 
         async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
@@ -328,6 +329,7 @@ namespace NServiceBus.Transport.SqlServer
         readonly string[] sendingAddresses;
         readonly SqlServerConstants sqlConstants;
         readonly SqlServerNameHelper nameHelper;
+        readonly SqlServerExceptionClassifier exceptionClassifier;
 
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;

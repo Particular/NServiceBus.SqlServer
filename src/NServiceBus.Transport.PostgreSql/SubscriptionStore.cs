@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Sql.Shared.PubSub;
-using SqlServer;
 
 class SubscriptionStore : ISubscriptionStore
 {

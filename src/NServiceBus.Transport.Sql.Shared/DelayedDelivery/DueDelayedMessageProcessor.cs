@@ -10,13 +10,14 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
 
     public class DueDelayedMessageProcessor
     {
-        public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory,
+        public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier,
             int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
             this.table = table;
             this.connectionFactory = connectionFactory;
+            this.exceptionClassifier = exceptionClassifier;
             this.batchSize = batchSize;
 
             table.OnStoreDelayedMessage += OnDelayedMessageStored;
@@ -67,7 +68,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
                         await backOffStrategy.WaitForNextExecution(moveDelayedMessagesCancellationToken)
                             .ConfigureAwait(false);
                     }
-                    catch (Exception ex) when (!ex.IsCausedBy(moveDelayedMessagesCancellationToken))
+                    catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, moveDelayedMessagesCancellationToken))
                     {
                         Logger.Error("Exception thrown while moving matured delayed messages", ex);
                         await dueDelayedMessageProcessorCircuitBreaker.Failure(ex, moveDelayedMessagesCancellationToken)
@@ -76,7 +77,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
                         continue;
                     }
                 }
-                catch (Exception ex) when (ex.IsCausedBy(moveDelayedMessagesCancellationToken))
+                catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, moveDelayedMessagesCancellationToken))
                 {
                     // private token, processor is being stopped, log the exception in case the stack trace is ever needed for debugging
                     Logger.Debug("Operation canceled while stopping the moving of matured delayed messages.", ex);
@@ -115,6 +116,8 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
         readonly HostSettings hostSettings;
         readonly DelayedMessageTable table;
         readonly DbConnectionFactory connectionFactory;
+        readonly IExceptionClassifier exceptionClassifier;
+
         readonly int batchSize;
         // WhenToRunNext whenToRunNext = new();
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.Transport.SqlServer;
+using Sql.Shared.Queuing;
 
 /// <summary>
 /// PostgreSql Transport

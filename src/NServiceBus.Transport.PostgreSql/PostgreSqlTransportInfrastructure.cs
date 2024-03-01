@@ -18,7 +18,6 @@ using Sql.Shared.PubSub;
 using Sql.Shared.Queuing;
 using Sql.Shared.Receiving;
 using Sql.Shared.Sending;
-using SqlTransport.DelayedDelivery;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
@@ -43,6 +42,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
     static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
     readonly PostgreSqlNameHelper nameHelper;
+    readonly PostgreSqlExceptionClassifier exceptionClassifier;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
         ReceiveSettings[] receiveSettings, string[] sendingAddresses)
@@ -54,6 +54,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
         sqlConstants = new PostgreSqlConstants();
         nameHelper = new PostgreSqlNameHelper();
+        exceptionClassifier = new PostgreSqlExceptionClassifier();
     }
 
     public override Task Shutdown(CancellationToken cancellationToken = default)
@@ -90,7 +91,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(
             (qualifiedTableName, queueName, isStreamSupported) => new PostgreSqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-            addressTranslator,
+            addressTranslator.Parse,
             false);
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -103,7 +104,7 @@ Be aware that different transaction modes affect consistency guarantees since di
     void ConfigureSendInfrastructure()
     {
         Dispatcher = new MessageDispatcher(
-            addressTranslator,
+            addressTranslator.Parse,
             new MulticastToUnicastConverter(subscriptionStore),
             tableBasedQueueCache,
             delayedMessageStore,
@@ -139,7 +140,7 @@ Be aware that different transaction modes affect consistency guarantees since di
             guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
         var queuePurger = new QueuePurger(connectionFactory);
-        var queuePeeker = new QueuePeeker(connectionFactory, queuePeekerOptions.Delay);
+        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
         IExpiredMessagesPurger expiredMessagesPurger;
         bool validateExpiredIndex;
@@ -197,7 +198,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
-            dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory,
+            dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier,
                 delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
         }
 
@@ -215,8 +216,8 @@ Be aware that different transaction modes affect consistency guarantees since di
 
             return new PostgreSqlMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
                 hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-                queuePeeker, queuePeekerOptions, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
-                subscriptionManager, receiveSetting.PurgeOnStartup);
+                queuePeeker, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
+                subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
         }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
         await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
@@ -319,22 +320,22 @@ Be aware that different transaction modes affect consistency guarantees since di
         if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
         {
             return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000),
-                tableBasedQueueCache);
+                tableBasedQueueCache, exceptionClassifier);
         }
 
         if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000),
-                tableBasedQueueCache);
+                tableBasedQueueCache, exceptionClassifier);
         }
 
         if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000),
-                tableBasedQueueCache, transactionForReceiveOnly: true);
+                tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
         }
 
-        return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache);
+        return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache, exceptionClassifier);
     }
 
 

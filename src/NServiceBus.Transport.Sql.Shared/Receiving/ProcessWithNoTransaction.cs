@@ -11,10 +11,11 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
     public class ProcessWithNoTransaction : ProcessStrategy
     {
-        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache)
-        : base(tableBasedQueueCache)
+        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        : base(tableBasedQueueCache, exceptionClassifier)
         {
             this.connectionFactory = connectionFactory;
+            this.exceptionClassifier = exceptionClassifier;
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
@@ -56,7 +57,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                 {
                     await TryHandleMessage(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+                catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
                     _ = await HandleError(ex, receiveResult.Message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
@@ -64,6 +65,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             }
         }
 
-        DbConnectionFactory connectionFactory;
+        readonly DbConnectionFactory connectionFactory;
+        readonly IExceptionClassifier exceptionClassifier;
     }
 }

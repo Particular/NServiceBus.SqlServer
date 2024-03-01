@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 using Microsoft.Data.SqlClient;
+using NServiceBus.Transport.Sql.Shared;
 using Sql.Shared.Receiving;
 
 class SqlServerMessageReceiver : MessageReceiver
@@ -14,10 +15,11 @@ class SqlServerMessageReceiver : MessageReceiver
         Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
         Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger,
         IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker,
-        QueuePeekerOptions queuePeekerOptions, SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker,
-        ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup) : base(transport, receiverId,
+        SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker,
+        ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup, IExceptionClassifier exceptionClassifier)
+        : base(transport, receiverId,
         receiveAddress, errorQueueAddress, criticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-        queuePeeker, queuePeekerOptions, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup)
+        queuePeeker, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier)
     {
         this.expiredMessagesPurger = expiredMessagesPurger;
         this.schemaInspector = schemaInspector;

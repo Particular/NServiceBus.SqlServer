@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
 using Sql.Shared.Queuing;
-using SqlServer;
 
 class PostgreSqlConstants : ISqlConstants
 {
