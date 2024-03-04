@@ -5,6 +5,8 @@
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Sql.Shared.Addressing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
     using SqlServer;
 
     public class When_checking_schema
@@ -42,7 +44,7 @@
 
         async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier());
 
             using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {

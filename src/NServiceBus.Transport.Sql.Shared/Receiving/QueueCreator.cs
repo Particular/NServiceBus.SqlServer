@@ -1,23 +1,23 @@
-namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
+    using System;
     using System.Data;
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using System.Threading;
+    using Configuration;
+    using Queuing;
+    using Sql.Shared;
     using Sql.Shared.Addressing;
 
-    class QueueCreator
+    public class QueueCreator
     {
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, QueueAddressTranslator addressTranslator, bool createMessageBodyColumn = false)
+        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, IExceptionClassifier exceptionClassifier, bool createMessageBodyColumn = false)
         {
             this.sqlConstants = sqlConstants;
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
+            this.exceptionClassifier = exceptionClassifier;
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
@@ -27,7 +27,7 @@ namespace NServiceBus.Transport.SqlServer
             {
                 foreach (var address in queueAddresses)
                 {
-                    await CreateQueue(sqlConstants.CreateQueueText, addressTranslator.Parse(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+                    await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (delayedQueueAddress != null)
@@ -58,7 +58,10 @@ namespace NServiceBus.Transport.SqlServer
                     transaction.Commit();
                 }
             }
-            catch (SqlException e) when (e.Number is 2714 or 1913) //Object already exists
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex) when (exceptionClassifier.ObjectAlreadyExists(ex)) //Object already exists
             {
                 //Table creation scripts are based on sys.objects metadata views.
                 //It looks that these views are not fully transactional and might
@@ -91,7 +94,8 @@ namespace NServiceBus.Transport.SqlServer
 
         ISqlConstants sqlConstants;
         DbConnectionFactory connectionFactory;
-        QueueAddressTranslator addressTranslator;
+        Func<string, CanonicalQueueAddress> addressTranslator;
+        IExceptionClassifier exceptionClassifier;
         bool createMessageBodyColumn;
     }
 }

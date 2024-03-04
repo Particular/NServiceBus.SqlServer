@@ -9,8 +9,12 @@
     using Performance.TimeToBeReceived;
     using Routing;
     using Sql.Shared.Addressing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
+    using Sql.Shared.Sending;
     using SqlServer;
     using Transport;
+    using SettingsKeys = SettingsKeys;
 
     public class When_using_ttbr
     {
@@ -120,7 +124,7 @@
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions(), new SqlServerNameHelper());
-            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser, true);
+            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser.Parse, true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -130,7 +134,7 @@
 
             await PurgeOutputQueue(addressParser, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser, CancellationToken cancellationToken = default)
@@ -144,7 +148,7 @@
 
         Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser.Parse, new SqlServerExceptionClassifier());
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
     using NUnit.Framework;
+    using Sql.Shared.Queuing;
     using Transport;
     using SqlServer;
 
