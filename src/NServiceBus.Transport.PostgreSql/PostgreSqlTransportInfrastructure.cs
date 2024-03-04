@@ -230,7 +230,7 @@ Be aware that different transaction modes affect consistency guarantees since di
             queuesToCreate.AddRange(sendingAddresses);
             queuesToCreate.AddRange(receiveAddresses);
 
-            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator,
+            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, exceptionClassifier,
                 createMessageBodyComputedColumn);
 
             await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress,

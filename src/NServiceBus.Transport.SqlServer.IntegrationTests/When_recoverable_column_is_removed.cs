@@ -16,6 +16,10 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using SqlServer;
     using System.Threading;
     using Sql.Shared.Addressing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
+    using Sql.Shared.Sending;
+    using SettingsKeys = SettingsKeys;
 
     public class When_recoverable_column_is_removed
     {
@@ -43,10 +47,10 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             var tableCache = new TableBasedQueueCache(
                 (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-                addressParser,
+                addressParser.Parse,
                 true);
             var queue = tableCache.Get(QueueName);
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
 
             // Run normally
             int messagesSent = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
@@ -150,7 +154,7 @@ END";
 
         Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier());
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

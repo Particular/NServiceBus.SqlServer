@@ -13,6 +13,12 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using Unicast.Queuing;
     using System.Threading;
     using Sql.Shared.Addressing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
+    using Sql.Shared.Sending;
+    //TODO: this should be moved to abstraction. SQL Server and PostgreSQL are likely to have separate transport transation keys
+    using SettingsKeys = SettingsKeys;
+
 
     public class When_dispatching_messages
     {
@@ -100,13 +106,13 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
             var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
-            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser, true);
+            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser.Parse, true);
 
             await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
 
             await PurgeOutputQueue(addressParser, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
@@ -120,7 +126,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier());
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }
