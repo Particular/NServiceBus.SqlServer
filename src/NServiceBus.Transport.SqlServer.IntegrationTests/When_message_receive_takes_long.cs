@@ -6,6 +6,8 @@
     using System.Transactions;
     using NUnit.Framework;
     using Sql.Shared.Addressing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
     using SqlServer;
     using Transport;
 
@@ -66,7 +68,7 @@
                 using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
-                    tableBasedQueue.FormatPeekCommand(100);
+                    tableBasedQueue.FormatPeekCommand();
                     await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
                     scope.Complete();
                 }
@@ -92,7 +94,7 @@
 
         Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator, false);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier(), false);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

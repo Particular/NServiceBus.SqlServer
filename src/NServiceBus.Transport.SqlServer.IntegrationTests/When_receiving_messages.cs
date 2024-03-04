@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Data.Common;
@@ -7,6 +7,8 @@
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
     using NUnit.Framework;
+    using Sql.Shared.Queuing;
+    using Transport;
     using SqlServer;
     using Transport;
 

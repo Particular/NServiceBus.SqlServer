@@ -13,4 +13,5 @@ class PostgreSqlExceptionClassifier : IExceptionClassifier
 
     //TODO: Check how to find out if an exception is a deadlock
     public bool IsDeadlockException(Exception ex) => false;
+    public bool ObjectAlreadyExists(Exception ex) => false;
 }

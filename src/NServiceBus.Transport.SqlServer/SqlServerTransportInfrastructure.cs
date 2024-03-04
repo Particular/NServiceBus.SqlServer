@@ -194,7 +194,7 @@ namespace NServiceBus.Transport.SqlServer
                 queuesToCreate.AddRange(sendingAddresses);
                 queuesToCreate.AddRange(receiveAddresses);
 
-                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator, createMessageBodyComputedColumn);
+                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, exceptionClassifier, createMessageBodyComputedColumn);
 
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);
