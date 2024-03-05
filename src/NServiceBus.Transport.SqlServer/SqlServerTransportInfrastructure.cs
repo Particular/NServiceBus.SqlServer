@@ -2,13 +2,15 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using System.Threading.Tasks;
+    using System.Transactions;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
     using Microsoft.Data.SqlClient;
 #endif
-    using System.Threading.Tasks;
-    using System.Transactions;
     using DelayedDelivery;
     using NServiceBus.Logging;
     using Performance.TimeToBeReceived;
@@ -67,6 +69,18 @@ namespace NServiceBus.Transport.SqlServer
             }
             var subscriptionTableCreator = new SubscriptionTableCreator(subscriptionTableName, connectionFactory);
             settings.Set(subscriptionTableCreator);
+
+            if (typeof(SqlConnection).Namespace != "Microsoft.Data.SqlClient")
+            {
+                return;
+            }
+
+            var informationalVersion = typeof(SqlConnection).Assembly.GetCustomAttributes().OfType<AssemblyInformationalVersionAttribute>().Single();
+            var currentClientVersion = new Version(informationalVersion.InformationalVersion.Split('+').First());
+            if (currentClientVersion < new Version(5, 2, 0))
+            {
+                Logger.WarnFormat("You are using an outdated version '{0}' of Microsoft.Data.SqlClient. We recommend using version 5.2.0 or later by adding a top-level package reference to avoid known problems in older versions of the client. Consult the SQL client release notes https://github.com/dotnet/SqlClient/blob/main/release-notes for breaking changes before upgrading.", currentClientVersion);
+            }
         }
 
         SqlConnectionFactory CreateConnectionFactory()
