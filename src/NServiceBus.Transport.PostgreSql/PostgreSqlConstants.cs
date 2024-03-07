@@ -59,6 +59,7 @@ ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
     public string PeekText { get; set; } = @"
 SELECT COALESCE(cast(max(RowVersion) - min(RowVersion) + 1 AS int), 0) Id FROM {0}";
 
+    //TODO: Verify if it is possible in PostgreSQL
     public string AddMessageBodyStringColumn { get; set; } = string.Empty;
 
     public string CreateQueueText { get; set; } = @"

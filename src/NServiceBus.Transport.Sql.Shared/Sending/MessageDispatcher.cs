@@ -10,7 +10,6 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
     using Microsoft.Data.SqlClient;
     using Transport;
     using System.Threading;
-    using Addressing;
     using Configuration;
     using DelayedDelivery;
     using Queuing;
@@ -18,7 +17,7 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
 
     public class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(Func<string, CanonicalQueueAddress> addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        public MessageDispatcher(Func<string, string> addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {
             this.addressTranslator = addressTranslator;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
@@ -197,7 +196,7 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         DbConnectionFactory connectionFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
+        Func<string, string> addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }
