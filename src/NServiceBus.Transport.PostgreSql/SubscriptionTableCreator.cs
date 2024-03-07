@@ -5,15 +5,14 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Threading.Tasks;
     using Npgsql;
     using Sql.Shared.Queuing;
-    using SqlServer;
 
     class SubscriptionTableCreator
     {
         ISqlConstants sqlConstants;
         QualifiedSubscriptionTableName tableName;
-        SqlServerDbConnectionFactory connectionFactory;
+        PostgreSqlDbConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, SqlServerDbConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, PostgreSqlDbConnectionFactory connectionFactory)
         {
             this.sqlConstants = sqlConstants;
             this.tableName = tableName;

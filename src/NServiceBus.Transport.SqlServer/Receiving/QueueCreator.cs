@@ -1,16 +1,13 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data;
     using System.Data.Common;
     using System.Threading.Tasks;
     using System.Threading;
-    using Configuration;
-    using Queuing;
     using Sql.Shared;
-    using Sql.Shared.Addressing;
 
-    public class QueueCreator
+    class QueueCreator
     {
         public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, IExceptionClassifier exceptionClassifier, bool createMessageBodyColumn = false)
         {

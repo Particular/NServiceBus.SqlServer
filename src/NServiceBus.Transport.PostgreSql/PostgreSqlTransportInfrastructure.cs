@@ -8,11 +8,9 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Logging;
 using Npgsql;
+using PubSub;
+using Sql.Shared.Configuration;
 using SqlServer;
-using SqlServer.PubSub;
-using QueueAddress = QueueAddress;
-using NServiceBus.Transport.Sql;
-using Sql.Shared.Addressing;
 using Sql.Shared.DelayedDelivery;
 using Sql.Shared.PubSub;
 using Sql.Shared.Queuing;
@@ -32,8 +30,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
     IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
-    SqlServerDbConnectionFactory connectionFactory;
-    ConnectionAttributes connectionAttributes;
+    PostgreSqlDbConnectionFactory connectionFactory;
 
     // TODO: Figure out if we should share this between SqlServer and PostgreSql in some static consts class or whatever
     static string DtcErrorMessage = @"
@@ -62,7 +59,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
     }
 
-    public override string ToTransportAddress(QueueAddress address)
+    public override string ToTransportAddress(Transport.QueueAddress address)
     {
         if (addressTranslator == null)
         {
@@ -76,7 +73,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
     public async Task Initialize(CancellationToken cancellationToken = new())
     {
-        connectionFactory = new SqlServerDbConnectionFactory(async ct =>
+        connectionFactory = new PostgreSqlDbConnectionFactory(async ct =>
         {
             var connection = new NpgsqlConnection(transport.ConnectionString);
 
@@ -85,13 +82,15 @@ Be aware that different transaction modes affect consistency guarantees since di
             return connection;
         });
 
-        connectionAttributes = ConnectionAttributesParser.Parse(transport.ConnectionString, transport.DefaultCatalog);
-
-        addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
+        addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(
-            (qualifiedTableName, queueName, isStreamSupported) => new PostgreSqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-            addressTranslator.Parse,
+            (address, isStreamSupported) =>
+            {
+                var canonicalAddress = addressTranslator.Parse(address);
+                return new PostgreSqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address);
+            },
+            s => addressTranslator.Parse(s).Address,
             false);
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
@@ -104,7 +103,7 @@ Be aware that different transaction modes affect consistency guarantees since di
     void ConfigureSendInfrastructure()
     {
         Dispatcher = new MessageDispatcher(
-            addressTranslator.Parse,
+            s => addressTranslator.Parse(s).Address,
             new MulticastToUnicastConverter(subscriptionStore),
             tableBasedQueueCache,
             delayedMessageStore,
@@ -143,11 +142,9 @@ Be aware that different transaction modes affect consistency guarantees since di
         var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
         IExpiredMessagesPurger expiredMessagesPurger;
-        bool validateExpiredIndex;
 
         // TODO: Figure out what to do here, MessageReceiver needs a purger
         expiredMessagesPurger = new NoOpExpiredMessagesPurger();
-        validateExpiredIndex = false;
         // if (transport.ExpiredMessagesPurger.PurgeOnStartup == false)
         // {
         //     diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new { Enabled = false, });
@@ -166,11 +163,8 @@ Be aware that different transaction modes affect consistency guarantees since di
         //     validateExpiredIndex = true;
         // }
 
-        var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token),
-            validateExpiredIndex);
-
         var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new PostgreSqlTableBasedQueue(sqlConstants,
-            addressTranslator.Parse(queueName).QualifiedTableName, queueName, !connectionAttributes.IsEncrypted));
+            addressTranslator.Parse(queueName).QualifiedTableName, queueName));
 
         //Create delayed delivery infrastructure
         CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -181,7 +175,7 @@ Be aware that different transaction modes affect consistency guarantees since di
             // diagnostics.Add("NServiceBus.Transport.SqlServer.DelayedDelivery",
             //     new { Native = true, Suffix = delayedDelivery.TableSuffix, delayedDelivery.BatchSize, });
 
-            var queueAddress = new QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
+            var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
                 delayedDelivery.TableSuffix);
 
             delayedQueueCanonicalAddress = addressTranslator.GetCanonicalForm(addressTranslator.Generate(queueAddress));
@@ -315,7 +309,7 @@ Be aware that different transaction modes affect consistency guarantees since di
 
     // TODO: Make this thing shared for both transports
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee,
-        TransactionOptions options, SqlServerDbConnectionFactory connectionFactory)
+        TransactionOptions options, DbConnectionFactory connectionFactory)
     {
         if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
         {
@@ -346,7 +340,7 @@ Be aware that different transaction modes affect consistency guarantees since di
         var subscriptionStoreSchema =
             string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
         var subscriptionTableName =
-            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog, nameHelper);
+            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, nameHelper);
 
         subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants,
             subscriptionTableName.QuotedQualifiedName, connectionFactory));

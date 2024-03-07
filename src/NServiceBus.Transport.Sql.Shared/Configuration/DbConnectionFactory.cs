@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
+using NServiceBus.Logging;
 
 public abstract class DbConnectionFactory
 {
@@ -25,7 +26,25 @@ public abstract class DbConnectionFactory
         return connection;
     }
 
-    protected abstract void ValidateConnectionPool(string connectionString);
+    protected void ValidateConnectionPool(string connectionString)
+    {
+        if (hasValidated)
+        {
+            return;
+        }
+
+        var validationResult = ConnectionPoolValidator.Validate(connectionString);
+        if (!validationResult.IsValid)
+        {
+            Logger.Warn(validationResult.Message);
+        }
+
+        hasValidated = true;
+    }
+
+    static bool hasValidated;
 
     protected Func<CancellationToken, Task<DbConnection>> openNewConnection;
+
+    static ILog Logger = LogManager.GetLogger<DbConnectionFactory>();
 }

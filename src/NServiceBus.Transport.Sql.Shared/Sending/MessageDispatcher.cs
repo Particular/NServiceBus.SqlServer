@@ -8,7 +8,6 @@
     using System.Transactions;
     using Transport;
     using System.Threading;
-    using Addressing;
     using Configuration;
     using DelayedDelivery;
     using Queuing;
@@ -16,7 +15,7 @@
 
     public class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(Func<string, CanonicalQueueAddress> addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        public MessageDispatcher(Func<string, string> addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {
             this.addressTranslator = addressTranslator;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
@@ -195,7 +194,7 @@
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         DbConnectionFactory connectionFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
+        Func<string, string> addressTranslator;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }

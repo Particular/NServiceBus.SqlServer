@@ -1,8 +1,8 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Addressing
+﻿namespace NServiceBus.Transport.SqlServer
 {
-    public class CanonicalQueueAddress
+    class CanonicalQueueAddress
     {
-        public CanonicalQueueAddress(string table, string schemaName, string catalogName, INameHelper nameHelper)
+        public CanonicalQueueAddress(string table, string schemaName, string catalogName, SqlServerNameHelper nameHelper)
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
             Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
@@ -23,7 +23,7 @@
         public string QualifiedTableName { get; }
         public string QuotedCatalogName { get; }
 
-        string GetCanonicalForm(INameHelper nameHelper)
+        string GetCanonicalForm(SqlServerNameHelper nameHelper)
         {
             return $"{Table}@{nameHelper.Quote(Schema)}@{nameHelper.Quote(Catalog)}";
         }

@@ -2,11 +2,10 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
 {
     using System;
     using System.Collections.Concurrent;
-    using Addressing;
 
     public class TableBasedQueueCache
     {
-        public TableBasedQueueCache(Func<string, string, bool, TableBasedQueue> queueFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool isStreamSupported)
+        public TableBasedQueueCache(Func<string, bool, TableBasedQueue> queueFactory, Func<string, string> addressTranslator, bool isStreamSupported)
         {
             this.queueFactory = queueFactory;
             this.addressTranslator = addressTranslator;
@@ -15,16 +14,17 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
 
         public TableBasedQueue Get(string destination)
         {
-            var address = addressTranslator(destination);
-            var key = Tuple.Create(address.QualifiedTableName, address.Address);
-            var queue = cache.GetOrAdd(key, x => queueFactory(x.Item1, x.Item2, isStreamSupported));
+            //Get a fully-qualified form of the name so that regardless in which format we get from the core/user, we cache based on a standardized from
+            //to avoid having duplicate cache entries for a single table
+            var key = addressTranslator(destination);
+            var queue = cache.GetOrAdd(key, x => queueFactory(x, isStreamSupported));
 
             return queue;
         }
 
-        Func<string, string, bool, TableBasedQueue> queueFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
-        ConcurrentDictionary<Tuple<string, string>, TableBasedQueue> cache = new ConcurrentDictionary<Tuple<string, string>, TableBasedQueue>();
+        Func<string, bool, TableBasedQueue> queueFactory;
+        Func<string, string> addressTranslator;
+        ConcurrentDictionary<string, TableBasedQueue> cache = new ConcurrentDictionary<string, TableBasedQueue>();
         bool isStreamSupported;
     }
 }

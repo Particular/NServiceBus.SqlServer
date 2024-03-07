@@ -124,7 +124,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Catalog and schema configuration for SQL Transport queues.
     /// </summary>
-    public QueueSchemaAndCatalogOptions SchemaAndCatalog { get; } = new QueueSchemaAndCatalogOptions();
+    public QueueSchemaOptions SchemaAndCatalog { get; } = new QueueSchemaOptions();
 
     internal class TestingInformation
     {

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Addressing;
 
     struct SortingResult
     {
@@ -18,14 +17,14 @@
 
     static class OperationSorter
     {
-        public static SortingResult SortAndDeduplicate(this IEnumerable<UnicastTransportOperation> source, Func<string, CanonicalQueueAddress> addressTranslator)
+        public static SortingResult SortAndDeduplicate(this IEnumerable<UnicastTransportOperation> source, Func<string, string> addressTranslator)
         {
             Dictionary<DeduplicationKey, UnicastTransportOperation> isolatedDispatch = null;
             Dictionary<DeduplicationKey, UnicastTransportOperation> defaultDispatch = null;
 
             foreach (var operation in source)
             {
-                var destination = addressTranslator(operation.Destination).Address;
+                var destination = addressTranslator(operation.Destination);
                 var messageId = operation.Message.MessageId;
                 var deduplicationKey = new DeduplicationKey(messageId, destination);
 
