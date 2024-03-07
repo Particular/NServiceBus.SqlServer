@@ -1,8 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
-    using Sql.Shared.Addressing;
-
-    class PostgreSqlNameHelper : INameHelper
+    class PostgreSqlNameHelper
     {
         const string prefix = "\"";
         const string suffix = "\"";

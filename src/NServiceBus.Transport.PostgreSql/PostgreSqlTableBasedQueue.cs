@@ -14,8 +14,8 @@ class PostgreSqlTableBasedQueue : TableBasedQueue
 {
     readonly PostgreSqlConstants postgreSqlConstants;
 
-    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported) =>
+    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName) :
+        base(sqlConstants, qualifiedTableName, queueName, true) =>
         postgreSqlConstants = sqlConstants;
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,

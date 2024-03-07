@@ -1,30 +1,27 @@
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.PostgreSql
 {
     using System;
     using System.Data.Common;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
-    using Microsoft.Data.SqlClient;
+    using System.Threading;
+    using Npgsql;
+    using Sql.Shared.Configuration;
 
-    class SqlServerDbConnectionFactory : DbConnectionFactory
+    class PostgreSqlDbConnectionFactory : DbConnectionFactory
     {
-        public SqlServerDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) : base(factory)
+        public PostgreSqlDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) : base(factory)
         {
         }
 
 
-        public SqlServerDbConnectionFactory(string connectionString)
+        public PostgreSqlDbConnectionFactory(string connectionString)
         {
             openNewConnection = async cancellationToken =>
             {
                 ValidateConnectionPool(connectionString);
 
-                var connection = new SqlConnection(connectionString);
+                var connection = new NpgsqlConnection(connectionString);
                 try
                 {
                     await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -49,6 +46,6 @@ namespace NServiceBus.Transport.SqlServer
             };
         }
 
-        static ILog Logger = LogManager.GetLogger<SqlServerDbConnectionFactory>();
+        static ILog Logger = LogManager.GetLogger<PostgreSqlDbConnectionFactory>();
     }
 }

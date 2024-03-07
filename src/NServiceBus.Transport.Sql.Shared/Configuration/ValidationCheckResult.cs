@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.SqlServer
+namespace NServiceBus.Transport.Sql.Shared
 {
     class ValidationCheckResult
     {
