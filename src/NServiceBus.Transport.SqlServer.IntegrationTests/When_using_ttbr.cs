@@ -122,18 +122,25 @@
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions(), new SqlServerNameHelper());
-            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser.Parse, true);
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions(), new SqlServerNameHelper());
+            var tableCache = new TableBasedQueueCache(
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
+                true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
             dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
-            await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
+            await CreateOutputQueueIfNecessary(addressTranslator, dbConnectionFactory, cancellationToken);
 
-            await PurgeOutputQueue(addressParser, cancellationToken);
+            await PurgeOutputQueue(addressTranslator, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(s => addressTranslator.Parse(s).Address, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser, CancellationToken cancellationToken = default)
