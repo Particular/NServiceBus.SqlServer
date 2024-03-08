@@ -5,7 +5,7 @@
 
     class QueueAddress
     {
-        public QueueAddress(string table, string schemaName, string catalogName, INameHelper nameHelper)
+        public QueueAddress(string table, string schemaName, string catalogName, SqlServerNameHelper nameHelper)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(table);
 
@@ -30,7 +30,7 @@
         //         algorithm assumes that those parts are specified in brackets delimited format
         //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id>
         //         or <catalog_id> parts.
-        public static QueueAddress Parse(string address, INameHelper nameHelper)
+        public static QueueAddress Parse(string address, SqlServerNameHelper nameHelper)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
 
@@ -53,7 +53,7 @@
             return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
         }
 
-        string GetStringForm(INameHelper nameHelper)
+        string GetStringForm(SqlServerNameHelper nameHelper)
         {
             var result = new StringBuilder();
             var optionalParts = new[] { Catalog, Schema };
@@ -100,12 +100,12 @@
             }
         }
 
-        static string Quote(string name, INameHelper nameHelper)
+        static string Quote(string name, SqlServerNameHelper nameHelper)
         {
             return nameHelper.Quote(name);
         }
 
-        static string SafeUnquote(string name, INameHelper nameHelper)
+        static string SafeUnquote(string name, SqlServerNameHelper nameHelper)
         {
             var result = nameHelper.Unquote(name);
             return string.IsNullOrWhiteSpace(result)

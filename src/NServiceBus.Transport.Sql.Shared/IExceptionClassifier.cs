@@ -10,7 +10,4 @@ public interface IExceptionClassifier
 #pragma warning restore PS0003 // A parameter of type CancellationToken on a non-private delegate or method should be optional
 
     bool IsDeadlockException(Exception ex);
-
-    bool ObjectAlreadyExists(Exception ex);
-
 }

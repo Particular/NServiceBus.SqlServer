@@ -59,7 +59,7 @@
             }
 
             var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null, null);
-            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, queueAddressTranslator.Parse, new SqlServerExceptionClassifier());
+            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, queueAddressTranslator.Parse);
 
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
