@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="$(PkgNServiceBus_TransportTests_Sources)\**\ExceptionExtensions.cs" />
+    <Compile Remove="$(PkgNServiceBus_TransportTests_Sources)\**\ExceptionExtensions.cs" Condition="'$(PkgNServiceBus_TransportTests_Sources)' != ''" />
   </ItemGroup>
 
 </Project>

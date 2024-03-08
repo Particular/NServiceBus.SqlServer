@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.TransportTests\**\*.cs" Exclude="**\obj\**" />
-    <Compile Remove="$(PkgNServiceBus_TransportTests_Sources)\**\ExceptionExtensions.cs" />
+    <Compile Remove="$(PkgNServiceBus_TransportTests_Sources)\**\ExceptionExtensions.cs" Condition="'$(PkgNServiceBus_TransportTests_Sources)' != ''" />
   </ItemGroup>
 
 </Project>
