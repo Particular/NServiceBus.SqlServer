@@ -5,16 +5,14 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data.Common;
     using System.Threading.Tasks;
     using System.Threading;
-    using Sql.Shared;
 
     class QueueCreator
     {
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, IExceptionClassifier exceptionClassifier, bool createMessageBodyColumn = false)
+        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
         {
             this.sqlConstants = sqlConstants;
             this.connectionFactory = connectionFactory;
             this.addressTranslator = addressTranslator;
-            this.exceptionClassifier = exceptionClassifier;
             this.createMessageBodyColumn = createMessageBodyColumn;
         }
 
@@ -58,7 +56,7 @@ namespace NServiceBus.Transport.SqlServer
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
-            catch (Exception ex) when (exceptionClassifier.ObjectAlreadyExists(ex)) //Object already exists
+            catch (Exception ex) when (ex.IsObjectAlreadyExists())
             {
                 //Table creation scripts are based on sys.objects metadata views.
                 //It looks that these views are not fully transactional and might
@@ -92,7 +90,6 @@ namespace NServiceBus.Transport.SqlServer
         ISqlConstants sqlConstants;
         DbConnectionFactory connectionFactory;
         Func<string, CanonicalQueueAddress> addressTranslator;
-        IExceptionClassifier exceptionClassifier;
         bool createMessageBodyColumn;
     }
 }

@@ -15,9 +15,9 @@
 
     public class MessageDispatcher : IMessageDispatcher
     {
-        public MessageDispatcher(Func<string, string> addressTranslator, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        public MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {
-            this.addressTranslator = addressTranslator;
+            this.getCanonicalAddressForm = getCanonicalAddressForm;
             this.multicastToUnicastConverter = multicastToUnicastConverter;
             this.tableBasedQueueCache = tableBasedQueueCache;
             this.delayedMessageTable = delayedMessageTable;
@@ -29,7 +29,7 @@
         {
             var sortedOperations = operations.UnicastTransportOperations
                 .Concat(await ConvertToUnicastOperations(operations, cancellationToken).ConfigureAwait(false))
-                .SortAndDeduplicate(addressTranslator);
+                .SortAndDeduplicate(getCanonicalAddressForm);
 
             await DispatchDefault(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
             await DispatchIsolated(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
@@ -194,7 +194,7 @@
         TableBasedQueueCache tableBasedQueueCache;
         IDelayedMessageStore delayedMessageTable;
         DbConnectionFactory connectionFactory;
-        Func<string, string> addressTranslator;
+        Func<string, string> getCanonicalAddressForm;
         IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }

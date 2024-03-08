@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
     using System;
-    using SqlServer;
 
     /// <summary>
     ///     Configures the native pub/sub behavior

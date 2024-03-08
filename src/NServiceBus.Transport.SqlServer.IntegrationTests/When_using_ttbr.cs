@@ -8,7 +8,6 @@
     using NUnit.Framework;
     using Performance.TimeToBeReceived;
     using Routing;
-    using Sql.Shared.Addressing;
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
@@ -148,7 +147,7 @@
 
         Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser.Parse, new SqlServerExceptionClassifier());
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser.Parse);
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

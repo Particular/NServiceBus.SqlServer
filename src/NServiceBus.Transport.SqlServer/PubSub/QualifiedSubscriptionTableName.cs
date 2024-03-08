@@ -1,14 +1,13 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using Sql.Shared.Addressing;
 
     class QualifiedSubscriptionTableName
     {
         public string QuotedCatalog;
         public string QuotedQualifiedName;
 
-        public QualifiedSubscriptionTableName(string table, string schema, string catalog, INameHelper nameHelper)
+        public QualifiedSubscriptionTableName(string table, string schema, string catalog, SqlServerNameHelper nameHelper)
         {
             if (table == null)
             {
