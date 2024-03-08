@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests
 {
     using NUnit.Framework;
-    using SqlServer;
+    using Sql.Shared;
 
     [TestFixture]
     public class ConnectionPoolValidatorTests
