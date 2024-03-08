@@ -9,7 +9,6 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using NServiceBus.Transport.SqlServer.PubSub;
     using Sql;
-    using Sql.Shared.Addressing;
     using Sql.Shared.PubSub;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
@@ -198,7 +197,7 @@ namespace NServiceBus.Transport.SqlServer
                 queuesToCreate.AddRange(sendingAddresses);
                 queuesToCreate.AddRange(receiveAddresses);
 
-                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, exceptionClassifier, createMessageBodyComputedColumn);
+                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, createMessageBodyComputedColumn);
 
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);
@@ -314,7 +313,7 @@ namespace NServiceBus.Transport.SqlServer
         public void ConfigureSendInfrastructure()
         {
             Dispatcher = new MessageDispatcher(
-                addressTranslator.Parse,
+                s => addressTranslator.Parse(s).Address,
                 new MulticastToUnicastConverter(subscriptionStore),
                 tableBasedQueueCache,
                 delayedMessageStore,

@@ -5,7 +5,6 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
-    using Sql.Shared.Addressing;
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using SqlServer;
@@ -94,7 +93,7 @@
 
         Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier(), false);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, false);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

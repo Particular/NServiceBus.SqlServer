@@ -15,7 +15,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using Routing;
     using SqlServer;
     using System.Threading;
-    using Sql.Shared.Addressing;
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
@@ -154,7 +153,7 @@ END";
 
         Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, new SqlServerExceptionClassifier());
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
         }

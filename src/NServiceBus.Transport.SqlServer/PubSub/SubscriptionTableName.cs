@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using Sql.Shared.Addressing;
 
     /// <summary>
     /// Subscription table name.
@@ -25,7 +24,7 @@ namespace NServiceBus.Transport.SqlServer
             this.catalog = catalog;
         }
 
-        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog, INameHelper nameHelper)
+        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog, SqlServerNameHelper nameHelper)
         {
             return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema, catalog ?? defaultCatalog, nameHelper);
         }

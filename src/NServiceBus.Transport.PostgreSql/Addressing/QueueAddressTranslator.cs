@@ -16,8 +16,6 @@
             this.queueOptions = queueOptions ?? new QueueSchemaOptions();
         }
 
-        public string DefaultCatalog { get; }
-
         public string DefaultSchema { get; }
 
         public QueueAddress Generate(Transport.QueueAddress queueAddress)

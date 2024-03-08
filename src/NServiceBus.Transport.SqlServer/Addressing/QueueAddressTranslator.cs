@@ -3,12 +3,11 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Collections.Concurrent;
     using System.Linq;
-    using Sql.Shared.Addressing;
 
     class QueueAddressTranslator
     {
 
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions, INameHelper nameHelper)
+        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions, SqlServerNameHelper nameHelper)
         {
             this.nameHelper = nameHelper;
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
@@ -87,7 +86,7 @@ namespace NServiceBus.Transport.SqlServer
             return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
         }
 
-        INameHelper nameHelper;
+        SqlServerNameHelper nameHelper;
         QueueSchemaAndCatalogOptions queueOptions;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
