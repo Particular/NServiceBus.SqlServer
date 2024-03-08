@@ -37,19 +37,23 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
             dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
             var purger = new QueuePurger(dbConnectionFactory);
 
             await RemoveQueueIfPresent(QueueName, token);
             await RemoveQueueIfPresent($"{QueueName}.Delayed", token);
-            await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory);
+            await CreateOutputQueueIfNecessary(addressTranslator, dbConnectionFactory);
 
             var tableCache = new TableBasedQueueCache(
-                (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-                addressParser.Parse,
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
                 true);
             var queue = tableCache.Get(QueueName);
-            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(s => addressTranslator.Parse(s).Address, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
 
             // Run normally
             int messagesSent = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);

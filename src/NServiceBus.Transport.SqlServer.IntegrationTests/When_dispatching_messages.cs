@@ -104,14 +104,21 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
-            var tableCache = new TableBasedQueueCache((qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported), addressParser.Parse, true);
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var tableCache = new TableBasedQueueCache(
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
+                true);
 
-            await CreateOutputQueueIfNecessary(addressParser, dbConnectionFactory, cancellationToken);
+            await CreateOutputQueueIfNecessary(addressTranslator, dbConnectionFactory, cancellationToken);
 
-            await PurgeOutputQueue(addressParser, cancellationToken);
+            await PurgeOutputQueue(addressTranslator, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser.Parse, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
+            dispatcher = new MessageDispatcher(s => addressTranslator.Parse(s).Address, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)

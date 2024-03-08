@@ -11,7 +11,6 @@
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
     using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
 
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
@@ -58,15 +57,19 @@
                 throw new Exception("Database is not configured on connection string");
             }
 
-            var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null, null);
-            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, queueAddressTranslator.Parse);
+            var addressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null, null);
+            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse);
 
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
 
             var tableBasedQueueCache = new TableBasedQueueCache(
-                (qualifiedTableName, queueName, isStreamSupported) => new SqlTableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported),
-                queueAddressTranslator.Parse,
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
                 true);
 
             var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
