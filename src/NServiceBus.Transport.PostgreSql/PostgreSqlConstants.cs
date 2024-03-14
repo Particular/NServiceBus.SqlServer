@@ -31,17 +31,14 @@ SELECT @Headers, @Body, DueDate
 FROM params;";
 
     public string ReceiveText { get; set; } = @"
-DELETE FROM
-    {0}
-USING (
-    SELECT Id, 
-    CASE WHEN Expires IS NULL
+DELETE FROM {0} rs
+WHERE rs.id = (SELECT id FROM {0} LIMIT 1 FOR UPDATE SKIP LOCKED)
+RETURNING rs.id,
+	    CASE WHEN Expires IS NULL
         THEN 0
         WHEN Expires > now() AT TIME ZONE 'UTC' THEN 0 ELSE 1
-    END Expired,
-    Headers, Body FROM {0} LIMIT 1 FOR UPDATE SKIP LOCKED
-) q
-WHERE q.id = {0}.id RETURNING q.Id, q.Expired, q.Headers, q.Body;
+	    END Expired,
+		rs.Headers, rs.Body;
 ";
 
     //TODO investigate the purpose and meaning of this extension, can it be bootstrapped, can dbas turn it off, potential prerequisite for us?
