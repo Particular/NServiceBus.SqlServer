@@ -9,7 +9,6 @@ using System.Transactions;
 using Logging;
 using Npgsql;
 using PubSub;
-using Sql.Shared;
 using Sql.Shared.Configuration;
 using SqlServer;
 using Sql.Shared.DelayedDelivery;
@@ -34,9 +33,9 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     PostgreSqlDbConnectionFactory connectionFactory;
 
     // TODO: Figure out if we should share this between SqlServer and PostgreSql in some static consts class or whatever
-    static string DtcErrorMessage = @"
-Distributed transactions are not available on Linux. The other transaction modes can be used by setting the `PostgreSqlTransport.TransportTransactionMode` property when configuring the endpoint.
-Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
+    //    static string DtcErrorMessage = @"
+    //Distributed transactions are not available on Linux. The other transaction modes can be used by setting the `PostgreSqlTransport.TransportTransactionMode` property when configuring the endpoint.
+    //Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
     static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
     readonly PostgreSqlNameHelper nameHelper;
@@ -243,11 +242,15 @@ Be aware that different transaction modes affect consistency guarantees since di
     }
 
     // TODO: Make this thing shared for both transports
+#pragma warning disable IDE0060
     async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
+#pragma warning restore IDE0060
     {
         await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
-        await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
+
+        //TODO: Figure out if PostgreSQL supports DTC
+        //await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
     }
 
     // TODO: Make this thing shared for both transports
@@ -270,43 +273,43 @@ Be aware that different transaction modes affect consistency guarantees since di
     }
 
     // TODO: Make this thing shared for both transports
-    async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions,
-        CancellationToken cancellationToken)
-    {
-        if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
-        {
-            var message = string.Empty;
+    //async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions,
+    //    CancellationToken cancellationToken)
+    //{
+    //    if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
+    //    {
+    //        var message = string.Empty;
 
-            try
-            {
-                using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions,
-                           TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    FakePromotableResourceManager.ForceDtc();
-                    using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                    {
-                        scope.Complete();
-                    }
-                }
-            }
-            catch (NotSupportedException exception)
-            {
-                message =
-                    "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions."
-                    + DtcErrorMessage + "Original error message: " + exception.Message;
-            }
-            catch (Exception exception) when (!exception.IsCausedBy(cancellationToken))
-            {
-                message = "Distributed transactions are not available."
-                          + DtcErrorMessage + "Original error message: " + exception.Message;
-            }
+    //        try
+    //        {
+    //            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions,
+    //                       TransactionScopeAsyncFlowOption.Enabled))
+    //            {
+    //                FakePromotableResourceManager.ForceDtc();
+    //                using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+    //                {
+    //                    scope.Complete();
+    //                }
+    //            }
+    //        }
+    //        catch (NotSupportedException exception)
+    //        {
+    //            message =
+    //                "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions."
+    //                + DtcErrorMessage + "Original error message: " + exception.Message;
+    //        }
+    //        catch (Exception exception) when (!exception.IsCausedBy(cancellationToken))
+    //        {
+    //            message = "Distributed transactions are not available."
+    //                      + DtcErrorMessage + "Original error message: " + exception.Message;
+    //        }
 
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                _logger.Warn(message);
-            }
-        }
-    }
+    //        if (!string.IsNullOrWhiteSpace(message))
+    //        {
+    //            _logger.Warn(message);
+    //        }
+    //    }
+    //}
 
     // TODO: Make this thing shared for both transports
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee,
