@@ -14,7 +14,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(string connectionString) : base(TransportTransactionMode.TransactionScope, true, true,
+    public PostgreSqlTransport(string connectionString) : base(TransportTransactionMode.SendsAtomicWithReceive, true, true,
         true)
     {
         Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
@@ -81,11 +81,6 @@ public class PostgreSqlTransport : TransportDefinition
     /// Default address schema.
     /// </summary>
     public string DefaultSchema { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Default address catalog.
-    /// </summary>
-    public string DefaultCatalog { get; set; }
 
     /// <summary>
     /// Delayed delivery infrastructure configuration
