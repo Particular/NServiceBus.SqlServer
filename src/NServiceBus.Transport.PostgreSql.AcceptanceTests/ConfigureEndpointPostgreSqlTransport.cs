@@ -57,7 +57,11 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
                 }
             }
 
-            commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
+            //Null-check because if an exception is thrown before startup these fields might be empty
+            if (delayedQueueAddress != null)
+            {
+                commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
+            }
 
             var subscriptionTableName = transport.Testing.SubscriptionTable;
 
