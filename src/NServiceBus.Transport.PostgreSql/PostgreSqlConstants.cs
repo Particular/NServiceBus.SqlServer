@@ -30,6 +30,9 @@ INSERT INTO {0} (
 SELECT @Headers, @Body, DueDate
 FROM params;";
 
+    //HINT: this query should no use USING as this can cause multiple rows to be returned event with LIMIT 1 applied.
+    //      https://stackoverflow.com/questions/75755863/limit-1-not-respected-when-used-with-for-update-skip-locked-in-postgres-14
+    //      https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
     public string ReceiveText { get; set; } = @"
 DELETE FROM {0} rs
 WHERE rs.id = (SELECT id FROM {0} LIMIT 1 FOR UPDATE SKIP LOCKED)

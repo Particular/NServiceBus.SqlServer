@@ -5,6 +5,7 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Data.Common;
     using System.Threading.Tasks;
     using System.Threading;
+    using Npgsql;
     using Sql.Shared.Configuration;
     using Sql.Shared.Queuing;
 
@@ -40,7 +41,9 @@ namespace NServiceBus.Transport.PostgreSql
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName);
+                    var tableName = canonicalQueueAddress.QualifiedTableName;
+
+                    var sql = string.Format(creationScript, tableName);
                     using (var command = connection.CreateCommand())
                     {
                         command.Transaction = transaction;
@@ -56,6 +59,12 @@ namespace NServiceBus.Transport.PostgreSql
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+            }
+            catch (PostgresException ex) when (ex.SqlState == "23505")
+            {
+                //PostgreSQL error code 23505: unique_violation is returned
+                //if the table creation is executed concurrently by multiple transactions
+                //In this case we want to discard the exception and continue
             }
 
             if (createMessageBodyColumn)

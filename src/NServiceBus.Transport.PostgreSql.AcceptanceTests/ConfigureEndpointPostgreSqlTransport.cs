@@ -15,7 +15,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
     public ConfigureEndpointPostgreSqlTransport()
     {
-        connectionString = Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ?? @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Connection Lifetime=0;";
+        connectionString = Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ?? @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Connection Lifetime=0;Include Error Detail=true";
 
         transport = new PostgreSqlTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
