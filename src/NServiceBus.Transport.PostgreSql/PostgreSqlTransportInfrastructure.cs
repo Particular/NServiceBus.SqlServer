@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -19,6 +20,7 @@ using Sql.Shared.Sending;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
+    const int PostgreSQLIdentifierLimit = 63;
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
     readonly ReceiveSettings[] receiveSettings;
@@ -223,6 +225,16 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             var queuesToCreate = new List<string>();
             queuesToCreate.AddRange(sendingAddresses);
             queuesToCreate.AddRange(receiveAddresses);
+
+            var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(q).Length > PostgreSQLIdentifierLimit);
+
+            var delayedQueueNameExceedsLimit =
+                Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.QualifiedTableName).Length > PostgreSQLIdentifierLimit;
+
+            if (queueNameExceedsLimit || delayedQueueNameExceedsLimit)
+            {
+                throw new Exception("PostgreSQL identifiers cannot exceed 63 bytes in length, consider using shorter endpoint names");
+            }
 
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse,
                 createMessageBodyComputedColumn);
