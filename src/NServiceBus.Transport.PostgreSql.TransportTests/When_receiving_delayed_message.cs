@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql.TransportTests
+﻿namespace NServiceBus.TransportTests
 {
     using System;
     using System.Threading.Tasks;

@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql.TransportTests
+﻿namespace NServiceBus.TransportTests
 {
     using System;
     using System.Collections.Generic;
@@ -8,7 +8,6 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using Logging;
-    using NServiceBus.TransportTests;
     using NUnit.Framework;
     using Routing;
     using Transport;
@@ -93,8 +92,7 @@
             onMessage = onMessage ?? throw new ArgumentNullException(nameof(onMessage));
             onError = onError ?? throw new ArgumentNullException(nameof(onError));
 
-            InputQueueName = GetTestName() + transactionMode;
-            ErrorQueueName = $"{InputQueueName}.error";
+            GetQueueNames(transactionMode, out InputQueueName, out ErrorQueueName);
 
             configurer = CreateConfigurer();
 
@@ -266,6 +264,28 @@
             testName = testName.Replace("_", "");
 
             return testName;
+        }
+
+        static void GetQueueNames(TransportTransactionMode transactionMode, out string inputQueueName, out string errorQueueName)
+        {
+            var testName = GetTestName();
+
+            // Max length for PostgreSQL table name is 63. In the transport we also add ".delayed".
+            var totalAddedText = $"{transactionMode}.delayed";
+            if (testName.Length + totalAddedText.Length > 63)
+            {
+                var charactersToConsiders = 63 - totalAddedText.Length - 8;
+                inputQueueName =
+                    $"{testName.Substring(0, charactersToConsiders)}{testName.GetHashCode():X8}{transactionMode}";
+            }
+            else
+            {
+                inputQueueName = $"{testName}{transactionMode}";
+            }
+
+            totalAddedText = $"{transactionMode}.error";
+            var charactersToConsider = testName.Length + totalAddedText.Length > 63 ? 63 - totalAddedText.Length : testName.Length;
+            errorQueueName = $"{testName.Substring(0, charactersToConsider)}.error";
         }
 
         public CancellationToken TestTimeoutCancellationToken => testCancellationTokenSource.Token;
