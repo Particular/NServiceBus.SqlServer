@@ -34,7 +34,8 @@
 
                 var fullTestName = testName + "." + endpointBuilder;
 
-                var charactersToConsider = fullTestName.Length > 63 ? 55 : fullTestName.Length;
+                // Max length for table name is 63. We'll add ".delayed" and hashcode.
+                var charactersToConsider = fullTestName.Length > 47 ? 47 : fullTestName.Length;
 
                 return fullTestName.Substring(0, charactersToConsider) + fullTestName.GetHashCode().ToString("X8");
             };
