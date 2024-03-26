@@ -269,23 +269,17 @@
         static void GetQueueNames(TransportTransactionMode transactionMode, out string inputQueueName, out string errorQueueName)
         {
             var testName = GetTestName();
+            var fullTestName = $"{testName}{transactionMode}";
+            int fullTestNameHash = fullTestName.GetHashCode();
 
-            // Max length for PostgreSQL table name is 63. In the transport we also add ".delayed".
-            var totalAddedText = $"{transactionMode}.delayed";
-            if (testName.Length + totalAddedText.Length > 63)
-            {
-                var charactersToConsiders = 63 - totalAddedText.Length - 8;
-                inputQueueName =
-                    $"{testName.Substring(0, charactersToConsiders)}{testName.GetHashCode():X8}{transactionMode}";
-            }
-            else
-            {
-                inputQueueName = $"{testName}{transactionMode}";
-            }
+            // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
+            var charactersToConsider = int.Min(fullTestName.Length, 47);
 
-            totalAddedText = $"{transactionMode}.error";
-            var charactersToConsider = testName.Length + totalAddedText.Length > 63 ? 63 - totalAddedText.Length : testName.Length;
-            errorQueueName = $"{testName.Substring(0, charactersToConsider)}.error";
+            inputQueueName = $"{fullTestName.Substring(0, charactersToConsider)}{fullTestNameHash:X8}";
+
+            // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) and the hashcode (8): 63-8-6=49
+            var charactersToConsiderForTheErrorQueue = int.Min(fullTestName.Length, 49);
+            errorQueueName = $"{fullTestName.Substring(0, charactersToConsiderForTheErrorQueue)}.error{fullTestNameHash:X8}";
         }
 
         public CancellationToken TestTimeoutCancellationToken => testCancellationTokenSource.Token;
