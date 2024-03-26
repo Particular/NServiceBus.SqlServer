@@ -13,7 +13,7 @@
     /// Base class for all the NSB test that sets up our conventions
     /// </summary>
     [TestFixture]
-    public abstract partial class NServiceBusAcceptanceTest
+    public abstract class NServiceBusAcceptanceTest
     {
         [SetUp]
         public void SetUp()
@@ -34,10 +34,10 @@
 
                 var fullTestName = testName + "." + endpointBuilder;
 
-                // Max length for table name is 63. We'll add ".delayed" and hashcode.
-                var charactersToConsider = fullTestName.Length > 47 ? 47 : fullTestName.Length;
+                // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
+                var charactersToConsider = int.Min(fullTestName.Length, 47);
 
-                return fullTestName.Substring(0, charactersToConsider) + fullTestName.GetHashCode().ToString("X8");
+                return $"{fullTestName.Substring(0, charactersToConsider)}{fullTestName.GetHashCode():X8}";
             };
         }
 
