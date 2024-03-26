@@ -4,6 +4,8 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
@@ -270,7 +272,7 @@
         {
             var testName = GetTestName();
             var fullTestName = $"{testName}{transactionMode}";
-            int fullTestNameHash = fullTestName.GetHashCode();
+            var fullTestNameHash = CreateDeterministicHash(fullTestName);
 
             // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
             var charactersToConsider = int.Min(fullTestName.Length, 47);
@@ -280,6 +282,17 @@
             // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) and the hashcode (8): 63-8-6=49
             var charactersToConsiderForTheErrorQueue = int.Min(fullTestName.Length, 49);
             errorQueueName = $"{fullTestName.Substring(0, charactersToConsiderForTheErrorQueue)}.error{fullTestNameHash:X8}";
+        }
+
+        public static uint CreateDeterministicHash(string input)
+        {
+            using (var provider = MD5.Create())
+            {
+                var inputBytes = Encoding.Default.GetBytes(input);
+                var hashBytes = provider.ComputeHash(inputBytes);
+                // generate a guid from the hash:
+                return BitConverter.ToUInt32(hashBytes, 0) % 1000000;
+            }
         }
 
         public CancellationToken TestTimeoutCancellationToken => testCancellationTokenSource.Token;

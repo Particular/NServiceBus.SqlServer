@@ -2,9 +2,12 @@
 {
     using System;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using AcceptanceTesting;
     using AcceptanceTesting.Customization;
+    using Newtonsoft.Json.Linq;
     using NUnit.Framework;
     using NUnit.Framework.Interfaces;
     using NUnit.Framework.Internal;
@@ -37,8 +40,19 @@
                 // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
                 var charactersToConsider = int.Min(fullTestName.Length, 47);
 
-                return $"{fullTestName.Substring(0, charactersToConsider)}{fullTestName.GetHashCode():X8}";
+                return $"{fullTestName.Substring(0, charactersToConsider)}{CreateDeterministicHash(fullTestName):X8}";
             };
+        }
+
+        public static uint CreateDeterministicHash(string input)
+        {
+            using (var provider = MD5.Create())
+            {
+                var inputBytes = Encoding.Default.GetBytes(input);
+                var hashBytes = provider.ComputeHash(inputBytes);
+                // generate a guid from the hash:
+                return BitConverter.ToUInt32(hashBytes, 0) % 1000000;
+            }
         }
 
         [TearDown]
