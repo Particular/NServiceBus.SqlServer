@@ -20,7 +20,9 @@ using Sql.Shared.Sending;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
-    const int PostgreSQLIdentifierLimit = 63;
+    //The PostgreSQL limit is 63 but we need to reserves space for "_Seq_seq" suffix used in the 
+    //auto-created sequence and that is 8 bytes less
+    const int TableQueueNameLimit = 55;
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
     readonly ReceiveSettings[] receiveSettings;
@@ -226,14 +228,14 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             queuesToCreate.AddRange(sendingAddresses);
             queuesToCreate.AddRange(receiveAddresses);
 
-            var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q, nameHelper).Table).Length > PostgreSQLIdentifierLimit);
+            var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q, nameHelper).Table).Length > TableQueueNameLimit);
 
             var delayedQueueNameExceedsLimit =
-                Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > PostgreSQLIdentifierLimit;
+                Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit;
 
             if (queueNameExceedsLimit || delayedQueueNameExceedsLimit)
             {
-                throw new Exception("PostgreSQL identifiers cannot exceed 63 bytes in length, consider using shorter endpoint names");
+                throw new Exception($"PostgreSQL table name exceeds {TableQueueNameLimit} in length, consider using shorter endpoint names");
             }
 
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse,

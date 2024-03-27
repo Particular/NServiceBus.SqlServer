@@ -274,13 +274,13 @@
             var fullTestName = $"{testName}{transactionMode}";
             var fullTestNameHash = CreateDeterministicHash(fullTestName);
 
-            // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
-            var charactersToConsider = int.Min(fullTestName.Length, 47);
+            // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8), the hashcode (8), and "_seq_seq" sequence suffix: 63-8-8-8=39
+            var charactersToConsider = int.Min(fullTestName.Length, 39);
 
             inputQueueName = $"{fullTestName.Substring(0, charactersToConsider)}{fullTestNameHash:X8}";
 
-            // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) and the hashcode (8): 63-8-6=49
-            var charactersToConsiderForTheErrorQueue = int.Min(fullTestName.Length, 49);
+            // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) the hashcode (8), and "_seq_seq" sequence suffix: 63-8-6-8=41
+            var charactersToConsiderForTheErrorQueue = int.Min(fullTestName.Length, 41);
             errorQueueName = $"{fullTestName.Substring(0, charactersToConsiderForTheErrorQueue)}.error{fullTestNameHash:X8}";
         }
 

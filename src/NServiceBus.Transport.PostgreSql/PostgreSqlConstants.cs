@@ -48,7 +48,7 @@ RETURNING rs.id,
     public string MoveDueDelayedMessageText { get; set; } = @"
 CREATE EXTENSION IF NOT EXISTS ""uuid-ossp""; 
 	
-WITH message as (DELETE FROM {0} WHERE rowversion in (SELECT rowversion from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
+WITH message as (DELETE FROM {0} WHERE seq in (SELECT seq from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
 RETURNING headers, body)
 INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT  uuid_generate_v4(), NULL, NULL, NULL, headers, body FROM message;
 
@@ -57,7 +57,7 @@ FROM {0}
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
     public string PeekText { get; set; } = @"
-SELECT COALESCE(cast(max(RowVersion) - min(RowVersion) + 1 AS int), 0) Id FROM {0}";
+SELECT COALESCE(cast(max(seq) - min(seq) + 1 AS int), 0) Id FROM {0}";
 
     //TODO: Verify if it is possible in PostgreSQL
     public string AddMessageBodyStringColumn { get; set; } = string.Empty;
@@ -70,7 +70,7 @@ SELECT COALESCE(cast(max(RowVersion) - min(RowVersion) + 1 AS int), 0) Id FROM {
         Expires TIMESTAMP,
         Headers TEXT NOT NULL,
         Body BYTEA,
-        RowVersion serial NOT NULL
+        Seq serial NOT NULL
     );";
 
     public string CreateDelayedMessageStoreText { get; set; } = @"
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS {0} (
     Headers text NOT NULL,
     Body bytea,
     Due timestamptz NOT NULL,
-    RowVersion bigint not null generated always as identity
+    Seq bigint not null generated always as identity
 );";
 
     public string PurgeBatchOfExpiredMessagesText { get; set; } = string.Empty;
