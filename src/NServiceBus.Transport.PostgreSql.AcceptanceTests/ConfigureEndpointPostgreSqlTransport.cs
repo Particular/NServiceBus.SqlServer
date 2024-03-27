@@ -39,6 +39,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
     public async Task Cleanup()
     {
+        //TODO: clean-up sequences
         using (var conn = new NpgsqlConnection(connectionString))
         {
             await conn.OpenAsync().ConfigureAwait(false);

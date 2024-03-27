@@ -37,8 +37,13 @@
 
                 var fullTestName = testName + "." + endpointBuilder;
 
-                // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8) and the hashcode (8): 63-8-8=47
-                var charactersToConsider = int.Min(fullTestName.Length, 47);
+                //TODO: shorten the .delayed to get additional symbols for the queue name
+                // Max length for table name is 63. We need to reserve space for the:
+                // - ".delayed" - suffix (8)
+                // - "_Seq_seq" suffix for auto-created sequence backing up the Seq column (8)
+                // - hashcode (8)
+                // In summary, we can use 63-8-8-8=39
+                var charactersToConsider = int.Min(fullTestName.Length, 39);
 
                 return $"{fullTestName.Substring(0, charactersToConsider)}{CreateDeterministicHash(fullTestName):X8}";
             };
