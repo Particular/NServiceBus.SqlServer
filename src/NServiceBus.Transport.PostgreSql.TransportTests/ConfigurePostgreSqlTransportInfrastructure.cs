@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.Transport.PostgreSql;
+using NServiceBus.Transport.SqlServer;
 using NServiceBus.TransportTests;
 using NUnit.Framework;
 using QueueAddress = NServiceBus.Transport.QueueAddress;
@@ -55,11 +57,15 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 
         if (string.IsNullOrWhiteSpace(connectionString) == false)
         {
+            var delayedDeliveryQueueName = postgreSqlTransport.Testing.DelayedDeliveryQueue
+                .Replace("\"public\".", string.Empty)
+                .Replace("\"", string.Empty);
+
             var queues = new[]
             {
                 errorQueueName,
                 inputQueueName,
-                postgreSqlTransport.Testing.DelayedDeliveryQueue
+                delayedDeliveryQueueName
             };
 
             using var conn = new NpgsqlConnection(connectionString);
@@ -71,9 +77,10 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
                 {
                     using (var comm = conn.CreateCommand())
                     {
-                        comm.CommandText = $"DROP TABLE IF EXISTS {queue}";
+                        comm.CommandText = $"DROP TABLE IF EXISTS \"public\".\"{queue}\"; " +
+                                           $"DROP SEQUENCE IF EXISTS \"public\".\"{queue}_seq_seq\";";
 
-                        //await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                        await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
