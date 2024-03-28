@@ -50,6 +50,12 @@ namespace NServiceBus.Transport.PostgreSql
                     //for objects that already exists. These queries will fail with
                     // 2714 (table) and 1913 (index) error codes.
                 }
+                catch (PostgresException ex) when (ex.SqlState == "23505")
+                {
+                    //PostgreSQL error code 23505: unique_violation is returned
+                    //if the table creation is executed concurrently by multiple transactions
+                    //In this case we want to discard the exception and continue
+                }
             }
         }
     }
