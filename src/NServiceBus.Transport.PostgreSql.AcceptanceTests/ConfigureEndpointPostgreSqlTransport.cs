@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Npgsql;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Transport.PostgreSql;
+using NServiceBus.Transport.SqlServer;
 
 public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecution
 {
@@ -49,12 +51,21 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
             var commandTextBuilder = new StringBuilder();
 
+            var nameHelper = new PostgreSqlNameHelper();
+
             //No clean-up for send-only endpoints
             if (queueAddresses != null)
             {
                 foreach (var address in queueAddresses)
                 {
                     commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {address};");
+
+                    //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
+
+                    var tableName = nameHelper.Unquote(address.Replace("\"public\".", string.Empty));
+                    var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
+
+                    commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
                 }
             }
 
@@ -62,6 +73,13 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
             if (delayedQueueAddress != null)
             {
                 commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
+
+                //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
+
+                var tableName = nameHelper.Unquote(delayedQueueAddress.Replace("\"public\".", string.Empty));
+                var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
+
+                commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
             }
 
             var subscriptionTableName = transport.Testing.SubscriptionTable;
