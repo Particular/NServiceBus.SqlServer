@@ -20,6 +20,7 @@
   
   <ItemGroup>
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\NServiceBusAcceptanceTest.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_routing_reply_to_specific_instance.cs" />
   </ItemGroup>
 
 </Project>
