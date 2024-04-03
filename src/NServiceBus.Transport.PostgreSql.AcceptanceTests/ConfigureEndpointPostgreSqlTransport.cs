@@ -48,6 +48,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
+            var defaultSchema = transport.DefaultSchema;
 
             var commandTextBuilder = new StringBuilder();
 
@@ -62,10 +63,10 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
                     //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
 
-                    var tableName = nameHelper.Unquote(address.Replace("\"public\".", string.Empty));
-                    var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
+                    //var tableName = nameHelper.Unquote(address.Replace($"\"public\".", string.Empty));
+                    //var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
 
-                    commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
+                    //commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
                 }
             }
 
@@ -76,10 +77,10 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
                 //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
 
-                var tableName = nameHelper.Unquote(delayedQueueAddress.Replace("\"public\".", string.Empty));
-                var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
+                //var tableName = nameHelper.Unquote(delayedQueueAddress.Replace("\"public\".", string.Empty));
+                //var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
 
-                commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
+                //commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
             }
 
             var subscriptionTableName = transport.Testing.SubscriptionTable;
