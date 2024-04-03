@@ -25,7 +25,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(TransportTransactionMode defaultTransactionMode, bool supportsDelayedDelivery,
+    internal PostgreSqlTransport(TransportTransactionMode defaultTransactionMode, bool supportsDelayedDelivery,
         bool supportsPublishSubscribe, bool supportsTtbr)
         : base(defaultTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTtbr)
     {

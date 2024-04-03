@@ -22,5 +22,21 @@
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\NServiceBusAcceptanceTest.cs" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_routing_reply_to_specific_instance.cs" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_endpoint.cs" Link="MultiSchema\When_custom_schema_configured_for_endpoint.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_endpoint_inside_physical_address.cs" Link="MultiSchema\When_custom_schema_configured_for_endpoint_inside_physical_address.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_endpoint_with_brackets_syntax.cs" Link="MultiSchema\When_custom_schema_configured_for_endpoint_with_brackets_syntax.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_endpoint_with_default_override.cs" Link="MultiSchema\When_custom_schema_configured_for_endpoint_with_default_override.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_endpoint_with_queue_specific_override.cs" Link="MultiSchema\When_custom_schema_configured_for_endpoint_with_queue_specific_override.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_error_queue.cs" Link="MultiSchema\When_custom_schema_configured_for_error_queue.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_local_endpoint.cs" Link="MultiSchema\When_custom_schema_configured_for_local_endpoint.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_configured_for_publisher_and_subscriber.cs" Link="MultiSchema\When_custom_schema_configured_for_publisher_and_subscriber.cs" />
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_contains_at.cs" Link="MultiSchema\When_custom_schema_contains_at.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="MultiSchema\" />
+  </ItemGroup>
 
 </Project>
