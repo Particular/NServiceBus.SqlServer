@@ -51,7 +51,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
                 var context = new ContextBag();
                 var transportTransaction = new TransportTransaction();
-                transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
 
                 try
                 {

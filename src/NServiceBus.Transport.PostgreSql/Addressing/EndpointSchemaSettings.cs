@@ -2,8 +2,8 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using Configuration;
     using Routing;
-    using Sql.Shared.Sending;
 
     class EndpointSchemaSettings
     {

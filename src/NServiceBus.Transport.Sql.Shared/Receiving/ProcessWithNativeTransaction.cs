@@ -83,8 +83,8 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             var transportTransaction = new TransportTransaction();
 
             //these resources are meant to be used by anyone except message dispatcher e.g. persister
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
+            transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
+            transportTransaction.Set(TransportTransactionKeys.SqlTransaction, transaction);
 
             if (transactionForReceiveOnly)
             {

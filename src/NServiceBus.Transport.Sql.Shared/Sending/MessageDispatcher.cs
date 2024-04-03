@@ -56,18 +56,18 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
                 return;
             }
 
-            transportTransaction.TryGet(SettingsKeys.IsUserProvidedTransactionKey, out bool userProvidedTransaction);
+            transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool userProvidedTransaction);
 
             if (userProvidedTransaction)
             {
-                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out DbTransaction sqlTransportTransaction);
+                transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction sqlTransportTransaction);
                 if (sqlTransportTransaction != null)
                 {
                     await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
-                transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out DbConnection sqlTransportConnection);
+                transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
                 if (sqlTransportConnection != null)
                 {
                     await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
@@ -118,8 +118,8 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
 
         async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlConnectionKey, out DbConnection sqlTransportConnection);
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out DbTransaction sqlTransportTransaction);
+            transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
+            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction sqlTransportTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             if (ambientTransaction != null)
@@ -182,7 +182,7 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
 
         static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
         {
-            transportTransaction.TryGet(SettingsKeys.TransportTransactionSqlTransactionKey, out DbTransaction nativeTransaction);
+            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
             transportTransaction.TryGet(out Transaction ambientTransaction);
 
             return nativeTransaction == null && ambientTransaction == null;
