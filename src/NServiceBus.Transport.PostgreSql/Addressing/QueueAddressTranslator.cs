@@ -2,7 +2,7 @@
 {
     using System.Collections.Concurrent;
     using System.Linq;
-    using Sql.Shared.Sending;
+    using Configuration;
     using SqlServer;
 
     class QueueAddressTranslator
