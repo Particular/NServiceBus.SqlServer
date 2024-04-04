@@ -8,6 +8,7 @@
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
             Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
+
             Table = table;
             Schema = schemaName;
             Address = GetCanonicalForm(nameHelper);
