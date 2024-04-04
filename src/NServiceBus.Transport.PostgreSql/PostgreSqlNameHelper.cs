@@ -2,8 +2,8 @@
 {
     class PostgreSqlNameHelper
     {
-        const string prefix = "\"";
-        const string suffix = "\"";
+        const string Delimiter = "\"";
+        static readonly string EscapedDelimiter = Delimiter + Delimiter;
 
         public string Quote(string unquotedName)
         {
@@ -11,7 +11,8 @@
             {
                 return null;
             }
-            return prefix + unquotedName.Replace(suffix, suffix + suffix) + suffix;
+            //Quotes are escaped by using double quotes
+            return Delimiter + unquotedName.Replace(Delimiter, EscapedDelimiter) + Delimiter;
         }
 
         public string Unquote(string quotedString)
@@ -21,13 +22,15 @@
                 return null;
             }
 
-            if (!quotedString.StartsWith(prefix) || !quotedString.EndsWith(suffix))
+            if (!quotedString.StartsWith(Delimiter) || !quotedString.EndsWith(Delimiter))
             {
+                //Already unquoted
                 return quotedString;
             }
 
             return quotedString
-                .Substring(prefix.Length, quotedString.Length - prefix.Length - suffix.Length).Replace(suffix + suffix, suffix);
+                .Substring(Delimiter.Length, quotedString.Length - (2 * Delimiter.Length))
+                .Replace(EscapedDelimiter, Delimiter);
         }
     }
 }

@@ -32,8 +32,6 @@
                 {
                     var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
 
-                    var transportSettings = c.ConfigureSqlServerTransport();
-
                     c.GetSettings()
                     .GetOrCreate<UnicastRoutingTable>()
                     .AddOrReplaceRoutes("Custom",
