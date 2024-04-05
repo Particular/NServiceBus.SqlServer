@@ -40,7 +40,7 @@ class PostgreSqlTableBasedQueue : TableBasedQueue
         }
         //TODO: figure out the error codes
         // see: PostgreSQL: Documentation: 16: Appendix A. PostgreSQL Error Codes
-        catch (NpgsqlException ex) when (ex.ErrorCode == 208)
+        catch (NpgsqlException ex) when (ex.SqlState == "42P01")
         {
             throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
         }

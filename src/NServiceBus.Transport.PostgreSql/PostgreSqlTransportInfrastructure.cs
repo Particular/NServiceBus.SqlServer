@@ -145,28 +145,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         var queuePurger = new QueuePurger(connectionFactory);
         var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
-        IExpiredMessagesPurger expiredMessagesPurger;
-
-        // TODO: Figure out what to do here, MessageReceiver needs a purger
-        expiredMessagesPurger = new NoOpExpiredMessagesPurger();
-        // if (transport.ExpiredMessagesPurger.PurgeOnStartup == false)
-        // {
-        //     diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new { Enabled = false, });
-        //     expiredMessagesPurger = new NoOpExpiredMessagesPurger();
-        //     validateExpiredIndex = false;
-        // }
-        // else
-        // {
-        //     var purgeBatchSize = transport.ExpiredMessagesPurger.PurgeBatchSize;
-        //
-        //     diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger",
-        //         new { Enabled = true, BatchSize = purgeBatchSize });
-        //
-        //     expiredMessagesPurger = new ExpiredMessagesPurger((_, token) => connectionFactory.OpenNewConnection(token),
-        //         purgeBatchSize);
-        //     validateExpiredIndex = true;
-        // }
-
         var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName));
 
