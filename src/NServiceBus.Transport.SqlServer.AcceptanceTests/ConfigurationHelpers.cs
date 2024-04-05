@@ -8,4 +8,14 @@ static class ConfigurationHelpers
     {
         return (SqlServerTransport)configuration.GetSettings().Get<TransportDefinition>();
     }
+
+    public static string BuildAddressWithSchema(string endpointName, string schema)
+    {
+        return $"{endpointName}@{schema}";
+    }
+
+    public static string QuoteSchema(string schema)
+    {
+        return $"[{schema}]";
+    }
 }

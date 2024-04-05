@@ -30,7 +30,7 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
+                    var receiverAddress = ConfigurationHelpers.BuildAddressWithSchema(EndpointNamingConvention(typeof(Receiver)), ReceiverSchema);
 
                     c.GetSettings()
                     .GetOrCreate<UnicastRoutingTable>()

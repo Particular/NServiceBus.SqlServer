@@ -34,7 +34,7 @@
 
                 testName = testName.Replace("_", "");
 
-                var fullTestName = testName + "." + endpointBuilder;
+                var fullTestName = testName + "#" + endpointBuilder;
 
                 //TODO: shorten the .delayed to get additional symbols for the queue name
                 // Max length for table name is 63. We need to reserve space for the:
