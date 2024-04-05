@@ -1,6 +1,5 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
-    using System;
     using SqlServer;
 
     class QueueAddress
@@ -8,7 +7,7 @@
         public QueueAddress(string table, string schemaName, PostgreSqlNameHelper nameHelper)
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
-            Table = table;
+            Table = SafeUnquote(table, nameHelper);
             Schema = SafeUnquote(schemaName, nameHelper);
         }
 
@@ -17,16 +16,29 @@
 
         public static QueueAddress Parse(string address, PostgreSqlNameHelper nameHelper)
         {
-            var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
-
-            if (firstAtIndex == -1)
+            /*
+             * The address format is two quoted identifiers joined by the @ character e.g. "table"@"schema".
+             * 
+             */
+            var index = 0;
+            var quoteCount = 0;
+            while (index < address.Length)
             {
-                return new QueueAddress(address, null, nameHelper);
+                if (address[index] == '"')
+                {
+                    quoteCount++;
+                }
+                else if (address[index] == '.' && quoteCount % 2 == 0)
+                {
+                    var schema = address.Substring(0, index);
+                    var table = address.Substring(index + 1);
+
+                    return new QueueAddress(table, schema, nameHelper);
+                }
+                index++;
             }
 
-            var table = address.Substring(0, firstAtIndex);
-            var schema = address.Substring(firstAtIndex + 1);
-            return new QueueAddress(table, schema, nameHelper);
+            return new QueueAddress(address, null, nameHelper);
         }
 
         static string SafeUnquote(string name, PostgreSqlNameHelper nameHelper)

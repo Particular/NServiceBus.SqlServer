@@ -9,4 +9,14 @@ static class ConfigurationHelpers
     {
         return (PostgreSqlTransport)configuration.GetSettings().Get<TransportDefinition>();
     }
+
+    public static string BuildAddressWithSchema(string endpointName, string schema)
+    {
+        return $"{schema}.{endpointName}";
+    }
+
+    public static string QuoteSchema(string schema)
+    {
+        return $"\"{schema}\"";
+    }
 }
