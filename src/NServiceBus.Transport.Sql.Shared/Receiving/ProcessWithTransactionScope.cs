@@ -11,7 +11,7 @@
     public class ProcessWithTransactionScope : ProcessStrategy
     {
         public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
-         : base(tableBasedQueueCache, exceptionClassifier)
+         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
         {
             this.transactionOptions = transactionOptions;
             this.connectionFactory = connectionFactory;
@@ -44,13 +44,13 @@
                         return;
                     }
 
+                    message = receiveResult.Message;
+
                     if (await TryHandleDelayedMessage(receiveResult.Message, connection, null, cancellationToken).ConfigureAwait(false))
                     {
                         scope.Complete();
                         return;
                     }
-
-                    message = receiveResult.Message;
 
                     connection.Close();
 

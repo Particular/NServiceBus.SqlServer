@@ -307,25 +307,27 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee,
         TransactionOptions options, DbConnectionFactory connectionFactory)
     {
+        var failureInfoStorage = new FailureInfoStorage(10000);
+
         if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
         {
-            return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000),
+            return new ProcessWithTransactionScope(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
 
         if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
         {
-            return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000),
+            return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
 
         if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
         {
-            return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000),
+            return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
         }
 
-        return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache, exceptionClassifier);
+        return new ProcessWithNoTransaction(connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier);
     }
 
 

@@ -234,22 +234,24 @@ namespace NServiceBus.Transport.SqlServer
 
         ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, DbConnectionFactory connectionFactory)
         {
+            var failureInfoStorage = new FailureInfoStorage(10000);
+
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {
-                return new ProcessWithTransactionScope(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier);
+                return new ProcessWithTransactionScope(options, connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
             {
-                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier);
+                return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier);
             }
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
             {
-                return new ProcessWithNativeTransaction(options, connectionFactory, new FailureInfoStorage(10000), tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
+                return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
             }
 
-            return new ProcessWithNoTransaction(connectionFactory, tableBasedQueueCache, exceptionClassifier);
+            return new ProcessWithNoTransaction(connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier);
         }
 
         async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
