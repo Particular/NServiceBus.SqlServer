@@ -11,61 +11,82 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
     public class ProcessWithNoTransaction : ProcessStrategy
     {
-        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
-        : base(tableBasedQueueCache, exceptionClassifier)
+        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
         {
             this.connectionFactory = connectionFactory;
+            this.failureInfoStorage = failureInfoStorage;
             this.exceptionClassifier = exceptionClassifier;
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
         {
+            Message message = null;
+            var context = new ContextBag();
+
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
-                MessageReadResult receiveResult;
-                using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
+                try
                 {
-                    receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-
-                    if (receiveResult == MessageReadResult.NoMessage)
+                    using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
-                        stopBatchCancellationTokenSource.Cancel();
-                        return;
-                    }
+                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
+                            .ConfigureAwait(false);
 
-                    if (receiveResult.IsPoison)
-                    {
-                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        if (receiveResult == MessageReadResult.NoMessage)
+                        {
+                            stopBatchCancellationTokenSource.Cancel();
+                            return;
+                        }
+
+                        if (receiveResult.IsPoison)
+                        {
+                            await ErrorQueue
+                                .DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken)
+                                .ConfigureAwait(false);
+                            transaction.Commit();
+                            return;
+                        }
+
+                        message = receiveResult.Message;
+
+                        if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction,
+                                cancellationToken).ConfigureAwait(false))
+                        {
+                            transaction.Commit();
+                            return;
+                        }
+
                         transaction.Commit();
-                        return;
                     }
-
-                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
+                }
+                catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
+                {
+                    if (message == null)
                     {
-                        transaction.Commit();
-                        return;
+                        throw;
                     }
-
-                    transaction.Commit();
+                    failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+                    return;
                 }
 
-                var context = new ContextBag();
                 var transportTransaction = new TransportTransaction();
                 transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
 
                 try
                 {
-                    await TryHandleMessage(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
+                    await TryHandleMessage(message, transportTransaction, context, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
-                    _ = await HandleError(ex, receiveResult.Message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
+                    _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
         readonly DbConnectionFactory connectionFactory;
+        readonly FailureInfoStorage failureInfoStorage;
         readonly IExceptionClassifier exceptionClassifier;
     }
 }

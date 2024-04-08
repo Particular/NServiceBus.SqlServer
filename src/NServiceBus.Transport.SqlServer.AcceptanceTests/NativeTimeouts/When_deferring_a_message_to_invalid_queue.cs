@@ -12,21 +12,34 @@
 
     public class When_deferring_a_message_to_invalid_queue : NServiceBusAcceptanceTest
     {
-        [Test]
-        public async Task Should_forward_it_to_the_error_queue()
+        [TestCase(TransportTransactionMode.TransactionScope)]
+        [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
+        [TestCase(TransportTransactionMode.ReceiveOnly)]
+        [TestCase(TransportTransactionMode.None)]
+        public async Task Should_forward_it_to_the_error_queue(TransportTransactionMode transactionMode)
         {
+            if (transactionMode == TransportTransactionMode.TransactionScope && !OperatingSystem.IsWindows())
+            {
+                Assert.Ignore("Transaction scope mode is only supported on windows");
+            }
+
             var delay = TimeSpan.FromSeconds(5); //To make sure it is actually stored
 
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<Endpoint>(b => b.DoNotFailOnErrorMessages().When((session, c) =>
-                {
-                    var options = new SendOptions();
+                .WithEndpoint<Endpoint>(b => b.DoNotFailOnErrorMessages()
+                    .CustomConfig(c =>
+                    {
+                        c.ConfigureSqlServerTransport().TransportTransactionMode = transactionMode;
+                    })
+                    .When((session, c) =>
+                    {
+                        var options = new SendOptions();
 
-                    options.DelayDeliveryWith(delay);
-                    options.SetDestination("InvalidDestination__");
+                        options.DelayDeliveryWith(delay);
+                        options.SetDestination("InvalidDestination__");
 
-                    return session.Send(new MyMessage(), options);
-                }))
+                        return session.Send(new MyMessage(), options);
+                    }))
                 .WithEndpoint<ErrorSpy>()
                 .Done(c => c.MessageForwardedToErrorQueue)
                 .Run();

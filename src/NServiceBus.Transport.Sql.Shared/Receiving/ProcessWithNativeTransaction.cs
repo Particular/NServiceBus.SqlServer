@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     public class ProcessWithNativeTransaction : ProcessStrategy
     {
         public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
-        : base(tableBasedQueueCache, exceptionClassifier)
+        : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
         {
             this.connectionFactory = connectionFactory;
             this.failureInfoStorage = failureInfoStorage;
@@ -49,13 +49,13 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                         return;
                     }
 
+                    message = receiveResult.Message;
+
                     if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
                     {
                         transaction.Commit();
                         return;
                     }
-
-                    message = receiveResult.Message;
 
                     if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(connection, transaction), context, cancellationToken).ConfigureAwait(false))
                     {

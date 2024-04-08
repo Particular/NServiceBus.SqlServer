@@ -22,10 +22,11 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
         OnMessage onMessage;
         OnError onError;
 
-        protected ProcessStrategy(TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        protected ProcessStrategy(TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, FailureInfoStorage failureInfoStorage)
         {
             this.tableBasedQueueCache = tableBasedQueueCache;
             this.exceptionClassifier = exceptionClassifier;
+            this.failureInfoStorage = failureInfoStorage;
             log = LogManager.GetLogger(GetType());
         }
 
@@ -89,8 +90,19 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
             }
-            var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
+
             var outgoingMessage = new OutgoingMessage(message.TransportId, message.Headers, message.Body);
+
+            if (failureInfoStorage.TryGetFailureInfoForMessage(message.TransportId, out var failure))
+            {
+                ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, failure.Exception);
+                outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
+
+                await ErrorQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+
+            var destinationQueue = tableBasedQueueCache.Get(forwardDestination);
             try
             {
                 await destinationQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
@@ -109,9 +121,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                     log.ErrorFormat("Message with ID '{0}' cannot be forwarded to its destination queue '{1}' because it does not exist.", message.TransportId, e.Queue);
                 }
 
-                ExceptionHeaderHelper.SetExceptionHeaders(outgoingMessage.Headers, e);
-                outgoingMessage.Headers.Add(FaultsHeaderKeys.FailedQ, forwardDestination);
-                await ErrorQueue.Send(outgoingMessage, TimeSpan.MaxValue, connection, transaction, cancellationToken).ConfigureAwait(false);
+                throw;
             }
 
             return true;
@@ -120,6 +130,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
         const string ForwardHeader = "NServiceBus.SqlServer.ForwardDestination";
         TableBasedQueueCache tableBasedQueueCache;
         readonly IExceptionClassifier exceptionClassifier;
+        readonly FailureInfoStorage failureInfoStorage;
         Action<string, Exception, CancellationToken> criticalError;
         protected ILog log;
     }
