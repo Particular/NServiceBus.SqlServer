@@ -5,7 +5,7 @@ namespace NServiceBus.AcceptanceTests
 
     public partial class TestSuiteConstraints
     {
-        public bool SupportsDtc => false; //OperatingSystem.IsWindows();
+        public bool SupportsDtc => false;
         public bool SupportsCrossQueueTransactions => true;
         public bool SupportsNativePubSub => true;
         public bool SupportsDelayedDelivery => true;
