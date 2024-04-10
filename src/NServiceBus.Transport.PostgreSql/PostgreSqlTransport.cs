@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Npgsql;
 using Sql.Shared.Queuing;
 
 /// <summary>
@@ -14,21 +15,35 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(string connectionString) : base(TransportTransactionMode.SendsAtomicWithReceive, true, true,
+    public PostgreSqlTransport(string connectionString) : this(connectionString,
+        TransportTransactionMode.SendsAtomicWithReceive, true, true,
         true)
     {
-        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-
-        ConnectionString = connectionString;
     }
 
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    internal PostgreSqlTransport(TransportTransactionMode defaultTransactionMode, bool supportsDelayedDelivery,
-        bool supportsPublishSubscribe, bool supportsTtbr)
-        : base(defaultTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTtbr)
+    /// <param name="connectionFactory">Connection factory that returns an instance of <see cref="NpgsqlConnection"/> in an Opened state.</param>
+    public PostgreSqlTransport(Func<CancellationToken, Task<NpgsqlConnection>> connectionFactory)
+        : base(DefaultTransportTransactionMode, true, true, true)
     {
+        Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+
+        ConnectionFactory = connectionFactory;
+    }
+
+    /// <summary>
+    /// Creates and instance of <see cref="PostgreSqlTransport"/>
+    /// </summary>
+    internal PostgreSqlTransport(string connectionString, TransportTransactionMode transactionMode,
+        bool supportsDelayedDelivery,
+        bool supportsPublishSubscribe, bool supportsTtbr)
+        : base(transactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTtbr)
+    {
+        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+        ConnectionString = connectionString;
     }
 
     /// <summary>
@@ -51,9 +66,9 @@ public class PostgreSqlTransport : TransportDefinition
     void ValidateConfiguration()
     {
         //This is needed due to legacy transport api support. It can be removed when the api is no longer supported.
-        if (string.IsNullOrWhiteSpace(ConnectionString))
+        if (string.IsNullOrWhiteSpace(ConnectionString) && ConnectionFactory == null)
         {
-            throw new Exception("PostgreSql transport requires a connection string.");
+            throw new Exception("PostgreSql transport requires a connection string or a ConnectionFactory.");
         }
     }
 
@@ -81,6 +96,11 @@ public class PostgreSqlTransport : TransportDefinition
     /// Default address schema.
     /// </summary>
     public string DefaultSchema { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Connection string factory.
+    /// </summary>
+    public Func<CancellationToken, Task<NpgsqlConnection>> ConnectionFactory { get; internal set; }
 
     /// <summary>
     /// Delayed delivery infrastructure configuration
@@ -133,5 +153,5 @@ public class PostgreSqlTransport : TransportDefinition
         internal string SubscriptionTable { get; set; }
     }
 
-    //static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
+    static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
 }

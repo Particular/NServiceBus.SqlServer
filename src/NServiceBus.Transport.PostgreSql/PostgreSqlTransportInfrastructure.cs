@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Logging;
-using Npgsql;
 using PubSub;
 using Sql.Shared.Configuration;
 using SqlServer;
@@ -20,7 +19,7 @@ using Sql.Shared.Sending;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
-    //The PostgreSQL limit is 63 but we need to reserves space for "_Seq_seq" suffix used in the 
+    //The PostgreSQL limit is 63 but we need to reserves space for "_Seq_seq" suffix used in the
     //auto-created sequence and that is 8 bytes less
     const int TableQueueNameLimit = 55;
     readonly PostgreSqlTransport transport;
@@ -77,14 +76,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     public async Task Initialize(CancellationToken cancellationToken = new())
     {
-        connectionFactory = new PostgreSqlDbConnectionFactory(async ct =>
-        {
-            var connection = new NpgsqlConnection(transport.ConnectionString);
-
-            await connection.OpenAsync(ct).ConfigureAwait(false);
-
-            return connection;
-        });
+        connectionFactory = CreateConnectionFactory();
 
         addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
         //TODO: check if we can provide streaming capability with PostgreSql
@@ -103,6 +95,17 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         ConfigureSendInfrastructure();
     }
+
+    PostgreSqlDbConnectionFactory CreateConnectionFactory()
+    {
+        if (transport.ConnectionFactory != null)
+        {
+            return new PostgreSqlDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false));
+        }
+
+        return new PostgreSqlDbConnectionFactory(transport.ConnectionString);
+    }
+
 
     void ConfigureSendInfrastructure()
     {

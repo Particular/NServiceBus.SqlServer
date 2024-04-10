@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
 using NServiceBus;
@@ -41,9 +42,21 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
     public async Task Cleanup()
     {
         //TODO: clean-up sequences
-        using (var conn = new NpgsqlConnection(connectionString))
+        Func<Task<NpgsqlConnection>> factory = async () =>
         {
-            await conn.OpenAsync().ConfigureAwait(false);
+            if (transport.ConnectionString != null)
+            {
+                var connection = new NpgsqlConnection(transport.ConnectionString);
+                await connection.OpenAsync().ConfigureAwait(false);
+                return connection;
+            }
+
+            return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
+        };
+
+        using (var conn = await factory().ConfigureAwait(false))
+        {
+            //await conn.OpenAsync().ConfigureAwait(false);
 
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
