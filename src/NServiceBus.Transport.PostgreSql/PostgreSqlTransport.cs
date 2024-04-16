@@ -15,10 +15,12 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Creates and instance of <see cref="PostgreSqlTransport"/>
     /// </summary>
-    public PostgreSqlTransport(string connectionString) : this(connectionString,
-        TransportTransactionMode.SendsAtomicWithReceive, true, true,
-        true)
+    public PostgreSqlTransport(string connectionString)
+        : base(DefaultTransportTransactionMode, true, true, true)
     {
+        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+
+        ConnectionString = connectionString;
     }
 
     /// <summary>
@@ -31,19 +33,6 @@ public class PostgreSqlTransport : TransportDefinition
         Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
 
         ConnectionFactory = connectionFactory;
-    }
-
-    /// <summary>
-    /// Creates and instance of <see cref="PostgreSqlTransport"/>
-    /// </summary>
-    internal PostgreSqlTransport(string connectionString, TransportTransactionMode transactionMode,
-        bool supportsDelayedDelivery,
-        bool supportsPublishSubscribe, bool supportsTtbr)
-        : base(transactionMode, supportsDelayedDelivery, supportsPublishSubscribe, supportsTtbr)
-    {
-        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
-
-        ConnectionString = connectionString;
     }
 
     /// <summary>
