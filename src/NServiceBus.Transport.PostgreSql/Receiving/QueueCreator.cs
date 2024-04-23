@@ -3,6 +3,8 @@ namespace NServiceBus.Transport.PostgreSql
     using System;
     using System.Data;
     using System.Data.Common;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
     using Npgsql;
@@ -69,7 +71,8 @@ namespace NServiceBus.Transport.PostgreSql
 
             if (createMessageBodyColumn)
             {
-                var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.QualifiedTableName);
+                var advisoryLockId = CalculateLockId(canonicalQueueAddress.QualifiedTableName);
+                var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.Schema, canonicalQueueAddress.Table, advisoryLockId);
 
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -85,6 +88,18 @@ namespace NServiceBus.Transport.PostgreSql
                     transaction.Commit();
                 }
             }
+        }
+
+        static long CalculateLockId(string text)
+        {
+            var byteContents = Encoding.Unicode.GetBytes(text);
+            var hashText = SHA256.Create().ComputeHash(byteContents);
+
+            long hashCodeStart = BitConverter.ToInt64(hashText, 0);
+            long hashCodeMedium = BitConverter.ToInt64(hashText, 8);
+            long hashCodeEnd = BitConverter.ToInt64(hashText, 24);
+
+            return hashCodeStart ^ hashCodeMedium ^ hashCodeEnd;
         }
 
         ISqlConstants sqlConstants;

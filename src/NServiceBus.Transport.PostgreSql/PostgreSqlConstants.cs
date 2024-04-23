@@ -60,7 +60,47 @@ ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 SELECT COALESCE(cast(max(seq) - min(seq) + 1 AS int), 0) Id FROM {0}";
 
     //TODO: Verify if it is possible in PostgreSQL
-    public string AddMessageBodyStringColumn { get; set; } = string.Empty;
+    public string AddMessageBodyStringColumn { get; set; } = @"
+DO $$
+BEGIN
+
+IF EXISTS (
+   SELECT FROM information_schema.tables 
+   WHERE  table_schema = '{0}'
+   AND    table_name   = '{1}'
+   )
+THEN
+    RETURN;
+END IF;
+
+IF NOT EXISTS (
+	SELECT FROM information_schema.columns 
+	WHERE  table_schema = '{0}'
+	AND table_name='{1}' 
+	AND column_name='StringBody'
+	)
+THEN
+    RETURN;
+END IF;
+
+PERFORM pg_advisory_xact_lock('{2}');
+
+IF EXISTS (
+    SELECT FROM information_schema.columns 
+    WHERE  table_schema = '{0}'
+    AND table_name='{1}' 
+    AND column_name='StringBody'
+    )
+THEN
+    
+    RETURN;
+END IF;
+
+ALTER TABLE {0}.""{1}""
+ADD BodyString text GENERATED ALWAYS AS (encode(Body, 'escape')) STORED;
+
+END
+$$";
 
     public string CreateQueueText { get; set; } = @"
     CREATE TABLE IF NOT EXISTS {0} (
