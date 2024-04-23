@@ -9,12 +9,5 @@
         {
             TransportConfiguration = new ConfigureEndpointPostgreSqlTransport(transport);
         }
-
-        public CustomizedServer(string connectionString, bool supportsPublishSubscribe = true, bool supportsDelayedDelivery = true)
-        {
-            var transport = new PostgreSqlTransport(connectionString, TransportTransactionMode.SendsAtomicWithReceive, supportsDelayedDelivery, supportsPublishSubscribe, true);
-
-            TransportConfiguration = new ConfigureEndpointPostgreSqlTransport(transport);
-        }
     }
 }
