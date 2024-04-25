@@ -33,8 +33,15 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
                 .Concat(await ConvertToUnicastOperations(operations, cancellationToken).ConfigureAwait(false))
                 .SortAndDeduplicate(getCanonicalAddressForm);
 
-            await DispatchDefault(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
-            await DispatchIsolated(sortedOperations, transportTransaction, cancellationToken).ConfigureAwait(false);
+            if (sortedOperations.DefaultDispatch != null)
+            {
+                await DispatchDefault(sortedOperations.DefaultDispatch, transportTransaction, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (sortedOperations.IsolatedDispatch != null)
+            {
+                await DispatchIsolated(sortedOperations.IsolatedDispatch, transportTransaction, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         async Task<IEnumerable<UnicastTransportOperation>> ConvertToUnicastOperations(TransportOperations operations, CancellationToken cancellationToken)
@@ -49,81 +56,36 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
             return result.SelectMany(x => x);
         }
 
-        async Task DispatchIsolated(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task DispatchIsolated(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
-            if (sortedOperations.IsolatedDispatch == null)
+            if (transportTransaction.IsUserProvided(out DbConnection connection, out var transaction))
             {
+                await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool userProvidedTransaction);
-
-            if (userProvidedTransaction)
-            {
-                transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction sqlTransportTransaction);
-                if (sqlTransportTransaction != null)
-                {
-                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportTransaction.Connection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
-                    return;
-                }
-
-                transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
-                if (sqlTransportConnection != null)
-                {
-                    await Dispatch(sortedOperations.IsolatedDispatch, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
-                    return;
-                }
-
-                throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
-            }
-
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using (connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             using (var tx = connection.BeginTransaction())
             {
-                await Dispatch(sortedOperations.IsolatedDispatch, connection, tx, cancellationToken).ConfigureAwait(false);
+                await Dispatch(operations, connection, tx, cancellationToken).ConfigureAwait(false);
                 tx.Commit();
                 scope.Complete();
             }
         }
 
-        async Task DispatchDefault(SortingResult sortedOperations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
+        async Task DispatchDefault(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
-            if (sortedOperations.DefaultDispatch == null)
-            {
-                return;
-            }
+            DbConnection connection;
 
             if (transportTransaction.OutsideOfHandler())
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+                using (connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    await Dispatch(sortedOperations.DefaultDispatch, connection, null, cancellationToken).ConfigureAwait(false);
+                    await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                 }
             }
-            else if (transportTransaction.IsNoTransaction())
-            {
-                transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
-                using (var transaction = sqlTransportConnection.BeginTransaction())
-                {
-                    await Dispatch(sortedOperations.DefaultDispatch, sqlTransportConnection, transaction, cancellationToken).ConfigureAwait(false);
-                    transaction.Commit();
-                }
-            }
-            else if (transportTransaction.IsReceiveOnly())
-            {
-                await DispatchUsingNewConnectionAndTransaction(sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
-            }
-            else //IsSendAtomicWithReceive || IsTransactionScope
-            {
-                await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-
-        async Task DispatchUsingNewConnectionAndTransaction(IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
-        {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            else if (transportTransaction.IsNoTransaction(out connection))
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -131,31 +93,29 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
                     transaction.Commit();
                 }
             }
-        }
-
-        async Task DispatchUsingReceiveTransaction(TransportTransaction transportTransaction, IEnumerable<UnicastTransportOperation> operations, CancellationToken cancellationToken)
-        {
-            transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
-            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction sqlTransportTransaction);
-            transportTransaction.TryGet(out Transaction ambientTransaction);
-
-            if (ambientTransaction != null)
+            else if (transportTransaction.IsReceiveOnly())
             {
-                if (sqlTransportConnection == null)
+                using (connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                    {
-                        await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
-                    }
+                    await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                    transaction.Commit();
                 }
-                else
+            }
+            else if (transportTransaction.IsSendsAtomicWithReceive(out connection, out var transaction))
+            {
+                await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+            }
+            else if (transportTransaction.IsTransactionScope())
+            {
+                using (connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    await Dispatch(operations, sqlTransportConnection, null, cancellationToken).ConfigureAwait(false);
+                    await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                await Dispatch(operations, sqlTransportConnection, sqlTransportTransaction, cancellationToken).ConfigureAwait(false);
+                throw new Exception("TransportTransaction is in invalid state.");
             }
         }
 
@@ -195,19 +155,6 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
 
             var queue = tableBasedQueueCache.Get(operation.Destination);
             return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction, cancellationToken);
-        }
-
-        static bool InReceiveWithNoTransactionMode(TransportTransaction transportTransaction)
-        {
-            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
-            transportTransaction.TryGet(out Transaction ambientTransaction);
-
-            return nativeTransaction == null && ambientTransaction == null;
-        }
-
-        static bool InReceiveOnlyTransportTransactionMode(TransportTransaction transportTransaction)
-        {
-            return transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
         }
 
         TableBasedQueueCache tableBasedQueueCache;
