@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared.Sending;
 
+using System;
 using System.Data.Common;
 using System.Transactions;
 using Receiving;
@@ -13,10 +14,12 @@ static class TransportTransactions
         return transportTransaction;
     }
 
-    public static bool IsNoTransaction(this TransportTransaction transportTransaction)
+    public static bool IsNoTransaction(this TransportTransaction transportTransaction, out DbConnection connection)
     {
         transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
         transportTransaction.TryGet(out Transaction ambientTransaction);
+
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection);
 
         return nativeTransaction == null && ambientTransaction == null;
     }
@@ -46,13 +49,13 @@ static class TransportTransactions
         return transportTransaction;
     }
 
-    public static bool IsSendsAtomicWithReceive(this TransportTransaction transportTransaction)
+    public static bool IsSendsAtomicWithReceive(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
     {
-        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
-        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbTransaction nativeConnection);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection);
         transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool receiveOnly);
 
-        return nativeTransaction != null && nativeConnection != null && !receiveOnly;
+        return transaction != null && connection != null && !receiveOnly;
     }
 
     public static TransportTransaction TransactionScope(Transaction transaction)
@@ -79,5 +82,26 @@ static class TransportTransactions
         return nativeTransaction == null && nativeConnection == null && ambientTransaction == null;
     }
 
+    public static bool IsUserProvided(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
+    {
+        var isUserProvided = transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool userProvidedTransaction);
+
+        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
+
+        if (transaction != null)
+        {
+            connection = transaction.Connection;
+        }
+        else if (transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection))
+        {
+            transaction = null;
+        }
+        else
+        {
+            throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
+        }
+
+        return isUserProvided;
+    }
     internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
 }
