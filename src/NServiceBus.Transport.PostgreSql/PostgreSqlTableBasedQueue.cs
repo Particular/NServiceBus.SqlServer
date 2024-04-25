@@ -38,7 +38,6 @@ class PostgreSqlTableBasedQueue : TableBasedQueue
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
-        //TODO: figure out the error codes
         // see: PostgreSQL: Documentation: 16: Appendix A. PostgreSQL Error Codes
         catch (NpgsqlException ex) when (ex.SqlState == "42P01")
         {

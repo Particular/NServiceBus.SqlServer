@@ -7,6 +7,7 @@
     using Configuration;
     using Extensibility;
     using Queuing;
+    using Sending;
 
     public class ProcessWithTransactionScope : ProcessStrategy
     {
@@ -54,7 +55,7 @@
 
                     connection.Close();
 
-                    if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(), context, cancellationToken).ConfigureAwait(false))
+                    if (!await TryProcess(receiveResult.Message, TransportTransactions.TransactionScope(Transaction.Current), context, cancellationToken).ConfigureAwait(false))
                     {
                         return;
                     }
@@ -72,16 +73,6 @@
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
             }
-        }
-
-        TransportTransaction PrepareTransportTransaction()
-        {
-            var transportTransaction = new TransportTransaction();
-
-            //these resources are meant to be used by anyone except message dispatcher e.g. persister
-            transportTransaction.Set(Transaction.Current);
-
-            return transportTransaction;
         }
 
         async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken)

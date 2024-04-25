@@ -94,13 +94,30 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
                 return;
             }
 
-            if (InReceiveWithNoTransactionMode(transportTransaction) || InReceiveOnlyTransportTransactionMode(transportTransaction))
+            if (transportTransaction.OutsideOfHandler())
+            {
+                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+                {
+                    await Dispatch(sortedOperations.DefaultDispatch, connection, null, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            else if (transportTransaction.IsNoTransaction())
+            {
+                transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection sqlTransportConnection);
+                using (var transaction = sqlTransportConnection.BeginTransaction())
+                {
+                    await Dispatch(sortedOperations.DefaultDispatch, sqlTransportConnection, transaction, cancellationToken).ConfigureAwait(false);
+                    transaction.Commit();
+                }
+            }
+            else if (transportTransaction.IsReceiveOnly())
             {
                 await DispatchUsingNewConnectionAndTransaction(sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
-                return;
             }
-
-            await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
+            else //IsSendAtomicWithReceive || IsTransactionScope
+            {
+                await DispatchUsingReceiveTransaction(transportTransaction, sortedOperations.DefaultDispatch, cancellationToken).ConfigureAwait(false);
+            }
         }
 
 
