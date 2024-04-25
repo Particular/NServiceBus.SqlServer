@@ -44,7 +44,6 @@ RETURNING rs.id,
 		rs.Headers, rs.Body;
 ";
 
-    //TODO investigate the purpose and meaning of this extension, can it be bootstrapped, can dbas turn it off, potential prerequisite for us?
     public string MoveDueDelayedMessageText { get; set; } = @"
 CREATE EXTENSION IF NOT EXISTS ""uuid-ossp""; 
 	
@@ -59,7 +58,6 @@ ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
     public string PeekText { get; set; } = @"
 SELECT COALESCE(cast(max(seq) - min(seq) + 1 AS int), 0) Id FROM {0}";
 
-    //TODO: Verify if it is possible in PostgreSQL
     public string AddMessageBodyStringColumn { get; set; } = @"
 DO $$
 BEGIN

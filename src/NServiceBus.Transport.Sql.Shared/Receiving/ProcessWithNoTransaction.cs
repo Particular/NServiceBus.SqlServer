@@ -70,8 +70,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                     return;
                 }
 
-                var transportTransaction = new TransportTransaction();
-                transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
+                var transportTransaction = TransportTransactions.NoTransaction(connection);
 
                 try
                 {

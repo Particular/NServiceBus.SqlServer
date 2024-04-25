@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\NServiceBusAcceptanceTest.cs" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_routing_reply_to_specific_instance.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_sending_within_an_ambient_transaction.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_message_handling_pipeline_is_invoked.cs">
       <Link>When_message_handling_pipeline_is_invoked.cs</Link>
     </Compile>

@@ -71,6 +71,7 @@ namespace NServiceBus.Transport.PostgreSql
 
             if (createMessageBodyColumn)
             {
+                //Generates an int for the advisory lock identifier based on the qualified table name
                 var advisoryLockId = CalculateLockId(canonicalQueueAddress.QualifiedTableName);
                 var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.Schema, canonicalQueueAddress.Table, advisoryLockId);
 
@@ -95,6 +96,7 @@ namespace NServiceBus.Transport.PostgreSql
             var byteContents = Encoding.Unicode.GetBytes(text);
             var hashText = SHA256.Create().ComputeHash(byteContents);
 
+            //TODO: Add a comment why we take these parts (and not starting with 16)
             long hashCodeStart = BitConverter.ToInt64(hashText, 0);
             long hashCodeMedium = BitConverter.ToInt64(hashText, 8);
             long hashCodeEnd = BitConverter.ToInt64(hashText, 24);

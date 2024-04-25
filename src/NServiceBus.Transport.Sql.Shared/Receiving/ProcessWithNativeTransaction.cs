@@ -57,7 +57,11 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                         return;
                     }
 
-                    if (!await TryProcess(receiveResult.Message, PrepareTransportTransaction(connection, transaction), context, cancellationToken).ConfigureAwait(false))
+                    var transportTransaction = transactionForReceiveOnly
+                        ? TransportTransactions.ReceiveOnly(connection, transaction)
+                        : TransportTransactions.SendsAtomicWithReceive(connection, transaction);
+
+                    if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
                     {
                         transaction.Rollback();
                         return;
@@ -76,23 +80,6 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
             }
-        }
-
-        TransportTransaction PrepareTransportTransaction(DbConnection connection, DbTransaction transaction)
-        {
-            var transportTransaction = new TransportTransaction();
-
-            //these resources are meant to be used by anyone except message dispatcher e.g. persister
-            transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
-            transportTransaction.Set(TransportTransactionKeys.SqlTransaction, transaction);
-
-            if (transactionForReceiveOnly)
-            {
-                //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
-                transportTransaction.Set(ReceiveOnlyTransactionMode, true);
-            }
-
-            return transportTransaction;
         }
 
         async Task<bool> TryProcess(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken)
