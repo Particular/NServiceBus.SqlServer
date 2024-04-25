@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Transactions;
 using Receiving;
 
-static class TransportTransactions
+public static class TransportTransactions
 {
     public static TransportTransaction NoTransaction(DbConnection connection)
     {
@@ -80,6 +80,26 @@ static class TransportTransactions
         transportTransaction.TryGet(out Transaction ambientTransaction);
 
         return nativeTransaction == null && nativeConnection == null && ambientTransaction == null;
+    }
+
+    public static TransportTransaction UserProvided(DbConnection connection)
+    {
+        var result = new TransportTransaction();
+
+        result.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
+        result.Set(TransportTransactionKeys.SqlConnection, connection);
+
+        return result;
+    }
+
+    public static TransportTransaction UserProvided(DbTransaction transaction)
+    {
+        var result = new TransportTransaction();
+
+        result.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
+        result.Set(TransportTransactionKeys.SqlTransaction, transaction);
+
+        return result;
     }
 
     public static bool IsUserProvided(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
