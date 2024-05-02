@@ -1,11 +1,12 @@
-namespace NServiceBus.Transport.PostgreSql;
+﻿namespace NServiceBus;
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
-using Sql.Shared.Queuing;
+using Transport;
+using Transport.PostgreSql;
 
 /// <summary>
 /// PostgreSql Transport
@@ -33,6 +34,14 @@ public class PostgreSqlTransport : TransportDefinition
         Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
 
         ConnectionFactory = connectionFactory;
+    }
+
+    /// <summary>
+    /// Used for backwards compatibility with the legacy transport api.
+    /// </summary>
+    internal PostgreSqlTransport()
+        : base(DefaultTransportTransactionMode, true, true, true)
+    {
     }
 
     /// <summary>
@@ -94,7 +103,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Delayed delivery infrastructure configuration
     /// </summary>
-    public DelayedDeliveryOptions DelayedDelivery { get; set; } = new DelayedDeliveryOptions();
+    public DelayedDeliveryOptions DelayedDelivery { get; } = new DelayedDeliveryOptions();
 
     /// <summary>
     /// Instructs the transport to create a computed column for inspecting message body contents.
@@ -111,7 +120,7 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Queue peeker settings.
     /// </summary>
-    public QueuePeekerOptions QueuePeeker { get; set; } = new QueuePeekerOptions();
+    public QueuePeekerOptions QueuePeeker { get; } = new QueuePeekerOptions();
 
     /// <summary>
     /// Time to wait before triggering the circuit breaker.
@@ -127,11 +136,10 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Catalog and schema configuration for SQL Transport queues.
     /// </summary>
-    public QueueSchemaOptions SchemaAndCatalog { get; } = new QueueSchemaOptions();
+    public QueueSchemaOptions Schema { get; } = new QueueSchemaOptions();
 
     internal class TestingInformation
     {
-
         internal string[] ReceiveAddresses { get; set; }
 
         internal string[] SendingAddresses { get; set; }

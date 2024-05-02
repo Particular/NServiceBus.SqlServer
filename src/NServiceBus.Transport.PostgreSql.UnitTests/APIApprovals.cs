@@ -1,4 +1,5 @@
 ﻿using NServiceBus;
+using NServiceBus.Transport.PostgreSql;
 using NUnit.Framework;
 using Particular.Approvals;
 using PublicApiGenerator;
@@ -9,7 +10,7 @@ public class APIApprovals
     [Test]
     public void Approve()
     {
-        var publicApi = typeof(SqlServerTransport).Assembly.GeneratePublicApi(new ApiGeneratorOptions
+        var publicApi = typeof(PostgreSqlTransport).Assembly.GeneratePublicApi(new ApiGeneratorOptions
         {
             ExcludeAttributes = new[]
             {
