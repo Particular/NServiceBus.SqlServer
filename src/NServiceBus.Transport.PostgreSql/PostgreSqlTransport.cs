@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql;
+namespace NServiceBus.Transport.PostgreSql;
 
 using System;
 using System.Collections.Generic;
@@ -131,7 +131,6 @@ public class PostgreSqlTransport : TransportDefinition
 
     internal class TestingInformation
     {
-        internal Func<string, TableBasedQueue> QueueFactoryOverride { get; set; } = null;
 
         internal string[] ReceiveAddresses { get; set; }
 

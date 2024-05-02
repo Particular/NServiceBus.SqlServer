@@ -148,7 +148,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         var queuePurger = new QueuePurger(connectionFactory);
         var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
-        var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new PostgreSqlTableBasedQueue(sqlConstants,
+        var queueFactory = new Func<string, PostgreSqlTableBasedQueue>(queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName));
 
         //Create delayed delivery infrastructure
