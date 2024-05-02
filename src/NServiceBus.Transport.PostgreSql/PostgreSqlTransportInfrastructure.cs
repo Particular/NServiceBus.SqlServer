@@ -78,7 +78,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         connectionFactory = CreateConnectionFactory();
 
-        addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
+        addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.Schema, nameHelper);
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(
             (address, isStreamSupported) =>

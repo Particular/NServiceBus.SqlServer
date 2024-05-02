@@ -3,15 +3,16 @@
 namespace NServiceBus
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Microsoft.Data.SqlClient;
-    using Transport.SqlServer;
+    using Npgsql;
+    using Transport.PostgreSql;
 
     /// <summary>
     /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
     /// </summary>
-    public static class SqlServerTransportSettingsExtensions
+    public static class PostgreSqlTransportSettingsExtensions
     {
         /// <summary>
         /// Configures NServiceBus to use the given transport.
@@ -19,14 +20,14 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "EndpointConfiguration.UseTransport(TransportDefinition)",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseTransport<T>(this EndpointConfiguration config)
-            where T : SqlServerTransport
+        public static TransportExtensions<PostgreSqlTransport> UseTransport<T>(this EndpointConfiguration config)
+            where T : PostgreSqlTransport
         {
-            var transport = new SqlServerTransport();
+            var transport = new PostgreSqlTransport();
 
             var routing = config.UseTransport(transport);
 
-            var settings = new TransportExtensions<SqlServerTransport>(transport, routing);
+            var settings = new TransportExtensions<PostgreSqlTransport>(transport, routing);
 
             return settings;
         }
@@ -37,24 +38,10 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.DefaultSchema",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> DefaultSchema(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string schemaName)
+        public static TransportExtensions<PostgreSqlTransport> DefaultSchema(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions, string schemaName)
         {
             transportExtensions.Transport.DefaultSchema = schemaName;
-
-            return transportExtensions;
-        }
-
-        /// <summary>
-        ///     Sets a default schema for both input and output queues
-        /// </summary>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "SqlServerTransport.DefaultCatalog",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> DefaultCatalog(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string catalogName)
-        {
-            transportExtensions.Transport.DefaultCatalog = catalogName;
 
             return transportExtensions;
         }
@@ -68,8 +55,8 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "RoutingSettings.UseSchemaForEndpoint",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseSchemaForEndpoint(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string schema)
+        public static TransportExtensions<PostgreSqlTransport> UseSchemaForEndpoint(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions, string endpointName, string schema)
         {
             transportExtensions.Routing().UseSchemaForEndpoint(endpointName, schema);
 
@@ -86,44 +73,10 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseSchemaForQueue",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseSchemaForQueue(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string schema)
+        public static TransportExtensions<PostgreSqlTransport> UseSchemaForQueue(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions, string queueName, string schema)
         {
-            transportExtensions.Transport.SchemaAndCatalog.UseSchemaForQueue(queueName, schema);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
-        ///  Specifies custom schema for given endpoint.
-        /// </summary>
-        /// <param name="endpointName">Endpoint name.</param>
-        /// <param name="catalog">Custom catalog value.</param>
-        /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "RoutingSettings.UseCatalogForEndpoint",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseCatalogForEndpoint(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string endpointName, string catalog)
-        {
-            transportExtensions.Routing().UseCatalogForEndpoint(endpointName, catalog);
-
-            return transportExtensions;
-        }
-
-        /// <summary>
-        /// Specifies custom schema for given queue.
-        /// </summary>
-        /// <param name="queueName">Queue name.</param>
-        /// <param name="catalog">Custom catalog value.</param>
-        /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "SqlServerTransport.SchemaAndCatalog.UseCatalogForQueue",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseCatalogForQueue(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string queueName, string catalog)
-        {
-            transportExtensions.Transport.SchemaAndCatalog.UseCatalogForQueue(queueName, catalog);
+            transportExtensions.Transport.Schema.UseSchemaForQueue(queueName, schema);
 
             return transportExtensions;
         }
@@ -137,8 +90,8 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.TimeToWaitBeforeTriggeringCircuitBreaker",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
-            this TransportExtensions<SqlServerTransport> transportExtensions, TimeSpan waitTime)
+        public static TransportExtensions<PostgreSqlTransport> TimeToWaitBeforeTriggeringCircuitBreaker(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions, TimeSpan waitTime)
         {
             transportExtensions.Transport.TimeToWaitBeforeTriggeringCircuitBreaker = waitTime;
 
@@ -153,24 +106,10 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "configuration.UseTransport(new SqlServerTransport(string connectionString))",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> ConnectionString(
-            this TransportExtensions<SqlServerTransport> transportExtensions, string connectionString)
+        public static TransportExtensions<PostgreSqlTransport> ConnectionString(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions, string connectionString)
         {
             transportExtensions.Transport.ConnectionString = connectionString;
-
-            return transportExtensions;
-        }
-
-        /// <summary>
-        /// Configures the transport to use the given func as the connection string.
-        /// </summary>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            Message = "This transport does not support a connection string.",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> ConnectionString(
-            this TransportExtensions<SqlServerTransport> transportExtensions, Func<string> connectionString)
-        {
-            transportExtensions.Transport.ConnectionString = connectionString.Invoke();
 
             return transportExtensions;
         }
@@ -183,11 +122,11 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.ConnectionFactory",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> UseCustomSqlConnectionFactory(
-            this TransportExtensions<SqlServerTransport> transportExtensions,
-            Func<Task<SqlConnection>> sqlConnectionFactory)
+        public static TransportExtensions<PostgreSqlTransport> UseCustomSqlConnectionFactory(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions,
+            Func<CancellationToken, Task<NpgsqlConnection>> sqlConnectionFactory)
         {
-            transportExtensions.Transport.ConnectionFactory = async (_) => await sqlConnectionFactory().ConfigureAwait(false);
+            transportExtensions.Transport.ConnectionFactory = async ct => await sqlConnectionFactory(ct).ConfigureAwait(false);
 
             return transportExtensions;
         }
@@ -203,8 +142,8 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.TransactionScope",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> TransactionScopeOptions(
-            this TransportExtensions<SqlServerTransport> transportExtensions,
+        public static TransportExtensions<PostgreSqlTransport> TransactionScopeOptions(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions,
             TimeSpan? timeout = null,
             IsolationLevel? isolationLevel = null)
         {
@@ -230,8 +169,8 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.QueuePeeker",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> QueuePeekerOptions(
-            this TransportExtensions<SqlServerTransport> transportExtensions,
+        public static TransportExtensions<PostgreSqlTransport> QueuePeekerOptions(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions,
             TimeSpan? delay = null,
             int? peekBatchSize = null)
         {
@@ -252,7 +191,7 @@ namespace NServiceBus
             ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static DelayedDeliverySettings NativeDelayedDelivery(
-            this TransportExtensions<SqlServerTransport> transportExtensions) =>
+            this TransportExtensions<PostgreSqlTransport> transportExtensions) =>
             new DelayedDeliverySettings(transportExtensions.Transport.DelayedDelivery);
 
         /// <summary>
@@ -262,26 +201,8 @@ namespace NServiceBus
             ReplacementTypeOrMember = "SqlServerTransport.Subscriptions",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
         public static SubscriptionSettings
-            SubscriptionSettings(this TransportExtensions<SqlServerTransport> transportExtensions) =>
+            SubscriptionSettings(this TransportExtensions<PostgreSqlTransport> transportExtensions) =>
             new SubscriptionSettings(transportExtensions.Transport.Subscriptions);
-
-        /// <summary>
-        /// Instructs the transport to purge all expired messages from the input queue before starting the processing.
-        /// </summary>
-        /// <param name="purgeBatchSize">Size of the purge batch.</param>
-        /// <param name="transportExtensions">The transport settings to configure.</param>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
-            ReplacementTypeOrMember = "SqlServerTransport.PurgeOnStartup",
-            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> PurgeExpiredMessagesOnStartup(
-            this TransportExtensions<SqlServerTransport> transportExtensions,
-            int? purgeBatchSize)
-        {
-            transportExtensions.Transport.ExpiredMessagesPurger.PurgeOnStartup = true;
-            transportExtensions.Transport.ExpiredMessagesPurger.PurgeBatchSize = purgeBatchSize;
-
-            return transportExtensions;
-        }
 
         /// <summary>
         /// Instructs the transport to create a computed column for inspecting message body contents.
@@ -289,8 +210,8 @@ namespace NServiceBus
         [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
             ReplacementTypeOrMember = "SqlServerTransport.CreateMessageBodyComputedColumn",
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
-        public static TransportExtensions<SqlServerTransport> CreateMessageBodyComputedColumn(
-            this TransportExtensions<SqlServerTransport> transportExtensions)
+        public static TransportExtensions<PostgreSqlTransport> CreateMessageBodyComputedColumn(
+            this TransportExtensions<PostgreSqlTransport> transportExtensions)
         {
             transportExtensions.Transport.CreateMessageBodyComputedColumn = true;
             return transportExtensions;
@@ -298,23 +219,89 @@ namespace NServiceBus
     }
 
     /// <summary>
-    /// Configuration extensions for Message-Driven Pub-Sub compatibility mode
+    /// Configures native delayed delivery.
     /// </summary>
-    public static partial class MessageDrivenPubSubCompatibilityModeConfiguration
+    [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.DelayedDelivery",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+    public partial class DelayedDeliverySettings
     {
-        /// <summary>
-        /// Enables compatibility with endpoints running on message-driven pub-sub
-        /// </summary>
-        /// <param name="transportExtensions">The transport to enable pub-sub compatibility on</param>
-        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6471",
-               Note = "Hybrid pub/sub support cannot be obsolete until there is a viable migration path to native pub/sub",
-               Message = "Hybrid pub/sub is no longer supported, use native pub/sub instead")]
-        public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
-            this TransportExtensions<SqlServerTransport> transportExtensions)
-        {
-            var subscriptionMigrationModeSettings = transportExtensions.Routing().EnableMessageDrivenPubSubCompatibilityMode();
+        DelayedDeliveryOptions options;
 
-            return subscriptionMigrationModeSettings;
+        internal DelayedDeliverySettings(DelayedDeliveryOptions options) => this.options = options;
+
+        /// <summary>
+        /// Sets the suffix for the table storing delayed messages.
+        /// </summary>
+        /// <param name="suffix"></param>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.TableSuffix",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public void TableSuffix(string suffix)
+        {
+            Guard.AgainstNullAndEmpty(nameof(suffix), suffix);
+
+            options.TableSuffix = suffix;
         }
+
+        /// <summary>
+        /// Sets the size of the batch when moving matured timeouts to the input queue.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.BatchSize",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public void BatchSize(int batchSize)
+        {
+            if (batchSize <= 0)
+            {
+                throw new ArgumentException("Batch size has to be a positive number", nameof(batchSize));
+            }
+
+            options.BatchSize = batchSize;
+        }
+    }
+
+    /// <summary>
+    /// Configures the native pub/sub behavior
+    /// </summary>
+    [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SqlServerTransport.Subscriptions",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+    public class SubscriptionSettings
+    {
+        SubscriptionOptions options;
+
+        internal SubscriptionSettings(SubscriptionOptions options) => this.options = options;
+
+        /// <summary>
+        /// Overrides the default name for the subscription table. All endpoints in a given system need to agree on that name in order for them to be able
+        /// to subscribe to and publish events.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="schemaName">Schema in which the table is defined if different from default schema configured for the transport.</param>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SubscriptionOptions.SubscriptionTableName",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public void SubscriptionTableName(string tableName, string schemaName = null) => options.SubscriptionTableName = new SubscriptionTableName(tableName, schemaName);
+
+        /// <summary>
+        /// Cache subscriptions for a given <see cref="TimeSpan"/>.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public void CacheSubscriptionInformationFor(TimeSpan timeSpan)
+        {
+            Guard.AgainstNegativeAndZero(nameof(timeSpan), timeSpan);
+            options.CacheInvalidationPeriod = timeSpan;
+        }
+
+        /// <summary>
+        /// Do not cache subscriptions.
+        /// </summary>
+        [PreObsolete("https://github.com/Particular/NServiceBus/issues/6811",
+            ReplacementTypeOrMember = "SubscriptionOptions.DisableSubscriptionCache",
+            Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
+        public void DisableSubscriptionCache() => options.DisableCaching = true;
     }
 }
