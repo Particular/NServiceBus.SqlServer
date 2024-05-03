@@ -126,7 +126,8 @@ namespace NServiceBus
             this TransportExtensions<PostgreSqlTransport> transportExtensions,
             Func<CancellationToken, Task<NpgsqlConnection>> sqlConnectionFactory)
         {
-            transportExtensions.Transport.ConnectionFactory = async ct => await sqlConnectionFactory(ct).ConfigureAwait(false);
+            transportExtensions.Transport.ConnectionFactory =
+                async ct => await sqlConnectionFactory(ct).ConfigureAwait(false);
 
             return transportExtensions;
         }
@@ -217,6 +218,11 @@ namespace NServiceBus
             return transportExtensions;
         }
     }
+}
+
+namespace NServiceBus.Transport.PostgreSql
+{
+    using System;
 
     /// <summary>
     /// Configures native delayed delivery.
