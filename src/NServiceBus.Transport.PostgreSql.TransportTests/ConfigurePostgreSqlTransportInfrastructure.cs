@@ -84,6 +84,18 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
                     }
                 }
             }
+
+            var subscriptionTableName = postgreSqlTransport.Testing.SubscriptionTable;
+
+            if (!string.IsNullOrEmpty(subscriptionTableName))
+            {
+                using (var comm = conn.CreateCommand())
+                {
+                    comm.CommandText = $"DROP TABLE IF EXISTS {subscriptionTableName};";
+
+                    await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                }
+            }
         }
     }
 

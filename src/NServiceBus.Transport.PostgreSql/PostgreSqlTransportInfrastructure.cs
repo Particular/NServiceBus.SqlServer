@@ -357,6 +357,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 .CreateIfNecessary(cancellationToken).ConfigureAwait(false);
         }
 
-        //transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
+        transport.Testing.SubscriptionTable = subscriptionTableName.QuotedQualifiedName;
     }
 }
