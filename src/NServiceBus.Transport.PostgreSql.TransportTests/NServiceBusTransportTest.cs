@@ -281,7 +281,7 @@
 
             // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) the hashcode (8), and "_seq_seq" sequence suffix: 63-8-6-8=41
             var charactersToConsiderForTheErrorQueue = int.Min(fullTestName.Length, 41);
-            errorQueueName = $"{fullTestName.Substring(0, charactersToConsiderForTheErrorQueue)}.error{fullTestNameHash:X8}";
+            errorQueueName = $"{fullTestName.Substring(0, charactersToConsiderForTheErrorQueue)}_error{fullTestNameHash:X8}";
         }
 
         public static uint CreateDeterministicHash(string input)

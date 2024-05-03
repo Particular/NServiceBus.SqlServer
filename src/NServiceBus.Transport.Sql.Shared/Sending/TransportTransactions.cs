@@ -76,7 +76,7 @@ public static class TransportTransactions
     public static bool OutsideOfHandler(this TransportTransaction transportTransaction)
     {
         transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
-        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbTransaction nativeConnection);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection nativeConnection);
         transportTransaction.TryGet(out Transaction ambientTransaction);
 
         return nativeTransaction == null && nativeConnection == null && ambientTransaction == null;
@@ -104,21 +104,27 @@ public static class TransportTransactions
 
     public static bool IsUserProvided(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
     {
-        var isUserProvided = transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool userProvidedTransaction);
+        connection = null;
+        transaction = null;
 
-        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
+        transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool isUserProvided);
 
-        if (transaction != null)
+        if (isUserProvided)
         {
-            connection = transaction.Connection;
-        }
-        else if (transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection))
-        {
-            transaction = null;
-        }
-        else
-        {
-            throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
+            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
+
+            if (transaction != null)
+            {
+                connection = transaction.Connection;
+            }
+            else if (transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection))
+            {
+                transaction = null;
+            }
+            else
+            {
+                throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
+            }
         }
 
         return isUserProvided;
