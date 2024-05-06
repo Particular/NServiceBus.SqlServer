@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql;
+namespace NServiceBus.Transport.PostgreSql;
 
 using System;
 using System.Collections.Generic;
@@ -76,7 +76,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         connectionFactory = CreateConnectionFactory();
 
         addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.Schema);
-        //TODO: check if we can provide streaming capability with PostgreSql
+
         tableBasedQueueCache = new TableBasedQueueCache(
             (address, isStreamSupported) =>
             {
@@ -84,7 +84,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 return new PostgreSqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address);
             },
             s => addressTranslator.Parse(s).Address,
-            false);
+            true);
 
         await ConfigureSubscriptions(cancellationToken).ConfigureAwait(false);
 
