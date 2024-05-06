@@ -200,7 +200,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
         }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
-        await ValidateDatabaseAccess(transactionOptions, cancellationToken).ConfigureAwait(false);
+        await ValidateDatabaseAccess(cancellationToken).ConfigureAwait(false);
 
         var receiveAddresses = Receivers.Values.Select(r => r.ReceiveAddress).ToList();
 
@@ -237,19 +237,13 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
     }
 
-    // TODO: Make this thing shared for both transports
-#pragma warning disable IDE0060
-    async Task ValidateDatabaseAccess(TransactionOptions transactionOptions, CancellationToken cancellationToken)
-#pragma warning restore IDE0060
+    async Task ValidateDatabaseAccess(CancellationToken cancellationToken)
     {
         await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
-
-        //TODO: Figure out if PostgreSQL supports DTC
-        //await TryEscalateToDistributedTransactions(transactionOptions, cancellationToken).ConfigureAwait(false);
+        //TODO: figure out if we can protect users from unexpected Prepared transactions
     }
 
-    // TODO: Make this thing shared for both transports
     async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
     {
         try
@@ -260,72 +254,30 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         }
         catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
         {
-            var message =
-                "Could not open connection to the PostgreSql instance. Check the original error message for details. Original error message: " +
-                ex.Message;
+            var message = $"Could not open connection to the PostgreSql instance. Check the original error message for details. Original error message: {ex.Message}";
 
             throw new Exception(message, ex);
         }
     }
 
     // TODO: Make this thing shared for both transports
-    //async Task TryEscalateToDistributedTransactions(TransactionOptions transactionOptions,
-    //    CancellationToken cancellationToken)
-    //{
-    //    if (transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
-    //    {
-    //        var message = string.Empty;
-
-    //        try
-    //        {
-    //            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions,
-    //                       TransactionScopeAsyncFlowOption.Enabled))
-    //            {
-    //                FakePromotableResourceManager.ForceDtc();
-    //                using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-    //                {
-    //                    scope.Complete();
-    //                }
-    //            }
-    //        }
-    //        catch (NotSupportedException exception)
-    //        {
-    //            message =
-    //                "The version of the SqlClient in use does not support enlisting SQL connections in distributed transactions."
-    //                + DtcErrorMessage + "Original error message: " + exception.Message;
-    //        }
-    //        catch (Exception exception) when (!exception.IsCausedBy(cancellationToken))
-    //        {
-    //            message = "Distributed transactions are not available."
-    //                      + DtcErrorMessage + "Original error message: " + exception.Message;
-    //        }
-
-    //        if (!string.IsNullOrWhiteSpace(message))
-    //        {
-    //            _logger.Warn(message);
-    //        }
-    //    }
-    //}
-
-    // TODO: Make this thing shared for both transports
-    ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee,
-        TransactionOptions options, DbConnectionFactory connectionFactory)
+    ProcessStrategy SelectProcessStrategy(TransportTransactionMode transactionMode, TransactionOptions options, DbConnectionFactory connectionFactory)
     {
         var failureInfoStorage = new FailureInfoStorage(10000);
 
-        if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
+        if (transactionMode == TransportTransactionMode.TransactionScope)
         {
             return new ProcessWithTransactionScope(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
 
-        if (minimumConsistencyGuarantee == TransportTransactionMode.SendsAtomicWithReceive)
+        if (transactionMode == TransportTransactionMode.SendsAtomicWithReceive)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
 
-        if (minimumConsistencyGuarantee == TransportTransactionMode.ReceiveOnly)
+        if (transactionMode == TransportTransactionMode.ReceiveOnly)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
