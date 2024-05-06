@@ -2,14 +2,14 @@
 {
     class CanonicalQueueAddress
     {
-        public CanonicalQueueAddress(string table, string schemaName, PostgreSqlNameHelper nameHelper)
+        public CanonicalQueueAddress(string table, string schemaName)
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
             Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
 
             Table = table;
             Schema = schemaName;
-            QualifiedTableName = $"{nameHelper.Quote(Schema)}.{nameHelper.Quote(Table)}";
+            QualifiedTableName = $"{PostgreSqlNameHelper.Quote(Schema)}.{PostgreSqlNameHelper.Quote(Table)}";
             Address = QualifiedTableName;
         }
 

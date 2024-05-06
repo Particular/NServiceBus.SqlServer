@@ -1,11 +1,11 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
-    class PostgreSqlNameHelper
+    static class PostgreSqlNameHelper
     {
         const string Delimiter = "\"";
         static readonly string EscapedDelimiter = Delimiter + Delimiter;
 
-        public string Quote(string unquotedName)
+        public static string Quote(string unquotedName)
         {
             if (unquotedName == null)
             {
@@ -15,7 +15,7 @@
             return Delimiter + unquotedName.Replace(Delimiter, EscapedDelimiter) + Delimiter;
         }
 
-        public string Unquote(string quotedString)
+        public static string Unquote(string quotedString)
         {
             if (quotedString == null)
             {

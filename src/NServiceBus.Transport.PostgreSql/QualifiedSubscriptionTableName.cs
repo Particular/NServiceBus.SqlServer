@@ -7,7 +7,7 @@
         public string QuotedCatalog;
         public string QuotedQualifiedName;
 
-        public QualifiedSubscriptionTableName(string table, string schema, PostgreSqlNameHelper nameHelper)
+        public QualifiedSubscriptionTableName(string table, string schema)
         {
             if (table == null)
             {
@@ -19,7 +19,7 @@
                 throw new ArgumentNullException(nameof(schema));
             }
 
-            QuotedQualifiedName = $"{nameHelper.Quote(schema)}.{nameHelper.Quote(table)}";
+            QuotedQualifiedName = $"{PostgreSqlNameHelper.Quote(schema)}.{PostgreSqlNameHelper.Quote(table)}";
         }
     }
 }

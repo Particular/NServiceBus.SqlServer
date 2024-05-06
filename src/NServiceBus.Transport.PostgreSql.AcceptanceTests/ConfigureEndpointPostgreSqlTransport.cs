@@ -64,8 +64,6 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
             var commandTextBuilder = new StringBuilder();
 
-            var nameHelper = new PostgreSqlNameHelper();
-
             //No clean-up for send-only endpoints
             if (queueAddresses != null)
             {

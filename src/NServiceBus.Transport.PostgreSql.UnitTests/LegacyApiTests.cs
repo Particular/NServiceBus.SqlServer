@@ -34,7 +34,7 @@
 
             Assert.AreEqual(true, transport.Transport.Subscriptions.DisableCaching);
             Assert.AreEqual(TimeSpan.FromSeconds(1), transport.Transport.Subscriptions.CacheInvalidationPeriod);
-            Assert.AreEqual(@"""schema"".""table""", transport.Transport.Subscriptions.SubscriptionTableName.Qualify("public", new PostgreSqlNameHelper()).QuotedQualifiedName);
+            Assert.AreEqual(@"""schema"".""table""", transport.Transport.Subscriptions.SubscriptionTableName.Qualify("public").QuotedQualifiedName);
         }
     }
 }
