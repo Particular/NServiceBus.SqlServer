@@ -2,7 +2,7 @@ namespace NServiceBus.Transport.SqlServer
 {
     class CanonicalQueueAddress
     {
-        public CanonicalQueueAddress(string table, string schemaName, string catalogName, SqlServerNameHelper nameHelper)
+        public CanonicalQueueAddress(string table, string schemaName, string catalogName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(table);
             ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
@@ -11,9 +11,9 @@ namespace NServiceBus.Transport.SqlServer
             Table = table;
             Catalog = catalogName;
             Schema = schemaName;
-            Address = GetCanonicalForm(nameHelper);
-            QuotedCatalogName = nameHelper.Quote(Catalog);
-            QualifiedTableName = $"{nameHelper.Quote(Catalog)}.{nameHelper.Quote(Schema)}.{nameHelper.Quote(Table)}";
+            Address = GetCanonicalForm();
+            QuotedCatalogName = SqlServerNameHelper.Quote(Catalog);
+            QualifiedTableName = $"{SqlServerNameHelper.Quote(Catalog)}.{SqlServerNameHelper.Quote(Schema)}.{SqlServerNameHelper.Quote(Table)}";
         }
 
         public string Catalog { get; }
@@ -24,9 +24,9 @@ namespace NServiceBus.Transport.SqlServer
         public string QualifiedTableName { get; }
         public string QuotedCatalogName { get; }
 
-        string GetCanonicalForm(SqlServerNameHelper nameHelper)
+        string GetCanonicalForm()
         {
-            return $"{Table}@{nameHelper.Quote(Schema)}@{nameHelper.Quote(Catalog)}";
+            return $"{Table}@{SqlServerNameHelper.Quote(Schema)}@{SqlServerNameHelper.Quote(Catalog)}";
         }
     }
 }

@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var successfulReceives = 46;
             var queueSize = 1000;
 
-            var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var inputQueueName = "input";
             var inputQueueAddress = parser.Parse(inputQueueName).Address;
             var inputQueue = new FakeTableBasedQueue(sqlConstants, inputQueueAddress, queueSize, successfulReceives);

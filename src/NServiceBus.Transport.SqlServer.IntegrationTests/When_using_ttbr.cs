@@ -122,7 +122,7 @@
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions(), new SqlServerNameHelper());
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
             var tableCache = new TableBasedQueueCache(
                 (address, isStreamSupported) =>
                 {
@@ -156,7 +156,7 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser.Parse);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
 
         QueuePurger purger;
