@@ -6,9 +6,8 @@
 
     class QueueAddressTranslator
     {
-        public QueueAddressTranslator(string defaultSchema, string defaultSchemaOverride, QueueSchemaOptions queueOptions, PostgreSqlNameHelper nameHelper)
+        public QueueAddressTranslator(string defaultSchema, string defaultSchemaOverride, QueueSchemaOptions queueOptions)
         {
-            this.nameHelper = nameHelper;
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -29,7 +28,7 @@
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
-            var transportAddress = QueueAddress.Parse(address, nameHelper);
+            var transportAddress = QueueAddress.Parse(address);
 
             return GetCanonicalForm(transportAddress);
         }
@@ -40,7 +39,7 @@
 
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
 
-            return new CanonicalQueueAddress(transportAddress.Table, schema, nameHelper);
+            return new CanonicalQueueAddress(transportAddress.Table, schema);
         }
 
         static string Override(string configuredValue, string addressValue, string defaultValue)
@@ -67,10 +66,9 @@
                 queueAddress?.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
             }
 
-            return new QueueAddress(tableName, schemaName, nameHelper);
+            return new QueueAddress(tableName, schemaName);
         }
 
-        PostgreSqlNameHelper nameHelper;
         QueueSchemaOptions queueOptions;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();

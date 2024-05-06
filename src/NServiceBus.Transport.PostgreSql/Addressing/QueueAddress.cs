@@ -2,17 +2,17 @@
 {
     class QueueAddress
     {
-        public QueueAddress(string table, string schemaName, PostgreSqlNameHelper nameHelper)
+        public QueueAddress(string table, string schemaName)
         {
             Guard.AgainstNullAndEmpty(nameof(table), table);
-            Table = SafeUnquote(table, nameHelper);
-            Schema = SafeUnquote(schemaName, nameHelper);
+            Table = SafeUnquote(table);
+            Schema = SafeUnquote(schemaName);
         }
 
         public string Table { get; }
         public string Schema { get; }
 
-        public static QueueAddress Parse(string address, PostgreSqlNameHelper nameHelper)
+        public static QueueAddress Parse(string address)
         {
             /*
              * The address format is two quoted identifiers joined by the @ character e.g. "table"@"schema".
@@ -31,17 +31,17 @@
                     var schema = address.Substring(0, index);
                     var table = address.Substring(index + 1);
 
-                    return new QueueAddress(table, schema, nameHelper);
+                    return new QueueAddress(table, schema);
                 }
                 index++;
             }
 
-            return new QueueAddress(address, null, nameHelper);
+            return new QueueAddress(address, null);
         }
 
-        static string SafeUnquote(string name, PostgreSqlNameHelper nameHelper)
+        static string SafeUnquote(string name)
         {
-            var result = nameHelper.Unquote(name);
+            var result = PostgreSqlNameHelper.Unquote(name);
             return string.IsNullOrWhiteSpace(result)
                 ? null
                 : result;

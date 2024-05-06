@@ -40,7 +40,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     //Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
     static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
-    readonly PostgreSqlNameHelper nameHelper;
     readonly PostgreSqlExceptionClassifier exceptionClassifier;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
@@ -52,7 +51,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         this.sendingAddresses = sendingAddresses;
 
         sqlConstants = new PostgreSqlConstants();
-        nameHelper = new PostgreSqlNameHelper();
         exceptionClassifier = new PostgreSqlExceptionClassifier();
     }
 
@@ -77,7 +75,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         connectionFactory = CreateConnectionFactory();
 
-        addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.Schema, nameHelper);
+        addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.Schema);
         //TODO: check if we can provide streaming capability with PostgreSql
         tableBasedQueueCache = new TableBasedQueueCache(
             (address, isStreamSupported) =>
@@ -208,7 +206,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             queuesToCreate.AddRange(sendingAddresses);
             queuesToCreate.AddRange(receiveAddresses);
 
-            var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q, nameHelper).Table).Length > TableQueueNameLimit);
+            var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
 
             var delayedQueueNameExceedsLimit =
                 Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit;
@@ -340,7 +338,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         var subscriptionStoreSchema =
             string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;
         var subscriptionTableName =
-            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, nameHelper);
+            pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema);
 
         subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants,
             subscriptionTableName.QuotedQualifiedName, connectionFactory));
