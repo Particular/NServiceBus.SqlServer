@@ -10,7 +10,6 @@ using System.Transactions;
 using Logging;
 using PubSub;
 using Sql.Shared.Configuration;
-using SqlServer;
 using Sql.Shared.DelayedDelivery;
 using Sql.Shared.PubSub;
 using Sql.Shared.Queuing;

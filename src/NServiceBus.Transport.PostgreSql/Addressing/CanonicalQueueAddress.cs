@@ -1,7 +1,5 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
-    using SqlServer;
-
     class CanonicalQueueAddress
     {
         public CanonicalQueueAddress(string table, string schemaName, PostgreSqlNameHelper nameHelper)
