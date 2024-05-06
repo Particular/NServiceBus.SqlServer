@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.PostgreSql
 {
     using System;
-    using SqlServer;
 
     /// <summary>
     /// Subscription table name.

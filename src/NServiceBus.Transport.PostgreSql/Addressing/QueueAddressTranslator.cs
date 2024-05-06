@@ -3,7 +3,6 @@
     using System.Collections.Concurrent;
     using System.Linq;
     using Configuration;
-    using SqlServer;
 
     class QueueAddressTranslator
     {

@@ -6,7 +6,6 @@ using Npgsql;
 using NServiceBus;
 using NServiceBus.Transport;
 using NServiceBus.Transport.PostgreSql;
-using NServiceBus.Transport.SqlServer;
 using NServiceBus.TransportTests;
 using NUnit.Framework;
 using QueueAddress = NServiceBus.Transport.QueueAddress;

@@ -1,7 +1,5 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
-    using SqlServer;
-
     class QueueAddress
     {
         public QueueAddress(string table, string schemaName, PostgreSqlNameHelper nameHelper)
