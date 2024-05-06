@@ -58,6 +58,10 @@ namespace NServiceBus.Transport.SqlServer
             await ConfigureReceiveInfrastructure(cancellationToken).ConfigureAwait(false);
 
             ConfigureSendInfrastructure();
+
+            diagnostics.Add("Dialect", "SQL Server");
+
+            hostSettings.StartupDiagnostic.Add("NServiceBus.Transport.SqlServer", diagnostics);
         }
 
         async Task ConfigureSubscriptions(CancellationToken cancellationToken)
@@ -67,6 +71,13 @@ namespace NServiceBus.Transport.SqlServer
             var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants, subscriptionTableName.QuotedQualifiedName, connectionFactory));
+
+            diagnostics.Add("SubscriptionStore", new
+            {
+                TableName = subscriptionTableName.QuotedQualifiedName,
+                Caching = !pubSubSettings.DisableCaching,
+                CacheInvalidtionPeriod = pubSubSettings.CacheInvalidationPeriod
+            });
 
             if (pubSubSettings.DisableCaching == false)
             {
@@ -91,14 +102,14 @@ namespace NServiceBus.Transport.SqlServer
 
             var transactionOptions = transport.TransactionScope.TransactionOptions;
 
-            diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions", new
+            diagnostics.Add("Transactions", new
             {
                 TransactionMode = transport.TransportTransactionMode,
                 transactionOptions.IsolationLevel,
                 transactionOptions.Timeout
             });
 
-            diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker", new
+            diagnostics.Add("CircuitBreaker", new
             {
                 TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker
             });
@@ -117,7 +128,7 @@ namespace NServiceBus.Transport.SqlServer
             bool validateExpiredIndex;
             if (transport.ExpiredMessagesPurger.PurgeOnStartup == false)
             {
-                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                diagnostics.Add("ExpiredMessagesPurger", new
                 {
                     Enabled = false,
                 });
@@ -128,7 +139,7 @@ namespace NServiceBus.Transport.SqlServer
             {
                 var purgeBatchSize = transport.ExpiredMessagesPurger.PurgeBatchSize;
 
-                diagnostics.Add("NServiceBus.Transport.SqlServer.ExpiredMessagesPurger", new
+                diagnostics.Add("ExpiredMessagesPurger", new
                 {
                     Enabled = true,
                     BatchSize = purgeBatchSize
@@ -148,7 +159,7 @@ namespace NServiceBus.Transport.SqlServer
             {
                 var delayedDelivery = transport.DelayedDelivery;
 
-                diagnostics.Add("NServiceBus.Transport.SqlServer.DelayedDelivery", new
+                diagnostics.Add("DelayedDelivery", new
                 {
                     Native = true,
                     Suffix = delayedDelivery.TableSuffix,
