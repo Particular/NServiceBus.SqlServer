@@ -7,9 +7,8 @@ namespace NServiceBus.Transport.SqlServer
     class QueueAddressTranslator
     {
 
-        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions, SqlServerNameHelper nameHelper)
+        public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
-            this.nameHelper = nameHelper;
             Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
 
             DefaultCatalog = defaultCatalog;
@@ -35,7 +34,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
-            var transportAddress = QueueAddress.Parse(address, nameHelper);
+            var transportAddress = QueueAddress.Parse(address);
 
             return GetCanonicalForm(transportAddress);
         }
@@ -47,7 +46,7 @@ namespace NServiceBus.Transport.SqlServer
             var schema = Override(specifiedSchema, transportAddress.Schema, DefaultSchema);
             var catalog = Override(specifiedCatalog, transportAddress.Catalog, DefaultCatalog);
 
-            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog, nameHelper);
+            return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
         }
 
         static string Override(string configuredValue, string addressValue, string defaultValue)
@@ -83,10 +82,9 @@ namespace NServiceBus.Transport.SqlServer
                 return new QueueAddress(tableName, Schema, Catalog);
             }
 
-            return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
+            return new QueueAddress(tableName, schemaName, catalogName);
         }
 
-        SqlServerNameHelper nameHelper;
         QueueSchemaAndCatalogOptions queueOptions;
         ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
         ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();

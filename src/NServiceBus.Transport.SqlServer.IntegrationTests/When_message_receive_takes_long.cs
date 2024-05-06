@@ -22,7 +22,7 @@
         [SetUp]
         public async Task SetUp()
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
@@ -95,7 +95,7 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, false);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
     }
 }

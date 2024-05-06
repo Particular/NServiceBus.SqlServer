@@ -5,14 +5,14 @@
 
     class QueueAddress
     {
-        public QueueAddress(string table, string schemaName, string catalogName, SqlServerNameHelper nameHelper)
+        public QueueAddress(string table, string schemaName, string catalogName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(table);
 
             Table = table;
-            Catalog = SafeUnquote(catalogName, nameHelper);
-            Schema = SafeUnquote(schemaName, nameHelper);
-            Value = GetStringForm(nameHelper);
+            Catalog = SafeUnquote(catalogName);
+            Schema = SafeUnquote(schemaName);
+            Value = GetStringForm();
         }
 
         public string Catalog { get; }
@@ -34,13 +34,13 @@
 
 
         // table@[db@]@[catalog] ->
-        public static QueueAddress Parse(string address, SqlServerNameHelper nameHelper)
+        public static QueueAddress Parse(string address)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
 
             if (firstAtIndex == -1)
             {
-                return new QueueAddress(address, null, null, nameHelper);
+                return new QueueAddress(address, null, null);
             }
 
             var tableName = address.Substring(0, firstAtIndex);
@@ -54,10 +54,10 @@
             {
                 ExtractNextPart(address, out catalogName);
             }
-            return new QueueAddress(tableName, schemaName, catalogName, nameHelper);
+            return new QueueAddress(tableName, schemaName, catalogName);
         }
 
-        string GetStringForm(SqlServerNameHelper nameHelper)
+        string GetStringForm()
         {
             var result = new StringBuilder();
             var optionalParts = new[] { Catalog, Schema };
@@ -65,7 +65,7 @@
             {
                 if (part != null)
                 {
-                    result.Insert(0, $"@{Quote(part, nameHelper)}");
+                    result.Insert(0, $"@{Quote(part)}");
                 }
                 else if (result.Length > 0)
                 {
@@ -104,14 +104,14 @@
             }
         }
 
-        static string Quote(string name, SqlServerNameHelper nameHelper)
+        static string Quote(string name)
         {
-            return nameHelper.Quote(name);
+            return SqlServerNameHelper.Quote(name);
         }
 
-        static string SafeUnquote(string name, SqlServerNameHelper nameHelper)
+        static string SafeUnquote(string name)
         {
-            var result = nameHelper.Unquote(name);
+            var result = SqlServerNameHelper.Unquote(name);
             return string.IsNullOrWhiteSpace(result)
                 ? null
                 : result;

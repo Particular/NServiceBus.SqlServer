@@ -25,7 +25,6 @@ namespace NServiceBus.Transport.SqlServer
 
             sqlConstants = new SqlServerConstants();
             exceptionClassifier = new SqlServerExceptionClassifier();
-            nameHelper = new SqlServerNameHelper();
         }
 
         public async Task Initialize(CancellationToken cancellationToken = default)
@@ -44,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer
 
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
-            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog, nameHelper);
+            addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
             tableBasedQueueCache = new TableBasedQueueCache(
                 (address, isStreamSupported) =>
                 {
@@ -65,7 +64,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             var pubSubSettings = transport.Subscriptions;
             var subscriptionStoreSchema = string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "dbo" : transport.DefaultSchema;
-            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog, nameHelper);
+            var subscriptionTableName = pubSubSettings.SubscriptionTableName.Qualify(subscriptionStoreSchema, connectionAttributes.Catalog);
 
             subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants, subscriptionTableName.QuotedQualifiedName, connectionFactory));
 
@@ -333,7 +332,6 @@ namespace NServiceBus.Transport.SqlServer
         readonly ReceiveSettings[] receiveSettings;
         readonly string[] sendingAddresses;
         readonly SqlServerConstants sqlConstants;
-        readonly SqlServerNameHelper nameHelper;
         readonly SqlServerExceptionClassifier exceptionClassifier;
 
         ConnectionAttributes connectionAttributes;

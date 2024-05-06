@@ -7,7 +7,7 @@
         public string QuotedCatalog;
         public string QuotedQualifiedName;
 
-        public QualifiedSubscriptionTableName(string table, string schema, string catalog, SqlServerNameHelper nameHelper)
+        public QualifiedSubscriptionTableName(string table, string schema, string catalog)
         {
             if (table == null)
             {
@@ -24,8 +24,8 @@
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            QuotedCatalog = nameHelper.Quote(catalog);
-            QuotedQualifiedName = $"{nameHelper.Quote(catalog)}.{nameHelper.Quote(schema)}.{nameHelper.Quote(table)}";
+            QuotedCatalog = SqlServerNameHelper.Quote(catalog);
+            QuotedQualifiedName = $"{SqlServerNameHelper.Quote(catalog)}.{SqlServerNameHelper.Quote(schema)}.{SqlServerNameHelper.Quote(table)}";
         }
     }
 }

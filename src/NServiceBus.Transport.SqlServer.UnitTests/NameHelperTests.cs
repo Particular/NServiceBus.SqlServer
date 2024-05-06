@@ -14,8 +14,8 @@
         [TestCase(null, null)]
         public void It_quotes_and_unquotes(string unquoted, string quoted)
         {
-            var quoteResult = new SqlServerNameHelper().Quote(unquoted);
-            var unquoteResult = new SqlServerNameHelper().Unquote(quoted);
+            var quoteResult = SqlServerNameHelper.Quote(unquoted);
+            var unquoteResult = SqlServerNameHelper.Unquote(quoted);
 
             Assert.AreEqual(unquoted, unquoteResult);
             Assert.AreEqual(quoted, quoteResult);
@@ -25,7 +25,7 @@
         [TestCase("abc", "abc")]
         public void It_unquotes(string quoted, string unquoted)
         {
-            var unquoteResult = new SqlServerNameHelper().Unquote(quoted);
+            var unquoteResult = SqlServerNameHelper.Unquote(quoted);
 
             Assert.AreEqual(unquoted, unquoteResult);
         }

@@ -24,9 +24,9 @@ namespace NServiceBus.Transport.SqlServer
             this.catalog = catalog;
         }
 
-        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog, SqlServerNameHelper nameHelper)
+        internal QualifiedSubscriptionTableName Qualify(string defaultSchema, string defaultCatalog)
         {
-            return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema, catalog ?? defaultCatalog, nameHelper);
+            return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema, catalog ?? defaultCatalog);
         }
     }
 }

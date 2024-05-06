@@ -1,12 +1,12 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
 
-    class SqlServerNameHelper
+    static class SqlServerNameHelper
     {
         const string prefix = "[";
         const string suffix = "]";
 
-        public string Quote(string unquotedName)
+        public static string Quote(string unquotedName)
         {
             if (unquotedName == null)
             {
@@ -15,7 +15,7 @@
             return prefix + unquotedName.Replace(suffix, suffix + suffix) + suffix;
         }
 
-        public string Unquote(string quotedString)
+        public static string Unquote(string quotedString)
         {
             if (quotedString == null)
             {

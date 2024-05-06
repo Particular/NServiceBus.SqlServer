@@ -20,7 +20,7 @@
         [TestCase("my.table", null, "[my.catalog]", "my.table@[]@[my.catalog]")]
         public void Should_generate_address(string tableName, string schemaName, string catalogName, string expectedAddress)
         {
-            var address = new QueueAddress(tableName, schemaName, catalogName, new SqlServerNameHelper());
+            var address = new QueueAddress(tableName, schemaName, catalogName);
 
             Assert.AreEqual(expectedAddress, address.Value);
         }
@@ -49,7 +49,7 @@
         [TestCase("my.table@my[schema", "my.table", "my[schema", null)]
         public void Should_parse_address(string transportAddress, string expectedTableName, string expectedSchema, string expectedCatalog)
         {
-            var parsedAddress = QueueAddress.Parse(transportAddress, new SqlServerNameHelper());
+            var parsedAddress = QueueAddress.Parse(transportAddress);
 
             Assert.AreEqual(expectedTableName, parsedAddress.Table);
             Assert.AreEqual(expectedSchema, parsedAddress.Schema);

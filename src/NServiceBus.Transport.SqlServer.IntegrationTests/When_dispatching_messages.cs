@@ -104,7 +104,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null, new SqlServerNameHelper());
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var tableCache = new TableBasedQueueCache(
                 (address, isStreamSupported) =>
                 {
@@ -134,7 +134,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
 
-            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus", new SqlServerNameHelper()), cancellationToken);
+            return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
 
         QueuePurger purger;
