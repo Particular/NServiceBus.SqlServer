@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.PostgreSql;
+﻿namespace NServiceBus.Transport.PostgreSql;
 
 using System;
 using System.Collections.Generic;
@@ -31,13 +31,9 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     QueueAddressTranslator addressTranslator;
     TableBasedQueueCache tableBasedQueueCache;
     ISubscriptionStore subscriptionStore;
+    Dictionary<string, object> diagnostics = [];
     IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
     PostgreSqlDbConnectionFactory connectionFactory;
-
-    // TODO: Figure out if we should share this between SqlServer and PostgreSql in some static consts class or whatever
-    //    static string DtcErrorMessage = @"
-    //Distributed transactions are not available on Linux. The other transaction modes can be used by setting the `PostgreSqlTransport.TransportTransactionMode` property when configuring the endpoint.
-    //Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
     static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
     readonly PostgreSqlExceptionClassifier exceptionClassifier;
@@ -81,7 +77,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             (address, isStreamSupported) =>
             {
                 var canonicalAddress = addressTranslator.Parse(address);
-                return new PostgreSqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address);
+                return new PostgreSqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
             },
             s => addressTranslator.Parse(s).Address,
             true);
@@ -91,6 +87,10 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         await ConfigureReceiveInfrastructure(cancellationToken).ConfigureAwait(false);
 
         ConfigureSendInfrastructure();
+
+        diagnostics.Add("Dialect", "PostgreSQL");
+
+        hostSettings.StartupDiagnostic.Add("NServiceBus.Transport.SqlServer", diagnostics);
     }
 
     PostgreSqlDbConnectionFactory CreateConnectionFactory()
@@ -124,16 +124,16 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         var transactionOptions = transport.TransactionScope.TransactionOptions;
 
-        // diagnostics.Add("NServiceBus.Transport.SqlServer.Transactions",
-        //     new
-        //     {
-        //         TransactionMode = transport.TransportTransactionMode,
-        //         transactionOptions.IsolationLevel,
-        //         transactionOptions.Timeout
-        //     });
+        diagnostics.Add("Transactions",
+            new
+            {
+                TransactionMode = transport.TransportTransactionMode,
+                transactionOptions.IsolationLevel,
+                transactionOptions.Timeout
+            });
 
-        // diagnostics.Add("NServiceBus.Transport.SqlServer.CircuitBreaker",
-        //     new { TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker });
+        diagnostics.Add("CircuitBreaker",
+            new { TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker });
 
         var queuePeekerOptions = transport.QueuePeeker;
 
@@ -146,7 +146,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
         var queueFactory = new Func<string, PostgreSqlTableBasedQueue>(queueName => new PostgreSqlTableBasedQueue(sqlConstants,
-            addressTranslator.Parse(queueName).QualifiedTableName, queueName));
+            addressTranslator.Parse(queueName).QualifiedTableName, queueName, true));
 
         //Create delayed delivery infrastructure
         CanonicalQueueAddress delayedQueueCanonicalAddress = null;
@@ -154,8 +154,12 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         {
             var delayedDelivery = transport.DelayedDelivery;
 
-            // diagnostics.Add("NServiceBus.Transport.SqlServer.DelayedDelivery",
-            //     new { Native = true, Suffix = delayedDelivery.TableSuffix, delayedDelivery.BatchSize, });
+            diagnostics.Add("DelayedDelivery", new
+            {
+                Native = true,
+                Suffix = delayedDelivery.TableSuffix,
+                delayedDelivery.BatchSize
+            });
 
             var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
                 delayedDelivery.TableSuffix);
@@ -342,6 +346,13 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         subscriptionStore = new PolymorphicSubscriptionStore(new SubscriptionTable(sqlConstants,
             subscriptionTableName.QuotedQualifiedName, connectionFactory));
+
+        diagnostics.Add("SubscriptionStore", new
+        {
+            TableName = subscriptionTableName.QuotedQualifiedName,
+            Caching = !pubSubSettings.DisableCaching,
+            CacheInvalidtionPeriod = pubSubSettings.CacheInvalidationPeriod
+        });
 
         if (pubSubSettings.DisableCaching == false)
         {
