@@ -14,8 +14,8 @@ class PostgreSqlTableBasedQueue : TableBasedQueue
 {
     readonly PostgreSqlConstants postgreSqlConstants;
 
-    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName) :
-        base(sqlConstants, qualifiedTableName, queueName, true)
+    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
+        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
     {
         postgreSqlConstants = sqlConstants;
     }
