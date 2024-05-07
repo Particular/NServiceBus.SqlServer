@@ -6,10 +6,9 @@ namespace NServiceBus.Transport.SqlServer
 
     class QueueAddressTranslator
     {
-
         public QueueAddressTranslator(string defaultCatalog, string defaultSchema, string defaultSchemaOverride, QueueSchemaAndCatalogOptions queueOptions)
         {
-            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
+            ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
 
             DefaultCatalog = defaultCatalog;
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -53,8 +52,12 @@ namespace NServiceBus.Transport.SqlServer
         {
             return configuredValue ?? addressValue ?? defaultValue;
         }
-
-        public QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        
+        readonly QueueSchemaAndCatalogOptions queueOptions;
+        readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
+        
+        record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
         {
             public static AddressKey Create(Transport.QueueAddress a)
             {
@@ -81,12 +84,6 @@ namespace NServiceBus.Transport.SqlServer
 
                 return new QueueAddress(tableName, Schema, Catalog);
             }
-
-            return new QueueAddress(tableName, schemaName, catalogName);
         }
-
-        QueueSchemaAndCatalogOptions queueOptions;
-        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
-        ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
     }
 }

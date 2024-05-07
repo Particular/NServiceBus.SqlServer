@@ -1,5 +1,6 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Linq;
     using Configuration;
@@ -8,7 +9,8 @@
     {
         public QueueAddressTranslator(string defaultSchema, string defaultSchemaOverride, QueueSchemaOptions queueOptions)
         {
-            Guard.AgainstNullAndEmpty(nameof(defaultSchema), defaultSchema);
+            //TODO: check if we can migrate from Guard classes to ArgumentException-like equivalents
+            ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
 
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
             this.queueOptions = queueOptions ?? new QueueSchemaOptions();
@@ -18,7 +20,9 @@
 
         public QueueAddress Generate(Transport.QueueAddress queueAddress)
         {
-            return logicalAddressCache.GetOrAdd(queueAddress, TranslateLogicalAddress);
+            // AddressKey has a GetHashCode implementation and can be used as a dictionary key, Transport.QueueAddress (from Core) does not (at this time)
+            var key = AddressKey.Create(queueAddress);
+            return logicalAddressCache.GetOrAdd(key, key => key.ToSqlQueueAddress());
         }
 
         public CanonicalQueueAddress Parse(string address)
@@ -46,31 +50,36 @@
         {
             return configuredValue ?? addressValue ?? defaultValue;
         }
-
-        public QueueAddress TranslateLogicalAddress(Transport.QueueAddress queueAddress)
+        
+        readonly QueueSchemaOptions queueOptions;
+        readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
+        readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
+        
+        record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema)
         {
-            var nonEmptyParts = new[]
+            public static AddressKey Create(Transport.QueueAddress a)
             {
-                queueAddress.BaseAddress,
-                queueAddress.Qualifier,
-                queueAddress.Discriminator
-            }.Where(p => !string.IsNullOrEmpty(p));
-
-            var tableName = string.Join(".", nonEmptyParts);
-
-
-            string schemaName = null;
-
-            if (queueAddress.Properties != null)
-            {
-                queueAddress?.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schemaName);
+                string schema = null;
+                if (a.Properties is not null)
+                {
+                    a.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schema);
+                }
+                return new AddressKey(a.BaseAddress, a.Discriminator, a.Qualifier, schema);
             }
 
-            return new QueueAddress(tableName, schemaName);
-        }
+            public QueueAddress ToSqlQueueAddress()
+            {
+                var nonEmptyParts = new[]
+                {
+                    BaseAddress,
+                    Qualifier,
+                    Discriminator
+                }.Where(p => !string.IsNullOrEmpty(p));
 
-        QueueSchemaOptions queueOptions;
-        ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new ConcurrentDictionary<string, CanonicalQueueAddress>();
-        ConcurrentDictionary<Transport.QueueAddress, QueueAddress> logicalAddressCache = new ConcurrentDictionary<Transport.QueueAddress, QueueAddress>();
+                var tableName = string.Join(".", nonEmptyParts);
+
+                return new QueueAddress(tableName, Schema);
+            }
+        }
     }
 }
