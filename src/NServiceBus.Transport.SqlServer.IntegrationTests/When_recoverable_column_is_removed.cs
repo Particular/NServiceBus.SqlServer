@@ -3,14 +3,9 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System;
     using System.Collections.Generic;
     using System.Data;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Extensibility;
-    using Microsoft.Data.SqlClient;
     using NUnit.Framework;
     using Routing;
     using SqlServer;

@@ -2,11 +2,7 @@ namespace NServiceBus.Transport.SqlServer;
 
 using System;
 using System.Threading;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
 using Microsoft.Data.SqlClient;
-#endif
 using Sql.Shared;
 
 class SqlServerExceptionClassifier : IExceptionClassifier

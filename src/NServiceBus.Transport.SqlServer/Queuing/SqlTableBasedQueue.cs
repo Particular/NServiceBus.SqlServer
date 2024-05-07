@@ -6,12 +6,8 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.String;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
 using Microsoft.Data.SqlClient;
-using NServiceBus.Unicast.Queuing;
-#endif
+using Unicast.Queuing;
 
 class SqlTableBasedQueue : TableBasedQueue
 {
