@@ -1,10 +1,6 @@
 ﻿namespace NServiceBus
 {
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
     using Microsoft.Data.SqlClient;
-#endif
     using System;
     using Extensibility;
     using Transport.Sql.Shared.Sending;

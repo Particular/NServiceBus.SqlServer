@@ -3,13 +3,9 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Data.Common;
     using System.Threading;
-#if SYSTEMDATASQLCLIENT
-    using System.Data.SqlClient;
-#else
-    using Microsoft.Data.SqlClient;
-#endif
     using System.Threading.Tasks;
     using Logging;
+    using Microsoft.Data.SqlClient;
 
     class SqlServerDbConnectionFactory : DbConnectionFactory
     {
