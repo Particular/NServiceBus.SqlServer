@@ -5,11 +5,9 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using System.Threading;
     using System.Threading.Tasks;
     using Faults;
-    using Microsoft.Data.SqlClient;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
     using Unicast.Queuing;
-    using Faults;
     using Sql.Shared;
     using Sql.Shared.Queuing;
 

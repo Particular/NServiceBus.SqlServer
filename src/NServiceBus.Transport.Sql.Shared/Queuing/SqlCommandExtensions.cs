@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Data.SqlClient;
 
     static class SqlCommandExtensions
     {

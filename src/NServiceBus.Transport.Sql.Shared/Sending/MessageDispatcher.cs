@@ -7,7 +7,6 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Microsoft.Data.SqlClient;
     using Transport;
     using System.Threading;
     using Configuration;

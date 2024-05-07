@@ -6,8 +6,6 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Microsoft.Data.SqlClient;
-    using Unicast.Queuing;
     using static System.String;
 
 #pragma warning disable CA1711 // Identifiers should not have incorrect suffix

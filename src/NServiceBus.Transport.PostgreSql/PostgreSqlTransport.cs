@@ -19,7 +19,7 @@ public class PostgreSqlTransport : TransportDefinition
     public PostgreSqlTransport(string connectionString)
         : base(DefaultTransportTransactionMode, true, true, true)
     {
-        Guard.AgainstNullAndEmpty(nameof(connectionString), connectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         ConnectionString = connectionString;
     }
@@ -31,7 +31,7 @@ public class PostgreSqlTransport : TransportDefinition
     public PostgreSqlTransport(Func<CancellationToken, Task<NpgsqlConnection>> connectionFactory)
         : base(DefaultTransportTransactionMode, true, true, true)
     {
-        Guard.AgainstNull(nameof(connectionFactory), connectionFactory);
+        ArgumentNullException.ThrowIfNull(connectionFactory);
 
         ConnectionFactory = connectionFactory;
     }

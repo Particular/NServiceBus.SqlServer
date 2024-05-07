@@ -1,5 +1,7 @@
 namespace NServiceBus.Transport.SqlServer
 {
+    using System;
+
     class CanonicalQueueAddress
     {
         public CanonicalQueueAddress(string table, string schemaName, string catalogName)
