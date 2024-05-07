@@ -8,11 +8,9 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
-    using System.Threading;
     using Configuration;
     using DelayedDelivery;
     using Queuing;
-    using Receiving;
 
     public class MessageDispatcher : IMessageDispatcher
     {

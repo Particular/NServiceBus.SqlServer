@@ -11,7 +11,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using SqlServer;
     using Transport;
     using Unicast.Queuing;
-    using System.Threading;
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
