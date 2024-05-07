@@ -232,7 +232,7 @@ namespace NServiceBus.Transport.PostgreSql
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
     public partial class DelayedDeliverySettings
     {
-        DelayedDeliveryOptions options;
+        readonly DelayedDeliveryOptions options;
 
         internal DelayedDeliverySettings(DelayedDeliveryOptions options) => this.options = options;
 
@@ -275,7 +275,7 @@ namespace NServiceBus.Transport.PostgreSql
             Note = "Should not be converted to an ObsoleteEx until API mismatch described in issue is resolved.")]
     public class SubscriptionSettings
     {
-        SubscriptionOptions options;
+        readonly SubscriptionOptions options;
 
         internal SubscriptionSettings(SubscriptionOptions options) => this.options = options;
 
