@@ -52,11 +52,11 @@ namespace NServiceBus.Transport.SqlServer
         {
             return configuredValue ?? addressValue ?? defaultValue;
         }
-        
+
         readonly QueueSchemaAndCatalogOptions queueOptions;
         readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
         readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
-        
+
         record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema, string Catalog)
         {
             public static AddressKey Create(Transport.QueueAddress a)

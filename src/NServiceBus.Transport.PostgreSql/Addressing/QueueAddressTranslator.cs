@@ -9,7 +9,6 @@
     {
         public QueueAddressTranslator(string defaultSchema, string defaultSchemaOverride, QueueSchemaOptions queueOptions)
         {
-            //TODO: check if we can migrate from Guard classes to ArgumentException-like equivalents
             ArgumentException.ThrowIfNullOrWhiteSpace(defaultSchema);
 
             DefaultSchema = string.IsNullOrWhiteSpace(defaultSchemaOverride) ? defaultSchema : defaultSchemaOverride;
@@ -50,20 +49,21 @@
         {
             return configuredValue ?? addressValue ?? defaultValue;
         }
-        
+
         readonly QueueSchemaOptions queueOptions;
         readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();
         readonly ConcurrentDictionary<string, CanonicalQueueAddress> physicalAddressCache = new();
-        
+
         record struct AddressKey(string BaseAddress, string Discriminator, string Qualifier, string Schema)
         {
             public static AddressKey Create(Transport.QueueAddress a)
             {
-                string schema = null;
-                if (a.Properties is not null)
+                if (a.Properties is null)
                 {
-                    a.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out schema);
+                    return new AddressKey(a.BaseAddress, a.Discriminator, a.Qualifier, null);
                 }
+
+                a.Properties.TryGetValue(SettingsKeys.SchemaPropertyKey, out var schema);
                 return new AddressKey(a.BaseAddress, a.Discriminator, a.Qualifier, schema);
             }
 

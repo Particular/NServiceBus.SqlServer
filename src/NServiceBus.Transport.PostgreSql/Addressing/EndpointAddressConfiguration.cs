@@ -18,7 +18,7 @@
         /// <param name="schema">Custom schema value.</param>
         public static void UseSchemaForEndpoint(this RoutingSettings settings, string endpointName, string schema)
         {
-            Guard.AgainstNull(nameof(endpointName), endpointName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(endpointName);
 
             var localEndpointName = settings.GetSettings().EndpointName();
 

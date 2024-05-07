@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data.Common;
+    using System.Threading;
 #if SYSTEMDATASQLCLIENT
     using System.Data.SqlClient;
 #else
@@ -9,7 +10,6 @@ namespace NServiceBus.Transport.SqlServer
 #endif
     using System.Threading.Tasks;
     using Logging;
-    using Microsoft.Data.SqlClient;
 
     class SqlServerDbConnectionFactory : DbConnectionFactory
     {

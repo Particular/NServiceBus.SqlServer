@@ -1,10 +1,12 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
+    using System;
+
     class QueueAddress
     {
         public QueueAddress(string table, string schemaName)
         {
-            Guard.AgainstNullAndEmpty(nameof(table), table);
+            ArgumentException.ThrowIfNullOrWhiteSpace(table);
             Table = SafeUnquote(table);
             Schema = SafeUnquote(schemaName);
         }

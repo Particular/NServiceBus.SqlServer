@@ -1,11 +1,13 @@
 ﻿namespace NServiceBus.Transport.PostgreSql
 {
+    using System;
+
     class CanonicalQueueAddress
     {
         public CanonicalQueueAddress(string table, string schemaName)
         {
-            Guard.AgainstNullAndEmpty(nameof(table), table);
-            Guard.AgainstNullAndEmpty(nameof(schemaName), schemaName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(table);
+            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
 
             Table = table;
             Schema = schemaName;
