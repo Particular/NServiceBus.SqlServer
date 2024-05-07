@@ -109,7 +109,7 @@ jobs:
           # create schemas
           $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS sender'
           $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS receiver'
-          $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS db@'
+          $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS "db@"'
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0
       - name: Teardown infrastructure
