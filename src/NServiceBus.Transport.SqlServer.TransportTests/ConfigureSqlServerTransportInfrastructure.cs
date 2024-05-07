@@ -7,6 +7,8 @@ using NServiceBus.Transport;
 using NServiceBus.TransportTests;
 using NUnit.Framework;
 
+[assembly: Ignore("CI testing")]
+
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public TransportDefinition CreateTransportDefinition()

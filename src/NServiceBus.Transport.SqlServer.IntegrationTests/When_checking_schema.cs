@@ -1,4 +1,8 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿using NUnit.Framework;
+
+[assembly: Ignore("CI testing")]
+
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Threading;

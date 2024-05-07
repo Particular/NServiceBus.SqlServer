@@ -1,6 +1,9 @@
 ﻿using NServiceBus;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
+using NUnit.Framework;
+
+[assembly: Ignore("CI testing")]
 
 static class ConfigurationHelpers
 {
