@@ -1,13 +1,10 @@
-﻿using NUnit.Framework;
-
-namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
     using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
     using SqlServer;
 
     public class When_checking_schema
