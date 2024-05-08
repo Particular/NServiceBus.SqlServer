@@ -76,7 +76,7 @@ public class PostgreSqlTransport : TransportDefinition
     public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[]
     {
         TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly,
-        TransportTransactionMode.SendsAtomicWithReceive, TransportTransactionMode.TransactionScope
+        TransportTransactionMode.SendsAtomicWithReceive
     };
 
 
@@ -149,5 +149,5 @@ public class PostgreSqlTransport : TransportDefinition
         internal string SubscriptionTable { get; set; }
     }
 
-    static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.TransactionScope;
+    static TransportTransactionMode DefaultTransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
 }
