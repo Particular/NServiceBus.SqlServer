@@ -45,11 +45,9 @@ RETURNING rs.id,
 ";
 
     public string MoveDueDelayedMessageText { get; set; } = @"
-CREATE EXTENSION IF NOT EXISTS ""uuid-ossp""; 
-	
 WITH message as (DELETE FROM {0} WHERE seq in (SELECT seq from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
 RETURNING headers, body)
-INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT  uuid_generate_v4(), NULL, NULL, NULL, headers, body FROM message;
+INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT gen_random_uuid(), NULL, NULL, NULL, headers, body FROM message;
 
 SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
 FROM {0} 
