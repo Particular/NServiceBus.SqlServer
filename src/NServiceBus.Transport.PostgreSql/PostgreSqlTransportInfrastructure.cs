@@ -270,13 +270,13 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
-        
+
         if (transactionMode == TransportTransactionMode.ReceiveOnly)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
         }
-        
+
         if (transactionMode == TransportTransactionMode.None)
         {
             return new ProcessWithNoTransaction(connectionFactory, failureInfoStorage, tableBasedQueueCache,
