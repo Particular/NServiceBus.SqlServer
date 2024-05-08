@@ -21,11 +21,6 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
-        if (!OperatingSystem.IsWindows() && transportDefinition.TransportTransactionMode == TransportTransactionMode.TransactionScope)
-        {
-            Assert.Ignore("DTC does not work on Linux.");
-        }
-
         postgreSqlTransport = (PostgreSqlTransport)transportDefinition;
 
         inputQueueName = queueAddress.ToString();

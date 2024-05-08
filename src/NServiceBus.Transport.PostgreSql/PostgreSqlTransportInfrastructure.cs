@@ -265,25 +265,25 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         var failureInfoStorage = new FailureInfoStorage(10000);
 
-        if (transactionMode == TransportTransactionMode.TransactionScope)
-        {
-            return new ProcessWithTransactionScope(options, connectionFactory, failureInfoStorage,
-                tableBasedQueueCache, exceptionClassifier);
-        }
-
         if (transactionMode == TransportTransactionMode.SendsAtomicWithReceive)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier);
         }
-
+        
         if (transactionMode == TransportTransactionMode.ReceiveOnly)
         {
             return new ProcessWithNativeTransaction(options, connectionFactory, failureInfoStorage,
                 tableBasedQueueCache, exceptionClassifier, transactionForReceiveOnly: true);
         }
+        
+        if (transactionMode == TransportTransactionMode.None)
+        {
+            return new ProcessWithNoTransaction(connectionFactory, failureInfoStorage, tableBasedQueueCache,
+                exceptionClassifier);
+        }
 
-        return new ProcessWithNoTransaction(connectionFactory, failureInfoStorage, tableBasedQueueCache, exceptionClassifier);
+        throw new Exception($"Unsupported transport transaction mode: {transactionMode}.");
     }
 
 
