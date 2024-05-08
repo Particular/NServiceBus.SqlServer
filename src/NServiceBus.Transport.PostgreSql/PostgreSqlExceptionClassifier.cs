@@ -2,6 +2,7 @@
 
 using System;
 using System.Threading;
+using Npgsql;
 using Sql.Shared;
 
 class PostgreSqlExceptionClassifier : IExceptionClassifier
@@ -11,5 +12,5 @@ class PostgreSqlExceptionClassifier : IExceptionClassifier
         exception.IsCausedBy(cancellationToken);
 #pragma warning restore PS0003
 
-    public bool IsDeadlockException(Exception ex) => false;
+    public bool IsDeadlockException(Exception ex) => ex is NpgsqlException { SqlState: "40P01" };
 }
