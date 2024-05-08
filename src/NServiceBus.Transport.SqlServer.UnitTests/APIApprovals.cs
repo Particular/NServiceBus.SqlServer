@@ -3,8 +3,6 @@ using NUnit.Framework;
 using Particular.Approvals;
 using PublicApiGenerator;
 
-[assembly: Ignore("CI testing")]
-
 [TestFixture]
 public class APIApprovals
 {
