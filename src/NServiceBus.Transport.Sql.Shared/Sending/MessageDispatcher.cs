@@ -79,7 +79,10 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
             {
                 using (connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
+                    using (var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                    }
                 }
             }
             else if (transportTransaction.IsNoTransaction(out connection))
