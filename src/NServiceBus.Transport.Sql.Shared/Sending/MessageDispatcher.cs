@@ -82,6 +82,7 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
                     using (var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
                     {
                         await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        transaction.Commit();
                     }
                 }
             }
