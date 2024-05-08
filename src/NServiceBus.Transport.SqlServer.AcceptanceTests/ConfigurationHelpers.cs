@@ -3,8 +3,6 @@ using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
 using NUnit.Framework;
 
-[assembly: Ignore("CI testing")]
-
 static class ConfigurationHelpers
 {
     public static SqlServerTransport ConfigureSqlServerTransport(this EndpointConfiguration configuration)
