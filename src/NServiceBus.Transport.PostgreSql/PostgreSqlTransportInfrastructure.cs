@@ -194,7 +194,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 _logger.Warn($"The {receiveSetting.PurgeOnStartup} should only be used in the development environment.");
             }
 
-            return new PostgreSqlMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
+            return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
                 hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                 queuePeeker, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
                 subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);

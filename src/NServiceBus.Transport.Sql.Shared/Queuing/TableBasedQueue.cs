@@ -21,10 +21,6 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
             Name = queueName;
             receiveCommand = Format(sqlConstants.ReceiveText, this.qualifiedTableName);
             purgeCommand = Format(sqlConstants.PurgeText, this.qualifiedTableName);
-            purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-            checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-            checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-            checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
         }
 
@@ -116,53 +112,6 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
             }
         }
 
-        public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = purgeExpiredCommand;
-                command.CommandType = CommandType.Text;
-                command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
-
-                return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        public async Task<bool> CheckExpiresIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = checkExpiresIndexCommand;
-                command.CommandType = CommandType.Text;
-
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
-                return rowsCount > 0;
-            }
-        }
-
-        public async Task<bool> CheckNonClusteredRowVersionIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = checkNonClusteredRowVersionIndexCommand;
-                command.CommandType = CommandType.Text;
-
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
-                return rowsCount > 0;
-            }
-        }
-
-        public async Task<string> CheckHeadersColumnType(DbConnection connection, CancellationToken cancellationToken = default)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = checkHeadersColumnTypeCommand;
-                command.CommandType = CommandType.Text;
-
-                return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
-            }
-        }
-
         public override string ToString()
         {
             return qualifiedTableName;
@@ -173,10 +122,6 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
         string peekCommand;
         string receiveCommand;
         string purgeCommand;
-        string purgeExpiredCommand;
-        string checkExpiresIndexCommand;
-        string checkNonClusteredRowVersionIndexCommand;
-        string checkHeadersColumnTypeCommand;
         bool isStreamSupported;
 
         static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();

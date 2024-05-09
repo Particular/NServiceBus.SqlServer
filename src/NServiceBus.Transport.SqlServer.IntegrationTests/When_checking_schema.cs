@@ -11,7 +11,7 @@
     {
         const string QueueTableName = "CheckingSchema";
 
-        TableBasedQueue queue;
+        SqlTableBasedQueue queue;
         SqlServerConstants sqlConstants = new();
 
         [SetUp]

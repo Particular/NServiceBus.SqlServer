@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 using Microsoft.Data.SqlClient;
-using NServiceBus.Transport.Sql.Shared;
+using Sql.Shared;
 using Sql.Shared.Receiving;
 
 class SqlServerMessageReceiver : MessageReceiver
@@ -25,16 +25,25 @@ class SqlServerMessageReceiver : MessageReceiver
         this.schemaInspector = schemaInspector;
     }
 
-    protected override async Task PerformSchemaInspection(TableBasedQueue inputQueue,
-        CancellationToken cancellationToken = default) =>
-        await schemaInspector.PerformInspection(inputQueue, cancellationToken).ConfigureAwait(false);
+    public override async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
+        CancellationToken cancellationToken = default)
+    {
+        await base.Initialize(limitations, onMessage, onError, cancellationToken).ConfigureAwait(false);
 
-    protected override async Task PurgeExpiredMessages(TableBasedQueue inputQueue,
+        await PurgeExpiredMessages(inputQueue, cancellationToken).ConfigureAwait(false);
+        await PerformSchemaInspection(inputQueue, cancellationToken).ConfigureAwait(false);
+    }
+
+    async Task PerformSchemaInspection(TableBasedQueue inputQueue,
+        CancellationToken cancellationToken = default) =>
+        await schemaInspector.PerformInspection((SqlTableBasedQueue)inputQueue, cancellationToken).ConfigureAwait(false);
+
+    async Task PurgeExpiredMessages(TableBasedQueue inputQueue,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            await expiredMessagesPurger.Purge(inputQueue, cancellationToken).ConfigureAwait(false);
+            await expiredMessagesPurger.Purge((SqlTableBasedQueue)inputQueue, cancellationToken).ConfigureAwait(false);
         }
         catch (SqlException e) when (e.Number == 1205)
         {

@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data.Common;
@@ -6,8 +6,9 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using System.Threading.Tasks;
     using Logging;
     using NServiceBus.Transport.Sql.Shared.Queuing;
+    using Sql.Shared;
 
-    public class ExpiredMessagesPurger : IExpiredMessagesPurger
+    class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
         public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, int? purgeBatchSize, IExceptionClassifier exceptionClassifier)
         {
@@ -16,7 +17,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
 
-        public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
+        public async Task Purge(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
             var totalPurgedRowsCount = 0;

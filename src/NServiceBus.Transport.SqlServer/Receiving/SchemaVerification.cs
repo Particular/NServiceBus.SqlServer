@@ -14,7 +14,7 @@
             this.validateExpiredIndex = validateExpiredIndex;
         }
 
-        public async Task PerformInspection(TableBasedQueue queue, CancellationToken cancellationToken = default)
+        public async Task PerformInspection(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             if (validateExpiredIndex)
             {
@@ -25,7 +25,7 @@
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, DbConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
+        async Task VerifyIndex(SqlTableBasedQueue queue, Func<SqlTableBasedQueue, DbConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -44,7 +44,7 @@
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
-        Task VerifyNonClusteredRowVersionIndex(TableBasedQueue queue, CancellationToken cancellationToken)
+        Task VerifyNonClusteredRowVersionIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -53,7 +53,7 @@
                 cancellationToken);
         }
 
-        Task VerifyExpiredIndex(TableBasedQueue queue, CancellationToken cancellationToken)
+        Task VerifyExpiredIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -63,7 +63,7 @@
             );
         }
 
-        async Task VerifyHeadersColumnType(TableBasedQueue queue, CancellationToken cancellationToken)
+        async Task VerifyHeadersColumnType(SqlTableBasedQueue queue, CancellationToken cancellationToken)
         {
             try
             {
@@ -82,7 +82,7 @@
             }
         }
 
-        Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
+        Func<SqlTableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
         readonly bool validateExpiredIndex;
         static ILog Logger = LogManager.GetLogger<SchemaInspector>();
     }

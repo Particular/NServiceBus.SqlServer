@@ -27,7 +27,7 @@ VALUES (
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
-        public string SendText { get; set; } =
+        public string SendTextWithoutRecoverable { get; set; } =
             @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
 IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON'
