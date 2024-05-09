@@ -30,16 +30,14 @@ class SqlServerMessageReceiver : MessageReceiver
     {
         await base.Initialize(limitations, onMessage, onError, cancellationToken).ConfigureAwait(false);
 
-        await PurgeExpiredMessages(inputQueue, cancellationToken).ConfigureAwait(false);
-        await PerformSchemaInspection(inputQueue, cancellationToken).ConfigureAwait(false);
+        await PurgeExpiredMessages(cancellationToken).ConfigureAwait(false);
+        await PerformSchemaInspection(cancellationToken).ConfigureAwait(false);
     }
 
-    async Task PerformSchemaInspection(TableBasedQueue inputQueue,
-        CancellationToken cancellationToken = default) =>
+    async Task PerformSchemaInspection(CancellationToken cancellationToken) =>
         await schemaInspector.PerformInspection((SqlTableBasedQueue)inputQueue, cancellationToken).ConfigureAwait(false);
 
-    async Task PurgeExpiredMessages(TableBasedQueue inputQueue,
-        CancellationToken cancellationToken = default)
+    async Task PurgeExpiredMessages(CancellationToken cancellationToken)
     {
         try
         {
