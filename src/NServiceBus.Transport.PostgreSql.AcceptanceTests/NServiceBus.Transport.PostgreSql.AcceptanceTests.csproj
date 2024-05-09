@@ -42,7 +42,6 @@
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\MultiSchema\When_custom_schema_contains_at.cs" Link="MultiSchema\When_custom_schema_contains_at.cs" />
     
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NativeTimeouts\When_deferring_a_message_in_native_mode.cs" Link="NativeTimeouts\When_deferring_a_message_in_native_mode.cs" />
-    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NativeTimeouts\When_deferring_a_message_to_invalid_queue.cs" Link="NativeTimeouts\When_deferring_a_message_to_invalid_queue.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NativeTimeouts\When_deferring_a_message_to_the_past_in_native_mode.cs" Link="NativeTimeouts\When_deferring_a_message_to_the_past_in_native_mode.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NativeTimeouts\When_using_TTBR_for_deferred_message_in_native_mode.cs" Link="NativeTimeouts\When_using_TTBR_for_deferred_message_in_native_mode.cs" />
     
