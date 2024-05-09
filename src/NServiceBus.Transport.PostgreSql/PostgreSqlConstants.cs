@@ -117,11 +117,6 @@ CREATE TABLE IF NOT EXISTS {0} (
     Seq bigint not null generated always as identity
 );";
 
-    public string PurgeBatchOfExpiredMessagesText { get; set; } = string.Empty;
-    public string CheckIfExpiresIndexIsPresent { get; set; } = string.Empty;
-    public string CheckIfNonClusteredRowVersionIndexIsPresent { get; set; } = string.Empty;
-    public string CheckHeadersColumnType { get; set; } = string.Empty;
-
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
     public string CreateSubscriptionTableText { get; set; } = @"
 CREATE TABLE IF NOT EXISTS {0} (

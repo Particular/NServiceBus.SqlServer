@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Logging;
     using Queuing;
 
-    public abstract class MessageReceiver : IMessageReceiver
+    public class MessageReceiver : IMessageReceiver
     {
         public MessageReceiver(
             TransportDefinition transport,
@@ -38,7 +38,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             ReceiveAddress = receiveAddress;
         }
 
-        public async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
+        public virtual async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
             CancellationToken cancellationToken = default)
         {
             this.limitations = limitations;
@@ -72,17 +72,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
                     Logger.Warn("Failed to purge input queue on startup.", ex);
                 }
             }
-
-            await PurgeExpiredMessages(inputQueue, cancellationToken).ConfigureAwait(false);
-
-            await PerformSchemaInspection(inputQueue, cancellationToken).ConfigureAwait(false);
         }
-
-        protected abstract Task PerformSchemaInspection(TableBasedQueue inputQueue,
-            CancellationToken cancellationToken = default);
-
-        protected abstract Task PurgeExpiredMessages(TableBasedQueue inputQueue,
-            CancellationToken cancellationToken = default);
 
         public Task StartReceive(CancellationToken cancellationToken = default)
         {
@@ -257,7 +247,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             }
         }
 
-        TableBasedQueue inputQueue;
+        protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly TransportDefinition transport;
         readonly string errorQueueAddress;

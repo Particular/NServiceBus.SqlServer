@@ -8,12 +8,67 @@ using System.Threading.Tasks;
 using static System.String;
 using Microsoft.Data.SqlClient;
 using Unicast.Queuing;
+using NServiceBus.Transport.Sql.Shared;
 
 class SqlTableBasedQueue : TableBasedQueue
 {
     public SqlTableBasedQueue(SqlServerConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported) =>
+        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
+    {
         sqlServerConstants = sqlConstants;
+
+        purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
+        checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
+        checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
+        checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+    }
+
+    public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
+    {
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = purgeExpiredCommand;
+            command.CommandType = CommandType.Text;
+            command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
+
+            return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async Task<bool> CheckExpiresIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
+    {
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = checkExpiresIndexCommand;
+            command.CommandType = CommandType.Text;
+
+            var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
+            return rowsCount > 0;
+        }
+    }
+
+    public async Task<bool> CheckNonClusteredRowVersionIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
+    {
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = checkNonClusteredRowVersionIndexCommand;
+            command.CommandType = CommandType.Text;
+
+            var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
+            return rowsCount > 0;
+        }
+    }
+
+    public async Task<string> CheckHeadersColumnType(DbConnection connection, CancellationToken cancellationToken = default)
+    {
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = checkHeadersColumnTypeCommand;
+            command.CommandType = CommandType.Text;
+
+            return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
+        }
+    }
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
     {
@@ -86,7 +141,7 @@ class SqlTableBasedQueue : TableBasedQueue
                     }
                 }
 
-                cachedSendCommand = Format(sqlServerConstants.SendText, qualifiedTableName);
+                cachedSendCommand = Format(sqlServerConstants.SendTextWithoutRecoverable, qualifiedTableName);
                 return cachedSendCommand;
             }
         }
@@ -108,7 +163,10 @@ class SqlTableBasedQueue : TableBasedQueue
     }
 
     string cachedSendCommand;
-
+    string purgeExpiredCommand;
+    string checkExpiresIndexCommand;
+    string checkNonClusteredRowVersionIndexCommand;
+    string checkHeadersColumnTypeCommand;
     readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
     readonly SqlServerConstants sqlServerConstants;
 }
