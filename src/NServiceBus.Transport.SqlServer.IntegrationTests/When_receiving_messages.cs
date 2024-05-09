@@ -88,7 +88,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             throw new Exception("Condition has not been met in predefined timespan.");
         }
 
-        class FakeTableBasedQueue : TableBasedQueue
+        class FakeTableBasedQueue : SqlTableBasedQueue
         {
             public int NumberOfReceives { get; set; }
             public int NumberOfPeeks { get; set; }
@@ -96,7 +96,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(ISqlConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, address, "", true)
+            public FakeTableBasedQueue(SqlServerConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, address, "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;
