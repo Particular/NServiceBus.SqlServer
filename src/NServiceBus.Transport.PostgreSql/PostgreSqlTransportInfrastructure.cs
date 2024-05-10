@@ -240,8 +240,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     async Task ValidateDatabaseAccess(CancellationToken cancellationToken)
     {
         await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
-
-        //TODO: figure out if we can protect users from unexpected Prepared transactions
     }
 
     async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
@@ -289,7 +287,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     async Task ConfigureSubscriptions(CancellationToken cancellationToken)
     {
-        subscriptionStore = new SubscriptionStore();
         var pubSubSettings = transport.Subscriptions;
         var subscriptionStoreSchema =
             string.IsNullOrWhiteSpace(transport.DefaultSchema) ? "public" : transport.DefaultSchema;

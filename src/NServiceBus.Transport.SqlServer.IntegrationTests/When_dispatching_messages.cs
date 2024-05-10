@@ -14,7 +14,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
-    //TODO: this should be moved to abstraction. SQL Server and PostgreSQL are likely to have separate transport transation keys
     using SettingsKeys = SettingsKeys;
 
 

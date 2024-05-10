@@ -130,7 +130,6 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// Disable native delayed delivery infrastructure
     /// </summary>
-    ///TODO: this is for SC usage only. It should not be public
     internal bool DisableDelayedDelivery { get; set; } = false;
 
     /// <summary>

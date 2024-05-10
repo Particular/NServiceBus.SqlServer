@@ -5,6 +5,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
+    using Sql.Shared.Queuing;
 
     class SchemaInspector
     {
