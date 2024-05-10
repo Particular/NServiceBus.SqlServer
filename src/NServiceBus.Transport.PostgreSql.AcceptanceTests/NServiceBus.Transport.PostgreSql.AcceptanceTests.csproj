@@ -27,7 +27,6 @@
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_message_handling_pipeline_is_invoked.cs" Link="When_message_handling_pipeline_is_invoked.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_ReplyTo_address_does_not_exist.cs" Link="When_ReplyTo_address_does_not_exist.cs" />
-    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_the_message_contains_a_legacy_callback_header.cs" Link="When_the_message_contains_a_legacy_callback_header.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_using_brackets_around_endpoint_names.cs" Link="When_using_brackets_around_endpoint_names.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_using_computed_message_body_column.cs" Link="When_using_computed_message_body_column.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_using_special_characters_in_endpoint_name.cs" Link="When_using_special_characters_in_endpoint_name.cs" />
