@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared.Queuing
 {
     using System.Collections.Generic;
-    using Legacy;
 
     public class Message
     {
@@ -25,9 +24,6 @@
             var parsedHeaders = string.IsNullOrEmpty(originalHeaders)
                 ? []
                 : DictionarySerializer.DeSerialize(originalHeaders);
-
-            //TODO: figure out if we need that
-            LegacyCallbacks.SubstituteReplyToWithCallbackQueueIfExists(parsedHeaders);
 
             Headers = parsedHeaders;
         }
