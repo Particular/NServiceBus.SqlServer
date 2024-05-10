@@ -6,7 +6,6 @@
     using Npgsql;
     using NServiceBus.AcceptanceTests;
     using NUnit.Framework;
-    using PostgreSql;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {
@@ -30,31 +29,15 @@
             {
                 var transport = new PostgreSqlTransport(async cancellationToken =>
                 {
-                    try
-                    {
-                        var connection = new NpgsqlConnection(GetConnectionString());
+                    var connection = new NpgsqlConnection(GetConnectionString());
 
-                        await connection.OpenAsync(cancellationToken);
+                    await connection.OpenAsync(cancellationToken);
 
-                        return connection;
-                    }
-                    catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
-                    {
-                        // TODO: Remove the try/catch
-                        Console.WriteLine(ex);
-                        throw;
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: Remove the try/catch
-                        Console.WriteLine(e);
-                        throw;
-                    }
+                    return connection;
                 });
 
                 EndpointSetup(new CustomizedServer(transport), (c, sd) =>
                 {
-                    // c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@public");
                 });
             }
 

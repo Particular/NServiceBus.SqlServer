@@ -18,7 +18,7 @@ using Sql.Shared.Sending;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
-    //The PostgreSQL limit is 63 but we need to reserves space for "_Seq_seq" suffix used in the
+    //The PostgreSQL limit is 63 but we need to reserve space for "_Seq_seq" suffix used in the
     //auto-created sequence and that is 8 bytes less
     const int TableQueueNameLimit = 55;
     readonly PostgreSqlTransport transport;
@@ -258,7 +258,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         }
     }
 
-    // TODO: Make this thing shared for both transports
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode transactionMode, TransactionOptions options, DbConnectionFactory connectionFactory)
     {
         var failureInfoStorage = new FailureInfoStorage(10000);
