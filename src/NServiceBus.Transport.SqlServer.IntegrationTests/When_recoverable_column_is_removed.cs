@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Data.Common;
     using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using Extensibility;
@@ -195,8 +196,7 @@ END";
         {
             public HandlerContextProvider(SqlServerDbConnectionFactory dbConnectionFactory)
             {
-                //TODO: get rid of this cast
-                sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+                sqlConnection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 
                 TransportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, sqlConnection);
@@ -216,8 +216,8 @@ END";
                 sqlTransaction.Commit();
             }
 
-            SqlTransaction sqlTransaction;
-            SqlConnection sqlConnection;
+            DbTransaction sqlTransaction;
+            DbConnection sqlConnection;
         }
     }
 }

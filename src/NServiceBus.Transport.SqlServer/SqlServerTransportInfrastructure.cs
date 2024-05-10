@@ -9,7 +9,10 @@ namespace NServiceBus.Transport.SqlServer
     using Logging;
     using NServiceBus.Transport.SqlServer.PubSub;
     using Sql;
+    using Sql.Shared.Configuration;
+    using Sql.Shared.DelayedDelivery;
     using Sql.Shared.PubSub;
+    using Sql.Shared.Queuing;
     using Sql.Shared.Receiving;
     using Sql.Shared.Sending;
     using Transport;

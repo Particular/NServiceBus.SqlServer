@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using static System.String;
 using Microsoft.Data.SqlClient;
 using Unicast.Queuing;
-using NServiceBus.Transport.Sql.Shared;
+using Sql.Shared;
+using Sql.Shared.Queuing;
 
 class SqlTableBasedQueue : TableBasedQueue
 {
@@ -96,11 +97,11 @@ class SqlTableBasedQueue : TableBasedQueue
         }
         catch (SqlException ex) when (ex.Number == 208)
         {
-            ThrowQueueNotFoundException(ex);
+            throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
         }
         catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
         {
-            ThrowFailedToSendException(ex);
+            throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
         }
     }
 
@@ -149,17 +150,6 @@ class SqlTableBasedQueue : TableBasedQueue
         {
             sendCommandLock.Release();
         }
-    }
-
-    //TODO: check if this could be shared with PostgreSQL implementation
-    void ThrowQueueNotFoundException(SqlException ex)
-    {
-        throw new QueueNotFoundException(Name, $"Failed to send message to {qualifiedTableName}", ex);
-    }
-
-    void ThrowFailedToSendException(Exception ex)
-    {
-        throw new Exception($"Failed to send message to {qualifiedTableName}", ex);
     }
 
     string cachedSendCommand;

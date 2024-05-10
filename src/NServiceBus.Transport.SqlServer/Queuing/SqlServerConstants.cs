@@ -1,5 +1,7 @@
 namespace NServiceBus.Transport.SqlServer
 {
+    using Sql.Shared.Queuing;
+
     class SqlServerConstants : ISqlConstants
     {
         public string PurgeText { get; set; } = "DELETE FROM {0}";
