@@ -41,7 +41,6 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
     public async Task Cleanup()
     {
-        //TODO: clean-up sequences
         Func<Task<NpgsqlConnection>> factory = async () =>
         {
             if (transport.ConnectionString != null)
@@ -56,8 +55,6 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
 
         using (var conn = await factory().ConfigureAwait(false))
         {
-            //await conn.OpenAsync().ConfigureAwait(false);
-
             var queueAddresses = transport.Testing.ReceiveAddresses;
             var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
             var defaultSchema = transport.DefaultSchema;
@@ -70,13 +67,6 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
                 foreach (var address in queueAddresses)
                 {
                     commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {address};");
-
-                    //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
-
-                    //var tableName = nameHelper.Unquote(address.Replace($"\"public\".", string.Empty));
-                    //var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
-
-                    //commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
                 }
             }
 
@@ -84,13 +74,6 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
             if (delayedQueueAddress != null)
             {
                 commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
-
-                //We want to get the sequence name from the table name e.g. "public"."something" -> "public"."something_seq_seq"
-
-                //var tableName = nameHelper.Unquote(delayedQueueAddress.Replace("\"public\".", string.Empty));
-                //var sequenceName = $"\"public\".\"{tableName}_seq_seq\"";
-
-                //commandTextBuilder.AppendLine($"DROP SEQUENCE IF EXISTS {sequenceName};");
             }
 
             var subscriptionTableName = transport.Testing.SubscriptionTable;
