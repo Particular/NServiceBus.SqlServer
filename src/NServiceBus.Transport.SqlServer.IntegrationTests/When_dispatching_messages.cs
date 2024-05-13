@@ -176,7 +176,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         {
             public HandlerContextProvider(SqlServerDbConnectionFactory dbConnectionFactory)
             {
-                //TODO: get rid of this cast
                 sqlConnection = (SqlConnection)dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
                 sqlTransaction = sqlConnection.BeginTransaction();
 

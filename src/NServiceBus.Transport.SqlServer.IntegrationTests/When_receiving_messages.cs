@@ -33,7 +33,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 var factory = new SqlServerDbConnectionFactory(connectionString);
                 var connection = await factory.OpenNewConnection(ct);
 
-                //TODO: get rid of casting
                 return (SqlConnection)connection;
             })
             {
@@ -115,7 +114,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
                 CancellationToken cancellationToken = default) =>
-                throw new NotImplementedException(); //TODO: implement :)
+                throw new NotImplementedException();
 
             public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
