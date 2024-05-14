@@ -18,8 +18,9 @@ using Sql.Shared.Sending;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {
-    //The PostgreSQL limit is 63 but we need to reserve space for "_Seq_seq" suffix used in the
-    //auto-created sequence and that is 8 bytes less
+    //The limit is 55=63-max(8,8). 63 is the built-in PostgreSQL limit and we also need to reserve space for:
+    //  - "_Seq_seq" suffix (8 bytes) used in the auto-created sequence for the main queue table
+    //  - ".delayed" suffix (8 bytes) that is used in the delayed messages table
     const int TableQueueNameLimit = 55;
     readonly PostgreSqlTransport transport;
     readonly HostSettings hostSettings;
