@@ -45,9 +45,9 @@ RETURNING rs.id,
 ";
 
     public string MoveDueDelayedMessageText { get; set; } = @"
-WITH message as (DELETE FROM {0} WHERE seq in (SELECT seq from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
-RETURNING headers, body)
-INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT gen_random_uuid(), NULL, NULL, NULL, headers, body FROM message;
+WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
+RETURNING id, headers, body)
+INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT id, NULL, NULL, NULL, headers, body FROM message;
 
 SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
 FROM {0} 
@@ -111,10 +111,10 @@ $$";
 
     public string CreateDelayedMessageStoreText { get; set; } = @"
 CREATE TABLE IF NOT EXISTS {0} (
+    Id uuid NOT NULL DEFAULT gen_random_uuid(), 
     Headers text NOT NULL,
     Body bytea,
-    Due timestamptz NOT NULL,
-    Seq bigint not null generated always as identity
+    Due timestamptz NOT NULL
 );";
 
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
