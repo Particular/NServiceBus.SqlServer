@@ -13,7 +13,7 @@ defaults:
     shell: pwsh
 jobs:
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }}  
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
