@@ -10,9 +10,12 @@
     using NServiceBus.AcceptanceTests;
     using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
+    using Sql.Shared.Queuing;
 
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
+        SqlServerConstants sqlConstants = new();
+
         [SetUp]
         public void SetUpConnectionString() =>
     connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
@@ -39,7 +42,7 @@
         // NOTE: The input queue must exist so that we can send messages to it
         async Task SetupInputQueue()
         {
-            var connectionFactory = new SqlConnectionFactory(async token =>
+            var connectionFactory = new SqlServerDbConnectionFactory(async token =>
             {
                 var connection = new SqlConnection(connectionString);
 
@@ -54,13 +57,21 @@
                 throw new Exception("Database is not configured on connection string");
             }
 
-            var queueAddressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
-            var queueCreator = new QueueCreator(connectionFactory, queueAddressTranslator);
+            var addressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
+            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse);
 
             var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
             await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
 
-            var tableBasedQueueCache = new TableBasedQueueCache(queueAddressTranslator, true);
+            var tableBasedQueueCache = new TableBasedQueueCache(
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
+                true);
+
             var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
             using (var connection = await connectionFactory.OpenNewConnection())

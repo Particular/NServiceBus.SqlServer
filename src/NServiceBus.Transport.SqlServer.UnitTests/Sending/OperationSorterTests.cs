@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests.Sending
 {
     using System.Linq;
+    using NServiceBus.Transport.Sql.Shared.Sending;
     using NUnit.Framework;
     using Routing;
     using SqlServer;
@@ -14,7 +15,7 @@
         {
             var queueAddressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
 
-            var sortResult = transportOperations.UnicastTransportOperations.SortAndDeduplicate(queueAddressTranslator);
+            var sortResult = transportOperations.UnicastTransportOperations.SortAndDeduplicate(s => queueAddressTranslator.Parse(s).Address);
 
             Assert.AreEqual(expectedDispatchedMessageCount, sortResult.DefaultDispatch.Count());
             Assert.IsNull(sortResult.IsolatedDispatch);
@@ -66,7 +67,7 @@
                 CreateTransportOperations("1", "dest", DispatchConsistency.Default),
                 CreateTransportOperations("2", "dest", DispatchConsistency.Isolated));
 
-            var sortResult = operations.UnicastTransportOperations.SortAndDeduplicate(queueAddressTranslator);
+            var sortResult = operations.UnicastTransportOperations.SortAndDeduplicate(s => queueAddressTranslator.Parse(s).Address);
 
             Assert.AreEqual(1, sortResult.DefaultDispatch.Count());
             Assert.AreEqual(1, sortResult.IsolatedDispatch.Count());

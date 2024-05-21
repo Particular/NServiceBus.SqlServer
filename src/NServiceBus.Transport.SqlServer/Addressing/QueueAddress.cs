@@ -30,6 +30,10 @@
         //         algorithm assumes that those parts are specified in brackets delimited format
         //      5. Parsing is not eager. If will stop at first `@` that defines correct <schema_id>
         //         or <catalog_id> parts.
+
+
+
+        // table@[db@]@[catalog] ->
         public static QueueAddress Parse(string address)
         {
             var firstAtIndex = address.IndexOf("@", StringComparison.Ordinal);
@@ -102,12 +106,12 @@
 
         static string Quote(string name)
         {
-            return NameHelper.Quote(name);
+            return SqlServerNameHelper.Quote(name);
         }
 
         static string SafeUnquote(string name)
         {
-            var result = NameHelper.Unquote(name);
+            var result = SqlServerNameHelper.Unquote(name);
             return string.IsNullOrWhiteSpace(result)
                 ? null
                 : result;

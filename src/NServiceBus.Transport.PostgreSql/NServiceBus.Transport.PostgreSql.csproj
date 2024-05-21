@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Description>PostgreSql transport support for NServiceBus.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NServiceBus" Version="[9.0.0, 10.0.0)" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
+    <PackageReference Include="Janitor.Fody" Version="1.9.0" PrivateAssets="All" />
+    <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="4.1.0" PrivateAssets="All" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.TransportTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.UnitTests" Key="$(NServiceBusTestsKey)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
