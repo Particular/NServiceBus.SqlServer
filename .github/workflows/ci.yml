@@ -57,7 +57,7 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Azure login
-        uses: azure/login@v2.1.0
+        uses: azure/login@v2.1.1
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}    
       - name: Setup PostgreSql 15.x
