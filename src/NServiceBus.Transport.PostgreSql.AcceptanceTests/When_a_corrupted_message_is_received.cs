@@ -50,11 +50,9 @@
                                 var command = conn.CreateCommand();
                                 var guid = Guid.NewGuid();
                                 command.CommandText =
-                                    $@"INSERT INTO public.""{endpoint}""(id, correlationid, replytoaddress, expires, headers, body)
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Expires,@Headers,@Body)";
+                                    $@"INSERT INTO public.""{endpoint}""(id, expires, headers, body)
+                                    VALUES (@Id,@Expires,@Headers,@Body)";
                                 command.Parameters.Add("Id", NpgsqlDbType.Uuid).Value = guid;
-                                command.Parameters.Add("CorrelationId", NpgsqlDbType.Varchar).Value = guid.ToString();
-                                command.Parameters.Add("ReplyToAddress", NpgsqlDbType.Varchar).Value = "";
                                 command.Parameters.Add("Expires", NpgsqlDbType.Timestamp).Value = DBNull.Value;
                                 command.Parameters.Add("Headers", NpgsqlDbType.Text).Value = "<corrupted headers";
 
