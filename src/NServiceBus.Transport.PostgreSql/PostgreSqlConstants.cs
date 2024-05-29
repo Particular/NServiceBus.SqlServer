@@ -35,7 +35,7 @@ FROM params;";
     //      https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
     public string ReceiveText { get; set; } = @"
 DELETE FROM {0} rs
-WHERE rs.id = (SELECT id FROM {0} LIMIT 1 FOR UPDATE SKIP LOCKED)
+WHERE rs.id = (SELECT id FROM {0} ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING rs.id,
 	    CASE WHEN Expires IS NULL
         THEN 0
@@ -47,7 +47,7 @@ RETURNING rs.id,
     public string MoveDueDelayedMessageText { get; set; } = @"
 WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
 RETURNING id, headers, body)
-INSERT into {1} (id, correlationid, replytoaddress, expires, headers, body) SELECT id, NULL, NULL, NULL, headers, body FROM message;
+INSERT into {1} (id, expires, headers, body) SELECT id, NULL, headers, body FROM message;
 
 SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
 FROM {0} 
@@ -99,15 +99,14 @@ END
 $$";
 
     public string CreateQueueText { get; set; } = @"
-    CREATE TABLE IF NOT EXISTS {0} (
-        Id uuid NOT NULL,
-        CorrelationId varchar(255),
-        ReplyToAddress varchar(255),
-        Expires TIMESTAMP,
-        Headers TEXT NOT NULL,
-        Body BYTEA,
-        Seq serial NOT NULL
-    );";
+CREATE TABLE IF NOT EXISTS {0} (
+    Id uuid NOT NULL PRIMARY KEY,
+    Expires TIMESTAMP,
+    Headers TEXT NOT NULL,
+    Body BYTEA,
+    Seq serial NOT NULL UNIQUE
+);
+";
 
     public string CreateDelayedMessageStoreText { get; set; } = @"
 CREATE TABLE IF NOT EXISTS {0} (
@@ -115,7 +114,8 @@ CREATE TABLE IF NOT EXISTS {0} (
     Headers text NOT NULL,
     Body bytea,
     Due timestamptz NOT NULL
-);";
+) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off);
+";
 
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
     public string CreateSubscriptionTableText { get; set; } = @"
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS {0} (
         Endpoint,
         Topic
     )
-)
+) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off)
 ";
 
     public string SubscribeText { get; set; } = @"
