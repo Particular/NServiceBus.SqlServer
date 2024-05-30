@@ -110,11 +110,13 @@ CREATE TABLE IF NOT EXISTS {0} (
 
     public string CreateDelayedMessageStoreText { get; set; } = @"
 CREATE TABLE IF NOT EXISTS {0} (
-    Id uuid NOT NULL DEFAULT gen_random_uuid(), 
+    Id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY, 
     Headers text NOT NULL,
     Body bytea,
     Due timestamptz NOT NULL
 ) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off);
+
+CREATE UNIQUE  INDEX ""{1}_Due"" on {0}(Due);
 ";
 
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
