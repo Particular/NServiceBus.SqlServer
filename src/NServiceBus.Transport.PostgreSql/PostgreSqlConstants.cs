@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS {0} (
     Due timestamptz NOT NULL
 ) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off);
 
-CREATE UNIQUE INDEX IF NOT EXISTS  ""{1}_Due"" on {0}(Due);
+CREATE INDEX IF NOT EXISTS  ""{1}_Due"" on {0}(Due);
 ";
 
     //HINT: https://stackoverflow.com/questions/1766046/postgresql-create-table-if-not-exists
