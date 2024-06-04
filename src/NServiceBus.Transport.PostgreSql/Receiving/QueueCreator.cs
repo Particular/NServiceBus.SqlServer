@@ -45,7 +45,7 @@ namespace NServiceBus.Transport.PostgreSql
                 {
                     var tableName = canonicalQueueAddress.QualifiedTableName;
 
-                    var sql = string.Format(creationScript, tableName);
+                    var sql = string.Format(creationScript, tableName, canonicalQueueAddress.Table);
                     using (var command = connection.CreateCommand())
                     {
                         command.Transaction = transaction;
