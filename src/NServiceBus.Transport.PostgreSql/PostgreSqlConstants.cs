@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS {0} (
     Headers text NOT NULL,
     Body bytea,
     Due timestamptz NOT NULL
-) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off);
+) WITH (fillfactor=100);
 
 CREATE INDEX IF NOT EXISTS  ""{1}_Due"" on {0}(Due);
 ";
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS {0} (
         Endpoint,
         Topic
     )
-) WITH (fillfactor=100, autovacuum_enabled=off, toast.autovacuum_enabled=off)
+) WITH (fillfactor=100)
 ";
 
     public string SubscribeText { get; set; } = @"
