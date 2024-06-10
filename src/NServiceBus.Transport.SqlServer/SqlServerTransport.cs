@@ -6,6 +6,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
     using Transport;
+    using Transport.Sql.Shared.Queuing;
     using Transport.SqlServer;
 
     /// <summary>
@@ -155,7 +156,6 @@ namespace NServiceBus
         /// <summary>
         /// Disable native delayed delivery infrastructure
         /// </summary>
-        ///TODO: this is for SC usage only. It should not be public
         internal bool DisableDelayedDelivery { get; set; } = false;
 
         internal TestingInformation Testing { get; } = new TestingInformation();

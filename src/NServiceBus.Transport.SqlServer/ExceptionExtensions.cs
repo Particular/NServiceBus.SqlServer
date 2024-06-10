@@ -19,6 +19,8 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
+        public static bool IsObjectAlreadyExists(this Exception ex) => ex is SqlException { Number: 2714 or 1913 };
+
         // the SQL client sometimes throws an SqlException when operations are canceled instead of an OperationCanceledException
 #pragma warning disable PS0003 // A parameter of type CancellationToken on a non-private delegate or method should be optional
         public static bool IsCausedBy(this Exception ex, CancellationToken cancellationToken) =>

@@ -1,7 +1,6 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using static NameHelper;
 
     class QualifiedSubscriptionTableName
     {
@@ -25,8 +24,8 @@
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            QuotedCatalog = Quote(catalog);
-            QuotedQualifiedName = $"{Quote(catalog)}.{Quote(schema)}.{Quote(table)}";
+            QuotedCatalog = SqlServerNameHelper.Quote(catalog);
+            QuotedQualifiedName = $"{SqlServerNameHelper.Quote(catalog)}.{SqlServerNameHelper.Quote(schema)}.{SqlServerNameHelper.Quote(table)}";
         }
     }
 }

@@ -29,4 +29,8 @@
     <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.UnitTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

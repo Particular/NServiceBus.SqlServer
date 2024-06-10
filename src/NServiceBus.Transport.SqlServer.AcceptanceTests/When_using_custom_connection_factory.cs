@@ -6,6 +6,7 @@
     using AcceptanceTesting.Customization;
     using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
+    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
@@ -39,7 +40,6 @@
 
                 EndpointSetup(new CustomizedServer(transport), (c, sd) =>
                 {
-                    c.OverridePublicReturnAddress($"{Conventions.EndpointNamingConvention(typeof(Endpoint))}@dbo@nservicebus");
                 });
             }
 

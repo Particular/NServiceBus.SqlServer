@@ -5,6 +5,8 @@
     using System.Threading.Tasks;
     using System.Transactions;
     using NUnit.Framework;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
     using SqlServer;
     using Transport;
 
@@ -15,6 +17,7 @@
         const int PeekTimeoutInSeconds = 2;
 
         TableBasedQueue queue;
+        SqlServerConstants sqlConstants = new();
 
         [SetUp]
         public async Task SetUp()
@@ -23,30 +26,30 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
-            await CreateQueueIfNotExists(addressParser, sqlConnectionFactory);
+            await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
+            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
         }
 
         [Test]
         public async Task It_does_not_block_queue_peeking()
         {
-            await SendMessage(queue, sqlConnectionFactory);
+            await SendMessage(queue, dbConnectionFactory);
 
-            var receiveTask = ReceiveWithLongHandling(queue, sqlConnectionFactory);
+            var receiveTask = ReceiveWithLongHandling(queue, dbConnectionFactory);
 
-            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue, sqlConnectionFactory); });
+            Assert.DoesNotThrowAsync(async () => { await TryPeekQueueSize(queue, dbConnectionFactory); });
 
             await receiveTask;
         }
 
-        static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
+                using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
                     var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], new byte[0]);
@@ -57,25 +60,25 @@
             }
         }
 
-        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
+                using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
-                    tableBasedQueue.FormatPeekCommand(100);
+                    tableBasedQueue.FormatPeekCommand();
                     await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
                     scope.Complete();
                 }
             }
         }
 
-        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken))
+                using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
                     await tableBasedQueue.TryReceive(connection, tx, cancellationToken);
@@ -86,11 +89,11 @@
             }
         }
 
-        SqlConnectionFactory sqlConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
-        static Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator, false);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, false);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }

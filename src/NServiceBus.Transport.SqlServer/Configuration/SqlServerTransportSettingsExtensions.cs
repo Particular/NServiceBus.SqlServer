@@ -11,7 +11,7 @@ namespace NServiceBus
     /// <summary>
     /// Provides support for <see cref="UseTransport{T}"/> transport APIs.
     /// </summary>
-    public static partial class SqlServerTransportSettingsExtensions
+    public static class SqlServerTransportSettingsExtensions
     {
         /// <summary>
         /// Configures NServiceBus to use the given transport.

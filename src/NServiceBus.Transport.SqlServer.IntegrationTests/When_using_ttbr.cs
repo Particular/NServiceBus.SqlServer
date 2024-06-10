@@ -8,15 +8,21 @@
     using NUnit.Framework;
     using Performance.TimeToBeReceived;
     using Routing;
+    using Sql.Shared.Queuing;
+    using Sql.Shared.Receiving;
+    using Sql.Shared.Sending;
     using SqlServer;
     using Transport;
+    using SettingsKeys = SettingsKeys;
 
     public class When_using_ttbr
     {
+        SqlServerConstants sqlConstants = new();
+
         [Test]
         public async Task Defaults_to_no_ttbr()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -45,7 +51,7 @@
         [Test]
         public async Task Diagnostic_headers_are_ignored()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -78,7 +84,7 @@
         [Test]
         public async Task Delivery_constraint_is_respected()
         {
-            using (var connection = sqlConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
@@ -116,32 +122,39 @@
 
         async Task PrepareAsync(CancellationToken cancellationToken = default)
         {
-            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
-            var tableCache = new TableBasedQueueCache(addressParser, true);
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions());
+            var tableCache = new TableBasedQueueCache(
+                (address, isStreamSupported) =>
+                {
+                    var canonicalAddress = addressTranslator.Parse(address);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                },
+                s => addressTranslator.Parse(s).Address,
+                true);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
-            await CreateOutputQueueIfNecessary(addressParser, sqlConnectionFactory, cancellationToken);
+            await CreateOutputQueueIfNecessary(addressTranslator, dbConnectionFactory, cancellationToken);
 
-            await PurgeOutputQueue(addressParser, cancellationToken);
+            await PurgeOutputQueue(addressTranslator, cancellationToken);
 
-            dispatcher = new MessageDispatcher(addressParser, new NoOpMulticastToUnicastConverter(), tableCache, null, sqlConnectionFactory);
+            dispatcher = new MessageDispatcher(s => addressTranslator.Parse(s).Address, new NoOpMulticastToUnicastConverter(), tableCache, null, dbConnectionFactory);
         }
 
         Task PurgeOutputQueue(QueueAddressTranslator addressParser, CancellationToken cancellationToken = default)
         {
-            purger = new QueuePurger(sqlConnectionFactory);
+            purger = new QueuePurger(dbConnectionFactory);
             var queueAddress = addressParser.Parse(ValidAddress);
-            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
+            queue = new SqlTableBasedQueue(sqlConstants, queueAddress.QualifiedTableName, queueAddress.Address, true);
 
             return purger.Purge(queue, cancellationToken);
         }
 
-        static Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
+        Task CreateOutputQueueIfNecessary(QueueAddressTranslator addressParser, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConnectionFactory, addressParser);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressParser.Parse);
 
             return queueCreator.CreateQueueIfNecessary(new[] { ValidAddress }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }
@@ -149,7 +162,7 @@
         QueuePurger purger;
         MessageDispatcher dispatcher;
         TableBasedQueue queue;
-        SqlConnectionFactory sqlConnectionFactory;
+        SqlServerDbConnectionFactory dbConnectionFactory;
 
         const string ValidAddress = "TTBRTests";
 

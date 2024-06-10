@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.6
         with:
           fetch-depth: 0
       - name: Setup .NET SDK
@@ -36,7 +36,7 @@ jobs:
         run: dotnet build src --configuration Release
       - name: Upload packages
         if: matrix.name == 'Windows'
-        uses: actions/upload-artifact@v4.3.1
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: NuGet packages
           path: nugets/
@@ -56,5 +56,65 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
+      - name: Azure login
+        uses: azure/login@v2.1.0
+        with:
+          creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}    
+      - name: Setup PostgreSql 15.x
+        id: setup-postgresql
+        run: |
+          echo "Getting the Azure region in which this workflow is running..."
+          $hostInfo = curl -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | ConvertFrom-Json
+          $region = $hostInfo.compute.location
+          echo "Actions agent running in Azure region: $region"
+
+          $name = "postgres-$(Get-Random)"
+          $packageTag = "Package=SqlPersistence"
+          $runnerOsTag = "RunnerOS=$($Env:RUNNER_OS)"
+          $dateTag = "Created=$(Get-Date -Format "yyyy-MM-dd")"
+
+          $password = [guid]::NewGuid().ToString("n")
+          echo "::add-mask::$password"
+
+          echo "Creating PostgreSQL container $name (This can take a while)"
+          $details = az container create --image postgres:15 --name $name --location $region --dns-name-label $name --resource-group GitHubActions-RG --cpu 2 --memory 8 --ports 5432 --ip-address public --environment-variables POSTGRES_PASSWORD="$password" --command-line "docker-entrypoint.sh postgres --max-prepared-transactions=10" | ConvertFrom-Json
+          echo "name=$name" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf-8 -Append
+
+          echo "Tagging container"
+          $ignore = az tag create --resource-id $details.id --tags $packageTag $runnerOsTag $dateTag
+
+          $fqdn = $details.ipAddress.fqdn
+          echo "::add-mask::$fqdn"
+
+          $connectionString = "User ID=postgres;Password=$password;Host=$fqdn;Port=5432;Database=postgres;"
+          echo "PostgreSqlTransportConnectionString=$connectionString" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+
+          $env:PGPASSWORD = $password
+
+          # psql not in PATH on Windows
+          if ($Env:RUNNER_OS -eq 'Windows') {
+            $Env:PATH = $Env:PATH + ';' + $Env:PGBIN
+          }
+
+          for ($i = 0; $i -lt 24; $i++) { ## 2 minute timeout
+            echo "Checking for PostgreSQL connectivity $($i+1)/30..."
+            $ignore = psql --host $fqdn --username=postgres --list
+            if ($?) {
+              echo "Connection successful"
+              break;
+            }
+            sleep 5
+          }
+
+          # create schemas
+          $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS sender'
+          $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS receiver'
+          $ignore = psql --host $fqdn --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS "db@"'
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0
+      - name: Teardown infrastructure
+        if: ${{ always() }}
+        run: |
+          echo "Removing container ${{ steps.setup-postgresql.outputs.name }}"
+          $ignore = az container delete --resource-group GitHubActions-RG --name ${{ steps.setup-postgresql.outputs.name }} --yes
+          echo "Removal complete"
