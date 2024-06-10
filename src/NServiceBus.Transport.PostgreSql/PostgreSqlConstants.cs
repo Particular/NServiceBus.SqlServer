@@ -14,10 +14,9 @@ INSERT INTO {0} (
     Body)
 VALUES (
     @Id,
-    NULL,
+    (now() AT TIME ZONE 'UTC') + (@TimeToBeReceivedMs || ' ms')::INTERVAL,
     @Headers,
-    @Body);
-";
+    @Body);";
 
     public string StoreDelayedMessageText { get; set; } = @"
 WITH params (DueDate) as (
