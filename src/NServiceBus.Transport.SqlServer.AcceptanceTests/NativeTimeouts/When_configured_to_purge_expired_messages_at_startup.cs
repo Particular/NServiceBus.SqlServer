@@ -12,6 +12,7 @@
     using NUnit.Framework;
     using Sql.Shared.Queuing;
 
+
     class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptanceTest
     {
         SqlServerConstants sqlConstants = new();
