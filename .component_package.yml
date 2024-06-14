@@ -1,3 +1,0 @@
-component_type: Transport
-component_packages:
-  - name: NServiceBus.Transport.SqlServer
