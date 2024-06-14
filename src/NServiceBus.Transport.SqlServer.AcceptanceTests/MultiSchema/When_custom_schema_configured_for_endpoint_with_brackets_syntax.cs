@@ -30,7 +30,7 @@
                     var receiverEndpoint = $"{EndpointNamingConvention(typeof(Receiver))}";
 
                     c.ConfigureRouting().RouteToEndpoint(typeof(Message), receiverEndpoint);
-                    c.ConfigureRouting().UseSchemaForEndpoint(receiverEndpoint, ConfigurationHelpers.QuoteSchema(ReceiverSchema));
+                    c.ConfigureRouting().UseSchemaForEndpoint(receiverEndpoint, $"[{ReceiverSchema}]");
                 });
             }
         }

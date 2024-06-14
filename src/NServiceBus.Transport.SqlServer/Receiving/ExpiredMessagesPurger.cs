@@ -1,23 +1,20 @@
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using NServiceBus.Transport.Sql.Shared.Queuing;
-    using Sql.Shared;
+    using Microsoft.Data.SqlClient;
 
     class ExpiredMessagesPurger : IExpiredMessagesPurger
     {
-        public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, int? purgeBatchSize, IExceptionClassifier exceptionClassifier)
+        public ExpiredMessagesPurger(Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection, int? purgeBatchSize)
         {
             this.openConnection = openConnection;
-            this.exceptionClassifier = exceptionClassifier;
             this.purgeBatchSize = purgeBatchSize ?? DefaultPurgeBatchSize;
         }
 
-        public async Task Purge(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
+        public async Task Purge(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             Logger.DebugFormat("Starting a new expired message purge task for table {0}.", queue);
             var totalPurgedRowsCount = 0;
@@ -41,7 +38,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 Logger.DebugFormat("{0} expired messages were successfully purged from table {1}", totalPurgedRowsCount, queue);
             }
-            catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 Logger.WarnFormat("Purging expired messages from table {0} failed after purging {1} messages.", queue, totalPurgedRowsCount);
                 throw;
@@ -49,8 +46,7 @@ namespace NServiceBus.Transport.SqlServer
         }
 
         int purgeBatchSize;
-        Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
-        readonly IExceptionClassifier exceptionClassifier;
+        Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection;
         const int DefaultPurgeBatchSize = 10000;
         static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }

@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using NServiceBus.Extensibility;
     using NUnit.Framework;
-    using Sql.Shared.Receiving;
+    using SqlServer;
 
     public class FailureInfoStorageTests
     {

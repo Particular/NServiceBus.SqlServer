@@ -4,15 +4,13 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
     using SqlServer;
 
     public class When_checking_schema
     {
         const string QueueTableName = "CheckingSchema";
 
-        SqlTableBasedQueue queue;
-        SqlServerConstants sqlConstants = new();
+        TableBasedQueue queue;
 
         [SetUp]
         public async Task SetUp()
@@ -21,30 +19,30 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
+            sqlConnectionFactory = SqlConnectionFactory.Default(connectionString);
 
-            await ResetQueue(addressParser, dbConnectionFactory);
+            await ResetQueue(addressParser, sqlConnectionFactory);
 
-            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
+            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
         }
 
         [Test]
         public async Task It_returns_type_for_headers_column()
         {
-            using (var connection = await dbConnectionFactory.OpenNewConnection())
+            using (var connection = await sqlConnectionFactory.OpenNewConnection())
             {
                 var type = await queue.CheckHeadersColumnType(connection);
                 Assert.AreEqual("nvarchar", type);
             }
         }
 
-        SqlServerDbConnectionFactory dbConnectionFactory;
+        SqlConnectionFactory sqlConnectionFactory;
 
-        async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
+        static async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlConnectionFactory sqlConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            var queueCreator = new QueueCreator(sqlConnectionFactory, addressTranslator);
 
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using (var connection = await sqlConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 using (var comm = connection.CreateCommand())
                 {

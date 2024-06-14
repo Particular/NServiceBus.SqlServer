@@ -20,7 +20,9 @@
             {
                 EndpointSetup<DefaultServer>(c =>
                 {
-                    c.ConfigureSqlServerTransport().DefaultSchema = ReceiverSchema;
+                    var endpointName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(Receiver));
+
+                    c.ConfigureSqlServerTransport().SchemaAndCatalog.UseSchemaForQueue(endpointName, ReceiverSchema);
                 });
             }
 

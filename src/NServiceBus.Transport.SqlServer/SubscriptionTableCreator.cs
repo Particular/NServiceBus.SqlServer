@@ -4,18 +4,14 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.Queuing;
 
     class SubscriptionTableCreator
     {
-        ISqlConstants sqlConstants;
         QualifiedSubscriptionTableName tableName;
-        DbConnectionFactory connectionFactory;
+        SqlConnectionFactory connectionFactory;
 
-        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
+        public SubscriptionTableCreator(QualifiedSubscriptionTableName tableName, SqlConnectionFactory connectionFactory)
         {
-            this.sqlConstants = sqlConstants;
             this.tableName = tableName;
             this.connectionFactory = connectionFactory;
         }
@@ -27,14 +23,13 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-                        var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
+                        var sql = string.Format(SqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 
-                        using (var command = connection.CreateCommand())
+                        using (var command = new SqlCommand(sql, connection, transaction)
                         {
-                            command.Transaction = transaction;
-                            command.CommandText = sql;
-                            command.CommandType = CommandType.Text;
-
+                            CommandType = CommandType.Text
+                        })
+                        {
                             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                         }
 

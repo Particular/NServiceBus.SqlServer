@@ -30,7 +30,9 @@
             {
                 EndpointSetup<DefaultServer>((c, r) =>
                 {
-                    var receiverAddress = ConfigurationHelpers.BuildAddressWithSchema(EndpointNamingConvention(typeof(Receiver)), ReceiverSchema);
+                    var receiverAddress = $"{EndpointNamingConvention(typeof(Receiver))}@{ReceiverSchema}";
+
+                    var transportSettings = c.ConfigureSqlServerTransport();
 
                     c.GetSettings()
                     .GetOrCreate<UnicastRoutingTable>()

@@ -47,7 +47,7 @@
         bool QueueIsEmpty()
         {
             var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
-
+            // TODO: Move opening SQL connection out of the method.
             using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();

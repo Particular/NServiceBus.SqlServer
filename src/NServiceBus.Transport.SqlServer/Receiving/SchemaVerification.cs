@@ -1,21 +1,20 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
-    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Sql.Shared.Queuing;
+    using Microsoft.Data.SqlClient;
 
     class SchemaInspector
     {
-        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex)
+        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection, bool validateExpiredIndex)
         {
             this.openConnection = openConnection;
             this.validateExpiredIndex = validateExpiredIndex;
         }
 
-        public async Task PerformInspection(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
+        public async Task PerformInspection(TableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             if (validateExpiredIndex)
             {
@@ -26,7 +25,7 @@
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
         }
 
-        async Task VerifyIndex(SqlTableBasedQueue queue, Func<SqlTableBasedQueue, DbConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
+        async Task VerifyIndex(TableBasedQueue queue, Func<TableBasedQueue, SqlConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -45,7 +44,7 @@
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
-        Task VerifyNonClusteredRowVersionIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
+        Task VerifyNonClusteredRowVersionIndex(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -54,7 +53,7 @@
                 cancellationToken);
         }
 
-        Task VerifyExpiredIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
+        Task VerifyExpiredIndex(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             return VerifyIndex(
                 queue,
@@ -64,7 +63,7 @@
             );
         }
 
-        async Task VerifyHeadersColumnType(SqlTableBasedQueue queue, CancellationToken cancellationToken)
+        async Task VerifyHeadersColumnType(TableBasedQueue queue, CancellationToken cancellationToken)
         {
             try
             {
@@ -83,8 +82,8 @@
             }
         }
 
-        Func<SqlTableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
+        Func<TableBasedQueue, CancellationToken, Task<SqlConnection>> openConnection;
         readonly bool validateExpiredIndex;
-        static ILog Logger = LogManager.GetLogger<SchemaInspector>();
+        static ILog Logger = LogManager.GetLogger<ExpiredMessagesPurger>();
     }
 }

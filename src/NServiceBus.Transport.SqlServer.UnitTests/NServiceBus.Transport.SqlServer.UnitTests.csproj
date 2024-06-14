@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
     <ProjectReference Include="..\NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj" />
   </ItemGroup>
 
