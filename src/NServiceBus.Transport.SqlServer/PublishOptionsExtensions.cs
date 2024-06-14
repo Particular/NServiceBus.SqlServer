@@ -1,9 +1,10 @@
 ﻿namespace NServiceBus
 {
-    using Microsoft.Data.SqlClient;
     using System;
     using Extensibility;
-    using Transport.Sql.Shared.Sending;
+    using Microsoft.Data.SqlClient;
+    using Transport;
+    using Transport.SqlServer;
 
     /// <summary>
     /// Adds transport specific settings to PublishOptions
@@ -22,7 +23,9 @@
             // Which is exactly what will happen after NServiceBus dispatches this message immediately.
             options.RequireImmediateDispatch();
 
-            var transportTransaction = TransportTransactions.UserProvided(transaction);
+            var transportTransaction = new TransportTransaction();
+            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
+            transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
             options.GetExtensions().Set(transportTransaction);
         }
 
@@ -40,7 +43,9 @@
 
             options.RequireImmediateDispatch();
 
-            var transportTransaction = TransportTransactions.UserProvided(connection);
+            var transportTransaction = new TransportTransaction();
+            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
+            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
 
             options.GetExtensions().Set(transportTransaction);
         }

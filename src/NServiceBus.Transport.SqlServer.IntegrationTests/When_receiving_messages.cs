@@ -1,20 +1,16 @@
-namespace NServiceBus.Transport.SqlServer.IntegrationTests
+﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
-    using System.Data.Common;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
-    using Transport;
     using SqlServer;
+    using Transport;
 
     public class When_receiving_messages
     {
-        SqlServerConstants sqlConstants = new();
-
         [Test]
         public async Task Should_stop_receiving_messages_after_first_unsuccessful_receive()
         {
@@ -24,26 +20,18 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var inputQueueName = "input";
             var inputQueueAddress = parser.Parse(inputQueueName).Address;
-            var inputQueue = new FakeTableBasedQueue(sqlConstants, inputQueueAddress, queueSize, successfulReceives);
+            var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            var transport = new SqlServerTransport(async (ct) =>
-            {
-                var factory = new SqlServerDbConnectionFactory(connectionString);
-                var connection = await factory.OpenNewConnection(ct);
-
-                return (SqlConnection)connection;
-            })
+            var transport = new SqlServerTransport(SqlConnectionFactory.Default(connectionString).OpenNewConnection)
             {
                 TransportTransactionMode = TransportTransactionMode.None,
                 TimeToWaitBeforeTriggeringCircuitBreaker = TimeSpan.MaxValue,
             };
 
             transport.Testing.QueueFactoryOverride = qa =>
-                qa == inputQueueAddress
-                    ? inputQueue
-                    : new SqlTableBasedQueue(sqlConstants, parser.Parse(qa).QualifiedTableName, qa, true);
+                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
 
             var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
@@ -87,7 +75,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             throw new Exception("Condition has not been met in predefined timespan.");
         }
 
-        class FakeTableBasedQueue : SqlTableBasedQueue
+        class FakeTableBasedQueue : TableBasedQueue
         {
             public int NumberOfReceives { get; set; }
             public int NumberOfPeeks { get; set; }
@@ -95,13 +83,13 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(SqlServerConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, address, "", true)
+            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+            public override Task<MessageReadResult> TryReceive(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 
@@ -112,11 +100,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 return Task.FromResult(readResult);
             }
 
-            protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
-                CancellationToken cancellationToken = default) =>
-                throw new NotImplementedException();
-
-            public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+            public override Task<int> TryPeek(SqlConnection connection, SqlTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 

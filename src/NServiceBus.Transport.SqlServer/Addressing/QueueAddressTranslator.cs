@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Collections.Concurrent;
@@ -31,7 +31,7 @@ namespace NServiceBus.Transport.SqlServer
             return physicalAddressCache.GetOrAdd(address, TranslatePhysicalAddress);
         }
 
-        public CanonicalQueueAddress TranslatePhysicalAddress(string address)
+        CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
             var transportAddress = QueueAddress.Parse(address);
 

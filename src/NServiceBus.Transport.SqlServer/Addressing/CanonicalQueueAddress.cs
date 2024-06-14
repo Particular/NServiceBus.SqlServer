@@ -1,6 +1,7 @@
-namespace NServiceBus.Transport.SqlServer
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using static NameHelper;
 
     class CanonicalQueueAddress
     {
@@ -14,8 +15,7 @@ namespace NServiceBus.Transport.SqlServer
             Catalog = catalogName;
             Schema = schemaName;
             Address = GetCanonicalForm();
-            QuotedCatalogName = SqlServerNameHelper.Quote(Catalog);
-            QualifiedTableName = $"{SqlServerNameHelper.Quote(Catalog)}.{SqlServerNameHelper.Quote(Schema)}.{SqlServerNameHelper.Quote(Table)}";
+            QualifiedTableName = $"{Quote(Catalog)}.{Quote(Schema)}.{Quote(Table)}";
         }
 
         public string Catalog { get; }
@@ -24,11 +24,11 @@ namespace NServiceBus.Transport.SqlServer
         public string Address { get; }
 
         public string QualifiedTableName { get; }
-        public string QuotedCatalogName { get; }
+        public string QuotedCatalogName => Quote(Catalog);
 
         string GetCanonicalForm()
         {
-            return $"{Table}@{SqlServerNameHelper.Quote(Schema)}@{SqlServerNameHelper.Quote(Catalog)}";
+            return $"{Table}@{Quote(Schema)}@{Quote(Catalog)}";
         }
     }
 }
