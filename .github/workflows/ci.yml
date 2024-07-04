@@ -62,20 +62,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Setup PostgreSql 15.x
-        uses: Particular/setup-postgres-action@4ac6332911185c5f678fdef8f0e1912c478ec528
+        uses: Particular/setup-postgres-action@68ceab91b17a96c30f9c9d382d269e811b0f8977
         with:
           connection-string-name: PostgreSqlTransportConnectionString
+          init-script: './.github/workflows/scripts/init-postgres.sql'
           tag: SqlTransport
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}  
-      - name: Prepare PostgreSql
-        run: |
-          $conn = New-Object System.Data.Common.DbConnectionStringBuilder
-          $conn.psBase.ConnectionString = $Env:PostgreSqlTransportConnectionString
-          $ipAddress = $conn.Item('host')
-          # create schemas
-          $ignore = psql --host $ipAddress --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS sender'
-          $ignore = psql --host $ipAddress --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS receiver'
-          $ignore = psql --host $ipAddress --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS "db@"'
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0
