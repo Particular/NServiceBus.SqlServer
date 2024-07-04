@@ -70,9 +70,9 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}  
       - name: Prepare PostgreSql
         run: |
-          $conn = New-Object System.Data.SqlClient.SqlConnectionStringBuilder
-          $conn.Item['ConnectionString'] = $Env:PostgreSqlTransportConnectionString
-          $ipAddress = $conn.Item['Host']
+          $conn = New-Object System.Data.Common.DbConnectionStringBuilder
+          $conn.psBase.ConnectionString = $Env:PostgreSqlTransportConnectionString
+          $ipAddress = $conn.Item('host')
           # create schemas
           $ignore = psql --host $ipAddress --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS sender'
           $ignore = psql --host $ipAddress --username=postgres --dbname=postgres --command 'CREATE SCHEMA IF NOT EXISTS receiver'
