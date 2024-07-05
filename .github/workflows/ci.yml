@@ -61,7 +61,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Setup PostgreSql 15.x
-        uses: Particular/setup-postgres-action@68ceab91b17a96c30f9c9d382d269e811b0f8977
+        uses: Particular/setup-postgres-action@v1.0.0
         with:
           connection-string-name: PostgreSqlTransportConnectionString
           init-script: './.github/workflows/scripts/init-postgres.sql'
