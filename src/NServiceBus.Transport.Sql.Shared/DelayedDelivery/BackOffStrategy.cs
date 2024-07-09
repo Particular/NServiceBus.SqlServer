@@ -40,7 +40,11 @@ class BackOffStrategy
         {
             int waitTime = (int)(NextExecutionTime - DateTime.UtcNow).TotalMilliseconds;
             waitTime = waitTime < 1000 ? waitTime : 1000;
-            await Task.Delay(waitTime, cancellationToken).ConfigureAwait(false);
+
+            if (waitTime > 0)
+            {
+                await Task.Delay(waitTime, cancellationToken).ConfigureAwait(false);
+            }
         }
         NextExecutionTime = DateTime.MaxValue;
     }
