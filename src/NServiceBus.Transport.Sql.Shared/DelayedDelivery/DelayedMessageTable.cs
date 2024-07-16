@@ -8,13 +8,13 @@ namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery
     using Queuing;
     using Transport;
 
-    public interface IDelayedMessageStore
+    interface IDelayedMessageStore
     {
         Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    public class DelayedMessageTable : IDelayedMessageStore
+    class DelayedMessageTable : IDelayedMessageStore
     {
         public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
         {

@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Transactions;
 using Receiving;
 
-public static class TransportTransactions
+static class TransportTransactions
 {
     public static TransportTransaction NoTransaction(DbConnection connection)
     {

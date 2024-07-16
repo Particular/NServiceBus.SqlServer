@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 
-public class BackOffStrategy
+class BackOffStrategy
 {
     public void RegisterNewDueTime(DateTime dueTime)
     {

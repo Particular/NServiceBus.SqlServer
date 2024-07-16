@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
     using static System.String;
 
 #pragma warning disable CA1711 // Identifiers should not have incorrect suffix
-    public abstract class TableBasedQueue
+    abstract class TableBasedQueue
 #pragma warning restore CA1711 // Identifiers should not have incorrect suffix
     {
         public string Name { get; }

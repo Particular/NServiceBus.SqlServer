@@ -1,6 +1,6 @@
 namespace NServiceBus.Transport.Sql.Shared.Queuing
 {
-    public struct MessageReadResult
+    struct MessageReadResult
     {
         MessageReadResult(Message message, MessageRow poisonMessage)
         {
