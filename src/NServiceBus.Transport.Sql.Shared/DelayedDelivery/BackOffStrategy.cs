@@ -37,9 +37,9 @@ public class BackOffStrategy(TimeProvider timeProvider = null)
 
         // While running this loop, a new delayed message can be stored
         // and NextExecutionTime could be set to a new (sooner) time.
-        while (now < NextExecutionTime)
+        TimeSpan waitTime;
+        while ((waitTime = NextExecutionTime - now) > TimeSpan.Zero)
         {
-            var waitTime = NextExecutionTime - now;
             waitTime = waitTime < oneSecond ? waitTime : oneSecond;
             await Task.Delay(waitTime, timeProvider, cancellationToken).ConfigureAwait(false);
         }
