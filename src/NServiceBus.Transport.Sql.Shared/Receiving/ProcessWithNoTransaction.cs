@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Queuing;
     using Sending;
 
-    public class ProcessWithNoTransaction : ProcessStrategy
+    class ProcessWithNoTransaction : ProcessStrategy
     {
         public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)

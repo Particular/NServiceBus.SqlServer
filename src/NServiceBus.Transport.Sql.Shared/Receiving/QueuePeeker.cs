@@ -8,7 +8,7 @@
     using Logging;
     using Queuing;
 
-    public class QueuePeeker : IPeekMessagesInQueue
+    class QueuePeeker : IPeekMessagesInQueue
     {
         public QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay)
         {

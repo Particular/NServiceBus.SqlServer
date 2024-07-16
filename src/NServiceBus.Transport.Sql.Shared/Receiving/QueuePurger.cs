@@ -5,7 +5,7 @@
     using Shared.Configuration;
     using Shared.Queuing;
 
-    public class QueuePurger : IPurgeQueues
+    class QueuePurger : IPurgeQueues
     {
         public QueuePurger(DbConnectionFactory connectionFactory)
         {

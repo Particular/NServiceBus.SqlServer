@@ -6,7 +6,7 @@ using System.Threading;
 using System;
 using NServiceBus.Logging;
 
-public abstract class DbConnectionFactory
+abstract class DbConnectionFactory
 {
     public DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory)
     {
