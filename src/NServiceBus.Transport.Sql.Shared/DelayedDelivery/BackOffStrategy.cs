@@ -1,11 +1,11 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery;
+namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery;
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 
-class BackOffStrategy
+public class BackOffStrategy(TimeProvider timeProvider = null)
 {
     public void RegisterNewDueTime(DateTime dueTime)
     {
@@ -36,9 +36,9 @@ class BackOffStrategy
 
         // While running this loop, a new delayed message can be stored
         // and NextExecutionTime could be set to a new (sooner) time.
-        while (DateTime.UtcNow < NextExecutionTime)
+        while (timeProvider.GetUtcNow() < NextExecutionTime)
         {
-            int waitTime = (int)(NextExecutionTime - DateTime.UtcNow).TotalMilliseconds;
+            int waitTime = (int)(NextExecutionTime - timeProvider.GetUtcNow()).TotalMilliseconds;
             waitTime = waitTime < 1000 ? waitTime : 1000;
 
             if (waitTime > 0)
@@ -53,7 +53,7 @@ class BackOffStrategy
     {
         IncreaseExponentialBackOff();
 
-        var calculatedBackoffTime = DateTime.UtcNow.AddMilliseconds(milliseconds);
+        var calculatedBackoffTime = timeProvider.GetUtcNow().AddMilliseconds(milliseconds);
 
         // If the next delayed message is coming up before the back-off time, use that.
         if (DelayedMessageAvailable && calculatedBackoffTime > NextDelayedMessage)
@@ -67,8 +67,8 @@ class BackOffStrategy
         }
 
         Logger.Debug(
-            $"Exponentially backing off for {milliseconds / 1000} seconds until {calculatedBackoffTime}.");
-        NextExecutionTime = calculatedBackoffTime;
+            $"Exponentially backing off for {milliseconds / 1000} seconds until {calculatedBackoffTime.UtcDateTime}.");
+        NextExecutionTime = calculatedBackoffTime.UtcDateTime;
     }
 
     void IncreaseExponentialBackOff()
@@ -83,10 +83,11 @@ class BackOffStrategy
     const int MaximumDelayUntilNextPeek = 60000;
     const int InitialBackOffTime = 500;
 
-    internal DateTime NextDelayedMessage { get; set; } = DateTime.UtcNow;
-    internal DateTime NextExecutionTime { get; set; } = DateTime.UtcNow.AddSeconds(2);
+    internal DateTime NextDelayedMessage { get; set; } = timeProvider.GetUtcNow().UtcDateTime;
+    internal DateTime NextExecutionTime { get; set; } = timeProvider.GetUtcNow().AddSeconds(2).UtcDateTime;
     bool DelayedMessageAvailable { get; set; }
 
     int milliseconds = InitialBackOffTime; // First time multiplied will be 1 second.
     static readonly ILog Logger = LogManager.GetLogger<BackOffStrategy>();
+    readonly TimeProvider timeProvider = timeProvider ?? TimeProvider.System;
 }
