@@ -11,7 +11,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Queuing;
     using Sending;
 
-    public class ProcessWithNativeTransaction : ProcessStrategy
+    class ProcessWithNativeTransaction : ProcessStrategy
     {
         public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)

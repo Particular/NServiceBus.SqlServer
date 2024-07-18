@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using Receiving;
     using DelayedDelivery;
 
-    public class DueDelayedMessageProcessor
+    class DueDelayedMessageProcessor
     {
         public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier,
             int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)

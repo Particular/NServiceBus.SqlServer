@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Logging;
     using Queuing;
 
-    public class MessageReceiver : IMessageReceiver
+    class MessageReceiver : IMessageReceiver
     {
         public MessageReceiver(
             TransportDefinition transport,

@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class SendOnlyDelayedMessageStore : IDelayedMessageStore
+class SendOnlyDelayedMessageStore : IDelayedMessageStore
 {
     public Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
         DbTransaction transaction, CancellationToken cancellationToken = default)

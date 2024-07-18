@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using System.Threading.Tasks;
 
 
-    public class CachedSubscriptionStore : ISubscriptionStore
+    class CachedSubscriptionStore : ISubscriptionStore
     {
         public CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor)
         {

@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using System.Threading.Tasks;
     using Sending;
 
-    public class MulticastToUnicastConverter : IMulticastToUnicastConverter
+    class MulticastToUnicastConverter : IMulticastToUnicastConverter
     {
         ISubscriptionStore subscriptions;
 

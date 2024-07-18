@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using Extensibility;
     using NServiceBus.Unicast.Messages;
 
-    public class SubscriptionManager(ISubscriptionStore subscriptionStore, string endpointName, string localAddress) : ISubscriptionManager
+    class SubscriptionManager(ISubscriptionStore subscriptionStore, string endpointName, string localAddress) : ISubscriptionManager
     {
         public Task Subscribe(MessageMetadata eventType, CancellationToken cancellationToken = default) => subscriptionStore.Subscribe(endpointName, localAddress, eventType.MessageType, cancellationToken);
 
