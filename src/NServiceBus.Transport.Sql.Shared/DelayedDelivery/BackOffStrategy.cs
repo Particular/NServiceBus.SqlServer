@@ -5,8 +5,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 
-class BackOffStrategy(TimeProvider timeProvider = null)
+class BackOffStrategy
 {
+    public BackOffStrategy() : this(TimeProvider.System) { }
+
+    public BackOffStrategy(TimeProvider timeProvider)
+    {
+        this.timeProvider = timeProvider;
+
+        NextExecutionTime = timeProvider.GetUtcNow().UtcDateTime.AddSeconds(2);
+        NextDelayedMessage = timeProvider.GetUtcNow().UtcDateTime;
+    }
+
     public void RegisterNewDueTime(DateTime dueTime)
     {
         NextDelayedMessage = dueTime;
@@ -81,13 +91,13 @@ class BackOffStrategy(TimeProvider timeProvider = null)
     const int MaximumDelayUntilNextPeek = 60000;
     const int InitialBackOffTime = 500;
 
-    internal DateTime NextDelayedMessage { get; set; } = timeProvider.GetUtcNow().UtcDateTime;
-    internal DateTime NextExecutionTime { get; set; } = timeProvider.GetUtcNow().UtcDateTime.AddSeconds(2);
+    internal DateTime NextDelayedMessage { get; private set; }
+    internal DateTime NextExecutionTime { get; private set; }
     bool DelayedMessageAvailable { get; set; }
 
     int milliseconds = InitialBackOffTime; // First time multiplied will be 1 second.
     static readonly ILog Logger = LogManager.GetLogger<BackOffStrategy>();
 
-    readonly TimeProvider timeProvider = timeProvider ?? TimeProvider.System;
+    readonly TimeProvider timeProvider;
     readonly TimeSpan oneSecond = TimeSpan.FromSeconds(1);
 }
