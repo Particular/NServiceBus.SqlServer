@@ -11,17 +11,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
+    <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="NServiceBus.AcceptanceTests.Sources" Version="9.1.0" GeneratePathProperty="true" />
     <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(PkgNServiceBus_AcceptanceTests_Sources)' != ''">
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\NServiceBusAcceptanceTest.cs" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_routing_reply_to_specific_instance.cs" />
     <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\When_sending_within_an_ambient_transaction.cs" />
+    <!--
+    TODO: The following two tests were not meant to be included in the sources. A fix has been merged to Core master and release-9.1 in:
+    - https://github.com/Particular/NServiceBus/pull/7121
+    - https://github.com/Particular/NServiceBus/pull/7122
+    The following two MSBuild elements can be removed once a version of the ATT source package is released
+    -->
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Core\DependencyInjection\When_resolving_address_translator.cs" />
+    <Compile Remove="$(PkgNServiceBus_AcceptanceTests_Sources)\**\Core\OpenTelemetry\Metrics\When_retrying_messages.cs" />
   </ItemGroup>
   
   <ItemGroup>
@@ -45,6 +53,7 @@
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NativeTimeouts\When_using_TTBR_for_deferred_message_in_native_mode.cs" Link="NativeTimeouts\When_using_TTBR_for_deferred_message_in_native_mode.cs" />
     
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\TransactionScope\When_using_scope_timeout_greater_than_machine_max.cs" Link="TransactionScope\When_using_scope_timeout_greater_than_machine_max.cs" />
+
   </ItemGroup>
   
 </Project>
