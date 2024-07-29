@@ -52,6 +52,8 @@ class BackOffStrategy
         {
             waitTime = waitTime < oneSecond ? waitTime : oneSecond;
             await Task.Delay(waitTime, timeProvider, cancellationToken).ConfigureAwait(false);
+
+            now = timeProvider.GetUtcNow();
         }
 
         NextExecutionTime = DateTime.MaxValue;
