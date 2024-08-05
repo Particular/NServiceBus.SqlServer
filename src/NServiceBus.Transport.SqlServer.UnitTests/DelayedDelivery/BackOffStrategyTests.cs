@@ -1,7 +1,9 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests.DelayedDelivery;
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
 using Sql.Shared.DelayedDelivery;
 
@@ -112,6 +114,26 @@ public class BackOffStrategyTests
         Assert.AreEqual(1, y);
     }
 
+    [Test]
+    public void When_WaitForNextExecution_Waits_It_Should_Wait_For_Exact_Difference_Between_Now_And_Next_Due_Time()
+    {
+        // Arrange
+        var oneMillisecond = TimeSpan.FromMilliseconds(1);
+        var timeProvider = new CaptureWhenTimerDueTimeProvider();
+        var strategy = new BackOffStrategy(timeProvider);
+        strategy.RegisterNewDueTime(timeProvider.GetUtcNow().Add(oneMillisecond).UtcDateTime);
+        timeProvider.AutoAdvanceAmount = oneMillisecond;
+
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1), TimeProvider.System);
+
+        // Act
+        async Task action() => await strategy.WaitForNextExecution(cts.Token).ConfigureAwait(false);
+
+        // Assert
+        Assert.ThrowsAsync<TaskCanceledException>(action);
+        Assert.That(timeProvider.DueTime, Is.EqualTo(oneMillisecond));
+    }
+
     /// <summary>
     /// Prevent flaky tests by allowing 999ms offset
     /// </summary>
@@ -119,5 +141,16 @@ public class BackOffStrategyTests
     {
         var difference = (after - before).TotalSeconds;
         return (int)double.Round(difference, MidpointRounding.ToZero);
+    }
+
+    class CaptureWhenTimerDueTimeProvider : FakeTimeProvider
+    {
+        public TimeSpan DueTime { get; private set; }
+
+        public override ITimer CreateTimer(TimerCallback callback, object state, TimeSpan dueTime, TimeSpan period)
+        {
+            DueTime = dueTime;
+            return base.CreateTimer(callback, state, dueTime, period);
+        }
     }
 }
