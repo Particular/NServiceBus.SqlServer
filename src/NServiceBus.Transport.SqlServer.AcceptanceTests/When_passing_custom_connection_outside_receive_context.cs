@@ -41,8 +41,8 @@
                 .Done(c => c.MarkerMessageReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.SendFromRollbackedScopeReceived);
-            Assert.IsFalse(context.PublishFromRollbackedScopeReceived);
+            Assert.That(context.SendFromRollbackedScopeReceived, Is.False);
+            Assert.That(context.PublishFromRollbackedScopeReceived, Is.False);
         }
 
         [Test]
