@@ -43,7 +43,7 @@
                 .Done(c => c.MessageForwardedToErrorQueue)
                 .Run();
 
-            Assert.IsTrue(context.MessageForwardedToErrorQueue);
+            Assert.That(context.MessageForwardedToErrorQueue, Is.True);
             Assert.AreEqual("InvalidDestination__", context.Headers[FaultsHeaderKeys.FailedQ]);
         }
 

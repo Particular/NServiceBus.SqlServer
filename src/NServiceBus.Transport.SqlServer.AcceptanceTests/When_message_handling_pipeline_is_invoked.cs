@@ -30,10 +30,10 @@
             Assert.IsNotNull(context.TransportTransaction);
             var transportTransaction = context.TransportTransaction;
 
-            Assert.IsTrue(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection));
+            Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
             Assert.IsInstanceOf<DbConnection>(connection);
 
-            Assert.IsTrue(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction));
+            Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction), Is.True);
             Assert.IsInstanceOf<DbTransaction>(transaction);
         }
 

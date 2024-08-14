@@ -110,7 +110,7 @@
                 }
 
                 var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
-                Assert.IsTrue(message.Message.Expired);
+                Assert.That(message.Message.Expired, Is.True);
             }
         }
 
