@@ -19,7 +19,7 @@
                 .Done(c => c.Done)
                 .Run();
 
-            Assert.True(context.AmbientTransactionPresent, "There should be an ambient transaction present");
+            Assert.That(context.AmbientTransactionPresent, Is.True, "There should be an ambient transaction present");
             Assert.AreEqual(IsolationLevel.RepeatableRead, context.IsolationLevel, "Ambient transaction should have configured isolation level");
         }
 

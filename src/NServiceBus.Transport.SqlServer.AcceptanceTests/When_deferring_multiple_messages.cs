@@ -34,7 +34,7 @@
                 .Done(c => c.WasCalled)
                 .Run();
 
-            Assert.True(context.WasCalled);
+            Assert.That(context.WasCalled, Is.True);
             Assert.AreEqual("Short", context.WhichWasCalled);
         }
 

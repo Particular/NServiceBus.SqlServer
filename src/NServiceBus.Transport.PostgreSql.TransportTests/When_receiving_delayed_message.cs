@@ -41,7 +41,7 @@
             _ = await onReceived.Task;
             after = DateTimeOffset.UtcNow;
 
-            Assert.True(after - before > delay);
+            Assert.That(after - before > delay, Is.True);
         }
     }
 }
