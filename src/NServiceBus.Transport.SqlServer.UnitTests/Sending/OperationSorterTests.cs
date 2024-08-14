@@ -18,7 +18,7 @@
             var sortResult = transportOperations.UnicastTransportOperations.SortAndDeduplicate(s => queueAddressTranslator.Parse(s).Address);
 
             Assert.That(sortResult.DefaultDispatch.Count(), Is.EqualTo(expectedDispatchedMessageCount));
-            Assert.IsNull(sortResult.IsolatedDispatch);
+            Assert.That(sortResult.IsolatedDispatch, Is.Null);
         }
 
         static object[] TestCases =

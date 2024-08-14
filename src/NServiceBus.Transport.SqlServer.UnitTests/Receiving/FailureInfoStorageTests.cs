@@ -61,7 +61,7 @@
             storage.ClearFailureInfoForMessage(messageId);
 
             storage.TryGetFailureInfoForMessage(messageId, out failureInfo);
-            Assert.IsNull(failureInfo);
+            Assert.That(failureInfo, Is.Null);
         }
 
         [Test]
@@ -84,7 +84,7 @@
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
-            Assert.IsNull(failureInfo);
+            Assert.That(failureInfo, Is.Null);
         }
 
         [Test]
