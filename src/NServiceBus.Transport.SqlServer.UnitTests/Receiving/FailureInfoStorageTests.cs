@@ -114,7 +114,7 @@
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
-            Assert.IsNotNull(failureInfo);
+            Assert.That(failureInfo, Is.Not.Null);
         }
 
         static FailureInfoStorage GetFailureInfoStorage()

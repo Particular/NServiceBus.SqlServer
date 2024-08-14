@@ -27,7 +27,7 @@
                 .Done(c => c.TransportTransaction != null)
                 .Run(TimeSpan.FromSeconds(10));
 
-            Assert.IsNotNull(context.TransportTransaction);
+            Assert.That(context.TransportTransaction, Is.Not.Null);
             var transportTransaction = context.TransportTransaction;
 
             Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
