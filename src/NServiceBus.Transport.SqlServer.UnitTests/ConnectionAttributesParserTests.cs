@@ -11,7 +11,7 @@
         {
             var ex = Assert.Throws<Exception>(() => ConnectionAttributesParser.Parse(@"Data Source=.\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=true"));
 
-            StringAssert.Contains("Initial Catalog property is mandatory in the connection string.", ex.Message);
+            Assert.That(ex.Message, Does.Contain("Initial Catalog property is mandatory in the connection string."));
         }
 
         [TestCase("Initial catalog=my.catalog")]
