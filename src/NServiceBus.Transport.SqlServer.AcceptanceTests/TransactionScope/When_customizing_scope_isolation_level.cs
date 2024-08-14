@@ -20,7 +20,7 @@
                 .Run();
 
             Assert.That(context.AmbientTransactionPresent, Is.True, "There should be an ambient transaction present");
-            Assert.AreEqual(IsolationLevel.RepeatableRead, context.IsolationLevel, "Ambient transaction should have configured isolation level");
+            Assert.That(context.IsolationLevel, Is.EqualTo(IsolationLevel.RepeatableRead), "Ambient transaction should have configured isolation level");
         }
 
         public class MyMessage : IMessage

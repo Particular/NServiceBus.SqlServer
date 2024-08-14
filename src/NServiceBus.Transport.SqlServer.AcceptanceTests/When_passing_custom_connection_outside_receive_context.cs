@@ -76,7 +76,7 @@
                 .Done(c => c.SendFromCompletedScopeReceived && c.PublishFromCompletedScopeReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.AreEqual(Guid.Empty, transactionId);
+            Assert.That(transactionId, Is.EqualTo(Guid.Empty));
         }
 
         class MarkerMessage : IMessage

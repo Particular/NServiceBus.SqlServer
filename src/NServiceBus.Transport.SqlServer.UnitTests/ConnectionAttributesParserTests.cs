@@ -22,7 +22,7 @@
         {
             var attributes = ConnectionAttributesParser.Parse(connectionString);
 
-            Assert.AreEqual("my.catalog", attributes.Catalog);
+            Assert.That(attributes.Catalog, Is.EqualTo("my.catalog"));
         }
 
         [TestCase("Initial Catalog=incorrect.catalog")]
@@ -32,7 +32,7 @@
             var defaultCatalog = "correct.catalog";
             var attributes = ConnectionAttributesParser.Parse(connectionString, defaultCatalog);
 
-            Assert.AreEqual(defaultCatalog, attributes.Catalog);
+            Assert.That(attributes.Catalog, Is.EqualTo(defaultCatalog));
         }
     }
 }
