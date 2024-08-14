@@ -33,7 +33,7 @@
             {
                 Assert.That(after[beforeItem.Key], Is.EqualTo(beforeItem.Value));
             }
-            Assert.That(after.Count, Is.EqualTo(before.Count));
+            Assert.That(after, Has.Count.EqualTo(before.Count));
         }
     }
 }
