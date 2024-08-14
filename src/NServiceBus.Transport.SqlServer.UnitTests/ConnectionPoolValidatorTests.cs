@@ -11,7 +11,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -27,7 +27,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Min Pool Size = 20;");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -35,7 +35,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = true");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
