@@ -31,10 +31,10 @@
             var transportTransaction = context.TransportTransaction;
 
             Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
-            Assert.IsInstanceOf<DbConnection>(connection);
+            Assert.That(connection, Is.InstanceOf<DbConnection>());
 
             Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction), Is.True);
-            Assert.IsInstanceOf<DbTransaction>(transaction);
+            Assert.That(transaction, Is.InstanceOf<DbTransaction>());
         }
 
         class InitiatingMessage : IMessage
