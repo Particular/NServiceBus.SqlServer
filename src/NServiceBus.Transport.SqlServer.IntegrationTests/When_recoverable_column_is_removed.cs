@@ -59,7 +59,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             await DropRecoverableColumn(token);
 
             var exception = Assert.ThrowsAsync<Exception>(() => RunTest(contextProviderType, dispatchConsistency, queue, purger, token));
-            Assert.That(exception.Message.Contains("change in the existence of the Recoverable column"), Is.True);
+            Assert.That(exception.Message, Does.Contain("change in the existence of the Recoverable column"));
 
             // Try again, should work
             int messagesSentAttempt2 = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
@@ -69,7 +69,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             await AddRecoverableColumn(token);
 
             var exception2 = Assert.ThrowsAsync<Exception>(() => RunTest(contextProviderType, dispatchConsistency, queue, purger, token));
-            Assert.That(exception2.Message.Contains("change in the existence of the Recoverable column"), Is.True);
+            Assert.That(exception2.Message, Does.Contain("change in the existence of the Recoverable column"));
 
             // Try again, should work
             int messagesSentAttempt3 = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
