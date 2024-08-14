@@ -19,9 +19,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
-        Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        Assert.Multiple(() =>
+        {
+            // We ignore calculating the time to wait, because that's not interesting in this test.
+            Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        });
     }
 
     [Test]
@@ -34,9 +37,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
-        Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        Assert.Multiple(() =>
+        {
+            // We ignore calculating the time to wait, because that's not interesting in this test.
+            Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        });
     }
 
     [Test]
@@ -110,8 +116,11 @@ public class BackOffStrategyTests
         var x = RoundOff(now, now.AddMilliseconds(999));
         var y = RoundOff(now, now.AddMilliseconds(1001));
 
-        Assert.That(x, Is.EqualTo(0));
-        Assert.That(y, Is.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(x, Is.EqualTo(0));
+            Assert.That(y, Is.EqualTo(1));
+        });
     }
 
     [Test]

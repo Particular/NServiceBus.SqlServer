@@ -42,8 +42,11 @@
                                         .Done(c => c.ReplyReceived)
                                         .Run();
 
-            Assert.That(context.MessageReceived, Is.True);
-            Assert.That(context.ReplyReceived, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.MessageReceived, Is.True);
+                Assert.That(context.ReplyReceived, Is.True);
+            });
         }
 
         class Context : ScenarioContext

@@ -22,9 +22,12 @@
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.That(failureInfo, Is.Not.Null);
-            Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(1));
-            Assert.That(failureInfo.Exception, Is.SameAs(exception));
-            Assert.That(failureInfo.Context, Is.SameAs(extensions));
+            Assert.Multiple(() =>
+            {
+                Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(1));
+                Assert.That(failureInfo.Exception, Is.SameAs(exception));
+                Assert.That(failureInfo.Context, Is.SameAs(extensions));
+            });
         }
 
         [Test]
@@ -41,8 +44,11 @@
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
             Assert.That(failureInfo, Is.Not.Null);
-            Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
-            Assert.That(failureInfo.Exception, Is.SameAs(secondException));
+            Assert.Multiple(() =>
+            {
+                Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
+                Assert.That(failureInfo.Exception, Is.SameAs(secondException));
+            });
         }
 
         [Test]

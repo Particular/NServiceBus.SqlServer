@@ -30,11 +30,14 @@
             Assert.That(context.TransportTransaction, Is.Not.Null);
             var transportTransaction = context.TransportTransaction;
 
-            Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
-            Assert.That(connection, Is.InstanceOf<DbConnection>());
+            Assert.Multiple(() =>
+            {
+                Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
+                Assert.That(connection, Is.InstanceOf<DbConnection>());
 
-            Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction), Is.True);
-            Assert.That(transaction, Is.InstanceOf<DbTransaction>());
+                Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction), Is.True);
+                Assert.That(transaction, Is.InstanceOf<DbTransaction>());
+            });
         }
 
         class InitiatingMessage : IMessage

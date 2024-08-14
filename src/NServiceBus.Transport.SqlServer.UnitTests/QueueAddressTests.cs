@@ -51,9 +51,12 @@
         {
             var parsedAddress = QueueAddress.Parse(transportAddress);
 
-            Assert.That(parsedAddress.Table, Is.EqualTo(expectedTableName));
-            Assert.That(parsedAddress.Schema, Is.EqualTo(expectedSchema));
-            Assert.That(parsedAddress.Catalog, Is.EqualTo(expectedCatalog));
+            Assert.Multiple(() =>
+            {
+                Assert.That(parsedAddress.Table, Is.EqualTo(expectedTableName));
+                Assert.That(parsedAddress.Schema, Is.EqualTo(expectedSchema));
+                Assert.That(parsedAddress.Catalog, Is.EqualTo(expectedCatalog));
+            });
         }
     }
 }

@@ -43,8 +43,11 @@
                 .Done(c => c.MessageForwardedToErrorQueue)
                 .Run();
 
-            Assert.That(context.MessageForwardedToErrorQueue, Is.True);
-            Assert.That(context.Headers[FaultsHeaderKeys.FailedQ], Is.EqualTo("InvalidDestination__"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.MessageForwardedToErrorQueue, Is.True);
+                Assert.That(context.Headers[FaultsHeaderKeys.FailedQ], Is.EqualTo("InvalidDestination__"));
+            });
         }
 
         public class Context : ScenarioContext

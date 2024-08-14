@@ -17,8 +17,11 @@
             var quoteResult = SqlServerNameHelper.Quote(unquoted);
             var unquoteResult = SqlServerNameHelper.Unquote(quoted);
 
-            Assert.That(unquoteResult, Is.EqualTo(unquoted));
-            Assert.That(quoteResult, Is.EqualTo(quoted));
+            Assert.Multiple(() =>
+            {
+                Assert.That(unquoteResult, Is.EqualTo(unquoted));
+                Assert.That(quoteResult, Is.EqualTo(quoted));
+            });
         }
 
         [Test]
