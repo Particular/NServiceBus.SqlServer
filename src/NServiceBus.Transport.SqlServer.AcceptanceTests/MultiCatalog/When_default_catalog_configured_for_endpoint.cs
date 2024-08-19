@@ -29,7 +29,7 @@
                                             .Done(c => c.Finished)
                                             .Run();
 
-                Assert.IsTrue(context.TablesFound);
+                Assert.That(context.TablesFound, Is.True);
             }
         }
 
@@ -42,8 +42,11 @@
                                         .Done(c => c.ReplyReceived)
                                         .Run();
 
-            Assert.IsTrue(context.MessageReceived);
-            Assert.IsTrue(context.ReplyReceived);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.MessageReceived, Is.True);
+                Assert.That(context.ReplyReceived, Is.True);
+            });
         }
 
         class Context : ScenarioContext

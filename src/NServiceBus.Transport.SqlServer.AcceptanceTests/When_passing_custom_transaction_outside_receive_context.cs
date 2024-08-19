@@ -56,8 +56,11 @@
                 .Done(c => c.SendFromCommittedTransactionReceived && c.PublishFromCommittedTransactionReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.SendFromRolledbackTransactionReceived);
-            Assert.IsFalse(context.PublishFromRolledbackTransactionReceived);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.SendFromRolledbackTransactionReceived, Is.False);
+                Assert.That(context.PublishFromRolledbackTransactionReceived, Is.False);
+            });
         }
 
         class CommandFromCommittedTransaction : IMessage

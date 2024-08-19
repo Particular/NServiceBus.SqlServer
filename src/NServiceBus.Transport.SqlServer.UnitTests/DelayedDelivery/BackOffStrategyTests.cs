@@ -19,9 +19,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.AreEqual(expectedNextDelayedMessage, strategy.NextDelayedMessage);
-        Assert.AreEqual(DateTime.MaxValue, strategy.NextExecutionTime);
+        Assert.Multiple(() =>
+        {
+            // We ignore calculating the time to wait, because that's not interesting in this test.
+            Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        });
     }
 
     [Test]
@@ -34,9 +37,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.AreEqual(expectedNextDelayedMessage, strategy.NextDelayedMessage);
-        Assert.AreEqual(DateTime.MaxValue, strategy.NextExecutionTime);
+        Assert.Multiple(() =>
+        {
+            // We ignore calculating the time to wait, because that's not interesting in this test.
+            Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        });
     }
 
     [Test]
@@ -51,7 +57,7 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false); // waits 4 more seconds
         var afterWaiting = DateTime.UtcNow;
 
-        Assert.AreEqual(7, RoundOff(beforeWaiting, afterWaiting));
+        Assert.That(RoundOff(beforeWaiting, afterWaiting), Is.EqualTo(7));
     }
 
     [Test]
@@ -67,7 +73,7 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false); // does NOT wait 4 more seconds
         var afterWaiting = DateTime.UtcNow;
 
-        Assert.AreEqual(4, RoundOff(beforeWaiting, afterWaiting));
+        Assert.That(RoundOff(beforeWaiting, afterWaiting), Is.EqualTo(4));
     }
 
     [Test]
@@ -83,7 +89,7 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false); // waits 4 more seconds
         var afterWaiting = DateTime.UtcNow;
 
-        Assert.AreEqual(7, RoundOff(beforeWaiting, afterWaiting));
+        Assert.That(RoundOff(beforeWaiting, afterWaiting), Is.EqualTo(7));
     }
 
     [Test]
@@ -100,7 +106,7 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false);
         var afterWaiting = DateTime.UtcNow;
 
-        Assert.AreEqual(5, RoundOff(beforeWaiting, afterWaiting));
+        Assert.That(RoundOff(beforeWaiting, afterWaiting), Is.EqualTo(5));
     }
 
     [Test]
@@ -110,8 +116,11 @@ public class BackOffStrategyTests
         var x = RoundOff(now, now.AddMilliseconds(999));
         var y = RoundOff(now, now.AddMilliseconds(1001));
 
-        Assert.AreEqual(0, x);
-        Assert.AreEqual(1, y);
+        Assert.Multiple(() =>
+        {
+            Assert.That(x, Is.EqualTo(0));
+            Assert.That(y, Is.EqualTo(1));
+        });
     }
 
     [Test]

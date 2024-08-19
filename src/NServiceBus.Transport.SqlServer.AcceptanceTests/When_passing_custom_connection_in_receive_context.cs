@@ -28,9 +28,12 @@
                 .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedCommandReceived)
                 .Run(TimeSpan.FromSeconds(10));
 
-            Assert.IsFalse(context.FollowUpRolledbackCommandReceived);
-            Assert.IsFalse(context.FollowUpRolledbackEventReceived);
-            Assert.IsFalse(context.InHandlerTransactionEscalatedToDTC);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.FollowUpRolledbackCommandReceived, Is.False);
+                Assert.That(context.FollowUpRolledbackEventReceived, Is.False);
+                Assert.That(context.InHandlerTransactionEscalatedToDTC, Is.False);
+            });
         }
 
         class InitiatingMessage : IMessage

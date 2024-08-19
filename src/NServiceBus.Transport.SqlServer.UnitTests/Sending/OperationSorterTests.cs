@@ -17,8 +17,11 @@
 
             var sortResult = transportOperations.UnicastTransportOperations.SortAndDeduplicate(s => queueAddressTranslator.Parse(s).Address);
 
-            Assert.AreEqual(expectedDispatchedMessageCount, sortResult.DefaultDispatch.Count());
-            Assert.IsNull(sortResult.IsolatedDispatch);
+            Assert.Multiple(() =>
+            {
+                Assert.That(sortResult.DefaultDispatch.Count(), Is.EqualTo(expectedDispatchedMessageCount));
+                Assert.That(sortResult.IsolatedDispatch, Is.Null);
+            });
         }
 
         static object[] TestCases =
@@ -69,8 +72,11 @@
 
             var sortResult = operations.UnicastTransportOperations.SortAndDeduplicate(s => queueAddressTranslator.Parse(s).Address);
 
-            Assert.AreEqual(1, sortResult.DefaultDispatch.Count());
-            Assert.AreEqual(1, sortResult.IsolatedDispatch.Count());
+            Assert.Multiple(() =>
+            {
+                Assert.That(sortResult.DefaultDispatch.Count(), Is.EqualTo(1));
+                Assert.That(sortResult.IsolatedDispatch.Count(), Is.EqualTo(1));
+            });
         }
 
         static TransportOperation CreateTransportOperations(string messageId, string destination, DispatchConsistency dispatchConsistency = DispatchConsistency.Default)

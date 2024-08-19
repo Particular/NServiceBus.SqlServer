@@ -24,7 +24,7 @@
                 .Done(c => c.WasCalled)
                 .Run());
 
-            StringAssert.Contains("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type.", exception.Message);
+            Assert.That(exception.Message, Does.Contain("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type."));
         }
 
         public class Context : ScenarioContext

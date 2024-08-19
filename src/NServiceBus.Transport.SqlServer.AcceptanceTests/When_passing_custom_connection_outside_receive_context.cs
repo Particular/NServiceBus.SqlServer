@@ -41,8 +41,11 @@
                 .Done(c => c.MarkerMessageReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.IsFalse(context.SendFromRollbackedScopeReceived);
-            Assert.IsFalse(context.PublishFromRollbackedScopeReceived);
+            Assert.Multiple(() =>
+            {
+                Assert.That(context.SendFromRollbackedScopeReceived, Is.False);
+                Assert.That(context.PublishFromRollbackedScopeReceived, Is.False);
+            });
         }
 
         [Test]
@@ -76,7 +79,7 @@
                 .Done(c => c.SendFromCompletedScopeReceived && c.PublishFromCompletedScopeReceived)
                 .Run(TimeSpan.FromMinutes(1));
 
-            Assert.AreEqual(Guid.Empty, transactionId);
+            Assert.That(transactionId, Is.EqualTo(Guid.Empty));
         }
 
         class MarkerMessage : IMessage

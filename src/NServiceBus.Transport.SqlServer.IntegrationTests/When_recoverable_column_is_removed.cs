@@ -53,27 +53,27 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             // Run normally
             int messagesSent = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
-            Assert.AreEqual(1, messagesSent);
+            Assert.That(messagesSent, Is.EqualTo(1));
 
             // Remove Recoverable column
             await DropRecoverableColumn(token);
 
             var exception = Assert.ThrowsAsync<Exception>(() => RunTest(contextProviderType, dispatchConsistency, queue, purger, token));
-            Assert.True(exception.Message.Contains("change in the existence of the Recoverable column"));
+            Assert.That(exception.Message, Does.Contain("change in the existence of the Recoverable column"));
 
             // Try again, should work
             int messagesSentAttempt2 = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
-            Assert.AreEqual(1, messagesSentAttempt2);
+            Assert.That(messagesSentAttempt2, Is.EqualTo(1));
 
             // Put the Recoverable column back
             await AddRecoverableColumn(token);
 
             var exception2 = Assert.ThrowsAsync<Exception>(() => RunTest(contextProviderType, dispatchConsistency, queue, purger, token));
-            Assert.True(exception2.Message.Contains("change in the existence of the Recoverable column"));
+            Assert.That(exception2.Message, Does.Contain("change in the existence of the Recoverable column"));
 
             // Try again, should work
             int messagesSentAttempt3 = await RunTest(contextProviderType, dispatchConsistency, queue, purger, token);
-            Assert.AreEqual(1, messagesSentAttempt3);
+            Assert.That(messagesSentAttempt3, Is.EqualTo(1));
         }
 
         async Task<int> RunTest(Type contextProviderType, DispatchConsistency dispatchConsistency, TableBasedQueue queue, QueuePurger purger, CancellationToken cancellationToken)

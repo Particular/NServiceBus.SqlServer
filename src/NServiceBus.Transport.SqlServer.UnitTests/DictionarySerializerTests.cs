@@ -31,9 +31,9 @@
         {
             foreach (var beforeItem in before)
             {
-                Assert.AreEqual(beforeItem.Value, after[beforeItem.Key]);
+                Assert.That(after[beforeItem.Key], Is.EqualTo(beforeItem.Value));
             }
-            Assert.AreEqual(before.Count, after.Count);
+            Assert.That(after, Has.Count.EqualTo(before.Count));
         }
     }
 }

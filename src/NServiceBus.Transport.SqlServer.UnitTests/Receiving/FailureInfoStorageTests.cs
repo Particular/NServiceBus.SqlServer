@@ -21,10 +21,13 @@
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
-            Assert.NotNull(failureInfo);
-            Assert.AreEqual(1, failureInfo.NumberOfProcessingAttempts);
-            Assert.AreSame(exception, failureInfo.Exception);
-            Assert.AreSame(extensions, failureInfo.Context);
+            Assert.That(failureInfo, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(1));
+                Assert.That(failureInfo.Exception, Is.SameAs(exception));
+                Assert.That(failureInfo.Context, Is.SameAs(extensions));
+            });
         }
 
         [Test]
@@ -40,9 +43,12 @@
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
 
-            Assert.NotNull(failureInfo);
-            Assert.AreEqual(2, failureInfo.NumberOfProcessingAttempts);
-            Assert.AreSame(secondException, failureInfo.Exception);
+            Assert.That(failureInfo, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
+                Assert.That(failureInfo.Exception, Is.SameAs(secondException));
+            });
         }
 
         [Test]
@@ -56,12 +62,12 @@
 
 
             storage.TryGetFailureInfoForMessage(messageId, out var failureInfo);
-            Assert.NotNull(failureInfo);
+            Assert.That(failureInfo, Is.Not.Null);
 
             storage.ClearFailureInfoForMessage(messageId);
 
             storage.TryGetFailureInfoForMessage(messageId, out failureInfo);
-            Assert.IsNull(failureInfo);
+            Assert.That(failureInfo, Is.Null);
         }
 
         [Test]
@@ -84,7 +90,7 @@
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
-            Assert.IsNull(failureInfo);
+            Assert.That(failureInfo, Is.Null);
         }
 
         [Test]
@@ -114,7 +120,7 @@
 
             storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
-            Assert.IsNotNull(failureInfo);
+            Assert.That(failureInfo, Is.Not.Null);
         }
 
         static FailureInfoStorage GetFailureInfoStorage()
