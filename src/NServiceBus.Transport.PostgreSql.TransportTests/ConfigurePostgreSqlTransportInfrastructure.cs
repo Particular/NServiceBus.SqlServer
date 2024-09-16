@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,50 +51,45 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(connectionString))
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            var queues = new List<string>
-            {
-                errorQueueName,
-                inputQueueName
-            };
+            return;
+        }
 
-            if (!postgreSqlTransport.DisableDelayedDelivery)
-            {
-                var delayedDeliveryQueueName = postgreSqlTransport.Testing.DelayedDeliveryQueue
-                    .Replace("\"public\".", string.Empty)
-                    .Replace("\"", string.Empty);
+        var queues = new List<string> { errorQueueName, inputQueueName };
 
-                queues.Add(delayedDeliveryQueueName);
+        if (!postgreSqlTransport.DisableDelayedDelivery)
+        {
+            var delayedDeliveryQueueName = postgreSqlTransport.Testing.DelayedDeliveryQueue
+                .Replace("\"public\".", string.Empty)
+                .Replace("\"", string.Empty);
+
+            queues.Add(delayedDeliveryQueueName);
+        }
+
+        using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var queue in queues.Where(q => !string.IsNullOrWhiteSpace(q)))
+        {
+            using (var comm = conn.CreateCommand())
+            {
+                comm.CommandText = $"DROP TABLE IF EXISTS \"public\".\"{queue}\"; " +
+                                   $"DROP SEQUENCE IF EXISTS \"public\".\"{queue}_seq_seq\";";
+
+                await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
+        }
 
-            using var conn = new NpgsqlConnection(connectionString);
-            await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        var subscriptionTableName = postgreSqlTransport.Testing.SubscriptionTable;
 
-            foreach (var queue in queues)
+        if (!string.IsNullOrEmpty(subscriptionTableName))
+        {
+            using (var comm = conn.CreateCommand())
             {
-                if (!string.IsNullOrWhiteSpace(queue))
-                {
-                    using (var comm = conn.CreateCommand())
-                    {
-                        comm.CommandText = $"DROP TABLE IF EXISTS \"public\".\"{queue}\"; " +
-                                           $"DROP SEQUENCE IF EXISTS \"public\".\"{queue}_seq_seq\";";
+                comm.CommandText = $"DROP TABLE IF EXISTS {subscriptionTableName};";
 
-                        await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                    }
-                }
-            }
-
-            var subscriptionTableName = postgreSqlTransport.Testing.SubscriptionTable;
-
-            if (!string.IsNullOrEmpty(subscriptionTableName))
-            {
-                using (var comm = conn.CreateCommand())
-                {
-                    comm.CommandText = $"DROP TABLE IF EXISTS {subscriptionTableName};";
-
-                    await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                }
+                await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
     }
