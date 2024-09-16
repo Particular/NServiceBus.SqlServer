@@ -26,7 +26,7 @@
 
         public CanonicalQueueAddress Parse(string address)
         {
-            return physicalAddressCache.GetOrAdd(address, TranslatePhysicalAddress);
+            return physicalAddressCache.GetOrAdd(address.StartsWith('"') ? address : $"\"{address}\"", TranslatePhysicalAddress);
         }
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
