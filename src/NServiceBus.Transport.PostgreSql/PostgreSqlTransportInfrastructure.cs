@@ -151,7 +151,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         //Create delayed delivery infrastructure
         CanonicalQueueAddress delayedQueueCanonicalAddress = null;
-        if (transport.DisableDelayedDelivery == false)
+        if (!transport.DisableDelayedDelivery)
         {
             var delayedDelivery = transport.DelayedDelivery;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,18 +50,22 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(connectionString) == false)
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            var delayedDeliveryQueueName = postgreSqlTransport.Testing.DelayedDeliveryQueue
-                .Replace("\"public\".", string.Empty)
-                .Replace("\"", string.Empty);
-
-            var queues = new[]
+            var queues = new List<string>
             {
                 errorQueueName,
-                inputQueueName,
-                delayedDeliveryQueueName
+                inputQueueName
             };
+
+            if (!postgreSqlTransport.DisableDelayedDelivery)
+            {
+                var delayedDeliveryQueueName = postgreSqlTransport.Testing.DelayedDeliveryQueue
+                    .Replace("\"public\".", string.Empty)
+                    .Replace("\"", string.Empty);
+
+                queues.Add(delayedDeliveryQueueName);
+            }
 
             using var conn = new NpgsqlConnection(connectionString);
             await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
