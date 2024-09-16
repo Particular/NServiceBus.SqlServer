@@ -50,7 +50,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
             var queues = new List<string>
             {
@@ -72,7 +72,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 
             foreach (var queue in queues)
             {
-                if (string.IsNullOrWhiteSpace(queue) == false)
+                if (!string.IsNullOrWhiteSpace(queue))
                 {
                     using (var comm = conn.CreateCommand())
                     {
