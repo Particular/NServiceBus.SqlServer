@@ -204,11 +204,12 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         await ValidateDatabaseAccess(cancellationToken).ConfigureAwait(false);
 
         var receiveAddresses = Receivers.Values.Select(r => r.ReceiveAddress).ToList();
+        var qualifiedSendingAddresses = sendingAddresses.Select(address => ToTransportAddress(new Transport.QueueAddress(address))).ToList();
 
         if (hostSettings.SetupInfrastructure)
         {
             var queuesToCreate = new List<string>();
-            queuesToCreate.AddRange(sendingAddresses);
+            queuesToCreate.AddRange(qualifiedSendingAddresses);
             queuesToCreate.AddRange(receiveAddresses);
 
             var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
@@ -231,7 +232,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         dueDelayedMessageProcessor?.Start(cancellationToken);
 
         transport.Testing.SendingAddresses =
-            sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
+            qualifiedSendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
         transport.Testing.ReceiveAddresses =
             receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
         transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
