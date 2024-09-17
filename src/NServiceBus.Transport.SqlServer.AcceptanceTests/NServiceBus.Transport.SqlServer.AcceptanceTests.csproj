@@ -18,6 +18,8 @@
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="System.Formats.Asn1" Version="9.0.0-rc.1.24431.7" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.64.2-preview" />
+    <PackageReference Include="Azure.Identity" Version="1.13.0-beta.1" />
   </ItemGroup>
 
 </Project>
