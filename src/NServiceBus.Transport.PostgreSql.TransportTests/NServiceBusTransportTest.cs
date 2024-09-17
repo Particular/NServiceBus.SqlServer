@@ -35,6 +35,7 @@
             testCancellationTokenSource = Debugger.IsAttached ? new CancellationTokenSource() : new CancellationTokenSource(TestTimeout);
             receiver = null;
             registrations = [];
+            CustomizeTransportDefinition = _ => { };
         }
         protected static IConfigureTransportInfrastructure CreateConfigurer()
         {
@@ -114,18 +115,19 @@
                 },
                 true);
 
-            var transport = configurer.CreateTransportDefinition();
+            var transportDefinition = configurer.CreateTransportDefinition();
 
-            IgnoreUnsupportedTransactionModes(transport, transactionMode);
+            CustomizeTransportDefinition(transportDefinition);
+            IgnoreUnsupportedTransactionModes(transportDefinition, transactionMode);
 
             if (OperatingSystem.IsWindows() && transactionMode == TransportTransactionMode.TransactionScope)
             {
                 TransactionManager.ImplicitDistributedTransactions = true;
             }
 
-            transport.TransportTransactionMode = transactionMode;
+            transportDefinition.TransportTransactionMode = transactionMode;
 
-            transportInfrastructure = await configurer.Configure(transport, hostSettings, new QueueAddress(InputQueueName), ErrorQueueName, cancellationToken);
+            transportInfrastructure = await configurer.Configure(transportDefinition, hostSettings, new QueueAddress(InputQueueName), ErrorQueueName, cancellationToken);
 
             receiver = transportInfrastructure.Receivers.Single().Value;
 
@@ -301,6 +303,7 @@
         protected string ErrorQueueName;
         protected static TransportTestLoggerFactory LogFactory;
         protected static TimeSpan TestTimeout = TimeSpan.FromSeconds(30);
+        protected Action<TransportDefinition> CustomizeTransportDefinition;
 
         string testId;
 

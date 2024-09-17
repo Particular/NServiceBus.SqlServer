@@ -151,7 +151,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         //Create delayed delivery infrastructure
         CanonicalQueueAddress delayedQueueCanonicalAddress = null;
-        if (transport.DisableDelayedDelivery == false)
+        if (!transport.DisableDelayedDelivery)
         {
             var delayedDelivery = transport.DelayedDelivery;
 
@@ -213,8 +213,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
 
-            var delayedQueueNameExceedsLimit =
-                Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit;
+            var delayedQueueNameExceedsLimit = delayedQueueCanonicalAddress != null && (Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit);
 
             if (queueNameExceedsLimit || delayedQueueNameExceedsLimit)
             {
