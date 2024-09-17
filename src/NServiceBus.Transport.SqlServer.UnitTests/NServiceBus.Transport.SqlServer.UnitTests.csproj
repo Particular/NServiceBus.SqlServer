@@ -21,6 +21,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Particular.Approvals" Version="1.0.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.1.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0-rc.1.24431.7" />
   </ItemGroup>
 
 </Project>
