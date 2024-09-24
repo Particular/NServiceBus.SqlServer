@@ -4,7 +4,6 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
     using SqlServer;
 
     public class When_checking_schema
@@ -21,7 +20,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
 
             await ResetQueue(addressParser, dbConnectionFactory);
 

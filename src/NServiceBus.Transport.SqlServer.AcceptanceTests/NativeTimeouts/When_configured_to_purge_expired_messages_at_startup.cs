@@ -50,7 +50,7 @@
                 await connection.OpenAsync(token);
 
                 return connection;
-            });
+            }, ConnectionPoolValidator.Validate);
 
             var parser = new DbConnectionStringBuilder { ConnectionString = connectionString };
             if (!parser.TryGetValue("Initial Catalog", out var catalogSetting) && !parser.TryGetValue("database", out catalogSetting))

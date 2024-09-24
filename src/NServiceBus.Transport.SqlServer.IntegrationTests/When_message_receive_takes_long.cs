@@ -6,7 +6,6 @@
     using System.Transactions;
     using NUnit.Framework;
     using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
     using SqlServer;
     using Transport;
 
@@ -26,7 +25,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
 
             await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
