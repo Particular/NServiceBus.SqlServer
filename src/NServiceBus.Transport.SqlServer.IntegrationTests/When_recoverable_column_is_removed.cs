@@ -30,7 +30,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var token = CancellationToken.None;
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var purger = new QueuePurger(dbConnectionFactory);

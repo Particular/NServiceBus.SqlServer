@@ -36,7 +36,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     IDelayedMessageStore delayedMessageStore = new SendOnlyDelayedMessageStore();
     PostgreSqlDbConnectionFactory connectionFactory;
 
-    static ILog _logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
+    static ILog Logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
     readonly PostgreSqlExceptionClassifier exceptionClassifier;
 
     public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
@@ -72,6 +72,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         connectionFactory = CreateConnectionFactory();
 
+        await ValidateDatabaseAccess(cancellationToken).ConfigureAwait(false);
+
         addressTranslator = new QueueAddressTranslator("public", transport.DefaultSchema, transport.Schema);
 
         tableBasedQueueCache = new TableBasedQueueCache(
@@ -98,10 +100,10 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         if (transport.ConnectionFactory != null)
         {
-            return new PostgreSqlDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false), ConnectionPoolValidator.Validate);
+            return new PostgreSqlDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false));
         }
 
-        return new PostgreSqlDbConnectionFactory(transport.ConnectionString, ConnectionPoolValidator.Validate);
+        return new PostgreSqlDbConnectionFactory(transport.ConnectionString);
     }
 
 
@@ -192,7 +194,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             if (receiveSetting.PurgeOnStartup)
             {
-                _logger.Warn($"The {receiveSetting.PurgeOnStartup} should only be used in the development environment.");
+                Logger.Warn($"The {receiveSetting.PurgeOnStartup} should only be used in the development environment.");
             }
 
             return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
@@ -200,8 +202,6 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 queuePeeker, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
                 subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
         }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
-
-        await ValidateDatabaseAccess(cancellationToken).ConfigureAwait(false);
 
         var receiveAddresses = Receivers.Values.Select(r => r.ReceiveAddress).ToList();
 
@@ -246,8 +246,14 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         try
         {
-            await using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
+                var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
+
+                if (!result.IsValid)
+                {
+                    Logger.Warn(result.Message);
+                }
             }
         }
         catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))

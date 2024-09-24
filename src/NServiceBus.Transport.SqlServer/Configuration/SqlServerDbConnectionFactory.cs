@@ -6,22 +6,18 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using Logging;
     using Microsoft.Data.SqlClient;
-    using NServiceBus.Transport.Sql.Shared;
     using Sql.Shared.Configuration;
 
     class SqlServerDbConnectionFactory : DbConnectionFactory
     {
-        public SqlServerDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory, Func<string, ValidationCheckResult> connectionPoolValidator) : base(factory, connectionPoolValidator)
+        public SqlServerDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) : base(factory)
         {
         }
 
-
-        public SqlServerDbConnectionFactory(string connectionString, Func<string, ValidationCheckResult> connectionPoolValidator)
+        public SqlServerDbConnectionFactory(string connectionString)
         {
             openNewConnection = async cancellationToken =>
             {
-                ValidateConnectionPool(connectionString);
-
                 var connection = new SqlConnection(connectionString);
                 try
                 {
@@ -45,10 +41,8 @@ namespace NServiceBus.Transport.SqlServer
 
                 return connection;
             };
-
-            validateConnectionPool = connectionPoolValidator;
         }
 
-        static ILog Logger = LogManager.GetLogger<SqlServerDbConnectionFactory>();
+        static readonly ILog Logger = LogManager.GetLogger<SqlServerDbConnectionFactory>();
     }
 }

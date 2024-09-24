@@ -30,7 +30,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             var transport = new SqlServerTransport(async (ct) =>
             {
-                var factory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
+                var factory = new SqlServerDbConnectionFactory(connectionString);
                 var connection = await factory.OpenNewConnection(ct);
 
                 return (SqlConnection)connection;

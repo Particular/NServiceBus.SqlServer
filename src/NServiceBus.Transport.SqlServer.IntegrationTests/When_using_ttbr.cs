@@ -134,7 +134,7 @@
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             await CreateOutputQueueIfNecessary(addressTranslator, dbConnectionFactory, cancellationToken);
 
