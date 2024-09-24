@@ -7,21 +7,18 @@
     using System.Threading;
     using Npgsql;
     using Sql.Shared.Configuration;
-    using NServiceBus.Transport.Sql.Shared;
 
     class PostgreSqlDbConnectionFactory : DbConnectionFactory
     {
-        public PostgreSqlDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory, Func<string, ValidationCheckResult> connectionPoolValidator) : base(factory, connectionPoolValidator)
+        public PostgreSqlDbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) : base(factory)
         {
         }
 
 
-        public PostgreSqlDbConnectionFactory(string connectionString, Func<string, ValidationCheckResult> connectionPoolValidator)
+        public PostgreSqlDbConnectionFactory(string connectionString)
         {
             openNewConnection = async cancellationToken =>
             {
-                ValidateConnectionPool(connectionString);
-
                 var connection = new NpgsqlConnection(connectionString);
                 try
                 {
@@ -45,8 +42,6 @@
 
                 return connection;
             };
-
-            validateConnectionPool = connectionPoolValidator;
         }
 
         static ILog Logger = LogManager.GetLogger<PostgreSqlDbConnectionFactory>();
