@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
-    using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;

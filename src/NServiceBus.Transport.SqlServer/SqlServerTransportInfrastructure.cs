@@ -44,6 +44,13 @@ namespace NServiceBus.Transport.SqlServer
                 }
             }
 
+            var result = ConnectionPoolValidator.Validate(connectionString);
+
+            if (!result.IsValid)
+            {
+                Logger.Warn(result.Message);
+            }
+
             connectionAttributes = ConnectionAttributesParser.Parse(connectionString, transport.DefaultCatalog);
 
             addressTranslator = new QueueAddressTranslator(connectionAttributes.Catalog, "dbo", transport.DefaultSchema, transport.SchemaAndCatalog);
@@ -320,7 +327,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 if (!string.IsNullOrWhiteSpace(message))
                 {
-                    _logger.Warn(message);
+                    Logger.Warn(message);
                 }
             }
         }
@@ -361,6 +368,6 @@ namespace NServiceBus.Transport.SqlServer
 Distributed transactions are not available on Linux. The other transaction modes can be used by setting the `SqlServerTransport.TransportTransactionMode` property when configuring the endpoint.
 Be aware that different transaction modes affect consistency guarantees since distributed transactions won't be atomically updating the resources together with consuming the incoming message.";
 
-        static ILog _logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
+        static ILog Logger = LogManager.GetLogger<SqlServerTransportInfrastructure>();
     }
 }

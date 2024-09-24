@@ -6,7 +6,6 @@
     using System.Transactions;
     using NUnit.Framework;
     using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
     using SqlServer;
     using Transport;
 
