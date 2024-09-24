@@ -1,8 +1,8 @@
-namespace NServiceBus.Transport.Sql.Shared
+namespace NServiceBus.Transport.SqlServer
 {
     using System;
     using System.Data.Common;
-
+    using NServiceBus.Transport.Sql.Shared;
 
     class ConnectionPoolValidator
     {

@@ -239,10 +239,10 @@ namespace NServiceBus.Transport.SqlServer
         {
             if (transport.ConnectionFactory != null)
             {
-                return new SqlServerDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false));
+                return new SqlServerDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false), ConnectionPoolValidator.Validate);
             }
 
-            return new SqlServerDbConnectionFactory(transport.ConnectionString);
+            return new SqlServerDbConnectionFactory(transport.ConnectionString, ConnectionPoolValidator.Validate);
         }
 
         ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, DbConnectionFactory connectionFactory)

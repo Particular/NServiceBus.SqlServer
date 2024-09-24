@@ -95,7 +95,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         {
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
 
             PrepareAsync().GetAwaiter().GetResult();
         }

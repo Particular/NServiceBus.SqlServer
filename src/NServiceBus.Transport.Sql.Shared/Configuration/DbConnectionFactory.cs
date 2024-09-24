@@ -8,9 +8,10 @@ using NServiceBus.Logging;
 
 abstract class DbConnectionFactory
 {
-    public DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory)
+    public DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory, Func<string, ValidationCheckResult> connectionPoolValidator)
     {
         openNewConnection = factory;
+        validateConnectionPool = connectionPoolValidator;
     }
 
     protected DbConnectionFactory()
@@ -33,7 +34,7 @@ abstract class DbConnectionFactory
             return;
         }
 
-        var validationResult = ConnectionPoolValidator.Validate(connectionString);
+        var validationResult = validateConnectionPool(connectionString);
         if (!validationResult.IsValid)
         {
             Logger.Warn(validationResult.Message);
@@ -45,6 +46,7 @@ abstract class DbConnectionFactory
     static bool hasValidated;
 
     protected Func<CancellationToken, Task<DbConnection>> openNewConnection;
+    protected Func<string, ValidationCheckResult> validateConnectionPool;
 
     static ILog Logger = LogManager.GetLogger<DbConnectionFactory>();
 }

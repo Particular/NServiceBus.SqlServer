@@ -4,7 +4,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
-    using Microsoft.Data.SqlClient;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
@@ -31,7 +30,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             var token = CancellationToken.None;
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
-            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
+            dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString, ConnectionPoolValidator.Validate);
 
             var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var purger = new QueuePurger(dbConnectionFactory);

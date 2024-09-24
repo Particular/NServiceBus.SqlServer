@@ -98,10 +98,10 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     {
         if (transport.ConnectionFactory != null)
         {
-            return new PostgreSqlDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false));
+            return new PostgreSqlDbConnectionFactory(async (ct) => await transport.ConnectionFactory(ct).ConfigureAwait(false), ConnectionPoolValidator.Validate);
         }
 
-        return new PostgreSqlDbConnectionFactory(transport.ConnectionString);
+        return new PostgreSqlDbConnectionFactory(transport.ConnectionString, ConnectionPoolValidator.Validate);
     }
 
 
