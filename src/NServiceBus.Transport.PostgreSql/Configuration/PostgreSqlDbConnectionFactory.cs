@@ -19,8 +19,6 @@
         {
             openNewConnection = async cancellationToken =>
             {
-                ValidateConnectionPool(connectionString);
-
                 var connection = new NpgsqlConnection(connectionString);
                 try
                 {

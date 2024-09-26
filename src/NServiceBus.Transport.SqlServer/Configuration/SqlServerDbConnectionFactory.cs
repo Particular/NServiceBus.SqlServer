@@ -14,13 +14,10 @@ namespace NServiceBus.Transport.SqlServer
         {
         }
 
-
         public SqlServerDbConnectionFactory(string connectionString)
         {
             openNewConnection = async cancellationToken =>
             {
-                ValidateConnectionPool(connectionString);
-
                 var connection = new SqlConnection(connectionString);
                 try
                 {
@@ -46,6 +43,6 @@ namespace NServiceBus.Transport.SqlServer
             };
         }
 
-        static ILog Logger = LogManager.GetLogger<SqlServerDbConnectionFactory>();
+        static readonly ILog Logger = LogManager.GetLogger<SqlServerDbConnectionFactory>();
     }
 }

@@ -4,7 +4,6 @@
     using System.Threading;
     using System.Threading.Tasks;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
     using SqlServer;
 
     public class When_checking_schema
