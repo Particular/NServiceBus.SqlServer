@@ -14,6 +14,8 @@
     using Routing;
     using Transport;
 
+    // This file can be deleted once the transport tests has been updated to NServiceBus 9.3.0 or higher. 
+    // See comment below for instructions on how to customize queue names
     public abstract class NServiceBusTransportTest
     {
         static NServiceBusTransportTest()
@@ -37,6 +39,7 @@
             registrations = [];
             CustomizeTransportDefinition = _ => { };
         }
+
         protected static IConfigureTransportInfrastructure CreateConfigurer()
         {
             var transportToUse = EnvironmentHelper.GetEnvironmentVariable("Transport_UseSpecific");
@@ -73,6 +76,7 @@
             {
                 registration.Dispose();
             }
+
             testCancellationTokenSource.Dispose();
         }
 
@@ -167,25 +171,11 @@
             DispatchProperties dispatchProperties = null,
             DispatchConsistency dispatchConsistency = DispatchConsistency.Default,
             byte[] body = null,
-            CancellationToken cancellationToken = default)
-        {
-            var messageId = Guid.NewGuid().ToString();
-            var message = new OutgoingMessage(messageId, headers ?? [], body ?? Array.Empty<byte>());
+            CancellationToken cancellationToken = default) =>
+            SendMessage(new UnicastAddressTag(address), headers, transportTransaction, dispatchProperties, dispatchConsistency, body, cancellationToken);
 
-            if (message.Headers.ContainsKey(TestIdHeaderName) == false)
-            {
-                message.Headers.Add(TestIdHeaderName, testId);
-            }
-
-            transportTransaction ??= new TransportTransaction();
-
-            var transportOperation = new TransportOperation(message, new UnicastAddressTag(address), dispatchProperties, dispatchConsistency);
-
-            return transportInfrastructure.Dispatcher.Dispatch(new TransportOperations(transportOperation), transportTransaction, cancellationToken);
-        }
-
-        protected Task PublishMessage(
-            Type eventType,
+        protected Task SendMessage(
+            AddressTag addressTag,
             Dictionary<string, string> headers = null,
             TransportTransaction transportTransaction = null,
             DispatchProperties dispatchProperties = null,
@@ -194,16 +184,13 @@
             CancellationToken cancellationToken = default)
         {
             var messageId = Guid.NewGuid().ToString();
-            var message = new OutgoingMessage(messageId, headers ?? [], body ?? Array.Empty<byte>());
+            var message = new OutgoingMessage(messageId, headers ?? [], body ?? []);
 
-            if (message.Headers.ContainsKey(TestIdHeaderName) == false)
-            {
-                message.Headers.Add(TestIdHeaderName, testId);
-            }
+            message.Headers.TryAdd(TestIdHeaderName, testId);
 
             transportTransaction ??= new TransportTransaction();
 
-            var transportOperation = new TransportOperation(message, new MulticastAddressTag(eventType), dispatchProperties, dispatchConsistency);
+            var transportOperation = new TransportOperation(message, addressTag, dispatchProperties, dispatchConsistency);
 
             return transportInfrastructure.Dispatcher.Dispatch(new TransportOperations(transportOperation), transportTransaction, cancellationToken);
         }
@@ -270,6 +257,8 @@
             return testName;
         }
 
+        // The new core base class will contain GetInputQueueName and GetErrorQueueName that a transport can optionally implement to override those names.
+        // Move this code to ConfigurePostgreSqlTransportInfrastructure and implement the above method
         static void GetQueueNames(TransportTransactionMode transactionMode, out string inputQueueName, out string errorQueueName)
         {
             var testName = GetTestName();
