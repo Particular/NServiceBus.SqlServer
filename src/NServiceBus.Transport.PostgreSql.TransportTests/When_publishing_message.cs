@@ -1,9 +1,12 @@
 ﻿namespace NServiceBus.TransportTests
 {
     using System;
+    using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
     using NUnit.Framework;
+    using Routing;
     using Transport;
     using Unicast.Messages;
 
@@ -31,7 +34,7 @@
             await receiver.Subscriptions.SubscribeAll([new MessageMetadata(typeof(MyEvent))],
                 new ContextBag());
 
-            await PublishMessage(typeof(MyEvent));
+            await SendMessage(new MulticastAddressTag(typeof(MyEvent)));
 
             var ctx = await onReceived.Task;
 
