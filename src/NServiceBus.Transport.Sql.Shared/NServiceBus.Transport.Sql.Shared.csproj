@@ -21,5 +21,6 @@
 
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql" Key="$(NServiceBusKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.UnitTests" Key="$(NServiceBusTestsKey)" />
+    <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.TransportTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 </Project>
