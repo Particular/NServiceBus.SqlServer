@@ -13,16 +13,16 @@ using Sql.Shared.Queuing;
 
 class SqlTableBasedQueue : TableBasedQueue
 {
-    public SqlTableBasedQueue(SqlServerConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
+    public SqlTableBasedQueue(SqlServerConstants sqlConstants, CanonicalQueueAddress queueAddress, string queueName, bool isStreamSupported) :
+        base(sqlConstants, queueAddress.QualifiedTableName, queueName, isStreamSupported)
     {
         sqlServerConstants = sqlConstants;
 
-        purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-        checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-        checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-        checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
-        checkRecoverableColumnColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, this.qualifiedTableName);
+        purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, qualifiedTableName);
+        checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, qualifiedTableName);
+        checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, qualifiedTableName);
+        checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, qualifiedTableName);
+        checkRecoverableColumnColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
     }
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
