@@ -42,7 +42,9 @@
             Assert.That(peekCount, Is.EqualTo(1), "A long running receive transaction should not skew the estimation for number of messages in the queue.");
         }
 
+#pragma warning disable PS0018
         static async Task<PostgreSqlTableBasedQueue> CreateATestQueue(PostgreSqlDbConnectionFactory connectionFactory)
+#pragma warning restore PS0018
         {
             var queueName = "queue_length_estimation_test";
 
