@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Transport.SqlServer\NServiceBus.Transport.SqlServer.csproj" />
+    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

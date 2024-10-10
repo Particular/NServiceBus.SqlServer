@@ -53,7 +53,8 @@ FROM {0}
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
     public string PeekText { get; set; } = @"
-SELECT COALESCE(cast(max(seq) - min(seq) + 1 AS int), 0) Id FROM {0}";
+SELECT COALESCE(cast((SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED) 
+- (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED) + 1 AS int), 0);";
 
     public string AddMessageBodyStringColumn { get; set; } = @"
 DO $$
