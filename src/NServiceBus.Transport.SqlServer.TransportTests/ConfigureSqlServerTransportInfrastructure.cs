@@ -9,12 +9,11 @@ using NUnit.Framework;
 
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
-    public TransportDefinition CreateTransportDefinition()
-    {
-        connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
+    public static string ConnectionString =>
+        Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") 
+        ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-        return new SqlServerTransport(connectionString);
-    }
+    public TransportDefinition CreateTransportDefinition() => new SqlServerTransport(ConnectionString);
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
@@ -51,7 +50,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(connectionString) == false)
+        if (string.IsNullOrWhiteSpace(ConnectionString) == false)
         {
             var queues = new[]
             {
@@ -60,7 +59,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 sqlServerTransport.Testing.DelayedDeliveryQueue
             };
 
-            using (var conn = new SqlConnection(connectionString))
+            using (var conn = new SqlConnection(ConnectionString))
             {
                 await conn.OpenAsync(cancellationToken);
 
@@ -80,7 +79,6 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         }
     }
 
-    string connectionString;
     string inputQueueName;
     string errorQueueName;
     SqlServerTransport sqlServerTransport;
