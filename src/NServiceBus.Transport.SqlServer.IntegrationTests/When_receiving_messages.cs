@@ -43,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             transport.Testing.QueueFactoryOverride = qa =>
                 qa == inputQueueAddress
                     ? inputQueue
-                    : new SqlTableBasedQueue(sqlConstants, parser.Parse(qa).QualifiedTableName, qa, true);
+                    : new SqlTableBasedQueue(sqlConstants, parser.Parse(qa), qa, true);
 
             var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
@@ -95,7 +95,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(SqlServerConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, address, "", true)
+            public FakeTableBasedQueue(SqlServerConstants sqlConstants, string address, int queueSize, int successfulReceives) : base(sqlConstants, new QueueAddressTranslator("nservicebus", "dbo", null, new QueueSchemaAndCatalogOptions()).Parse(address), "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;
