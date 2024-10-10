@@ -52,7 +52,7 @@
             var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, false);
 
-            await queueCreator.CreateQueueIfNecessary(new[] {queueName}, null);
+            await queueCreator.CreateQueueIfNecessary(new[] { queueName }, null);
 
             await using var connection = await connectionFactory.OpenNewConnection();
             await queue.Purge(connection);

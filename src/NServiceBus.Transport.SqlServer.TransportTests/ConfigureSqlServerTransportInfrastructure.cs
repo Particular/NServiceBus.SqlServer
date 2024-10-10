@@ -10,7 +10,7 @@ using NUnit.Framework;
 public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfrastructure
 {
     public static string ConnectionString =>
-        Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") 
+        Environment.GetEnvironmentVariable("SqlServerTransportConnectionString")
         ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
     public TransportDefinition CreateTransportDefinition() => new SqlServerTransport(ConnectionString);
