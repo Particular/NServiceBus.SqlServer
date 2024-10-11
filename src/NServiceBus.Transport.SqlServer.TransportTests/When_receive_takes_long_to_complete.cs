@@ -1,94 +1,126 @@
-﻿#pragma warning disable PS0018
-namespace NServiceBus.TransportTests
+﻿namespace NServiceBus.TransportTests;
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using NUnit.Framework;
+using Transport;
+using Transport.SqlServer;
+
+//HINT: This test operates on the lower level than the transport tests because we need to verify
+//      internal behavior of the transport. In this case the peek behavior that is not exposed by the transport seam.
+//      Therefore we are not using the transport base class.
+public class When_receive_takes_long_to_complete
 {
-    using System;
-    using System.Threading.Tasks;
-    using NUnit.Framework;
-    using Transport;
-    using Transport.SqlServer;
-
-    public class When_receive_takes_long_to_complete : NServiceBusTransportTest
+    [TestCase(TransportTransactionMode.None)]
+    [TestCase(TransportTransactionMode.ReceiveOnly)]
+    [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
+    [TestCase(TransportTransactionMode.TransactionScope)]
+    public async Task Peeker_should_provide_accurate_queue_length_estimate(TransportTransactionMode transactionMode)
     {
-        [TestCase(TransportTransactionMode.None)]
-        [TestCase(TransportTransactionMode.ReceiveOnly)]
-        [TestCase(TransportTransactionMode.SendsAtomicWithReceive)]
-        [TestCase(TransportTransactionMode.TransactionScope)]
-        public async Task Peeker_should_provide_accurate_queue_length_estimate(TransportTransactionMode transactionMode)
+        var cancellationToken = TestContext.CurrentContext.CancellationToken;
+
+        queue = await CreateATestQueue(connectionFactory, cancellationToken);
+
+        await SendAMessage(connectionFactory, queue, cancellationToken);
+        await SendAMessage(connectionFactory, queue, cancellationToken);
+
+        var (txStarted, txFinished, txCompletionSource) = SpawnALongRunningReceiveTransaction(connectionFactory, queue);
+
+        await txStarted;
+
+        int peekCount;
+
+        using (var connection = await connectionFactory.OpenNewConnection(cancellationToken))
         {
-            var connectionFactory = new SqlServerDbConnectionFactory(ConfigureSqlServerTransportInfrastructure.ConnectionString);
+            var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-            SqlTableBasedQueue queue = await CreateATestQueue(connectionFactory);
-
-            await SendAMessage(connectionFactory, queue);
-            await SendAMessage(connectionFactory, queue);
-
-            var (txStarted, txFinished, txCompletionSource) = SpawnALongRunningReceiveTransaction(connectionFactory, queue);
-
-            await txStarted;
-
-            var peekCount = 0;
-
-            using (var connection = await connectionFactory.OpenNewConnection())
-            {
-                var transaction = await connection.BeginTransactionAsync();
-
-                queue.FormatPeekCommand();
-                peekCount = await queue.TryPeek(connection, transaction);
-            }
-
-            txCompletionSource.SetResult();
-            await txFinished;
-
-            Assert.That(peekCount, Is.EqualTo(1), "A long running receive transaction should not skew the estimation for number of messages in the queue.");
+            queue.FormatPeekCommand();
+            peekCount = await queue.TryPeek(connection, transaction, null, cancellationToken);
         }
 
-        static async Task<SqlTableBasedQueue> CreateATestQueue(SqlServerDbConnectionFactory connectionFactory)
-        {
-            var queueName = "queue_length_estimation_test";
+        txCompletionSource.SetResult();
+        await txFinished;
 
-            var sqlConstants = new SqlServerConstants();
+        Assert.That(peekCount, Is.EqualTo(1), "A long running receive transaction should not skew the estimation for number of messages in the queue.");
+    }
 
-            var queue = new SqlTableBasedQueue(sqlConstants, queueName, queueName, false);
+    static async Task<SqlTableBasedQueue> CreateATestQueue(SqlServerDbConnectionFactory connectionFactory, CancellationToken cancellationToken)
+    {
+        var queueName = "queue_length_estimation_test";
 
-            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
-            var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, false);
+        var sqlConstants = new SqlServerConstants();
 
-            await queueCreator.CreateQueueIfNecessary(new[] { queueName }, null);
+        var queue = new SqlTableBasedQueue(sqlConstants, queueName, queueName, false);
 
-            await using var connection = await connectionFactory.OpenNewConnection();
-            await queue.Purge(connection);
+        var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+        var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, false);
 
-            return queue;
-        }
+        await queueCreator.CreateQueueIfNecessary(new[] { queueName }, null, cancellationToken);
 
-        static async Task SendAMessage(SqlServerDbConnectionFactory connectionFactory, SqlTableBasedQueue queue)
+        await using var connection = await connectionFactory.OpenNewConnection(cancellationToken);
+        await queue.Purge(connection, cancellationToken);
+
+        return queue;
+    }
+
+    static async Task SendAMessage(SqlServerDbConnectionFactory connectionFactory, SqlTableBasedQueue queue, CancellationToken cancellationToken)
+    {
+        await using var connection = await connectionFactory.OpenNewConnection(cancellationToken);
+        var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        await queue.Send(
+            new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>()),
+            TimeSpan.MaxValue, connection, transaction,
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    (Task, Task, TaskCompletionSource) SpawnALongRunningReceiveTransaction(SqlServerDbConnectionFactory connectionFactory, SqlTableBasedQueue queue)
+    {
+        var started = new TaskCompletionSource();
+        var cancellationTokenSource = new TaskCompletionSource();
+
+        var task = Task.Run(async () =>
         {
             await using var connection = await connectionFactory.OpenNewConnection();
             var transaction = await connection.BeginTransactionAsync();
 
-            await queue.Send(new OutgoingMessage(Guid.NewGuid().ToString(), [], Array.Empty<byte>()), TimeSpan.MaxValue, connection, transaction);
+            await queue.TryReceive(connection, transaction);
 
-            await transaction.CommitAsync();
-        }
+            started.SetResult();
 
-        (Task, Task, TaskCompletionSource) SpawnALongRunningReceiveTransaction(SqlServerDbConnectionFactory connectionFactory, SqlTableBasedQueue queue)
-        {
-            var started = new TaskCompletionSource();
-            var cancellationTokenSource = new TaskCompletionSource();
+            await cancellationTokenSource.Task;
+        });
 
-            var task = Task.Run(async () =>
-            {
-                await using var connection = await connectionFactory.OpenNewConnection();
-                var transaction = await connection.BeginTransactionAsync();
-
-                await queue.TryReceive(connection, transaction);
-
-                started.SetResult();
-
-                await cancellationTokenSource.Task;
-            });
-
-            return (started.Task, task, cancellationTokenSource);
-        }
+        return (started.Task, task, cancellationTokenSource);
     }
+
+    [SetUp]
+    public async Task Setup()
+    {
+        connectionFactory = new SqlServerDbConnectionFactory(ConfigureSqlServerTransportInfrastructure.ConnectionString);
+
+        queue = await CreateATestQueue(connectionFactory, CancellationToken.None);
+    }
+
+    [TearDown]
+    public async Task TearDown()
+    {
+        if (queue == null)
+        {
+            return;
+        }
+
+        await using var connection = await connectionFactory.OpenNewConnection(CancellationToken.None);
+        await using var comm = connection.CreateCommand();
+
+        comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
+
+        await comm.ExecuteNonQueryAsync(CancellationToken.None);
+    }
+
+    SqlTableBasedQueue queue;
+    SqlServerDbConnectionFactory connectionFactory;
 }
