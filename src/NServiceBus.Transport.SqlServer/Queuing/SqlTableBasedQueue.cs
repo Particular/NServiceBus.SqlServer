@@ -22,7 +22,7 @@ class SqlTableBasedQueue : TableBasedQueue
         checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, qualifiedTableName);
         checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, qualifiedTableName);
         checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, qualifiedTableName);
-        checkRecoverableColumnColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
+        checkRecoverableColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
     }
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
@@ -126,11 +126,11 @@ class SqlTableBasedQueue : TableBasedQueue
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = checkRecoverableColumnColumnCommand;
+                command.CommandText = checkRecoverableColumnCommand;
                 command.CommandType = CommandType.Text;
                 command.Transaction = transaction;
 
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnColumnCommand), cancellationToken).ConfigureAwait(false);
+                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnCommand), cancellationToken).ConfigureAwait(false);
                 if (rowsCount > 0)
                 {
                     cachedSendCommand = Format(sqlServerConstants.SendTextWithRecoverable, qualifiedTableName);
@@ -155,7 +155,7 @@ class SqlTableBasedQueue : TableBasedQueue
     readonly string checkExpiresIndexCommand;
     readonly string checkNonClusteredRowVersionIndexCommand;
     readonly string checkHeadersColumnTypeCommand;
-    readonly string checkRecoverableColumnColumnCommand;
+    readonly string checkRecoverableColumnCommand;
     readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
     readonly SqlServerConstants sqlServerConstants;
 }
