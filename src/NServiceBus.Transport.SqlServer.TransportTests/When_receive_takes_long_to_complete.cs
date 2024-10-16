@@ -3,6 +3,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using NUnit.Framework;
 using Transport;
 using Transport.SqlServer;
@@ -45,15 +46,15 @@ public class When_receive_takes_long_to_complete
         Assert.That(peekCount, Is.EqualTo(1), "A long running receive transaction should not skew the estimation for number of messages in the queue.");
     }
 
-    static async Task<SqlTableBasedQueue> CreateATestQueue(SqlServerDbConnectionFactory connectionFactory, CancellationToken cancellationToken)
+    async Task<SqlTableBasedQueue> CreateATestQueue(SqlServerDbConnectionFactory connectionFactory, CancellationToken cancellationToken)
     {
         var queueName = "queue_length_estimation_test";
 
         var sqlConstants = new SqlServerConstants();
 
-        var queue = new SqlTableBasedQueue(sqlConstants, queueName, queueName, false);
+        var queue = new SqlTableBasedQueue(sqlConstants, new CanonicalQueueAddress(queueName, "dbo", catalogName), queueName, false);
 
-        var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+        var addressTranslator = new QueueAddressTranslator(catalogName, "dbo", null, null);
         var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, false);
 
         await queueCreator.CreateQueueIfNecessary(new[] { queueName }, null, cancellationToken);
@@ -100,6 +101,10 @@ public class When_receive_takes_long_to_complete
     [SetUp]
     public async Task Setup()
     {
+        var connectionString = ConfigureSqlServerTransportInfrastructure.ConnectionString;
+        var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
+
+        catalogName = connectionStringBuilder.InitialCatalog;
         connectionFactory = new SqlServerDbConnectionFactory(ConfigureSqlServerTransportInfrastructure.ConnectionString);
 
         queue = await CreateATestQueue(connectionFactory, CancellationToken.None);
@@ -120,6 +125,8 @@ public class When_receive_takes_long_to_complete
 
         await comm.ExecuteNonQueryAsync(CancellationToken.None);
     }
+
+    string catalogName;
 
     SqlTableBasedQueue queue;
     SqlServerDbConnectionFactory connectionFactory;
