@@ -68,7 +68,7 @@
                 (address, isStreamSupported) =>
                 {
                     var canonicalAddress = addressTranslator.Parse(address);
-                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress, canonicalAddress.Address, isStreamSupported);
                 },
                 s => addressTranslator.Parse(s).Address,
                 true);

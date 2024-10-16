@@ -13,15 +13,16 @@ using Sql.Shared.Queuing;
 
 class SqlTableBasedQueue : TableBasedQueue
 {
-    public SqlTableBasedQueue(SqlServerConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
+    public SqlTableBasedQueue(SqlServerConstants sqlConstants, CanonicalQueueAddress queueAddress, string queueName, bool isStreamSupported) :
+        base(sqlConstants, queueAddress.QualifiedTableName, queueName, isStreamSupported)
     {
         sqlServerConstants = sqlConstants;
 
-        purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-        checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-        checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-        checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+        purgeExpiredCommand = Format(sqlConstants.PurgeBatchOfExpiredMessagesText, qualifiedTableName);
+        checkExpiresIndexCommand = Format(sqlConstants.CheckIfExpiresIndexIsPresent, qualifiedTableName);
+        checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, qualifiedTableName);
+        checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, qualifiedTableName);
+        checkRecoverableColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
     }
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
@@ -85,7 +86,7 @@ class SqlTableBasedQueue : TableBasedQueue
 
                 message.PrepareSendCommand(command);
 
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
         // 207 = Invalid column name
@@ -123,27 +124,24 @@ class SqlTableBasedQueue : TableBasedQueue
                 return sendCommand;
             }
 
-            var commandText = Format(sqlServerConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
             using (var command = connection.CreateCommand())
             {
+                command.CommandText = checkRecoverableColumnCommand;
                 command.CommandType = CommandType.Text;
-                command.CommandText = commandText;
                 command.Transaction = transaction;
 
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnCommand), cancellationToken).ConfigureAwait(false);
+                if (rowsCount > 0)
                 {
-                    for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
-                    {
-                        if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
-                        {
-                            cachedSendCommand = Format(sqlServerConstants.SendTextWithRecoverable, qualifiedTableName);
-                            return cachedSendCommand;
-                        }
-                    }
+                    cachedSendCommand = Format(sqlServerConstants.SendTextWithRecoverable, qualifiedTableName);
+                    return cachedSendCommand;
                 }
+                else
+                {
 
-                cachedSendCommand = Format(sqlServerConstants.SendTextWithoutRecoverable, qualifiedTableName);
-                return cachedSendCommand;
+                    cachedSendCommand = Format(sqlServerConstants.SendTextWithoutRecoverable, qualifiedTableName);
+                    return cachedSendCommand;
+                }
             }
         }
         finally
@@ -153,10 +151,11 @@ class SqlTableBasedQueue : TableBasedQueue
     }
 
     string cachedSendCommand;
-    string purgeExpiredCommand;
-    string checkExpiresIndexCommand;
-    string checkNonClusteredRowVersionIndexCommand;
-    string checkHeadersColumnTypeCommand;
+    readonly string purgeExpiredCommand;
+    readonly string checkExpiresIndexCommand;
+    readonly string checkNonClusteredRowVersionIndexCommand;
+    readonly string checkHeadersColumnTypeCommand;
+    readonly string checkRecoverableColumnCommand;
     readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
     readonly SqlServerConstants sqlServerConstants;
 }
