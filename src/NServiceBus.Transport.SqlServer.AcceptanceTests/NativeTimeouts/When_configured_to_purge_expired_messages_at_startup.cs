@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativeTimeouts
+namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativeTimeouts
 {
     using System;
     using System.Collections.Generic;

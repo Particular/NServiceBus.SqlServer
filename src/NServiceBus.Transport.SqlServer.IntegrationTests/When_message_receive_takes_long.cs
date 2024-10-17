@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -28,7 +28,7 @@
 
             await CreateQueueIfNotExists(addressParser, sqlConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
+            queue = new TableBasedQueue(addressParser.Parse(QueueTableName), QueueTableName, true);
         }
 
         [Test]

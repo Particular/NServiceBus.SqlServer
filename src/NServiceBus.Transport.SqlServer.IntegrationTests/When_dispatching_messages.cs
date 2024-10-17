@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -112,8 +112,7 @@
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
         {
             purger = new QueuePurger(sqlConnectionFactory);
-            var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
-            queue = new TableBasedQueue(queueAddress, ValidAddress, true);
+            queue = new TableBasedQueue(addressTranslator.Parse(ValidAddress), ValidAddress, true);
 
             return purger.Purge(queue, cancellationToken);
         }

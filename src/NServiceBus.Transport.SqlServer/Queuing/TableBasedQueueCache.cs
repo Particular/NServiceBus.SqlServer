@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             var address = addressTranslator.Parse(destination);
             var key = Tuple.Create(address.QualifiedTableName, address.Address);
-            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(x.Item1, x.Item2, isStreamSupported));
+            var queue = cache.GetOrAdd(key, x => new TableBasedQueue(address, x.Item2, isStreamSupported));
 
             return queue;
         }

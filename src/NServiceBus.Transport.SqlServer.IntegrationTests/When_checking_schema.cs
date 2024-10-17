@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Threading;
@@ -23,7 +23,7 @@
 
             await ResetQueue(addressParser, sqlConnectionFactory);
 
-            queue = new TableBasedQueue(addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, false);
+            queue = new TableBasedQueue(addressParser.Parse(QueueTableName), QueueTableName, false);
         }
 
         [Test]

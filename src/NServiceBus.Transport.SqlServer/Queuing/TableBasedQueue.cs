@@ -17,16 +17,17 @@ namespace NServiceBus.Transport.SqlServer
     {
         public string Name { get; }
 
-        public TableBasedQueue(string qualifiedTableName, string queueName, bool isStreamSupported)
+        public TableBasedQueue(CanonicalQueueAddress queueAddress, string queueName, bool isStreamSupported)
         {
-            this.qualifiedTableName = qualifiedTableName;
+            qualifiedTableName = queueAddress.QualifiedTableName;
             Name = queueName;
-            receiveCommand = Format(SqlConstants.ReceiveText, this.qualifiedTableName);
-            purgeCommand = Format(SqlConstants.PurgeText, this.qualifiedTableName);
-            purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, this.qualifiedTableName);
-            checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, this.qualifiedTableName);
-            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, this.qualifiedTableName);
-            checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, this.qualifiedTableName);
+            receiveCommand = Format(SqlConstants.ReceiveText, qualifiedTableName);
+            purgeCommand = Format(SqlConstants.PurgeText, qualifiedTableName);
+            purgeExpiredCommand = Format(SqlConstants.PurgeBatchOfExpiredMessagesText, qualifiedTableName);
+            checkExpiresIndexCommand = Format(SqlConstants.CheckIfExpiresIndexIsPresent, qualifiedTableName);
+            checkNonClusteredRowVersionIndexCommand = Format(SqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, qualifiedTableName);
+            checkHeadersColumnTypeCommand = Format(SqlConstants.CheckHeadersColumnType, qualifiedTableName);
+            checkRecoverableColumnCommand = Format(SqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
             this.isStreamSupported = isStreamSupported;
         }
 
@@ -145,23 +146,24 @@ namespace NServiceBus.Transport.SqlServer
                     return sendCommand;
                 }
 
-                var commandText = Format(SqlConstants.CheckIfTableHasRecoverableText, qualifiedTableName);
-                using (var command = new SqlCommand(commandText, connection, transaction))
+                using (var command = connection.CreateCommand())
                 {
-                    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        for (int fieldIndex = 0; fieldIndex < reader.FieldCount; fieldIndex++)
-                        {
-                            if (string.Equals("Recoverable", reader.GetName(fieldIndex), StringComparison.OrdinalIgnoreCase))
-                            {
-                                cachedSendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
-                                return cachedSendCommand;
-                            }
-                        }
-                    }
+                    command.CommandText = checkRecoverableColumnCommand;
+                    command.CommandType = CommandType.Text;
+                    command.Transaction = transaction;
 
-                    cachedSendCommand = Format(SqlConstants.SendText, qualifiedTableName);
-                    return cachedSendCommand;
+                    var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnCommand), cancellationToken).ConfigureAwait(false);
+                    if (rowsCount > 0)
+                    {
+                        cachedSendCommand = Format(SqlConstants.SendTextWithRecoverable, qualifiedTableName);
+                        return cachedSendCommand;
+                    }
+                    else
+                    {
+
+                        cachedSendCommand = Format(SqlConstants.SendText, qualifiedTableName);
+                        return cachedSendCommand;
+                    }
                 }
             }
             finally
@@ -237,6 +239,7 @@ namespace NServiceBus.Transport.SqlServer
         string checkExpiresIndexCommand;
         string checkNonClusteredRowVersionIndexCommand;
         string checkHeadersColumnTypeCommand;
+        string checkRecoverableColumnCommand;
         bool isStreamSupported;
 
         readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
