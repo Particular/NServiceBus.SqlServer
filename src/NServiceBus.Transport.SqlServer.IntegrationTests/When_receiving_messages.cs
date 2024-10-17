@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Linq;
@@ -23,7 +23,7 @@
 
             var parser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
             var inputQueueName = "input";
-            var inputQueueAddress = parser.Parse(inputQueueName).Address;
+            var inputQueueAddress = parser.Parse(inputQueueName);
             var inputQueue = new FakeTableBasedQueue(inputQueueAddress, queueSize, successfulReceives);
 
             var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True";
@@ -35,7 +35,7 @@
             };
 
             transport.Testing.QueueFactoryOverride = qa =>
-                qa == inputQueueAddress ? inputQueue : new TableBasedQueue(parser.Parse(qa).QualifiedTableName, qa, true);
+                qa == inputQueueAddress.Address ? inputQueue : new TableBasedQueue(parser.Parse(qa), qa, true);
 
             var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(inputQueueName), true, false, "error");
             var hostSettings = new HostSettings("IntegrationTests", string.Empty, new StartupDiagnosticEntries(),
@@ -87,7 +87,7 @@
             int queueSize;
             int successfulReceives;
 
-            public FakeTableBasedQueue(string address, int queueSize, int successfulReceives) : base(address, "", true)
+            public FakeTableBasedQueue(CanonicalQueueAddress address, int queueSize, int successfulReceives) : base(address, "", true)
             {
                 this.queueSize = queueSize;
                 this.successfulReceives = successfulReceives;

@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.IntegrationTests
+namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
@@ -134,7 +134,7 @@
         {
             purger = new QueuePurger(sqlConnectionFactory);
             var queueAddress = addressParser.Parse(ValidAddress);
-            queue = new TableBasedQueue(queueAddress.QualifiedTableName, queueAddress.Address, true);
+            queue = new TableBasedQueue(queueAddress, queueAddress.Address, true);
 
             return purger.Purge(queue, cancellationToken);
         }
