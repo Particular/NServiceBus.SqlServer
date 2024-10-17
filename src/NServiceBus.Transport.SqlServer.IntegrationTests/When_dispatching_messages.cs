@@ -107,7 +107,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 (address, isStreamSupported) =>
                 {
                     var canonicalAddress = addressTranslator.Parse(address);
-                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress.QualifiedTableName, canonicalAddress.Address, isStreamSupported);
+                    return new SqlTableBasedQueue(sqlConstants, canonicalAddress, canonicalAddress.Address, isStreamSupported);
                 },
                 s => addressTranslator.Parse(s).Address,
                 true);
@@ -122,7 +122,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         Task PurgeOutputQueue(QueueAddressTranslator addressTranslator, CancellationToken cancellationToken = default)
         {
             purger = new QueuePurger(dbConnectionFactory);
-            var queueAddress = addressTranslator.Parse(ValidAddress).QualifiedTableName;
+            var queueAddress = addressTranslator.Parse(ValidAddress);
             queue = new SqlTableBasedQueue(sqlConstants, queueAddress, ValidAddress, true);
 
             return purger.Purge(queue, cancellationToken);
