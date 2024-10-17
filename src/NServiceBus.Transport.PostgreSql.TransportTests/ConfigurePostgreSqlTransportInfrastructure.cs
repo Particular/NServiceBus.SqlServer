@@ -11,12 +11,11 @@ using QueueAddress = NServiceBus.Transport.QueueAddress;
 
 public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInfrastructure
 {
-    public TransportDefinition CreateTransportDefinition()
-    {
-        connectionString = Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ?? @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Connection Lifetime=0;";
+    public static string ConnectionString =>
+        Environment.GetEnvironmentVariable("PostgreSqlTransportConnectionString") ??
+        @"User ID=user;Password=admin;Host=localhost;Port=54320;Database=nservicebus;Pooling=true;Connection Lifetime=0;";
 
-        return new PostgreSqlTransport(connectionString);
-    }
+    public TransportDefinition CreateTransportDefinition() => new PostgreSqlTransport(ConnectionString);
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
@@ -48,7 +47,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (string.IsNullOrWhiteSpace(ConnectionString))
         {
             return;
         }
@@ -64,7 +63,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
             queues.Add(delayedDeliveryQueueName);
         }
 
-        using var conn = new NpgsqlConnection(connectionString);
+        using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var queue in queues.Where(q => !string.IsNullOrWhiteSpace(q)))
@@ -91,7 +90,6 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
         }
     }
 
-    string connectionString;
     string inputQueueName;
     string errorQueueName;
     PostgreSqlTransport postgreSqlTransport;

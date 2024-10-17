@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NServiceBus.Transport.PostgreSql\NServiceBus.Transport.PostgreSql.csproj" />
+    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
