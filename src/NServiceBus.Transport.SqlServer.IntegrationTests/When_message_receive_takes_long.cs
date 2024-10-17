@@ -29,7 +29,7 @@
 
             await CreateQueueIfNotExists(addressParser, dbConnectionFactory);
 
-            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName).QualifiedTableName, QueueTableName, true);
+            queue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(QueueTableName), QueueTableName, true);
         }
 
         [Test]
