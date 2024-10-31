@@ -51,7 +51,7 @@ jobs:
           echo "Create extra databases"
           sqlcmd -Q "CREATE DATABASE nservicebus1"
           sqlcmd -Q "CREATE DATABASE nservicebus2"
-          sqlcmd -Q "CREATE DATABASE [n service.bus&*#]"
+          sqlcmd -Q "CREATE DATABASE [n service.bus&#]"
 
           echo "Create additional schemas"
           sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
