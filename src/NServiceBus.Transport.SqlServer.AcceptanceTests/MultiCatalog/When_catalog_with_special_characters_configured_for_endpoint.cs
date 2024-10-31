@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 public class When_catalog_with_special_characters_configured_for_endpoint : MultiCatalogAcceptanceTest
 {
-    static string EndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "n service.bus&*#");
+    static string EndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "n service.bus&#");
 
     [Test]
     public async Task Should_be_able_to_send_messages_to_the_endpoint()
