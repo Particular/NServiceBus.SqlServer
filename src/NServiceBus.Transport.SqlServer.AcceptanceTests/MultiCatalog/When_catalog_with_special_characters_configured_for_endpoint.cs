@@ -1,50 +1,46 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using NUnit.Framework;
+
+public class When_catalog_with_special_characters_configured_for_endpoint : MultiCatalogAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using NUnit.Framework;
+    static string EndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "n service.bus&*#");
 
-    public class When_catalog_with_special_characters_configured_for_endpoint : MultiCatalogAcceptanceTest
+    [Test]
+    public async Task Should_be_able_to_send_messages_to_the_endpoint()
     {
-        static string EndpointConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "n service.bus&*#");
+        await Scenario.Define<Context>()
+            .WithEndpoint<AnEndpoint>(c => c.When(s => s.SendLocal(new Message())))
+            .Done(c => c.MessageReceived)
+            .Run();
 
-        [Test]
-        public async Task Should_be_able_to_send_messages_to_the_endpoint()
+        Assert.Pass();
+    }
+
+    public class AnEndpoint : EndpointConfigurationBuilder
+    {
+        public AnEndpoint() =>
+            EndpointSetup(new CustomizedServer(EndpointConnectionString), (_, _) => { });
+
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            await Scenario.Define<Context>()
-                .WithEndpoint<AnEndpoint>(c => c.When(s => s.SendLocal(new Message())))
-                .Done(c => c.MessageReceived)
-                .Run();
-
-            Assert.Pass();
-        }
-
-        public class AnEndpoint : EndpointConfigurationBuilder
-        {
-            public AnEndpoint() =>
-                EndpointSetup(new CustomizedServer(EndpointConnectionString), (c, sd) =>
-                {
-                });
-
-
-            class Handler(Context scenarioContext) : IHandleMessages<Message>
+            public Task Handle(Message message, IMessageHandlerContext context)
             {
-                public Task Handle(Message message, IMessageHandlerContext context)
-                {
-                    scenarioContext.MessageReceived = true;
+                scenarioContext.MessageReceived = true;
 
-                    return Task.FromResult(0);
-                }
+                return Task.FromResult(0);
             }
         }
+    }
 
-        public class Message : ICommand
-        {
-        }
+    public class Message : ICommand
+    {
+    }
 
-        class Context : ScenarioContext
-        {
-            public bool MessageReceived { get; set; }
-        }
+    class Context : ScenarioContext
+    {
+        public bool MessageReceived { get; set; }
     }
 }
