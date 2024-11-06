@@ -52,7 +52,7 @@ IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         public string CheckIfTableHasRecoverableText { get; set; } = @"
 SELECT COUNT(*)
-FROM {0}.sys.columns c
+FROM [{0}].sys.columns c
 WHERE c.object_id = OBJECT_ID(N'{1}')
     AND c.name = 'Recoverable'";
 
