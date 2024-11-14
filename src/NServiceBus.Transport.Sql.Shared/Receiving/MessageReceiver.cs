@@ -120,9 +120,15 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
-            messageReceivingCancellationTokenSource?.Cancel();
+            if (messageReceivingCancellationTokenSource == null)
+            {
+                // already stopped or never started
+                return;
+            }
 
-            using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
+            await messageReceivingCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+
+            await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
             {
                 await messageReceivingTask.ConfigureAwait(false);
 
@@ -140,8 +146,9 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
             messageReceivingCircuitBreaker.Dispose();
             messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
-            messageReceivingCancellationTokenSource?.Dispose();
-            messageProcessingCancellationTokenSource?.Dispose();
+            messageReceivingCancellationTokenSource.Dispose();
+            messageReceivingCancellationTokenSource = null;
+            messageProcessingCancellationTokenSource.Dispose();
         }
 
         async Task ReceiveMessagesAndSwallowExceptions(CancellationToken messageReceivingCancellationToken)

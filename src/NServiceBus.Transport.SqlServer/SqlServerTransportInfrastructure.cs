@@ -342,11 +342,16 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken = default)
+        public override async Task Shutdown(CancellationToken cancellationToken = default)
         {
-            return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
-        }
+            await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                .ConfigureAwait(false);
 
+            if (dueDelayedMessageProcessor != null)
+            {
+                await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         readonly SqlServerTransport transport;
         readonly HostSettings hostSettings;

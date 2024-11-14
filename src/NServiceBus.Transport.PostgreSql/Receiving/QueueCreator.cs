@@ -23,17 +23,15 @@ namespace NServiceBus.Transport.PostgreSql
 
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            foreach (var address in queueAddresses)
             {
-                foreach (var address in queueAddresses)
-                {
-                    await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
-                }
+                await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+            }
 
-                if (delayedQueueAddress != null)
-                {
-                    await CreateQueue(sqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
-                }
+            if (delayedQueueAddress != null)
+            {
+                await CreateQueue(sqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -41,23 +39,20 @@ namespace NServiceBus.Transport.PostgreSql
         {
             try
             {
-                using (var transaction = connection.BeginTransaction())
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                var tableName = canonicalQueueAddress.QualifiedTableName;
+
+                var sql = string.Format(creationScript, tableName, canonicalQueueAddress.Table);
+                using (var command = connection.CreateCommand())
                 {
-                    var tableName = canonicalQueueAddress.QualifiedTableName;
+                    command.Transaction = transaction;
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
 
-                    var sql = string.Format(creationScript, tableName, canonicalQueueAddress.Table);
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = sql;
-                        command.CommandType = CommandType.Text;
-
-                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-
-                    }
-
-                    transaction.Commit();
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
+
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -75,19 +70,17 @@ namespace NServiceBus.Transport.PostgreSql
                 var advisoryLockId = CalculateLockId(canonicalQueueAddress.QualifiedTableName);
                 var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn, canonicalQueueAddress.Schema, canonicalQueueAddress.Table, advisoryLockId);
 
-                using (var transaction = connection.BeginTransaction())
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = bodyStringSql;
-                        command.CommandType = CommandType.Text;
+                    command.Transaction = transaction;
+                    command.CommandText = bodyStringSql;
+                    command.CommandType = CommandType.Text;
 
-                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                    }
-
-                    transaction.Commit();
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
+
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
