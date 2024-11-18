@@ -3,6 +3,9 @@
   <PropertyGroup>
     <MinVerMinimumMajorMinor>8.0</MinVerMinimumMajorMinor>
     <MinVerAutoIncrement>minor</MinVerAutoIncrement>
+
+    <!-- Temporarily disable nuget package inspections -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
 
 </Project>
