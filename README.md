@@ -42,3 +42,7 @@ All tests use the default connection string `Data Source=.\SQLEXPRESS;Initial Ca
   - `receiver` owner `db_owner`
   - `sender` owner `db_owner`
   - `db@` owner `db_owner`
+
+## Connection pooling for PostgreSQL
+
+Deployments with multiple endpoints running on PostgreSQL require external connection pooling e.g. [using pgBouncer](/docs/postgre-with-pgbouncer.md)
