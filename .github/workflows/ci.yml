@@ -25,18 +25,20 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4.0.0
+        uses: actions/setup-dotnet@v4.1.0
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            9.0.x
+            8.0.x
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
         if: matrix.name == 'Windows'
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: NuGet packages
           path: nugets/
@@ -58,7 +60,7 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Azure login
-        uses: azure/login@v2.1.1
+        uses: azure/login@v2.2.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
       - name: Setup PostgreSql 15.x
