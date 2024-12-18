@@ -4,8 +4,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
+using NServiceBus.Transport.Sql.Shared;
 using NUnit.Framework;
-using Sql.Shared.DelayedDelivery;
 
 public class BackOffStrategyTests
 {

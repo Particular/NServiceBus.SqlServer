@@ -4,8 +4,8 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
     using SqlServer;
     using Transport;
 

@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Queuing;
+namespace NServiceBus.Transport.Sql.Shared;
 
 interface ISqlConstants
 {

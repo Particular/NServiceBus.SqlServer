@@ -5,8 +5,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using NServiceBus.Transport.Sql.Shared.Queuing;
-    using Sql.Shared;
+    using NServiceBus.Transport.Sql.Shared;
 
     class ExpiredMessagesPurger : IExpiredMessagesPurger
     {

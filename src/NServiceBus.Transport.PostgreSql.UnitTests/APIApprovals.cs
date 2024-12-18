@@ -1,5 +1,4 @@
 ﻿using NServiceBus;
-using NServiceBus.Transport.PostgreSql;
 using NUnit.Framework;
 using Particular.Approvals;
 using PublicApiGenerator;

@@ -1,9 +1,9 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Configuration;
+﻿namespace NServiceBus.Transport.Sql.Shared;
 
-using System.Data.Common;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 abstract class DbConnectionFactory
 {

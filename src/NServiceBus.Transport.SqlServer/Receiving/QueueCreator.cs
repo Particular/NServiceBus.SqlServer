@@ -3,10 +3,9 @@ namespace NServiceBus.Transport.SqlServer
     using System;
     using System.Data;
     using System.Data.Common;
-    using System.Threading.Tasks;
     using System.Threading;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.Queuing;
+    using System.Threading.Tasks;
+    using NServiceBus.Transport.Sql.Shared;
 
     class QueueCreator
     {

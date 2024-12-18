@@ -5,11 +5,10 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Data.Common;
     using System.Security.Cryptography;
     using System.Text;
-    using System.Threading.Tasks;
     using System.Threading;
+    using System.Threading.Tasks;
     using Npgsql;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.Queuing;
+    using NServiceBus.Transport.Sql.Shared;
 
     class QueueCreator
     {

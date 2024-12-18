@@ -8,13 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Logging;
-using PubSub;
-using Sql.Shared.Configuration;
-using Sql.Shared.DelayedDelivery;
-using Sql.Shared.PubSub;
-using Sql.Shared.Queuing;
-using Sql.Shared.Receiving;
-using Sql.Shared.Sending;
+using NServiceBus.Transport.Sql.Shared;
 
 class PostgreSqlTransportInfrastructure : TransportInfrastructure
 {

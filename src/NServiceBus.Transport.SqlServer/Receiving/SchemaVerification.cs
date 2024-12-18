@@ -5,7 +5,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using Sql.Shared.Queuing;
+    using NServiceBus.Transport.Sql.Shared;
 
     class SchemaInspector
     {

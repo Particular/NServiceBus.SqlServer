@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.SqlServer.PubSub
+﻿namespace NServiceBus.Transport.SqlServer
 {
     using System.Threading;
     using System.Threading.Tasks;

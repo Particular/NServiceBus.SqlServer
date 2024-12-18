@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql.Configuration;
+﻿namespace NServiceBus.Transport.PostgreSql;
 
 class SettingsKeys
 {

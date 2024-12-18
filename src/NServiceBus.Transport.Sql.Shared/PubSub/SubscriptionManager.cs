@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.PubSub
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Linq;
     using System.Threading;

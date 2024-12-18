@@ -5,9 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 using Microsoft.Data.SqlClient;
-using Sql.Shared;
-using Sql.Shared.Queuing;
-using Sql.Shared.Receiving;
+using NServiceBus.Transport.Sql.Shared;
 
 class SqlServerMessageReceiver : MessageReceiver
 {

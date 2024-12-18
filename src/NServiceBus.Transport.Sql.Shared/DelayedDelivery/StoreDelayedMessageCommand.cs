@@ -1,10 +1,9 @@
-namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
-    using Queuing;
 
     class StoreDelayedMessageCommand
     {

@@ -2,11 +2,11 @@
 {
     using System;
     using System.Data.Common;
+    using System.Threading;
     using System.Threading.Tasks;
     using Logging;
-    using System.Threading;
     using Npgsql;
-    using Sql.Shared.Configuration;
+    using NServiceBus.Transport.Sql.Shared;
 
     class PostgreSqlDbConnectionFactory : DbConnectionFactory
     {

@@ -4,15 +4,14 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
+    using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
     using Routing;
     using SqlServer;
-    using System.Threading;
-    using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
-    using Sql.Shared.Sending;
+
     using SettingsKeys = SettingsKeys;
 
     public class When_recoverable_column_is_removed

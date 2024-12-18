@@ -1,9 +1,8 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Sending;
+﻿namespace NServiceBus.Transport.Sql.Shared;
 
 using System;
 using System.Data.Common;
 using System.Transactions;
-using Receiving;
 
 static class TransportTransactions
 {

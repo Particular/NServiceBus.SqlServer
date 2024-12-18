@@ -1,14 +1,15 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
-using System.Data;
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
-using static System.String;
+using NServiceBus.Transport.Sql.Shared;
 using Unicast.Queuing;
-using Sql.Shared.Queuing;
+
+using static System.String;
 
 class PostgreSqlTableBasedQueue : TableBasedQueue
 {

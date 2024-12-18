@@ -3,8 +3,8 @@
     using System;
     using System.Collections.Generic;
     using NServiceBus.Extensibility;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
-    using Sql.Shared.Receiving;
 
     public class FailureInfoStorageTests
     {
