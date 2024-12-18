@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="9.2.3" />
     <PackageReference Include="Npgsql" Version="8.0.5" AutomaticVersionRange="false" />
+    <PackageReference Include="NServiceBus" Version="9.2.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,4 +41,5 @@
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
     </ItemGroup>
   </Target>
+
 </Project>
