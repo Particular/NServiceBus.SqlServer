@@ -1,6 +1,6 @@
 namespace NServiceBus.Transport.SqlServer
 {
-    using Sql.Shared.Queuing;
+    using NServiceBus.Transport.Sql.Shared;
 
     class SqlServerConstants : ISqlConstants
     {
@@ -197,7 +197,7 @@ BEGIN TRY
 
     CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
     (
-	    [RowVersion] ASC
+        [RowVersion] ASC
     )
 
     CREATE NONCLUSTERED INDEX Index_Expires ON {0}

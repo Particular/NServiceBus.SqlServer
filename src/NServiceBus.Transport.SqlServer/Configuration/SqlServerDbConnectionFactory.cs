@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using Logging;
     using Microsoft.Data.SqlClient;
-    using Sql.Shared.Configuration;
+    using NServiceBus.Transport.Sql.Shared;
 
     class SqlServerDbConnectionFactory : DbConnectionFactory
     {

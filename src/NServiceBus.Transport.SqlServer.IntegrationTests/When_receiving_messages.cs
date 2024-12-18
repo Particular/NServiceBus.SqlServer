@@ -6,10 +6,10 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
-    using Sql.Shared.Queuing;
-    using Transport;
     using SqlServer;
+    using Transport;
 
     public class When_receiving_messages
     {

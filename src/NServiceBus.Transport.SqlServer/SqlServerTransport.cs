@@ -5,8 +5,8 @@ namespace NServiceBus
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
+    using NServiceBus.Transport.Sql.Shared;
     using Transport;
-    using Transport.Sql.Shared.Queuing;
     using Transport.SqlServer;
 
     /// <summary>

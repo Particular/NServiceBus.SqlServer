@@ -1,15 +1,15 @@
 ﻿namespace NServiceBus.Transport.SqlServer;
 
-using System.Data;
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.String;
 using Microsoft.Data.SqlClient;
+using NServiceBus.Transport.Sql.Shared;
 using Unicast.Queuing;
-using Sql.Shared;
-using Sql.Shared.Queuing;
+
+using static System.String;
 
 class SqlTableBasedQueue : TableBasedQueue
 {

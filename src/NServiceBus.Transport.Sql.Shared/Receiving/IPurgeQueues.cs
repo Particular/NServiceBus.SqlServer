@@ -1,8 +1,7 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Threading;
     using System.Threading.Tasks;
-    using Queuing;
 
     interface IPurgeQueues
     {

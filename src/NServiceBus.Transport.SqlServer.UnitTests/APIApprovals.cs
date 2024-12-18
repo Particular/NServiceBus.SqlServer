@@ -1,5 +1,5 @@
 ﻿using NServiceBus;
-using NServiceBus.Transport.Sql.Shared.DelayedDelivery;
+using NServiceBus.Transport.Sql.Shared;
 using NUnit.Framework;
 using Particular.Approvals;
 using PublicApiGenerator;
