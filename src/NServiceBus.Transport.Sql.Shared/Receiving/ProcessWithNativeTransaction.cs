@@ -1,15 +1,14 @@
 namespace NServiceBus.Transport.Sql.Shared.Receiving
 {
     using System;
-    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
     using Configuration;
-    using IsolationLevel = System.Data.IsolationLevel;
     using Extensibility;
     using Queuing;
     using Sending;
+    using IsolationLevel = System.Data.IsolationLevel;
 
     class ProcessWithNativeTransaction : ProcessStrategy
     {

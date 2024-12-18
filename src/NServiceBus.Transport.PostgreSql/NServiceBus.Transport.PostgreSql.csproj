@@ -4,7 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -24,22 +23,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.Sql.Shared\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.TransportTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.AcceptanceTests" Key="$(NServiceBusTestsKey)" />
     <InternalsVisibleTo Include="NServiceBus.Transport.PostgreSql.UnitTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj">
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <IncludeAssets>NServiceBus.Transport.Sql.Shared.dll</IncludeAssets>
-    </ProjectReference>
-  </ItemGroup>
-
-  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
-    <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
-    </ItemGroup>
-  </Target>
 
 </Project>
