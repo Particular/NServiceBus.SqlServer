@@ -1,10 +1,10 @@
-namespace NServiceBus.Transport.Sql.Shared.Sending
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface IMulticastToUnicastConverter
+    interface IMulticastToUnicastConverter
     {
         Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default);
     }

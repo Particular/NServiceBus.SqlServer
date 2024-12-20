@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data.Common;
@@ -8,11 +8,8 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
     using Unicast.Queuing;
-    using Sql.Shared;
-    using Sql.Shared.Queuing;
 
-
-    public abstract class ProcessStrategy
+    abstract class ProcessStrategy
     {
         protected TableBasedQueue InputQueue;
         protected TableBasedQueue ErrorQueue;

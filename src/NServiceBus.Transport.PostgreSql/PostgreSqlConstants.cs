@@ -1,6 +1,6 @@
 ﻿namespace NServiceBus.Transport.PostgreSql;
 
-using Sql.Shared.Queuing;
+using NServiceBus.Transport.Sql.Shared;
 
 class PostgreSqlConstants : ISqlConstants
 {
@@ -36,11 +36,11 @@ FROM params;";
 DELETE FROM {0} rs
 WHERE rs.id = (SELECT id FROM {0} ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING rs.id,
-	    CASE WHEN Expires IS NULL
+        CASE WHEN Expires IS NULL
         THEN 0
         WHEN Expires > now() AT TIME ZONE 'UTC' THEN 0 ELSE 1
-	    END Expired,
-		rs.Headers, rs.Body;
+        END Expired,
+        rs.Headers, rs.Body;
 ";
 
     public string MoveDueDelayedMessageText { get; set; } = @"
@@ -70,11 +70,11 @@ THEN
 END IF;
 
 IF NOT EXISTS (
-	SELECT FROM information_schema.columns 
-	WHERE  table_schema = '{0}'
-	AND table_name='{1}' 
-	AND column_name='StringBody'
-	)
+    SELECT FROM information_schema.columns 
+    WHERE  table_schema = '{0}'
+    AND table_name='{1}' 
+    AND column_name='StringBody'
+    )
 THEN
     RETURN;
 END IF;

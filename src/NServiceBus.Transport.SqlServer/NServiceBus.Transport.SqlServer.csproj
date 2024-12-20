@@ -4,7 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -12,15 +11,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="[9.0.0, 10.0.0)" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" AutomaticVersionRange="false" />
+    <PackageReference Include="NServiceBus" Version="9.1.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
+    <PackageReference Include="Fody" Version="6.9.1" PrivateAssets="All" />
     <PackageReference Include="Janitor.Fody" Version="1.9.0" PrivateAssets="All" />
     <PackageReference Include="Obsolete.Fody" Version="5.3.0" PrivateAssets="All" />
     <PackageReference Include="Particular.Packaging" Version="4.1.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.Sql.Shared\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,16 +33,4 @@
     <InternalsVisibleTo Include="NServiceBus.Transport.SqlServer.UnitTests" Key="$(NServiceBusTestsKey)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj">
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <IncludeAssets>NServiceBus.Transport.Sql.Shared.dll</IncludeAssets>
-    </ProjectReference>
-  </ItemGroup>
-
-  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
-    <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
-    </ItemGroup>
-  </Target>
 </Project>

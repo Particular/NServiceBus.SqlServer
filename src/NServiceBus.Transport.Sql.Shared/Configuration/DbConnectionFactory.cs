@@ -1,11 +1,11 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Configuration;
+﻿namespace NServiceBus.Transport.Sql.Shared;
 
-using System.Data.Common;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
-public abstract class DbConnectionFactory
+abstract class DbConnectionFactory
 {
     protected DbConnectionFactory(Func<CancellationToken, Task<DbConnection>> factory) => openNewConnection = factory;
 

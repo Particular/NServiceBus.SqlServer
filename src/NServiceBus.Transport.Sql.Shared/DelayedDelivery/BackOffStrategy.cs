@@ -1,11 +1,11 @@
-namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery;
+namespace NServiceBus.Transport.Sql.Shared;
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Logging;
 
-public class BackOffStrategy
+class BackOffStrategy
 {
     public BackOffStrategy() : this(TimeProvider.System) { }
 

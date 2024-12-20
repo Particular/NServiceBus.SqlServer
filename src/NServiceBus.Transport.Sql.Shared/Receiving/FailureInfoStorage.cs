@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +7,7 @@
 
     // The data structure has fixed maximum size. When the data structure reaches its maximum size,
     // the least recently used (LRU) message processing failure is removed from the storage.
-    public class FailureInfoStorage
+    class FailureInfoStorage
     {
         public FailureInfoStorage(int maxElements)
         {

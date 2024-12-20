@@ -1,20 +1,19 @@
-namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data;
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
-    using Queuing;
     using Transport;
 
-    public interface IDelayedMessageStore
+    interface IDelayedMessageStore
     {
         Task Store(OutgoingMessage message, TimeSpan dueAfter, string destination, DbConnection connection,
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    public class DelayedMessageTable : IDelayedMessageStore
+    class DelayedMessageTable : IDelayedMessageStore
     {
         public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
         {

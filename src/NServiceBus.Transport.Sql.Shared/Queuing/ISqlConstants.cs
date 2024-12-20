@@ -1,6 +1,6 @@
-namespace NServiceBus.Transport.Sql.Shared.Queuing;
+namespace NServiceBus.Transport.Sql.Shared;
 
-public interface ISqlConstants
+interface ISqlConstants
 {
     string PurgeText { get; set; }
     string StoreDelayedMessageText { get; set; }

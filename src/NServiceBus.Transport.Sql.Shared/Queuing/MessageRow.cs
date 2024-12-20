@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Queuing
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
     using System.Threading.Tasks;
     using Logging;
 
-    public class MessageRow
+    class MessageRow
     {
         MessageRow() { }
 

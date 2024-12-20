@@ -1,8 +1,8 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Queuing
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Collections.Generic;
 
-    public class Message
+    class Message
     {
         public Message(string transportId, string originalHeaders, byte[] body, bool expired)
         {

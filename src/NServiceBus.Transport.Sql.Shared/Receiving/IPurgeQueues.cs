@@ -1,10 +1,9 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Receiving
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Threading;
     using System.Threading.Tasks;
-    using Queuing;
 
-    public interface IPurgeQueues
+    interface IPurgeQueues
     {
         Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken = default);
     }

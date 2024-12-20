@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.Sql.Shared.Sending
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     class TransportTransactionKeys
     {

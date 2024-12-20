@@ -1,17 +1,14 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
-    using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Configuration;
-    using IsolationLevel = System.Data.IsolationLevel;
     using Extensibility;
-    using Queuing;
-    using Sending;
 
-    public class ProcessWithNativeTransaction : ProcessStrategy
+    using IsolationLevel = System.Data.IsolationLevel;
+
+    class ProcessWithNativeTransaction : ProcessStrategy
     {
         public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)

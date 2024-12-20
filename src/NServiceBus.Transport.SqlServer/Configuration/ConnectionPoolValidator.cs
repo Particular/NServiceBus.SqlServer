@@ -2,7 +2,7 @@ namespace NServiceBus.Transport.SqlServer;
 
 using System;
 using System.Data.Common;
-using Sql.Shared;
+using NServiceBus.Transport.Sql.Shared;
 
 static class ConnectionPoolValidator
 {

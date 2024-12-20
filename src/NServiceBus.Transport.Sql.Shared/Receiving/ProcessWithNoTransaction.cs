@@ -1,15 +1,12 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
-    using Configuration;
     using Extensibility;
-    using Queuing;
-    using Sending;
 
-    public class ProcessWithNoTransaction : ProcessStrategy
+    class ProcessWithNoTransaction : ProcessStrategy
     {
         public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
