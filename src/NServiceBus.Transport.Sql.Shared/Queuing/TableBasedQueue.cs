@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Queuing
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data;

@@ -4,8 +4,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.Queuing;
+    using NServiceBus.Transport.Sql.Shared;
 
     class SubscriptionTableCreator
     {

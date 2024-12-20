@@ -3,7 +3,7 @@
 using System;
 using System.Threading;
 using Npgsql;
-using Sql.Shared;
+using NServiceBus.Transport.Sql.Shared;
 
 class PostgreSqlExceptionClassifier : IExceptionClassifier
 {

@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.PostgreSql.PubSub
+﻿namespace NServiceBus.Transport.PostgreSql
 {
     using System.Threading;
     using System.Threading.Tasks;

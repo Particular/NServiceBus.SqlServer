@@ -1,7 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests.Sending
 {
     using System.Linq;
-    using NServiceBus.Transport.Sql.Shared.Sending;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
     using Routing;
     using SqlServer;

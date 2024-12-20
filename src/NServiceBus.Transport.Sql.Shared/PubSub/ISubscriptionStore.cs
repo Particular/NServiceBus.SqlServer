@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.PubSub
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Collections.Generic;

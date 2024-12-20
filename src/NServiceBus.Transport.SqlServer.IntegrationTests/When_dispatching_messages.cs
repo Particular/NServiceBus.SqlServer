@@ -6,16 +6,14 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Threading.Tasks;
     using Extensibility;
     using Microsoft.Data.SqlClient;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
     using Routing;
     using SqlServer;
     using Transport;
     using Unicast.Queuing;
-    using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
-    using Sql.Shared.Sending;
-    using SettingsKeys = SettingsKeys;
 
+    using SettingsKeys = SettingsKeys;
 
     public class When_dispatching_messages
     {

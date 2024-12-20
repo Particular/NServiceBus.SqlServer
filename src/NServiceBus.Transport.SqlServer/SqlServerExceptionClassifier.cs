@@ -3,7 +3,7 @@ namespace NServiceBus.Transport.SqlServer;
 using System;
 using System.Threading;
 using Microsoft.Data.SqlClient;
-using Sql.Shared;
+using NServiceBus.Transport.Sql.Shared;
 
 class SqlServerExceptionClassifier : IExceptionClassifier
 {

@@ -5,7 +5,7 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Threading.Tasks;
     using Logging;
     using Npgsql;
-    using Sql.Shared.Queuing;
+    using NServiceBus.Transport.Sql.Shared;
 
     class SubscriptionTableCreator
     {

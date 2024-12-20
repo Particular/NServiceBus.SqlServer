@@ -5,14 +5,13 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Extensibility;
+    using NServiceBus.Transport.Sql.Shared;
     using NUnit.Framework;
     using Performance.TimeToBeReceived;
     using Routing;
-    using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
-    using Sql.Shared.Sending;
     using SqlServer;
     using Transport;
+
     using SettingsKeys = SettingsKeys;
 
     public class When_using_ttbr

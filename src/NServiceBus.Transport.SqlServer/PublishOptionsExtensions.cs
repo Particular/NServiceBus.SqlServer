@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus
 {
-    using Microsoft.Data.SqlClient;
     using System;
     using Extensibility;
-    using Transport.Sql.Shared.Sending;
+    using Microsoft.Data.SqlClient;
+    using NServiceBus.Transport.Sql.Shared;
 
     /// <summary>
     /// Adds transport specific settings to PublishOptions
