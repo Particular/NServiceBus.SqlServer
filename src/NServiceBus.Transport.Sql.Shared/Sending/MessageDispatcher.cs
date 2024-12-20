@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Sending
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Collections.Generic;
@@ -7,9 +7,6 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Configuration;
-    using DelayedDelivery;
-    using Queuing;
     using Transport;
 
     class MessageDispatcher : IMessageDispatcher

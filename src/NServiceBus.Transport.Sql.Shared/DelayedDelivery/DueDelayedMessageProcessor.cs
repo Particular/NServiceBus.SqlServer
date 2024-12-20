@@ -1,12 +1,9 @@
-namespace NServiceBus.Transport.Sql.Shared.PubSub
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using Configuration;
-    using DelayedDelivery;
     using Logging;
-    using Receiving;
 
     class DueDelayedMessageProcessor
     {

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Data.Common;
-    using Sql;
 
     class ConnectionAttributesParser
     {

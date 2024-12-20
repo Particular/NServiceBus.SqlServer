@@ -7,14 +7,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using System.Transactions;
     using Logging;
-    using NServiceBus.Transport.SqlServer.PubSub;
-    using Sql;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.DelayedDelivery;
-    using Sql.Shared.PubSub;
-    using Sql.Shared.Queuing;
-    using Sql.Shared.Receiving;
-    using Sql.Shared.Sending;
+    using NServiceBus.Transport.Sql.Shared;
     using Transport;
 
     class SqlServerTransportInfrastructure : TransportInfrastructure

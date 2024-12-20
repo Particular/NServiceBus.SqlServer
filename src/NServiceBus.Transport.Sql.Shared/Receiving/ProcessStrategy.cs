@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.Receiving
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data.Common;
@@ -7,10 +7,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Faults;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
-    using Sql.Shared;
-    using Sql.Shared.Queuing;
     using Unicast.Queuing;
-
 
     abstract class ProcessStrategy
     {

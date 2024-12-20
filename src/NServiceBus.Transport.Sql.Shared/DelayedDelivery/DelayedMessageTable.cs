@@ -1,11 +1,10 @@
-namespace NServiceBus.Transport.Sql.Shared.DelayedDelivery
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data;
     using System.Data.Common;
     using System.Threading;
     using System.Threading.Tasks;
-    using Queuing;
     using Transport;
 
     interface IDelayedMessageStore

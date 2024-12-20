@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared.PubSub
+namespace NServiceBus.Transport.Sql.Shared
 {
     using System.Collections.Generic;
     using System.Data;
@@ -6,9 +6,6 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Sql.Shared;
-    using Sql.Shared.Configuration;
-    using Sql.Shared.Queuing;
 
     class SubscriptionTable
     {
