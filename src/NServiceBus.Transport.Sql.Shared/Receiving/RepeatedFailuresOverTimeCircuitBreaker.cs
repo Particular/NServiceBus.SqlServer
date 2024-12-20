@@ -1,11 +1,11 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared.Receiving;
 
-using NServiceBus.Logging;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using NServiceBus.Logging;
 
-public class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
+class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
 {
     public RepeatedFailuresOverTimeCircuitBreaker(string name, TimeSpan timeToWaitBeforeTriggering, Action<Exception> triggerAction)
     {

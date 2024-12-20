@@ -9,7 +9,7 @@
     using Queuing;
     using Sending;
 
-    public class ProcessWithTransactionScope : ProcessStrategy
+    class ProcessWithTransactionScope : ProcessStrategy
     {
         public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
          : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)

@@ -3,7 +3,7 @@ namespace NServiceBus.Transport.Sql.Shared.Queuing
     using System;
     using System.Collections.Concurrent;
 
-    public class TableBasedQueueCache
+    class TableBasedQueueCache
     {
         public TableBasedQueueCache(Func<string, bool, TableBasedQueue> queueFactory, Func<string, string> addressTranslator, bool isStreamSupported)
         {

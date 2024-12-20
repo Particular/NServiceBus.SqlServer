@@ -7,12 +7,12 @@ namespace NServiceBus.Transport.Sql.Shared.Sending
     using System.Threading;
     using System.Threading.Tasks;
     using System.Transactions;
-    using Transport;
     using Configuration;
     using DelayedDelivery;
     using Queuing;
+    using Transport;
 
-    public class MessageDispatcher : IMessageDispatcher
+    class MessageDispatcher : IMessageDispatcher
     {
         public MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
         {

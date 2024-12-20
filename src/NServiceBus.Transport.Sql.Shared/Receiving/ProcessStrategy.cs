@@ -7,12 +7,12 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Faults;
     using NServiceBus.Extensibility;
     using NServiceBus.Logging;
-    using Unicast.Queuing;
     using Sql.Shared;
     using Sql.Shared.Queuing;
+    using Unicast.Queuing;
 
 
-    public abstract class ProcessStrategy
+    abstract class ProcessStrategy
     {
         protected TableBasedQueue InputQueue;
         protected TableBasedQueue ErrorQueue;

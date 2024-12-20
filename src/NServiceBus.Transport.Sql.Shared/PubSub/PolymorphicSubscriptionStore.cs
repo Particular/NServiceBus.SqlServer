@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using System.Threading;
     using System.Threading.Tasks;
 
-    public class PolymorphicSubscriptionStore : ISubscriptionStore
+    class PolymorphicSubscriptionStore : ISubscriptionStore
     {
         public PolymorphicSubscriptionStore(SubscriptionTable subscriptionTable)
         {

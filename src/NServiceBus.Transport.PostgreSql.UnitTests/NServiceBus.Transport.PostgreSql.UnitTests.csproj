@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.Transport.Sql.Shared\NServiceBus.Transport.Sql.Shared.csproj" />
     <ProjectReference Include="..\NServiceBus.Transport.PostgreSql\NServiceBus.Transport.PostgreSql.csproj" />
   </ItemGroup>
 

@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    public class Message
+    class Message
     {
         public Message(string transportId, string originalHeaders, byte[] body, bool expired)
         {

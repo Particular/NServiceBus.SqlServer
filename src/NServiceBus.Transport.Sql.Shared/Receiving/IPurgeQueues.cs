@@ -4,7 +4,7 @@
     using System.Threading.Tasks;
     using Queuing;
 
-    public interface IPurgeQueues
+    interface IPurgeQueues
     {
         Task<int> Purge(TableBasedQueue queue, CancellationToken cancellationToken = default);
     }

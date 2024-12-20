@@ -5,7 +5,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface ISubscriptionStore
+    interface ISubscriptionStore
     {
         Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default);
         Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default);

@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.Sql.Shared.PubSub
     using Sql.Shared.Configuration;
     using Sql.Shared.Queuing;
 
-    public class SubscriptionTable
+    class SubscriptionTable
     {
         ISqlConstants sqlConstants;
         string qualifiedTableName;

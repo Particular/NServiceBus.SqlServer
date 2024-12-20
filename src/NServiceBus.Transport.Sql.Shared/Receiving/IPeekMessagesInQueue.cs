@@ -5,7 +5,7 @@ namespace NServiceBus.Transport.Sql.Shared.Receiving
     using Queuing;
 
 #pragma warning disable CA1711 // Identifiers should not have incorrect suffix
-    public interface IPeekMessagesInQueue
+    interface IPeekMessagesInQueue
 #pragma warning restore CA1711 // Identifiers should not have incorrect suffix
     {
         Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default);
