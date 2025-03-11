@@ -95,11 +95,17 @@ namespace NServiceBus.Transport.Sql.Shared
         public async Task ChangeConcurrency(PushRuntimeSettings newLimitations,
             CancellationToken cancellationToken = default)
         {
-            var oldLimiter = concurrencyLimiter;
-            var oldMaxConcurrency = maxConcurrency;
-            concurrencyLimiter = new SemaphoreSlim(newLimitations.MaxConcurrency);
-            limitations = newLimitations;
-            maxConcurrency = limitations.MaxConcurrency;
+            SemaphoreSlim oldLimiter;
+            int oldMaxConcurrency;
+
+            lock (lockObject)
+            {
+                oldLimiter = concurrencyLimiter;
+                oldMaxConcurrency = maxConcurrency;
+                concurrencyLimiter = new SemaphoreSlim(newLimitations.MaxConcurrency);
+                limitations = newLimitations;
+                maxConcurrency = limitations.MaxConcurrency;
+            }
 
             try
             {
@@ -281,5 +287,7 @@ namespace NServiceBus.Transport.Sql.Shared
         public ISubscriptionManager Subscriptions { get; }
         public string Id { get; }
         public string ReceiveAddress { get; }
+
+        public static object lockObject = new();
     }
 }
