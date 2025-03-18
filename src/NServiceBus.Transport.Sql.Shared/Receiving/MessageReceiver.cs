@@ -261,7 +261,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
-        readonly object lockObject = new(); // Not static, must not be shared between receiver instances
+        readonly object lockObject = new();
         readonly TransportDefinition transport;
         readonly string errorQueueAddress;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
