@@ -261,6 +261,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
+        readonly object lockObject = new();
         readonly TransportDefinition transport;
         readonly string errorQueueAddress;
         readonly Action<string, Exception, CancellationToken> criticalErrorAction;
@@ -287,7 +288,5 @@ namespace NServiceBus.Transport.Sql.Shared
         public ISubscriptionManager Subscriptions { get; }
         public string Id { get; }
         public string ReceiveAddress { get; }
-
-        public static object lockObject = new();
     }
 }
