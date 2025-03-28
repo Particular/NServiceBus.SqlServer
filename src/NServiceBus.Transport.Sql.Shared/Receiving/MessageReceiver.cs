@@ -125,29 +125,40 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
-            if (messageReceivingCancellationTokenSource == null)
+            try
             {
-                // already stopped or never started
-                return;
-            }
-
-            await messageReceivingCancellationTokenSource.CancelAsync().ConfigureAwait(false);
-
-            await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
-            {
-                await messageReceivingTask.ConfigureAwait(false);
-
-                while (concurrencyLimiter.CurrentCount != maxConcurrency)
+                if (messageReceivingCancellationTokenSource == null)
                 {
-                    // Pass CancellationToken.None so that no exceptions will be thrown while waiting
-                    // for the message receiver to gracefully shut down. The cancellation tokens passed to
-                    // ProcessMessages (and thus the message processing pipelines) will be responsible
-                    // for more forcefully shutting down message processing after the user's shutdown SLA
-                    // is reached
-                    await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+                    // already stopped or never started
+                    return;
+                }
+
+                await messageReceivingCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+
+                await using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
+                {
+                    await messageReceivingTask.ConfigureAwait(false);
+
+                    while (concurrencyLimiter.CurrentCount != maxConcurrency)
+                    {
+                        // Pass CancellationToken.None so that no exceptions will be thrown while waiting
+                        // for the message receiver to gracefully shut down. The cancellation tokens passed to
+                        // ProcessMessages (and thus the message processing pipelines) will be responsible
+                        // for more forcefully shutting down message processing after the user's shutdown SLA
+                        // is reached
+                        await Task.Delay(50, CancellationToken.None).ConfigureAwait(false);
+                    }
                 }
             }
+            finally
+            {
+                Dispose();
+            }
 
+        }
+
+        public void Dispose()
+        {
             messageReceivingCircuitBreaker.Dispose();
             messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();

@@ -10,7 +10,7 @@ using System.Transactions;
 using Logging;
 using NServiceBus.Transport.Sql.Shared;
 
-class PostgreSqlTransportInfrastructure : TransportInfrastructure
+class PostgreSqlTransportInfrastructure : TransportInfrastructure, IDisposable
 {
     //The limit is 55=63-max(8,8). 63 is the built-in PostgreSQL limit and we also need to reserve space for:
     //  - "_Seq_seq" suffix (8 bytes) used in the auto-created sequence for the main queue table
@@ -47,12 +47,27 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     public override async Task Shutdown(CancellationToken cancellationToken = default)
     {
-        await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
-            .ConfigureAwait(false);
-
-        if (dueDelayedMessageProcessor != null)
+        try
         {
-            await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                .ConfigureAwait(false);
+
+            if (dueDelayedMessageProcessor != null)
+            {
+                await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach(MessageReceiver r in Receivers.Values)
+        {
+            r.Dispose();
         }
     }
 
