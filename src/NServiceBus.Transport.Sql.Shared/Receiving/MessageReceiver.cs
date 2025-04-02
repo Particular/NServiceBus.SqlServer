@@ -5,7 +5,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using Logging;
 
-    class MessageReceiver : IMessageReceiver
+    [Janitor.SkipWeaving]
+    class MessageReceiver : IMessageReceiver, IDisposable
     {
         public MessageReceiver(
             TransportDefinition transport,

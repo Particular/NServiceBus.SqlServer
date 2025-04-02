@@ -10,6 +10,7 @@ using System.Transactions;
 using Logging;
 using NServiceBus.Transport.Sql.Shared;
 
+[Janitor.SkipWeaving]
 class PostgreSqlTransportInfrastructure : TransportInfrastructure, IDisposable
 {
     //The limit is 55=63-max(8,8). 63 is the built-in PostgreSQL limit and we also need to reserve space for:
@@ -65,7 +66,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure, IDisposable
 
     public void Dispose()
     {
-        foreach(MessageReceiver r in Receivers.Values)
+        foreach (var r in Receivers.Values.Cast<MessageReceiver>())
         {
             r.Dispose();
         }

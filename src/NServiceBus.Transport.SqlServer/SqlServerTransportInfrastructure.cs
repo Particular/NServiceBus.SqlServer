@@ -10,7 +10,8 @@ namespace NServiceBus.Transport.SqlServer
     using NServiceBus.Transport.Sql.Shared;
     using Transport;
 
-    class SqlServerTransportInfrastructure : TransportInfrastructure
+    [Janitor.SkipWeaving]
+    class SqlServerTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         public SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
@@ -355,7 +356,7 @@ namespace NServiceBus.Transport.SqlServer
 
         public void Dispose()
         {
-            foreach(MessageReceiver r in Receivers.Values)
+            foreach (var r in Receivers.Values.Cast<MessageReceiver>())
             {
                 r.Dispose();
             }
