@@ -155,17 +155,16 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 Dispose();
             }
-
         }
 
         public void Dispose()
         {
-            messageReceivingCircuitBreaker.Dispose();
-            messageProcessingCircuitBreaker.Dispose();
-            concurrencyLimiter.Dispose();
-            messageReceivingCancellationTokenSource.Dispose();
+            messageReceivingCircuitBreaker?.Dispose();
+            messageProcessingCircuitBreaker?.Dispose();
+            concurrencyLimiter?.Dispose();
+            messageReceivingCancellationTokenSource?.Dispose();
             messageReceivingCancellationTokenSource = null;
-            messageProcessingCancellationTokenSource.Dispose();
+            messageProcessingCancellationTokenSource?.Dispose();
         }
 
         async Task ReceiveMessagesAndSwallowExceptions(CancellationToken messageReceivingCancellationToken)
