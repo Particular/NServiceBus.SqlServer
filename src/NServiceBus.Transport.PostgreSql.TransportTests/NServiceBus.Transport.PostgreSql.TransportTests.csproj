@@ -19,8 +19,4 @@
     <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(PkgNServiceBus_TransportTests_Sources)' != ''">
-    <Compile Remove="$(PkgNServiceBus_TransportTests_Sources)\**\NServiceBusTransportTest.cs" />
-  </ItemGroup>
-
 </Project>
