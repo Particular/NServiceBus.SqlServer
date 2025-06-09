@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NServiceBus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -11,15 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.5" AutomaticVersionRange="false" />
-    <PackageReference Include="NServiceBus" Version="9.2.7" />
+    <PackageReference Include="Npgsql" Version="9.0.3" AutomaticVersionRange="false" />
+    <PackageReference Include="NServiceBus" Version="10.0.0-alpha.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="All" />
-    <PackageReference Include="Janitor.Fody" Version="1.9.0" PrivateAssets="All" />
-    <PackageReference Include="Obsolete.Fody" Version="5.3.1" PrivateAssets="All" />
-    <PackageReference Include="Particular.Packaging" Version="4.2.2" PrivateAssets="All" />
+    <PackageReference Include="Particular.Packaging" Version="4.4.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

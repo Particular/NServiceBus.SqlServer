@@ -1,9 +1,9 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared;
 
-using NServiceBus.Logging;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using NServiceBus.Logging;
 
 class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
 {
@@ -17,11 +17,6 @@ class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
     }
 
     public bool Triggered => triggered;
-
-    public void Dispose()
-    {
-        //Injected
-    }
 
     public void Success()
     {
@@ -70,6 +65,25 @@ class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
         }
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+                timer?.Dispose();
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
 
     string name;
     TimeSpan timeToWaitBeforeTriggering;
@@ -78,6 +92,7 @@ class RepeatedFailuresOverTimeCircuitBreaker : IDisposable
     long failureCount;
     Exception lastException;
     volatile bool triggered;
+    bool disposed;
 
     static TimeSpan NoPeriodicTriggering = TimeSpan.FromMilliseconds(-1);
     static ILog Logger = LogManager.GetLogger<RepeatedFailuresOverTimeCircuitBreaker>();

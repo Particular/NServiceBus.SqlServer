@@ -1,4 +1,4 @@
-namespace NServiceBus
+namespace NServiceBus.Transport.PostgreSql
 {
     using System;
     using System.Threading;

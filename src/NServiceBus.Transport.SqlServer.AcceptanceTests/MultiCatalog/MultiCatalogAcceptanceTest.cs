@@ -4,7 +4,7 @@
     using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
 
-    public class MultiCatalogAcceptanceTest : NServiceBusAcceptanceTest
+    public abstract class MultiCatalogAcceptanceTest : NServiceBusAcceptanceTest
     {
         protected static string GetDefaultConnectionString() =>
             Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";

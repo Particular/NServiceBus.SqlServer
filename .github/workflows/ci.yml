@@ -35,9 +35,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4.3.1
         with:
-          dotnet-version: |
-            9.0.x
-            8.0.x
+          global-json-file: global.json
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
@@ -74,6 +72,6 @@ jobs:
           init-script: './.github/workflows/scripts/init-postgres.sql'
           tag: SqlTransport
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}  
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0

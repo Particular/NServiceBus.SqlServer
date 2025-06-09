@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.github/workflows/ci.yml" />
+    <File Path="../.github/workflows/release.yml" />
+    <File Path="Custom.Build.props" />
+    <File Path="Scripts/Create-Databases.sql" />
+    <File Path="Scripts/Reset-Database.sql" />
+  </Folder>
+  <Project Path="NServiceBus.Transport.PostgreSql.AcceptanceTests/NServiceBus.Transport.PostgreSql.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Transport.PostgreSql.TransportTests/NServiceBus.Transport.PostgreSql.TransportTests.csproj" />
+  <Project Path="NServiceBus.Transport.PostgreSql.UnitTests/NServiceBus.Transport.PostgreSql.UnitTests.csproj" />
+  <Project Path="NServiceBus.Transport.PostgreSql/NServiceBus.Transport.PostgreSql.csproj" />
+  <Project Path="NServiceBus.Transport.SqlServer.AcceptanceTests/NServiceBus.Transport.SqlServer.AcceptanceTests.csproj" />
+  <Project Path="NServiceBus.Transport.SqlServer.IntegrationTests/NServiceBus.Transport.SqlServer.IntegrationTests.csproj" />
+  <Project Path="NServiceBus.Transport.SqlServer.TransportTests/NServiceBus.Transport.SqlServer.TransportTests.csproj" />
+  <Project Path="NServiceBus.Transport.SqlServer.UnitTests/NServiceBus.Transport.SqlServer.UnitTests.csproj" />
+  <Project Path="NServiceBus.Transport.SqlServer/NServiceBus.Transport.SqlServer.csproj" />
+</Solution>

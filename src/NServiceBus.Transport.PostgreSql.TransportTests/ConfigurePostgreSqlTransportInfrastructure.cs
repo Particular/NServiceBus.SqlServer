@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -38,6 +40,36 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
         };
 
         return await postgreSqlTransport.Initialize(hostSettings, receivers, new[] { errorQueueName }, cancellationToken).ConfigureAwait(false);
+    }
+
+    public string GetInputQueueName(string testName, TransportTransactionMode transactionMode)
+    {
+        var fullTestName = $"{testName}{transactionMode}";
+        var fullTestNameHash = CreateDeterministicHash(fullTestName);
+
+        // Max length for table name is 63. We need to reserve space for the ".delayed" suffix (8), the hashcode (8), and "_seq_seq" sequence suffix: 63-8-8-8=39
+        var charactersToConsider = int.Min(fullTestName.Length, 39);
+
+        return $"{fullTestName[..charactersToConsider]}{fullTestNameHash:X8}";
+    }
+
+    public string GetErrorQueueName(string testName, TransportTransactionMode transactionMode)
+    {
+        var fullTestName = $"{testName}{transactionMode}";
+        var fullTestNameHash = CreateDeterministicHash(fullTestName);
+
+        // Max length for table name is 63. We need to reserve space for the ".error" suffix (6) the hashcode (8), and "_seq_seq" sequence suffix: 63-8-6-8=41
+        var charactersToConsider = int.Min(fullTestName.Length, 41);
+
+        return $"{fullTestName[..charactersToConsider]}_error{fullTestNameHash:X8}";
+    }
+
+    static uint CreateDeterministicHash(string input)
+    {
+        var inputBytes = Encoding.Default.GetBytes(input);
+        var hashBytes = MD5.HashData(inputBytes);
+
+        return BitConverter.ToUInt32(hashBytes, 0) % 1000000;
     }
 
     public async Task Cleanup(CancellationToken cancellationToken = default)
