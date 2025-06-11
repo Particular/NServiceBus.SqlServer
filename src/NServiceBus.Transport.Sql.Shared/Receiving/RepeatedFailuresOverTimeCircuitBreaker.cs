@@ -149,11 +149,6 @@ sealed class RepeatedFailuresOverTimeCircuitBreaker
         }
     }
 
-    /// <summary>
-    /// Disposes the resources associated with the circuit breaker.
-    /// </summary>
-    public void Dispose() => timer.Dispose();
-
     void CircuitBreakerTriggered(object state)
     {
         var previousState = Volatile.Read(ref circuitBreakerState);
