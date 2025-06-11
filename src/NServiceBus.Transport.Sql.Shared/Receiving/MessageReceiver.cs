@@ -148,8 +148,6 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
             }
 
-            messageReceivingCircuitBreaker.Dispose();
-            messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
             messageReceivingCancellationTokenSource.Dispose();
             messageReceivingCancellationTokenSource = null;
@@ -200,7 +198,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
             // If either the receiving or processing circuit breakers are triggered, start only one message processing task at a time.
             var maximumConcurrentProcessing =
-                messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered
+                messageProcessingCircuitBreaker.IsTriggered || messageReceivingCircuitBreaker.IsTriggered
                     ? 1
                     : messageCount;
 
