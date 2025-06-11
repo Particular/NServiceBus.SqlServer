@@ -8,8 +8,6 @@ namespace NServiceBus.Transport.SqlServer.UnitTests.Receiving
     using NUnit.Framework;
     using NServiceBus.Transport.Sql.Shared;
 
-#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-
     // Ideally the circuit breaker would use a time provider to allow for easier testing but that would require a significant refactor
     // and we want keep the changes to a minimum for now to allow backporting to older versions.
     [TestFixture]
@@ -223,4 +221,3 @@ namespace NServiceBus.Transport.SqlServer.UnitTests.Receiving
         }
     }
 }
-#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
