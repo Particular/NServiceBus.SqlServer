@@ -148,6 +148,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
             }
 
+            messageReceivingCircuitBreaker.Dispose();
+            messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
             messageReceivingCancellationTokenSource.Dispose();
             messageReceivingCancellationTokenSource = null;
