@@ -1,4 +1,6 @@
-﻿namespace NServiceBus.Transport.SqlServer;
+﻿#nullable enable
+
+namespace NServiceBus.Transport.SqlServer;
 
 using System;
 using System.Threading;
@@ -42,18 +44,18 @@ sealed class RepeatedFailuresOverTimeCircuitBreaker
         string name,
         TimeSpan timeToWaitBeforeTriggering,
         Action<Exception> triggerAction,
-        Action armedAction = null,
-        Action disarmedAction = null,
-        TimeSpan timeToWaitWhenTriggered = default,
-        TimeSpan timeToWaitWhenArmed = default)
+        Action? armedAction = null,
+        Action? disarmedAction = null,
+        TimeSpan? timeToWaitWhenTriggered = default,
+        TimeSpan? timeToWaitWhenArmed = default)
     {
         this.name = name;
         this.triggerAction = triggerAction;
         this.armedAction = armedAction ?? (static () => { });
         this.disarmedAction = disarmedAction ?? (static () => { });
         this.timeToWaitBeforeTriggering = timeToWaitBeforeTriggering;
-        this.timeToWaitWhenTriggered = timeToWaitWhenTriggered == TimeSpan.MinValue ? TimeSpan.FromSeconds(10) : timeToWaitWhenTriggered;
-        this.timeToWaitWhenArmed = timeToWaitWhenArmed == TimeSpan.MinValue ? TimeSpan.FromSeconds(1) : timeToWaitWhenArmed;
+        this.timeToWaitWhenTriggered = timeToWaitWhenTriggered ?? TimeSpan.FromSeconds(10);
+        this.timeToWaitWhenArmed = timeToWaitWhenArmed ?? TimeSpan.FromSeconds(1);
 
         timer = new Timer(CircuitBreakerTriggered);
     }
@@ -149,7 +151,7 @@ sealed class RepeatedFailuresOverTimeCircuitBreaker
         }
     }
 
-    void CircuitBreakerTriggered(object state)
+    void CircuitBreakerTriggered(object? state)
     {
         var previousState = Volatile.Read(ref circuitBreakerState);
         if (previousState == Disarmed)
@@ -182,7 +184,7 @@ sealed class RepeatedFailuresOverTimeCircuitBreaker
     public bool IsTriggered => circuitBreakerState == Triggered;
 
     int circuitBreakerState = Disarmed;
-    Exception lastException;
+    Exception? lastException;
 
     readonly string name;
     readonly Timer timer;
