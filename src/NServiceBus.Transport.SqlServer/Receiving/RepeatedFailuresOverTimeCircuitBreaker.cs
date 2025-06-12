@@ -181,6 +181,11 @@ sealed class RepeatedFailuresOverTimeCircuitBreaker
         }
     }
 
+    /// <summary>
+    /// Disposes the resources associated with the circuit breaker.
+    /// </summary>
+    public void Dispose() => timer.Dispose();
+
     public bool IsTriggered => circuitBreakerState == Triggered;
 
     int circuitBreakerState = Disarmed;

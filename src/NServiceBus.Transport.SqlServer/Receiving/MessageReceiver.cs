@@ -141,6 +141,8 @@
                 }
             }
 
+            messageReceivingCircuitBreaker.Dispose();
+            messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
             messageReceivingCancellationTokenSource?.Dispose();
             messageProcessingCancellationTokenSource?.Dispose();
