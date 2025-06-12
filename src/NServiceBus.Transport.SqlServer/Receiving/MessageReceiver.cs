@@ -188,7 +188,10 @@
             var stopBatchCancellationSource = new CancellationTokenSource();
 
             // If either the receiving or processing circuit breakers are triggered, start only one message processing task at a time.
-            var maximumConcurrentProcessing = messageProcessingCircuitBreaker.Triggered || messageReceivingCircuitBreaker.Triggered ? 1 : messageCount;
+            var maximumConcurrentProcessing =
+                messageProcessingCircuitBreaker.IsTriggered || messageReceivingCircuitBreaker.IsTriggered
+                    ? 1
+                    : messageCount;
 
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
