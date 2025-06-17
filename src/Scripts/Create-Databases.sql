@@ -35,7 +35,7 @@ CREATE TABLE error (
     RowVersion bigint IDENTITY(1,1) NOT NULL
 );
 
-CREATE CLUSTERED INDEX Index_RowVersion ON error
+CREATE NONCLUSTERED INDEX Index_RowVersion ON error
 (
     RowVersion
 )
