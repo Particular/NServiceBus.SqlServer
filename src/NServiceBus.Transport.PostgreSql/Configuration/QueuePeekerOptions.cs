@@ -15,31 +15,33 @@ namespace NServiceBus
         /// </summary>
         public TimeSpan Delay
         {
-            get => delay;
+            get;
             set
             {
                 if (value < TimeSpan.FromMilliseconds(100))
                 {
-                    var message = "Delay requested is invalid. The value should be greater than 100 ms and less than 10 seconds.";
+                    var message =
+                        "Delay requested is invalid. The value should be greater than 100 ms and less than 10 seconds.";
                     throw new Exception(message);
                 }
 
                 if (value > TimeSpan.FromSeconds(10))
                 {
-                    var message = $"Delay requested of {value} is not recommended. The recommended delay value is between 100 milliseconds to 10 seconds.";
+                    var message =
+                        $"Delay requested of {value} is not recommended. The recommended delay value is between 100 milliseconds to 10 seconds.";
                     Logger.Warn(message);
                 }
 
-                delay = value;
+                field = value;
             }
-        }
+        } = TimeSpan.FromSeconds(1);
 
         /// <summary>
         /// Maximal number of records to peek.
         /// </summary>
         public int? MaxRecordsToPeek
         {
-            get => maxRecordsToPeek;
+            get;
             set
             {
                 if (value.HasValue && value < 1)
@@ -48,12 +50,9 @@ namespace NServiceBus
                     throw new Exception(message);
                 }
 
-                maxRecordsToPeek = value;
+                field = value;
             }
         }
-
-        TimeSpan delay = TimeSpan.FromSeconds(1);
-        int? maxRecordsToPeek;
 
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }
