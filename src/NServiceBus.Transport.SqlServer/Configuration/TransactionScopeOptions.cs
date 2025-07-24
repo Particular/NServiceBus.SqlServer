@@ -18,7 +18,12 @@ namespace NServiceBus
             get;
             set
             {
-                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, TransactionManager.MaximumTimeout);
+                if (value > TransactionManager.MaximumTimeout)
+                {
+                    var message = "Timeout requested is longer than the maximum value for this machine. Override using the maxTimeout setting of the system.transactions section in machine.config";
+
+                    throw new Exception(message);
+                }
                 field = value;
             }
         } = TransactionManager.DefaultTimeout;
