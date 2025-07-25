@@ -7,9 +7,6 @@
     /// </summary>
     public partial class DelayedDeliveryOptions
     {
-        string tableSuffix = "Delayed";
-        int batchSize = 100;
-
         internal DelayedDeliveryOptions() { }
 
         /// <summary>
@@ -17,27 +14,27 @@
         /// </summary>
         public string TableSuffix
         {
-            get => tableSuffix;
+            get;
             set
             {
                 ArgumentException.ThrowIfNullOrWhiteSpace(value);
 
-                tableSuffix = value;
+                field = value;
             }
-        }
+        } = "Delayed";
 
         /// <summary>
         /// Size of the batch when moving matured timeouts to the input queue.
         /// </summary>
         public int BatchSize
         {
-            get => batchSize;
+            get;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
 
-                batchSize = value;
+                field = value;
             }
-        }
+        } = 100;
     }
 }

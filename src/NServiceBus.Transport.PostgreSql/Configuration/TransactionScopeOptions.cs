@@ -15,27 +15,20 @@ namespace NServiceBus
         /// </summary>
         public TimeSpan Timeout
         {
-            get => timeout;
+            get;
             set
             {
-                if (value > TransactionManager.MaximumTimeout)
-                {
-                    var message = "Timeout requested is longer than the maximum value for this machine. Override using the maxTimeout setting of the system.transactions section in machine.config";
-
-                    throw new Exception(message);
-                }
-
-                timeout = value;
+                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, TransactionManager.MaximumTimeout);
+                field = value;
             }
-        }
+        } = TransactionManager.DefaultTimeout;
 
         /// <summary>
         /// Transaction isolation level.
         /// </summary>
         public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
 
-        internal TransactionOptions TransactionOptions => new TransactionOptions { IsolationLevel = IsolationLevel, Timeout = timeout };
+        internal TransactionOptions TransactionOptions => new() { IsolationLevel = IsolationLevel, Timeout = Timeout };
 
-        TimeSpan timeout = TransactionManager.DefaultTimeout;
     }
 }

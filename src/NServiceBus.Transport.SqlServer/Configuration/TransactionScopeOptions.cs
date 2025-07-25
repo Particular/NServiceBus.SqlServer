@@ -15,7 +15,7 @@ namespace NServiceBus
         /// </summary>
         public TimeSpan Timeout
         {
-            get => timeout;
+            get;
             set
             {
                 if (value > TransactionManager.MaximumTimeout)
@@ -24,18 +24,15 @@ namespace NServiceBus
 
                     throw new Exception(message);
                 }
-
-                timeout = value;
+                field = value;
             }
-        }
+        } = TransactionManager.DefaultTimeout;
 
         /// <summary>
         /// Transaction isolation level.
         /// </summary>
         public IsolationLevel IsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
 
-        internal TransactionOptions TransactionOptions => new TransactionOptions { IsolationLevel = IsolationLevel, Timeout = timeout };
-
-        TimeSpan timeout = TransactionManager.DefaultTimeout;
+        internal TransactionOptions TransactionOptions => new() { IsolationLevel = IsolationLevel, Timeout = Timeout };
     }
 }
