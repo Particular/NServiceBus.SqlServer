@@ -6,6 +6,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using System.Transactions;
     using Microsoft.Data.SqlClient;
+    using Particular.Obsoletes;
     using Transport.SqlServer;
 
     /// <summary>

@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer
 {
     using System;
+    using Particular.Obsoletes;
 
     /// <summary>
     /// Configures native delayed delivery.
