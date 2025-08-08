@@ -7,6 +7,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using System.Transactions;
     using Npgsql;
+    using Particular.Obsoletes;
     using Transport.PostgreSql;
 
     /// <summary>
@@ -223,6 +224,7 @@ namespace NServiceBus
 namespace NServiceBus.Transport.PostgreSql
 {
     using System;
+    using Particular.Obsoletes;
 
     /// <summary>
     /// Configures native delayed delivery.

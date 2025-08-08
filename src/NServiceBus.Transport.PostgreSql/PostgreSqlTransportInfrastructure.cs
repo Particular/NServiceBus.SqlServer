@@ -213,7 +213,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
 
-            var delayedQueueNameExceedsLimit = delayedQueueCanonicalAddress != null && (Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit);
+            var delayedQueueNameExceedsLimit = delayedQueueCanonicalAddress != null && Encoding.UTF8.GetBytes(delayedQueueCanonicalAddress.Table).Length > TableQueueNameLimit;
 
             if (queueNameExceedsLimit || delayedQueueNameExceedsLimit)
             {
