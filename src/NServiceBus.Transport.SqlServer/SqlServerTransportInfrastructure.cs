@@ -10,7 +10,8 @@ namespace NServiceBus.Transport.SqlServer
     using NServiceBus.Transport.Sql.Shared;
     using Transport;
 
-    class SqlServerTransportInfrastructure : TransportInfrastructure
+    [Janitor.SkipWeaving]
+    class SqlServerTransportInfrastructure : TransportInfrastructure, IDisposable
     {
         public SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
         {
@@ -337,12 +338,27 @@ namespace NServiceBus.Transport.SqlServer
 
         public override async Task Shutdown(CancellationToken cancellationToken = default)
         {
-            await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
-                .ConfigureAwait(false);
-
-            if (dueDelayedMessageProcessor != null)
+            try
             {
-                await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+                await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                    .ConfigureAwait(false);
+
+                if (dueDelayedMessageProcessor != null)
+                {
+                    await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var r in Receivers.Values.Cast<MessageReceiver>())
+            {
+                r.Dispose();
             }
         }
 
