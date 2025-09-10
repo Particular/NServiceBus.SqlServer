@@ -43,22 +43,19 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        void ClearForMessageType(string topic)
-        {
-            if (Cache.TryRemove(topic, out var removed))
-            {
-                removed.Dispose();
-            }
-        }
+        void ClearForMessageType(string topic) => Cache.TryRemove(topic, out _);
+
 
         static string CacheKey(Type eventType) => eventType.FullName;
 
         readonly ConcurrentDictionary<string, CachedSubscriptions> Cache = new();
 
         sealed class CachedSubscriptions(ISubscriptionStore store, Type eventType, TimeSpan cacheFor)
-            : IDisposable
         {
-            SemaphoreSlim fetchSemaphore = new(1, 1);
+            // Note we are not disposing this semaphore to make sure we are not running into ObjectDisposedException
+            // in case Dispose is called while another thread is waiting to enter the semaphore.
+            // This is generally safe because we are never accessing the WaitHandle property.
+            readonly SemaphoreSlim fetchSemaphore = new(1, 1);
 
             List<string> cachedData;
             DateTime cachedAt;
@@ -87,17 +84,6 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 await fetchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 return new FetchLease(fetchSemaphore);
-            }
-
-            public void Dispose()
-            {
-                if (fetchSemaphore is null)
-                {
-                    return;
-                }
-
-                fetchSemaphore.Dispose();
-                fetchSemaphore = null;
             }
 
             readonly struct FetchLease : IDisposable
