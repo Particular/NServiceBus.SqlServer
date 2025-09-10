@@ -7,14 +7,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
 
 
-    class CachedSubscriptionStore : ISubscriptionStore
+    class CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor) : ISubscriptionStore
     {
-        public CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor)
-        {
-            this.inner = inner;
-            this.cacheFor = cacheFor;
-        }
-
         public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var cacheItem = Cache.GetOrAdd(CacheKey(eventType),
@@ -56,8 +50,6 @@ namespace NServiceBus.Transport.Sql.Shared
             return eventType.FullName;
         }
 
-        TimeSpan cacheFor;
-        ISubscriptionStore inner;
         ConcurrentDictionary<string, CacheItem> Cache = new ConcurrentDictionary<string, CacheItem>();
 
         class CacheItem
