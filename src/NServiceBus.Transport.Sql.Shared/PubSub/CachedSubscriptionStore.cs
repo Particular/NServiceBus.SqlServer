@@ -3,6 +3,7 @@ namespace NServiceBus.Transport.Sql.Shared
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -72,30 +73,30 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             readonly SemaphoreSlim fetchSemaphore = new(1, 1);
 
-            List<string> cachedData;
-            DateTime cachedAt;
+            List<string> cachedSubscriptions;
+            long cachedAtTimestamp;
 
             public async ValueTask<List<string>> EnsureFresh(CancellationToken cancellationToken = default)
             {
-                var dataSnapshot = cachedData;
-                var atSnapshot = cachedAt;
+                var cachedSubscriptionsSnapshot = cachedSubscriptions;
+                var cachedAtTimestampSnapshot = cachedAtTimestamp;
 
-                if (dataSnapshot != null && DateTime.UtcNow - atSnapshot < cacheFor)
+                if (cachedSubscriptionsSnapshot != null && Stopwatch.GetElapsedTime(cachedAtTimestampSnapshot) < cacheFor)
                 {
-                    return dataSnapshot;
+                    return cachedSubscriptionsSnapshot;
                 }
 
                 using var lease = await AcquireLease(cancellationToken).ConfigureAwait(false);
 
-                if (cachedData != null && DateTime.UtcNow - cachedAt < cacheFor)
+                if (cachedSubscriptions != null && Stopwatch.GetElapsedTime(cachedAtTimestamp) < cacheFor)
                 {
-                    return cachedData;
+                    return cachedSubscriptions;
                 }
 
-                cachedData = await store.GetSubscribers(eventType, cancellationToken).ConfigureAwait(false);
-                cachedAt = DateTime.UtcNow;
+                cachedSubscriptions = await store.GetSubscribers(eventType, cancellationToken).ConfigureAwait(false);
+                cachedAtTimestamp = Stopwatch.GetTimestamp();
 
-                return cachedData;
+                return cachedSubscriptions;
             }
 
 #pragma warning disable PS0018 // Clear should not be cancellable
@@ -105,8 +106,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 await fetchSemaphore.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    cachedData = null;
-                    cachedAt = default;
+                    cachedSubscriptions = null;
+                    cachedAtTimestamp = 0;
                 }
                 finally
                 {
