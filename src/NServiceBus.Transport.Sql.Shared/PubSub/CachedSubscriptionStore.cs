@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
 
 
-    class CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor) : ISubscriptionStore
+    sealed class CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor) : ISubscriptionStore, IDisposable
     {
         public async Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
@@ -27,7 +27,8 @@ namespace NServiceBus.Transport.Sql.Shared
             }
             finally
             {
-                ClearForMessageType(CacheKey(eventType));
+                await Clear(CacheKey(eventType))
+                    .ConfigureAwait(false);
             }
         }
 
@@ -39,22 +40,36 @@ namespace NServiceBus.Transport.Sql.Shared
             }
             finally
             {
-                ClearForMessageType(CacheKey(eventType));
+                await Clear(CacheKey(eventType))
+                    .ConfigureAwait(false);
             }
         }
 
-        void ClearForMessageType(string topic) => Cache.TryRemove(topic, out _);
+        public void Dispose()
+        {
+            if (Cache.IsEmpty)
+            {
+                return;
+            }
 
+            foreach (var subscription in Cache.Values)
+            {
+                subscription.Dispose();
+            }
+
+            Cache.Clear();
+        }
+
+#pragma warning disable PS0018 // Clear should not be cancellable
+        ValueTask Clear(string cacheKey) => Cache.TryGetValue(cacheKey, out var cachedSubscriptions) ? cachedSubscriptions.Clear() : ValueTask.CompletedTask;
+#pragma warning restore PS0018
 
         static string CacheKey(Type eventType) => eventType.FullName;
 
         readonly ConcurrentDictionary<string, CachedSubscriptions> Cache = new();
 
-        sealed class CachedSubscriptions(ISubscriptionStore store, Type eventType, TimeSpan cacheFor)
+        sealed class CachedSubscriptions(ISubscriptionStore store, Type eventType, TimeSpan cacheFor) : IDisposable
         {
-            // Note we are not disposing this semaphore to make sure we are not running into ObjectDisposedException
-            // in case Dispose is called while another thread is waiting to enter the semaphore.
-            // This is generally safe because we are never accessing the WaitHandle property.
             readonly SemaphoreSlim fetchSemaphore = new(1, 1);
 
             List<string> cachedData;
@@ -62,9 +77,12 @@ namespace NServiceBus.Transport.Sql.Shared
 
             public async ValueTask<List<string>> EnsureFresh(CancellationToken cancellationToken = default)
             {
-                if (cachedData != null && DateTime.UtcNow - cachedAt < cacheFor)
+                var dataSnapshot = cachedData;
+                var atSnapshot = cachedAt;
+
+                if (dataSnapshot != null && DateTime.UtcNow - atSnapshot < cacheFor)
                 {
-                    return cachedData;
+                    return dataSnapshot;
                 }
 
                 using var lease = await AcquireLease(cancellationToken).ConfigureAwait(false);
@@ -79,6 +97,24 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 return cachedData;
             }
+
+#pragma warning disable PS0018 // Clear should not be cancellable
+            public async ValueTask Clear()
+#pragma warning restore PS0018
+            {
+                await fetchSemaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    cachedData = null;
+                    cachedAt = default;
+                }
+                finally
+                {
+                    fetchSemaphore.Release();
+                }
+            }
+
+            public void Dispose() => fetchSemaphore.Dispose();
 
             async ValueTask<FetchLease> AcquireLease(CancellationToken cancellationToken)
             {
