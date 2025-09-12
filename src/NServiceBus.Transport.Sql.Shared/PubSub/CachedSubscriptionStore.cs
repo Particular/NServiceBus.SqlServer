@@ -103,16 +103,9 @@ namespace NServiceBus.Transport.Sql.Shared
             public async ValueTask Clear()
 #pragma warning restore PS0018
             {
-                await fetchSemaphore.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    cachedSubscriptions = null;
-                    cachedAtTimestamp = 0;
-                }
-                finally
-                {
-                    fetchSemaphore.Release();
-                }
+                using var lease = await AcquireLease(CancellationToken.None).ConfigureAwait(false);
+                cachedSubscriptions = null;
+                cachedAtTimestamp = 0;
             }
 
             public void Dispose() => fetchSemaphore.Dispose();
