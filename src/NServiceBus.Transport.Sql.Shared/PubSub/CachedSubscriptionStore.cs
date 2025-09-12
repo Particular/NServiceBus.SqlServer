@@ -86,44 +86,44 @@ namespace NServiceBus.Transport.Sql.Shared
                     return cachedSubscriptionsSnapshot;
                 }
 
-                using var lease = await AcquireLease(cancellationToken).ConfigureAwait(false);
+                await fetchSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
 
-                if (cachedSubscriptions != null && Stopwatch.GetElapsedTime(cachedAtTimestamp) < cacheFor)
+                try
                 {
+                    if (cachedSubscriptions != null && Stopwatch.GetElapsedTime(cachedAtTimestamp) < cacheFor)
+                    {
+                        return cachedSubscriptions;
+                    }
+
+                    cachedSubscriptions = await store.GetSubscribers(eventType, cancellationToken).ConfigureAwait(false);
+                    cachedAtTimestamp = Stopwatch.GetTimestamp();
+
                     return cachedSubscriptions;
                 }
-
-                cachedSubscriptions = await store.GetSubscribers(eventType, cancellationToken).ConfigureAwait(false);
-                cachedAtTimestamp = Stopwatch.GetTimestamp();
-
-                return cachedSubscriptions;
+                finally
+                {
+                    fetchSemaphore.Release();
+                }
             }
 
 #pragma warning disable PS0018 // Clear should not be cancellable
             public async ValueTask Clear()
 #pragma warning restore PS0018
             {
-                using var lease = await AcquireLease(CancellationToken.None).ConfigureAwait(false);
-                cachedSubscriptions = null;
-                cachedAtTimestamp = 0;
+                try
+                {
+                    await fetchSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+
+                    cachedSubscriptions = null;
+                    cachedAtTimestamp = 0;
+                }
+                finally
+                {
+                    fetchSemaphore.Release():
+                }
             }
 
             public void Dispose() => fetchSemaphore.Dispose();
-
-            async ValueTask<FetchLease> AcquireLease(CancellationToken cancellationToken)
-            {
-                await fetchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                return new FetchLease(fetchSemaphore);
-            }
-
-            readonly struct FetchLease : IDisposable
-            {
-                readonly SemaphoreSlim semaphore;
-
-                internal FetchLease(SemaphoreSlim semaphore) => this.semaphore = semaphore;
-
-                public void Dispose() => semaphore.Release();
-            }
         }
     }
 }
