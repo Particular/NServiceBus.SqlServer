@@ -119,7 +119,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
                 finally
                 {
-                    fetchSemaphore.Release():
+                    fetchSemaphore.Release();
                 }
             }
 
