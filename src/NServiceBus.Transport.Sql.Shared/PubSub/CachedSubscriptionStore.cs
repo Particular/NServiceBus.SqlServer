@@ -86,7 +86,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     return cachedSubscriptionsSnapshot;
                 }
 
-                await fetchSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+                await fetchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
