@@ -47,12 +47,19 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
     public override async Task Shutdown(CancellationToken cancellationToken = default)
     {
-        await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
-            .ConfigureAwait(false);
-
-        if (dueDelayedMessageProcessor != null)
+        try
         {
-            await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                .ConfigureAwait(false);
+
+            if (dueDelayedMessageProcessor != null)
+            {
+                await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            (subscriptionStore as IDisposable)?.Dispose();
         }
     }
 
