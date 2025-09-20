@@ -3,67 +3,127 @@ namespace NServiceBus.Transport.Sql.Shared
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
 
 
-    class CachedSubscriptionStore : ISubscriptionStore
+    sealed class CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor) : ISubscriptionStore, IDisposable
     {
-        public CachedSubscriptionStore(ISubscriptionStore inner, TimeSpan cacheFor)
+        public async Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
-            this.inner = inner;
-            this.cacheFor = cacheFor;
-        }
+            var cacheKey = CacheKey(eventType);
+            var cachedSubscriptions = Cache.GetOrAdd(cacheKey,
+                static (_, state) => new CachedSubscriptions(state.inner, state.eventType, state.cacheFor),
+                (inner, eventType, cacheFor));
 
-        public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
-        {
-            var cacheItem = Cache.GetOrAdd(CacheKey(eventType),
-                _ => new CacheItem
-                {
-                    StoredUtc = DateTime.UtcNow,
-                    Subscribers = inner.GetSubscribers(eventType, cancellationToken)
-                });
-
-            var age = DateTime.UtcNow - cacheItem.StoredUtc;
-            if (age >= cacheFor)
-            {
-                cacheItem.Subscribers = inner.GetSubscribers(eventType, cancellationToken);
-                cacheItem.StoredUtc = DateTime.UtcNow;
-            }
-
-            return cacheItem.Subscribers;
+            return await cachedSubscriptions.EnsureFresh(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
         {
-            await inner.Subscribe(endpointName, endpointAddress, eventType, cancellationToken).ConfigureAwait(false);
-            ClearForMessageType(CacheKey(eventType));
+            try
+            {
+                await inner.Subscribe(endpointName, endpointAddress, eventType, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                await Clear(CacheKey(eventType))
+                    .ConfigureAwait(false);
+            }
         }
 
         public async Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
         {
-            await inner.Unsubscribe(endpointName, eventType, cancellationToken).ConfigureAwait(false);
-            ClearForMessageType(CacheKey(eventType));
+            try
+            {
+                await inner.Unsubscribe(endpointName, eventType, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                await Clear(CacheKey(eventType))
+                    .ConfigureAwait(false);
+            }
         }
 
-        void ClearForMessageType(string topic)
+        public void Dispose()
         {
-            Cache.TryRemove(topic, out _);
+            if (Cache.IsEmpty)
+            {
+                return;
+            }
+
+            foreach (var subscription in Cache.Values)
+            {
+                subscription.Dispose();
+            }
+
+            Cache.Clear();
         }
 
-        static string CacheKey(Type eventType)
-        {
-            return eventType.FullName;
-        }
+#pragma warning disable PS0018 // Clear should not be cancellable
+        ValueTask Clear(string cacheKey) => Cache.TryGetValue(cacheKey, out var cachedSubscriptions) ? cachedSubscriptions.Clear() : ValueTask.CompletedTask;
+#pragma warning restore PS0018
 
-        TimeSpan cacheFor;
-        ISubscriptionStore inner;
-        ConcurrentDictionary<string, CacheItem> Cache = new ConcurrentDictionary<string, CacheItem>();
+        static string CacheKey(Type eventType) => eventType.FullName;
 
-        class CacheItem
+        readonly ConcurrentDictionary<string, CachedSubscriptions> Cache = new();
+
+        sealed class CachedSubscriptions(ISubscriptionStore store, Type eventType, TimeSpan cacheFor) : IDisposable
         {
-            public DateTime StoredUtc { get; set; } // Internal usage, only set/get using private
-            public Task<List<string>> Subscribers { get; set; }
+            readonly SemaphoreSlim fetchSemaphore = new(1, 1);
+
+            List<string> cachedSubscriptions;
+            long cachedAtTimestamp;
+
+            public async ValueTask<List<string>> EnsureFresh(CancellationToken cancellationToken = default)
+            {
+                var cachedSubscriptionsSnapshot = cachedSubscriptions;
+                var cachedAtTimestampSnapshot = cachedAtTimestamp;
+
+                if (cachedSubscriptionsSnapshot != null && Stopwatch.GetElapsedTime(cachedAtTimestampSnapshot) < cacheFor)
+                {
+                    return cachedSubscriptionsSnapshot;
+                }
+
+                await fetchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    if (cachedSubscriptions != null && Stopwatch.GetElapsedTime(cachedAtTimestamp) < cacheFor)
+                    {
+                        return cachedSubscriptions;
+                    }
+
+                    cachedSubscriptions = await store.GetSubscribers(eventType, cancellationToken).ConfigureAwait(false);
+                    cachedAtTimestamp = Stopwatch.GetTimestamp();
+
+                    return cachedSubscriptions;
+                }
+                finally
+                {
+                    fetchSemaphore.Release();
+                }
+            }
+
+#pragma warning disable PS0018 // Clear should not be cancellable
+            public async ValueTask Clear()
+#pragma warning restore PS0018
+            {
+                try
+                {
+                    await fetchSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+
+                    cachedSubscriptions = null;
+                    cachedAtTimestamp = 0;
+                }
+                finally
+                {
+                    fetchSemaphore.Release();
+                }
+            }
+
+            public void Dispose() => fetchSemaphore.Dispose();
         }
     }
 }

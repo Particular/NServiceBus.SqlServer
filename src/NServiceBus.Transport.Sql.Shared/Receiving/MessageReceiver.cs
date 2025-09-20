@@ -125,6 +125,12 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public async Task StopReceive(CancellationToken cancellationToken = default)
         {
+            if (messageReceivingCancellationTokenSource == null)
+            {
+                // already stopped or never started
+                return;
+            }
+
             messageReceivingCancellationTokenSource?.Cancel();
 
             using (cancellationToken.Register(() => messageProcessingCancellationTokenSource?.Cancel()))
@@ -146,6 +152,7 @@ namespace NServiceBus.Transport.Sql.Shared
             messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
             messageReceivingCancellationTokenSource?.Dispose();
+            messageReceivingCancellationTokenSource = null;
             messageProcessingCancellationTokenSource?.Dispose();
         }
 

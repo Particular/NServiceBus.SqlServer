@@ -45,9 +45,22 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         exceptionClassifier = new PostgreSqlExceptionClassifier();
     }
 
-    public override Task Shutdown(CancellationToken cancellationToken = default)
+    public override async Task Shutdown(CancellationToken cancellationToken = default)
     {
-        return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
+        try
+        {
+            await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                .ConfigureAwait(false);
+
+            if (dueDelayedMessageProcessor != null)
+            {
+                await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            (subscriptionStore as IDisposable)?.Dispose();
+        }
     }
 
     public override string ToTransportAddress(Transport.QueueAddress address)
