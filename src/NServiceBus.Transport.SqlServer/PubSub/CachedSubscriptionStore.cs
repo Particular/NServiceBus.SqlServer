@@ -85,13 +85,13 @@ namespace NServiceBus.Transport.SqlServer
             long cachedAtTimestamp;
             readonly ISubscriptionStore store;
             readonly Type eventType;
-            readonly TimeSpan cacheFor1;
+            readonly TimeSpan cacheFor;
 
             public CachedSubscriptions(ISubscriptionStore store, Type eventType, TimeSpan cacheFor)
             {
                 this.store = store;
                 this.eventType = eventType;
-                cacheFor1 = cacheFor;
+                this.cacheFor = cacheFor;
             }
 
             public async ValueTask<List<string>> EnsureFresh(CancellationToken cancellationToken = default)
@@ -99,7 +99,7 @@ namespace NServiceBus.Transport.SqlServer
                 var cachedSubscriptionsSnapshot = cachedSubscriptions;
                 var cachedAtTimestampSnapshot = cachedAtTimestamp;
 
-                if (cachedSubscriptionsSnapshot != null && GetElapsedTime(cachedAtTimestampSnapshot) < cacheFor1)
+                if (cachedSubscriptionsSnapshot != null && GetElapsedTime(cachedAtTimestampSnapshot) < cacheFor)
                 {
                     return cachedSubscriptionsSnapshot;
                 }
@@ -108,7 +108,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    if (cachedSubscriptions != null && GetElapsedTime(cachedAtTimestamp) < cacheFor1)
+                    if (cachedSubscriptions != null && GetElapsedTime(cachedAtTimestamp) < cacheFor)
                     {
                         return cachedSubscriptions;
                     }
