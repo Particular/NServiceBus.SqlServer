@@ -295,9 +295,22 @@ namespace NServiceBus.Transport.SqlServer
                 connectionFactory);
         }
 
-        public override Task Shutdown(CancellationToken cancellationToken = default)
+        public override async Task Shutdown(CancellationToken cancellationToken = default)
         {
-            return dueDelayedMessageProcessor?.Stop(cancellationToken) ?? Task.FromResult(0);
+            try
+            {
+                await Task.WhenAll(Receivers.Values.Select(pump => pump.StopReceive(cancellationToken)))
+                    .ConfigureAwait(false);
+
+                if (dueDelayedMessageProcessor != null)
+                {
+                    await dueDelayedMessageProcessor.Stop(cancellationToken).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                (subscriptionStore as IDisposable)?.Dispose();
+            }
         }
 
 #pragma warning disable CS0618 // Type or member is obsolete
