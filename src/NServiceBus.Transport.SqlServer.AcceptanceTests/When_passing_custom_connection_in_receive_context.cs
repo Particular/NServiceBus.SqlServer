@@ -25,7 +25,7 @@
                         await bus.SendLocal(new InitiatingMessage());
                     });
                 })
-                .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedCommandReceived)
+                .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
                 .Run(TimeSpan.FromSeconds(10));
 
             Assert.Multiple(() =>
