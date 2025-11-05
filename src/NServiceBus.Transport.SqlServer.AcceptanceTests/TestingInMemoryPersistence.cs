@@ -13,21 +13,21 @@ using NServiceBus.Persistence;
 using NServiceBus.Unicast.Subscriptions;
 using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
-public class TestingInMemoryPersistence : PersistenceDefinition
+public class TestingInMemoryPersistence : PersistenceDefinition, IPersistenceDefinitionFactory<TestingInMemoryPersistence>
 {
-    internal TestingInMemoryPersistence()
-    {
-        Supports<StorageType.Subscriptions>(s =>
-        {
-            s.EnableFeatureByDefault<TestingInMemorySubscriptionPersistence>();
-        });
-    }
+    TestingInMemoryPersistence() => Supports<StorageType.Subscriptions, TestingInMemorySubscriptionPersistence>();
+    public static TestingInMemoryPersistence Create() => new();
 }
 
 public static class InMemoryPersistenceExtensions
 {
     public static void UseStorage(this PersistenceExtensions<TestingInMemoryPersistence> extensions, TestingInMemorySubscriptionStorage storageInstance)
     {
+        if (extensions == null)
+        {
+            throw new ArgumentNullException(nameof(extensions));
+        }
+
         extensions.GetSettings().Set("InMemoryPersistence.StorageInstance", storageInstance);
     }
 }
@@ -55,10 +55,7 @@ public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
         return Task.FromResult(true);
     }
 
-    static string BuildKey(Subscriber subscriber)
-    {
-        return $"{subscriber.TransportAddress ?? ""}_{subscriber.Endpoint ?? ""}";
-    }
+    static string BuildKey(Subscriber subscriber) => $"{subscriber.TransportAddress ?? ""}_{subscriber.Endpoint ?? ""}";
 
     public Task Unsubscribe(Subscriber subscriber, MessageType messageType, ContextBag context, CancellationToken cancellationToken = default)
     {
@@ -66,6 +63,7 @@ public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
         {
             dict.TryRemove(BuildKey(subscriber), out var _);
         }
+
         return Task.FromResult(true);
     }
 
@@ -73,11 +71,15 @@ public class TestingInMemorySubscriptionStorage : ISubscriptionStorage
     {
         var subscribers = messageTypes
             .SelectMany(msgType => storage.TryGetValue(msgType, out var subs) ? subs.Values : [])
-            .GroupBy(s => new { s.TransportAddress, s.Endpoint }) // Subscriber does not implement IEquatable<T>
+            .GroupBy(s => new
+            {
+                s.TransportAddress,
+                s.Endpoint
+            }) // Subscriber does not implement IEquatable<T>
             .Select(g => g.First());
 
         return Task.FromResult(subscribers);
     }
 
-    ConcurrentDictionary<MessageType, ConcurrentDictionary<string, Subscriber>> storage = new ConcurrentDictionary<MessageType, ConcurrentDictionary<string, Subscriber>>();
+    readonly ConcurrentDictionary<MessageType, ConcurrentDictionary<string, Subscriber>> storage = new();
 }
