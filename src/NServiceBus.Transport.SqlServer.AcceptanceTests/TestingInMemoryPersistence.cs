@@ -21,15 +21,7 @@ public class TestingInMemoryPersistence : PersistenceDefinition, IPersistenceDef
 
 public static class InMemoryPersistenceExtensions
 {
-    public static void UseStorage(this PersistenceExtensions<TestingInMemoryPersistence> extensions, TestingInMemorySubscriptionStorage storageInstance)
-    {
-        if (extensions == null)
-        {
-            throw new ArgumentNullException(nameof(extensions));
-        }
-
-        extensions.GetSettings().Set("InMemoryPersistence.StorageInstance", storageInstance);
-    }
+    public static void UseStorage(this PersistenceExtensions<TestingInMemoryPersistence> extensions, TestingInMemorySubscriptionStorage storageInstance) => extensions.GetSettings().Set("InMemoryPersistence.StorageInstance", storageInstance);
 }
 
 public class TestingInMemorySubscriptionPersistence : Feature
