@@ -17,7 +17,15 @@
             this.exceptionClassifier = exceptionClassifier;
         }
 
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override ProcessResult ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        {
+            var popTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            var processingTask = ProcessingTask(popTaskCompletionSource, stopBatchCancellationTokenSource, cancellationToken);
+            return new(processingTask, popTaskCompletionSource.Task);
+        }
+
+        async Task ProcessingTask(TaskCompletionSource<bool> receiveTaskCompletionSource, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken)
         {
             Message message = null;
             var context = new ContextBag();
@@ -28,6 +36,9 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
                     var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+
+                    // Signal that receive is complete
+                    receiveTaskCompletionSource.TrySetResult(true);
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
@@ -64,11 +75,18 @@
             }
             catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
+                receiveTaskCompletionSource.TrySetException(ex);
+
                 if (message == null)
                 {
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+            }
+            catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
+            {
+                receiveTaskCompletionSource.TrySetCanceled(cancellationToken);
+                throw;
             }
         }
 

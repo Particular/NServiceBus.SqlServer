@@ -9,6 +9,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using NServiceBus.Logging;
     using Unicast.Queuing;
 
+    record ProcessResult(Task ProcessingTask, Task ReceiveTask);
+
     abstract class ProcessStrategy
     {
         protected TableBasedQueue InputQueue;
@@ -35,7 +37,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalError = criticalError;
         }
 
-        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
+        public abstract ProcessResult ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
