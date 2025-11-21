@@ -1,7 +1,6 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Logging;
@@ -206,7 +205,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     : messageCount;
 
             bool shouldWaitForReceiveTasks = true;
-            var receiveCompletion = new CountdownEvent(maximumConcurrentProcessing);
+            var receiveLatch = new AsyncCountdownLatch(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
                 if (stopBatchCancellationSource.IsCancellationRequested)
@@ -220,23 +219,19 @@ namespace NServiceBus.Transport.Sql.Shared
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
                 _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
-                    localConcurrencyLimiter, receiveCompletion, messageProcessingCancellationTokenSource.Token);
+                    localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
             }
 
             if (shouldWaitForReceiveTasks)
             {
                 // Wait for all receive operations to complete before returning (and thus peeking again)
-                await Task.Run(
-                        () => receiveCompletion.Wait(messageProcessingCancellationTokenSource.Token),
-                        messageProcessingCancellationTokenSource.Token
-                    )
-                    .ConfigureAwait(false);
+                await receiveLatch.WaitAsync().ConfigureAwait(false);
             }
         }
 
         async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
             CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
-            CountdownEvent receiveCompletion, CancellationToken messageProcessingCancellationToken)
+            AsyncCountdownLatch receiveLatch, CancellationToken messageProcessingCancellationToken)
         {
             try
             {
@@ -246,7 +241,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveCompletion,
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveLatch,
                         messageProcessingCancellationToken)
                         .ConfigureAwait(false);
 

@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            CountdownEvent receiveCompletion, CancellationToken cancellationToken = default)
+            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -40,7 +40,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     }
                     finally
                     {
-                        receiveCompletion.Signal();
+                        receiveLatch.Signal();
                     }
 
                     if (receiveResult == MessageReadResult.NoMessage)
