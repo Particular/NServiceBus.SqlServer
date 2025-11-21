@@ -16,14 +16,8 @@ namespace NServiceBus.Transport.Sql.Shared
             this.exceptionClassifier = exceptionClassifier;
         }
 
-        public override ProcessResult ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
-        {
-            var receiveTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            return new(ProcessingTask(receiveTaskCompletionSource, stopBatchCancellationTokenSource, cancellationToken), receiveTaskCompletionSource.Task);
-        }
-
-        async Task ProcessingTask(TaskCompletionSource<bool> receiveTaskCompletionSource, CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            CountdownEvent receiveCompletion, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -34,11 +28,16 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
-                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
-                            .ConfigureAwait(false);
-
-                        // Signal that receive is complete
-                        receiveTaskCompletionSource.TrySetResult(true);
+                        MessageReadResult receiveResult;
+                        try
+                        {
+                            receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            receiveCompletion.Signal();
+                        }
 
                         if (receiveResult == MessageReadResult.NoMessage)
                         {
@@ -69,19 +68,12 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
                 catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
                 {
-                    receiveTaskCompletionSource.TrySetException(ex);
-
                     if (message == null)
                     {
                         throw;
                     }
                     failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
                     return;
-                }
-                catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
-                {
-                    receiveTaskCompletionSource.TrySetCanceled(cancellationToken);
-                    throw;
                 }
 
                 var transportTransaction = TransportTransactions.NoTransaction(connection);

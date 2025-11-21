@@ -205,11 +205,13 @@ namespace NServiceBus.Transport.Sql.Shared
                     ? 1
                     : messageCount;
 
-            var popTasks = new List<Task>(maximumConcurrentProcessing);
+            bool shouldWaitForReceiveTasks = true;
+            var receiveCompletion = new CountdownEvent(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
                 if (stopBatchCancellationSource.IsCancellationRequested)
                 {
+                    shouldWaitForReceiveTasks = false;
                     break;
                 }
 
@@ -217,60 +219,58 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
-                var popTask = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
-                    localConcurrencyLimiter, messageProcessingCancellationTokenSource.Token);
-                popTasks.Add(popTask);
+                _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
+                    localConcurrencyLimiter, receiveCompletion, messageProcessingCancellationTokenSource.Token);
             }
 
-            // Wait for all pop operations to complete before returning (and thus peeking again)
-            await Task.WhenAll(popTasks).ConfigureAwait(false);
+            if (shouldWaitForReceiveTasks)
+            {
+                // Wait for all receive operations to complete before returning (and thus peeking again)
+                await Task.Run(
+                        () => receiveCompletion.Wait(messageProcessingCancellationTokenSource.Token),
+                        messageProcessingCancellationTokenSource.Token
+                    )
+                    .ConfigureAwait(false);
+            }
         }
 
-        Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
+        async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
             CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
-            CancellationToken messageProcessingCancellationToken)
+            CountdownEvent receiveCompletion, CancellationToken messageProcessingCancellationToken)
         {
-            var (processingTask, popTask) = processStrategy.ProcessMessage(stopBatchCancellationTokenSource,
-                messageProcessingCancellationToken);
-
-            async Task WrapProcessingTask()
+            try
             {
                 try
                 {
-                    try
-                    {
-                        // We need to force the method to continue asynchronously because SqlConnection
-                        // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
-                        await Task.Yield();
+                    // We need to force the method to continue asynchronously because SqlConnection
+                    // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
+                    await Task.Yield();
 
-                        await processingTask.ConfigureAwait(false);
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveCompletion,
+                        messageProcessingCancellationToken)
+                        .ConfigureAwait(false);
 
-                        messageProcessingCircuitBreaker.Success();
-                    }
-                    catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
-                    {
-                        Logger.Warn("Message processing failed", ex);
-
-                        if (!exceptionClassifier.IsDeadlockException(ex))
-                        {
-                            await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken)
-                                .ConfigureAwait(false);
-                        }
-                    }
+                    messageProcessingCircuitBreaker.Success();
                 }
-                catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
+                catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
                 {
-                    Logger.Debug("Message processing canceled.", ex);
-                }
-                finally
-                {
-                    localConcurrencyLimiter.Release();
+                    Logger.Warn("Message processing failed", ex);
+
+                    if (!exceptionClassifier.IsDeadlockException(ex))
+                    {
+                        await messageProcessingCircuitBreaker.Failure(ex, messageProcessingCancellationToken)
+                            .ConfigureAwait(false);
+                    }
                 }
             }
-
-            // Start the wrapped processing task but return the popTask for coordination
-            _ = WrapProcessingTask();
-            return popTask;
+            catch (Exception ex) when (exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
+            {
+                Logger.Debug("Message processing canceled.", ex);
+            }
+            finally
+            {
+                localConcurrencyLimiter.Release();
+            }
         }
 
         protected TableBasedQueue inputQueue;
