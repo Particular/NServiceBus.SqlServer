@@ -21,7 +21,8 @@ namespace NServiceBus.Transport.Sql.Shared
             isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         }
 
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -31,7 +32,16 @@ namespace NServiceBus.Transport.Sql.Shared
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                    MessageReadResult receiveResult;
+                    try
+                    {
+                        receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        receiveLatch.Signal();
+                    }
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {

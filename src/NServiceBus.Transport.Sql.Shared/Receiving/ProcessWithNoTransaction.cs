@@ -16,7 +16,8 @@ namespace NServiceBus.Transport.Sql.Shared
             this.exceptionClassifier = exceptionClassifier;
         }
 
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -27,8 +28,16 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
-                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
-                            .ConfigureAwait(false);
+                        MessageReadResult receiveResult;
+                        try
+                        {
+                            receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            receiveLatch.Signal();
+                        }
 
                         if (receiveResult == MessageReadResult.NoMessage)
                         {

@@ -17,7 +17,8 @@
             this.exceptionClassifier = exceptionClassifier;
         }
 
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -27,7 +28,15 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+                    MessageReadResult receiveResult;
+                    try
+                    {
+                        receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        receiveLatch.Signal();
+                    }
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
