@@ -225,7 +225,7 @@ namespace NServiceBus.Transport.Sql.Shared
             if (shouldWaitForReceiveTasks)
             {
                 // Wait for all receive operations to complete before returning (and thus peeking again)
-                await receiveLatch.WaitAsync().ConfigureAwait(false);
+                await receiveLatch.WaitAsync(CancellationToken.None).ConfigureAwait(false);
             }
         }
 

@@ -19,7 +19,7 @@ class AsyncCountdownLatch
         }
     }
 
-    public Task WaitAsync() => completionSource.Task;
+    public Task WaitAsync(CancellationToken cancellationToken = default) => completionSource.Task;
 
     public void Signal()
     {
