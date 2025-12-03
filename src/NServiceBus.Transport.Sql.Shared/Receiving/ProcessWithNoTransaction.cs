@@ -21,6 +21,7 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             Message message = null;
             var context = new ContextBag();
+            var hasLatchBeenSignalled = false;
 
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
@@ -37,6 +38,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         finally
                         {
                             receiveLatch.Signal();
+                            hasLatchBeenSignalled = true;
                         }
 
                         if (receiveResult == MessageReadResult.NoMessage)
@@ -86,6 +88,13 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
                     _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (!hasLatchBeenSignalled)
+                    {
+                        receiveLatch.Signal();
+                    }
                 }
             }
         }
