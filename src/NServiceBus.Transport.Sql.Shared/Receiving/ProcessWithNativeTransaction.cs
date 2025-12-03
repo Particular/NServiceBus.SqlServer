@@ -26,6 +26,7 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             Message message = null;
             var context = new ContextBag();
+            var hasLatchBeenSignalled = false;
 
             try
             {
@@ -41,6 +42,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     finally
                     {
                         receiveLatch.Signal();
+                        hasLatchBeenSignalled = true;
                     }
 
                     if (receiveResult == MessageReadResult.NoMessage)
@@ -86,6 +88,13 @@ namespace NServiceBus.Transport.Sql.Shared
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+            }
+            finally
+            {
+                if (!hasLatchBeenSignalled)
+                {
+                    receiveLatch.Signal();
+                }
             }
         }
 
