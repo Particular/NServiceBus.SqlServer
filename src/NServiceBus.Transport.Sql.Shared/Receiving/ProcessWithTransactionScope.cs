@@ -22,6 +22,7 @@
         {
             Message message = null;
             var context = new ContextBag();
+            var hasLatchBeenSignalled = false;
 
             try
             {
@@ -36,6 +37,7 @@
                     finally
                     {
                         receiveLatch.Signal();
+                        hasLatchBeenSignalled = true;
                     }
 
                     if (receiveResult == MessageReadResult.NoMessage)
@@ -78,6 +80,13 @@
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+            }
+            finally
+            {
+                if (!hasLatchBeenSignalled)
+                {
+                    receiveLatch.Signal();
+                }
             }
         }
 
