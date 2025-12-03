@@ -241,8 +241,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveLatch,
-                        messageProcessingCancellationToken)
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, messageProcessingCancellationToken)
                         .ConfigureAwait(false);
 
                     messageProcessingCircuitBreaker.Success();
@@ -265,6 +264,7 @@ namespace NServiceBus.Transport.Sql.Shared
             finally
             {
                 localConcurrencyLimiter.Release();
+                receiveLatch.Signal();
             }
         }
 

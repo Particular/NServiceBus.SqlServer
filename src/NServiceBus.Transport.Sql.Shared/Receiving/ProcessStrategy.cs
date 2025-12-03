@@ -35,8 +35,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalError = criticalError;
         }
 
-        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default);
+        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
