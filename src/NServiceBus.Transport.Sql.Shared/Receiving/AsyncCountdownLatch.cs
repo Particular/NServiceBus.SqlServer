@@ -20,9 +20,15 @@ class AsyncCountdownLatch
         }
     }
 
-    public Task WaitAsync(CancellationToken cancellationToken = default) => completionSource.Task;
+#pragma warning disable PS0003
+    public Task WaitAsync(CancellationToken cancellationToken)
+#pragma warning restore PS0003
+    {
+        _ = cancellationToken.Register(completionSource.SetResult);
+        return completionSource.Task;
+    }
 
-    public Signaler GetSignaler() => new Signaler(this);
+    public Signaler GetSignaler() => new(this);
 
     void Signal()
     {

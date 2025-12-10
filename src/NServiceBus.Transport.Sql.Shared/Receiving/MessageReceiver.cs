@@ -204,13 +204,11 @@ namespace NServiceBus.Transport.Sql.Shared
                     ? 1
                     : messageCount;
 
-            bool shouldWaitForReceiveTasks = true;
             var receiveLatch = new AsyncCountdownLatch(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
                 if (stopBatchCancellationSource.IsCancellationRequested)
                 {
-                    shouldWaitForReceiveTasks = false;
                     break;
                 }
 
@@ -222,11 +220,8 @@ namespace NServiceBus.Transport.Sql.Shared
                     localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
             }
 
-            if (shouldWaitForReceiveTasks)
-            {
-                // Wait for all receive operations to complete before returning (and thus peeking again)
-                await receiveLatch.WaitAsync(CancellationToken.None).ConfigureAwait(false);
-            }
+            // Wait for all receive operations to complete before returning (and thus peeking again)
+            await receiveLatch.WaitAsync(stopBatchCancellationSource.Token).ConfigureAwait(false);
         }
 
         async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
