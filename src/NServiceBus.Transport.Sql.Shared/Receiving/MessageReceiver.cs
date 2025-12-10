@@ -233,6 +233,7 @@ namespace NServiceBus.Transport.Sql.Shared
             CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
             AsyncCountdownLatch receiveLatch, CancellationToken messageProcessingCancellationToken)
         {
+            using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
                 try
@@ -241,7 +242,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveLatch,
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, latchSignaler,
                         messageProcessingCancellationToken)
                         .ConfigureAwait(false);
 

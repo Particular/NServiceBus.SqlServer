@@ -17,11 +17,10 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
+            AsyncCountdownLatch.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
-            var hasLatchBeenSignalled = false;
 
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
@@ -29,17 +28,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
-                        MessageReadResult receiveResult;
-                        try
-                        {
-                            receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
-                                .ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            receiveLatch.Signal();
-                            hasLatchBeenSignalled = true;
-                        }
+                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                        receiveLatch.Signal();
 
                         if (receiveResult == MessageReadResult.NoMessage)
                         {
@@ -88,13 +78,6 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
                     _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
-                }
-                finally
-                {
-                    if (!hasLatchBeenSignalled)
-                    {
-                        receiveLatch.Signal();
-                    }
                 }
             }
         }
