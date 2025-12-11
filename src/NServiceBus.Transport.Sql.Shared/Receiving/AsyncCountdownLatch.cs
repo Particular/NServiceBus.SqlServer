@@ -37,23 +37,30 @@ class AsyncCountdownLatch
         }
     }
 
-    public class Signaler(AsyncCountdownLatch parent) : IDisposable
+    public struct Signaler(AsyncCountdownLatch parent) : IDisposable
     {
         bool signalled;
 
         public void Signal()
         {
+            if (signalled)
+            {
+                return;
+            }
+
             parent.Signal();
             signalled = true;
         }
 
         public void Dispose()
         {
-            if (!signalled)
+            if (signalled)
             {
-                parent.Signal();
-                signalled = true;
+                return;
             }
+
+            parent.Signal();
+            signalled = true;
         }
     }
 }
