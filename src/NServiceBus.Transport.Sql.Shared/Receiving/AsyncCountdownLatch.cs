@@ -22,7 +22,7 @@ class AsyncCountdownLatch
 
     public async Task WaitAsync(CancellationToken cancellationToken = default)
     {
-        var registration = cancellationToken.Register(static state => ((TaskCompletionSource)state).SetResult(), completionSource);
+        var registration = cancellationToken.Register(static state => ((TaskCompletionSource)state).TrySetResult(), completionSource);
         await using var _ = registration.ConfigureAwait(false);
         await completionSource.Task.ConfigureAwait(false);
     }
@@ -33,7 +33,7 @@ class AsyncCountdownLatch
     {
         if (Interlocked.Decrement(ref count) == 0)
         {
-            completionSource.SetResult();
+            _ = completionSource.TrySetResult();
         }
     }
 
