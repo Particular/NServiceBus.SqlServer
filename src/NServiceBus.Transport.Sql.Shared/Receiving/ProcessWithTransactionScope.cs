@@ -18,7 +18,7 @@
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            AsyncCountdownLatch.Signaler receiveLatch, CancellationToken cancellationToken = default)
+            ReceiveCountdownEvent.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();

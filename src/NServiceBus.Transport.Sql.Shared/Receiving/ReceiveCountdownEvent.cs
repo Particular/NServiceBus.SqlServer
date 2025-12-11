@@ -4,12 +4,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-class AsyncCountdownLatch
+class ReceiveCountdownEvent
 {
     int count;
     readonly TaskCompletionSource completionSource;
 
-    public AsyncCountdownLatch(int count)
+    public ReceiveCountdownEvent(int count)
     {
         this.count = count;
         completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -37,7 +37,7 @@ class AsyncCountdownLatch
         }
     }
 
-    public struct Signaler(AsyncCountdownLatch parent) : IDisposable
+    public struct Signaler(ReceiveCountdownEvent parent) : IDisposable
     {
         bool signalled;
 

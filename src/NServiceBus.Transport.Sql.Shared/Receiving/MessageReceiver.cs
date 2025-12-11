@@ -204,7 +204,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     ? 1
                     : messageCount;
 
-            var receiveLatch = new AsyncCountdownLatch(maximumConcurrentProcessing);
+            var receiveLatch = new ReceiveCountdownEvent(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
                 if (stopBatchCancellationSource.IsCancellationRequested)
@@ -226,7 +226,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
             CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
-            AsyncCountdownLatch receiveLatch, CancellationToken messageProcessingCancellationToken)
+            ReceiveCountdownEvent receiveLatch, CancellationToken messageProcessingCancellationToken)
         {
             using var latchSignaler = receiveLatch.GetSignaler();
             try
