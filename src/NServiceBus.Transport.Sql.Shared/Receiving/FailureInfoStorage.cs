@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Runtime.ExceptionServices;
-    using NServiceBus.Extensibility;
+    using Extensibility;
 
     // The data structure has fixed maximum size. When the data structure reaches its maximum size,
     // the least recently used (LRU) message processing failure is removed from the storage.
@@ -70,8 +70,6 @@
         Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
         LinkedList<string> leastRecentlyUsedMessages = new LinkedList<string>();
         object lockObject = new object();
-
-        int maxElements;
 
         class FailureInfoNode
         {

@@ -5,8 +5,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading;
     using System.Threading.Tasks;
     using Faults;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Logging;
+    using Extensibility;
+    using Logging;
     using Unicast.Queuing;
 
     abstract class ProcessStrategy
