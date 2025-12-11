@@ -18,27 +18,18 @@
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
+            AsyncCountdownLatch.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
-            var hasLatchBeenSignalled = false;
 
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    MessageReadResult receiveResult;
-                    try
-                    {
-                        receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        receiveLatch.Signal();
-                        hasLatchBeenSignalled = true;
-                    }
+                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+                    receiveLatch.Signal();
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
@@ -80,13 +71,6 @@
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
-            }
-            finally
-            {
-                if (!hasLatchBeenSignalled)
-                {
-                    receiveLatch.Signal();
-                }
             }
         }
 

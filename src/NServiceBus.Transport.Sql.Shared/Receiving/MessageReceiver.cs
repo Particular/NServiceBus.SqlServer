@@ -204,13 +204,11 @@ namespace NServiceBus.Transport.Sql.Shared
                     ? 1
                     : messageCount;
 
-            bool shouldWaitForReceiveTasks = true;
             var receiveLatch = new AsyncCountdownLatch(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
             {
                 if (stopBatchCancellationSource.IsCancellationRequested)
                 {
-                    shouldWaitForReceiveTasks = false;
                     break;
                 }
 
@@ -222,17 +220,15 @@ namespace NServiceBus.Transport.Sql.Shared
                     localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
             }
 
-            if (shouldWaitForReceiveTasks)
-            {
-                // Wait for all receive operations to complete before returning (and thus peeking again)
-                await receiveLatch.WaitAsync(CancellationToken.None).ConfigureAwait(false);
-            }
+            // Wait for all receive operations to complete before returning (and thus peeking again)
+            await receiveLatch.WaitAsync(stopBatchCancellationSource.Token).ConfigureAwait(false);
         }
 
         async Task ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(
             CancellationTokenSource stopBatchCancellationTokenSource, SemaphoreSlim localConcurrencyLimiter,
             AsyncCountdownLatch receiveLatch, CancellationToken messageProcessingCancellationToken)
         {
+            using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
                 try
@@ -241,7 +237,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, receiveLatch,
+                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, latchSignaler,
                         messageProcessingCancellationToken)
                         .ConfigureAwait(false);
 

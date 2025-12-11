@@ -22,28 +22,18 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            AsyncCountdownLatch receiveLatch, CancellationToken cancellationToken = default)
+            AsyncCountdownLatch.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
-            var hasLatchBeenSignalled = false;
 
             try
             {
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 using (var transaction = connection.BeginTransaction(isolationLevel))
                 {
-                    MessageReadResult receiveResult;
-                    try
-                    {
-                        receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        receiveLatch.Signal();
-                        hasLatchBeenSignalled = true;
-                    }
+                    var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                    receiveLatch.Signal();
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
@@ -88,13 +78,6 @@ namespace NServiceBus.Transport.Sql.Shared
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
-            }
-            finally
-            {
-                if (!hasLatchBeenSignalled)
-                {
-                    receiveLatch.Signal();
-                }
             }
         }
 
