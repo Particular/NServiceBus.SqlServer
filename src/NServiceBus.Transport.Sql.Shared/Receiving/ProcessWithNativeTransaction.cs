@@ -8,19 +8,9 @@ namespace NServiceBus.Transport.Sql.Shared
 
     using IsolationLevel = System.Data.IsolationLevel;
 
-    class ProcessWithNativeTransaction : ProcessStrategy
+    class ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
+        : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
-        : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
-        {
-            this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
-            this.exceptionClassifier = exceptionClassifier;
-            this.transactionForReceiveOnly = transactionForReceiveOnly;
-
-            isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
-        }
-
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
             ReceiveCountdownEvent.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
@@ -104,11 +94,9 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        IsolationLevel isolationLevel;
-        DbConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
-        readonly IExceptionClassifier exceptionClassifier;
-        bool transactionForReceiveOnly;
+        IsolationLevel isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
+        FailureInfoStorage failureInfoStorage = failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier = exceptionClassifier;
         internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
 }

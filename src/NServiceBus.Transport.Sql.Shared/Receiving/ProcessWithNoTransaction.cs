@@ -6,16 +6,9 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using Extensibility;
 
-    class ProcessWithNoTransaction : ProcessStrategy
+    class ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
-        : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
-        {
-            this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
-            this.exceptionClassifier = exceptionClassifier;
-        }
-
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
             ReceiveCountdownEvent.Signaler receiveLatch, CancellationToken cancellationToken = default)
         {
@@ -82,8 +75,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        readonly DbConnectionFactory connectionFactory;
-        readonly FailureInfoStorage failureInfoStorage;
-        readonly IExceptionClassifier exceptionClassifier;
+        readonly FailureInfoStorage failureInfoStorage = failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier = exceptionClassifier;
     }
 }

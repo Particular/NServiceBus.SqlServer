@@ -7,13 +7,8 @@
 
     // The data structure has fixed maximum size. When the data structure reaches its maximum size,
     // the least recently used (LRU) message processing failure is removed from the storage.
-    class FailureInfoStorage
+    class FailureInfoStorage(int maxElements)
     {
-        public FailureInfoStorage(int maxElements)
-        {
-            this.maxElements = maxElements;
-        }
-
         public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
             lock (lockObject)
