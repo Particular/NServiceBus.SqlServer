@@ -6,15 +6,8 @@
     using System.Transactions;
     using Logging;
 
-    class QueuePeeker : IPeekMessagesInQueue
+    class QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay) : IPeekMessagesInQueue
     {
-        public QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay)
-        {
-            this.connectionFactory = connectionFactory;
-            this.exceptionClassifier = exceptionClassifier;
-            this.peekDelay = peekDelay;
-        }
-
         public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
             var messageCount = 0;
@@ -49,10 +42,6 @@
 
             return messageCount;
         }
-
-        readonly DbConnectionFactory connectionFactory;
-        readonly IExceptionClassifier exceptionClassifier;
-        readonly TimeSpan peekDelay;
 
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }
