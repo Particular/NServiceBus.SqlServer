@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.Sql.Shared
         : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveLatch, CancellationToken cancellationToken = default)
+            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
                         var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-                        receiveLatch.Signal();
+                        receiveCountdownEventSignaler.Signal();
 
                         if (receiveResult == MessageReadResult.NoMessage)
                         {

@@ -10,7 +10,7 @@
         : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
         public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveLatch, CancellationToken cancellationToken = default)
+            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -21,7 +21,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
                     var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
-                    receiveLatch.Signal();
+                    receiveCountdownEventSignaler.Signal();
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
