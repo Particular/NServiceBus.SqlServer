@@ -6,17 +6,11 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using Extensibility;
 
-    class ProcessWithNoTransaction : ProcessStrategy
+    class ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
-        : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
-        {
-            this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
-            this.exceptionClassifier = exceptionClassifier;
-        }
-
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -27,8 +21,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     using (var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                     {
-                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken)
-                            .ConfigureAwait(false);
+                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                        receiveCountdownEventSignaler.Signal();
 
                         if (receiveResult == MessageReadResult.NoMessage)
                         {
@@ -81,8 +75,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        readonly DbConnectionFactory connectionFactory;
-        readonly FailureInfoStorage failureInfoStorage;
-        readonly IExceptionClassifier exceptionClassifier;
+        readonly FailureInfoStorage failureInfoStorage = failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier = exceptionClassifier;
     }
 }

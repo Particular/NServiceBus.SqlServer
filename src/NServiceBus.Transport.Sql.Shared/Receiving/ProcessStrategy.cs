@@ -5,8 +5,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading;
     using System.Threading.Tasks;
     using Faults;
-    using NServiceBus.Extensibility;
-    using NServiceBus.Logging;
+    using Extensibility;
+    using Logging;
     using Unicast.Queuing;
 
     abstract class ProcessStrategy
@@ -35,7 +35,8 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalError = criticalError;
         }
 
-        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default);
+        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default);
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {

@@ -6,18 +6,11 @@
     using System.Transactions;
     using Extensibility;
 
-    class ProcessWithTransactionScope : ProcessStrategy
+    class ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
+        : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
-         : base(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
-        {
-            this.transactionOptions = transactionOptions;
-            this.connectionFactory = connectionFactory;
-            this.failureInfoStorage = failureInfoStorage;
-            this.exceptionClassifier = exceptionClassifier;
-        }
-
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource, CancellationToken cancellationToken = default)
+        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
+            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -28,6 +21,7 @@
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
                     var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+                    receiveCountdownEventSignaler.Signal();
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
@@ -95,9 +89,7 @@
             }
         }
 
-        TransactionOptions transactionOptions;
-        DbConnectionFactory connectionFactory;
-        FailureInfoStorage failureInfoStorage;
-        readonly IExceptionClassifier exceptionClassifier;
+        FailureInfoStorage failureInfoStorage = failureInfoStorage;
+        readonly IExceptionClassifier exceptionClassifier = exceptionClassifier;
     }
 }
