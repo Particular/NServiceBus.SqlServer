@@ -13,7 +13,6 @@ public class When_custom_schema_contains_at : NServiceBusAcceptanceTest
     {
         var ctx = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
@@ -26,32 +25,22 @@ public class When_custom_schema_contains_at : NServiceBusAcceptanceTest
 
     public class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
+        public Endpoint() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 c.ConfigureSqlServerTransport().DefaultSchema = "db@";
             });
-        }
 
-        class EventHandler : IHandleMessages<Message>
+        class EventHandler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public EventHandler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageReceived = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 }

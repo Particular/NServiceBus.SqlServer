@@ -87,7 +87,7 @@ public class When_deferring_a_message_to_invalid_queue : NServiceBusAcceptanceTe
                 scenarioContext.Headers = context.MessageHeaders;
                 scenarioContext.MessageForwardedToErrorQueue = true;
 
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }

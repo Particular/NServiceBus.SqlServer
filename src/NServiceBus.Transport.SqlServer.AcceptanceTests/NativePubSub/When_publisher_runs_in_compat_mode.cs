@@ -68,7 +68,7 @@ public class When_publisher_runs_in_compat_mode : NServiceBusAcceptanceTest
             {
                 scenarioContext.GotTheEvent = true;
                 scenarioContext.MarkAsCompleted();
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }

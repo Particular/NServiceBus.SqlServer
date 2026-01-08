@@ -15,7 +15,6 @@ public class When_custom_schema_configured_for_endpoint_with_queue_specific_over
         var ctx = await Scenario.Define<Context>()
             .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
             .WithEndpoint<Receiver>()
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
@@ -23,8 +22,7 @@ public class When_custom_schema_configured_for_endpoint_with_queue_specific_over
 
     public class Sender : EndpointConfigurationBuilder
     {
-        public Sender()
-        {
+        public Sender() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 var receiverEndpoint = EndpointNamingConvention(typeof(Receiver));
@@ -32,6 +30,5 @@ public class When_custom_schema_configured_for_endpoint_with_queue_specific_over
                 c.ConfigureRouting().RouteToEndpoint(typeof(Message), receiverEndpoint);
                 c.ConfigureRouting().UseSchemaForEndpoint(receiverEndpoint, ReceiverSchema);
             });
-        }
     }
 }

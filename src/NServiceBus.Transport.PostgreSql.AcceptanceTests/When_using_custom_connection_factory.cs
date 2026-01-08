@@ -14,7 +14,6 @@ public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
     {
         var ctx = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(b => b.When((bus, c) => bus.SendLocal(new Message())))
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
@@ -41,19 +40,13 @@ public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
             });
         }
 
-        class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageReceived = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
@@ -63,7 +56,5 @@ public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
         public bool MessageReceived { get; set; }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 }

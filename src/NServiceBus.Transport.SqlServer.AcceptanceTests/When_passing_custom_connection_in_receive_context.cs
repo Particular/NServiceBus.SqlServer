@@ -25,7 +25,6 @@ public class When_passing_custom_connection_in_receive_context : NServiceBusAcce
                     await bus.SendLocal(new InitiatingMessage());
                 });
             })
-            .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
             .Run();
 
         Assert.Multiple(() =>

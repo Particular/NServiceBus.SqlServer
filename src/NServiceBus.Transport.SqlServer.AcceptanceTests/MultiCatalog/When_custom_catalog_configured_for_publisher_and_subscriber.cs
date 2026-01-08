@@ -67,7 +67,5 @@ public class When_custom_catalog_configured_for_publisher_and_subscriber : Multi
         }
     }
 
-    public class Event : IEvent
-    {
-    }
+    public class Event : IEvent;
 }

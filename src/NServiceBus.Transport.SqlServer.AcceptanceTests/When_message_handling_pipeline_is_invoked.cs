@@ -21,7 +21,6 @@ public class When_message_handling_pipeline_is_invoked : NServiceBusAcceptanceTe
                 c.DoNotFailOnErrorMessages();
                 c.When(async bus => await bus.SendLocal(new InitiatingMessage()));
             })
-            .Done(c => c.TransportTransaction != null)
             .Run();
 
         Assert.That(context.TransportTransaction, Is.Not.Null);

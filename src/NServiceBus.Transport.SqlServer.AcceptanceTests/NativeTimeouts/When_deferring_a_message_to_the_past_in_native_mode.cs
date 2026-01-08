@@ -22,7 +22,6 @@ public class When_deferring_a_message_to_the_past_in_native_mode : NServiceBusAc
 
                 return bus.Send(new MyMessage(), options);
             }))
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(context.MessageReceived, Is.True);
@@ -35,28 +34,18 @@ public class When_deferring_a_message_to_the_past_in_native_mode : NServiceBusAc
 
     public class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public Endpoint() => EndpointSetup<DefaultServer>();
 
-        public class MyMessageHandler : IHandleMessages<MyMessage>
+        public class MyMessageHandler(Context scenarioContext) : IHandleMessages<MyMessage>
         {
-            readonly Context scenarioContext;
-            public MyMessageHandler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageReceived = true;
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class MyMessage : IMessage
-    {
-    }
+    public class MyMessage : IMessage;
 }

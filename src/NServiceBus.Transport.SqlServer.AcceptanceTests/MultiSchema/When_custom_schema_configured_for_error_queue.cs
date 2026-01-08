@@ -32,8 +32,7 @@ public class When_custom_schema_configured_for_error_queue : NServiceBusAcceptan
 
     public class Sender : EndpointConfigurationBuilder
     {
-        public Sender()
-        {
+        public Sender() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 var errorSpyName = AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(ErrorSpy));
@@ -47,45 +46,33 @@ public class When_custom_schema_configured_for_error_queue : NServiceBusAcceptan
                 var transport = c.ConfigureSqlServerTransport();
                 transport.SchemaAndCatalog.UseSchemaForQueue(errorSpyName, ErrorSpySchema);
             });
-        }
 
         class Handler : IHandleMessages<Message>
         {
-            public Task Handle(Message message, IMessageHandlerContext context)
-            {
-                throw new Exception("Simulated exception");
-            }
+            public Task Handle(Message message, IMessageHandlerContext context) => throw new Exception("Simulated exception");
         }
     }
 
     public class ErrorSpy : EndpointConfigurationBuilder
     {
-        public ErrorSpy()
-        {
+        public ErrorSpy() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 c.ConfigureSqlServerTransport().DefaultSchema = ErrorSpySchema;
             });
-        }
 
-        class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.FailedMessageProcessed = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class Message : ICommand { }
+    public class Message : ICommand;
 
     const string ErrorSpySchema = "receiver";
 }

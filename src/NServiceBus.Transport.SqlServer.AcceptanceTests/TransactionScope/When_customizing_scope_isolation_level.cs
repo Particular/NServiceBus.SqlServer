@@ -16,47 +16,35 @@ public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
 
         var context = await Scenario.Define<Context>()
             .WithEndpoint<Endpoint>(c => c.When(b => b.SendLocal(new MyMessage())))
-            .Done(c => c.Done)
             .Run();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(context.AmbientTransactionPresent, Is.True, "There should be an ambient transaction present");
             Assert.That(context.IsolationLevel, Is.EqualTo(IsolationLevel.RepeatableRead), "Ambient transaction should have configured isolation level");
-        });
+        }
     }
 
-    public class MyMessage : IMessage
-    {
-    }
+    public class MyMessage : IMessage;
 
     class Context : ScenarioContext
     {
-        public bool Done { get; set; }
         public bool AmbientTransactionPresent { get; set; }
         public IsolationLevel IsolationLevel { get; set; }
     }
 
     class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
+        public Endpoint() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 var transport = c.ConfigureSqlServerTransport();
                 transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
                 transport.TransactionScope.IsolationLevel = IsolationLevel.RepeatableRead;
             });
-        }
 
-        class MyMessageHandler : IHandleMessages<MyMessage>
+        class MyMessageHandler(Context scenarioContext) : IHandleMessages<MyMessage>
         {
-            readonly Context scenarioContext;
-            public MyMessageHandler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
                 var ambientTransactionPresent = Transaction.Current != null;
@@ -66,9 +54,9 @@ public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
                 {
                     scenarioContext.IsolationLevel = Transaction.Current.IsolationLevel;
                 }
-                scenarioContext.Done = true;
+                scenarioContext.MarkAsCompleted();
 
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }

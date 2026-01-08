@@ -14,7 +14,6 @@ public class When_custom_schema_configured_for_endpoint_with_default_override : 
         var ctx = await Scenario.Define<Context>()
             .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
             .WithEndpoint<Receiver>()
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
@@ -22,8 +21,7 @@ public class When_custom_schema_configured_for_endpoint_with_default_override : 
 
     public class Sender : EndpointConfigurationBuilder
     {
-        public Sender()
-        {
+        public Sender() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 var transport = c.ConfigureSqlServerTransport();
@@ -31,6 +29,5 @@ public class When_custom_schema_configured_for_endpoint_with_default_override : 
 
                 c.ConfigureRouting().RouteToEndpoint(typeof(Message), Conventions.EndpointNamingConvention(typeof(Receiver)));
             });
-        }
     }
 }

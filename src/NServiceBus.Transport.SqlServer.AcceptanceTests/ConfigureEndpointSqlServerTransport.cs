@@ -33,7 +33,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         configuration.UseTransport(transport);
 
-        return Task.FromResult(0);
+        return Task.CompletedTask;
     }
 
     public async Task Cleanup()

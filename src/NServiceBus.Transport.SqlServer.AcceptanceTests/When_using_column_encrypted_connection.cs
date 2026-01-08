@@ -64,7 +64,7 @@ public class When_using_column_encrypted_connection : NServiceBusAcceptanceTest
             {
                 scenarioContext.MessageReceived = true;
 
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }
@@ -74,7 +74,5 @@ public class When_using_column_encrypted_connection : NServiceBusAcceptanceTest
         public bool MessageReceived { get; set; }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 }

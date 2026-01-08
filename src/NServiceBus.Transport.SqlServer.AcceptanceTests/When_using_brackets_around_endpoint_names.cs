@@ -40,7 +40,7 @@ public class When_using_brackets_around_endpoint_names : NServiceBusAcceptanceTe
             {
                 scenarioContext.MessageReceived = true;
 
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }
@@ -50,7 +50,5 @@ public class When_using_brackets_around_endpoint_names : NServiceBusAcceptanceTe
         public bool MessageReceived { get; set; }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 }

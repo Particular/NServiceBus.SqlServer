@@ -23,20 +23,16 @@ public class When_using_scope_timeout_greater_than_machine_max : NServiceBusAcce
         Assert.That(exception.Message, Contains.Substring("Timeout requested is longer than the maximum value for this machine"));
     }
 
-    class Context : ScenarioContext
-    {
-    }
+    class Context : ScenarioContext;
 
     class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
+        public Endpoint() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 var transport = c.ConfigureSqlServerTransport();
                 transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
                 transport.TransactionScope.Timeout = TimeSpan.FromHours(1);
             });
-        }
     }
 }

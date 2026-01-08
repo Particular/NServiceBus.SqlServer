@@ -66,8 +66,7 @@ public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
 
     class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
+        public Endpoint() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 // Make sure the purger is fired often enough to clean expired messages from
@@ -75,32 +74,21 @@ public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
                 c.GetSettings().Set("SqlServer.PurgeTaskDelayTimeSpan", TimeSpan.FromSeconds(2));
                 c.LimitMessageProcessingConcurrencyTo(1);
             });
-        }
 
-        class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageWasHandled = true;
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }
 
     [TimeToBeReceived("00:00:00.001")]
-    public class ExpiredMessage : IMessage
-    {
-    }
+    public class ExpiredMessage : IMessage;
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 
     string connectionString;
 }
