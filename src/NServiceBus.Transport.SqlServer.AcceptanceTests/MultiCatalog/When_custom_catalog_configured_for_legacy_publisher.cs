@@ -14,13 +14,14 @@
             AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher));
 
         [Test]
-        public Task Should_receive_event()
+        public async Task Should_receive_event()
         {
-            return Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<LegacyPublisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, s => s.Subscribe(typeof(Event))))
-                .Done(c => c.EventReceived)
+                .WithEndpoint<Subscriber>(b => b.When(s => s.Subscribe(typeof(Event))))
                 .Run();
+
+            Assert.That(context.EventReceived, Is.True);
         }
 
         class Context : ScenarioContext
@@ -31,8 +32,7 @@
 
         class LegacyPublisher : EndpointConfigurationBuilder
         {
-            public LegacyPublisher()
-            {
+            public LegacyPublisher() =>
                 EndpointSetup(new CustomizedServer(PublisherConnectionString, false),
                     (c, rd) =>
                     {
@@ -49,7 +49,6 @@
                             }
                         });
                     });
-            }
         }
 
         class Subscriber : EndpointConfigurationBuilder
@@ -68,25 +67,17 @@
                 });
             }
 
-            class EventHandler : IHandleMessages<Event>
+            class EventHandler(Context scenarioContext) : IHandleMessages<Event>
             {
-                readonly Context scenarioContext;
-
-                public EventHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
                     scenarioContext.EventReceived = true;
-                    return Task.FromResult(0);
+                    scenarioContext.MarkAsCompleted();
+                    return Task.CompletedTask;
                 }
             }
         }
 
-        public class Event : IEvent
-        {
-        }
+        public class Event : IEvent;
     }
 }

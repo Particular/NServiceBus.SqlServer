@@ -19,44 +19,33 @@
                 .WithEndpoint<AnEndpoint>(c =>
                 {
                     c.DoNotFailOnErrorMessages();
-                    c.When(async bus =>
-                    {
-                        await bus.SendLocal(new InitiatingMessage());
-                    });
+                    c.When(async bus => await bus.SendLocal(new InitiatingMessage()));
                 })
                 .Done(c => c.TransportTransaction != null)
-                .Run(TimeSpan.FromSeconds(10));
+                .Run();
 
             Assert.That(context.TransportTransaction, Is.Not.Null);
             var transportTransaction = context.TransportTransaction;
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlConnection", out object connection), Is.True);
                 Assert.That(connection, Is.InstanceOf<DbConnection>());
 
                 Assert.That(transportTransaction.TryGet("System.Data.SqlClient.SqlTransaction", out object transaction), Is.True);
                 Assert.That(transaction, Is.InstanceOf<DbTransaction>());
-            });
-        }
-
-        class InitiatingMessage : IMessage
-        {
-        }
-
-        class ParticipatingInTransportTransactionBehavior : IBehavior<IIncomingPhysicalMessageContext, IIncomingPhysicalMessageContext>
-        {
-            readonly MyContext testContext;
-
-            public ParticipatingInTransportTransactionBehavior(MyContext testContext)
-            {
-                this.testContext = testContext;
             }
+        }
+
+        class InitiatingMessage : IMessage;
+
+        class ParticipatingInTransportTransactionBehavior(MyContext testContext) : IBehavior<IIncomingPhysicalMessageContext, IIncomingPhysicalMessageContext>
+        {
             public Task Invoke(IIncomingPhysicalMessageContext context, Func<IIncomingPhysicalMessageContext, Task> next)
             {
                 var transaction = context.Extensions.Get<TransportTransaction>();
                 testContext.TransportTransaction = transaction;
-
+                testContext.MarkAsCompleted();
                 return Task.CompletedTask;
             }
         }
@@ -68,15 +57,13 @@
 
         class AnEndpoint : EndpointConfigurationBuilder
         {
-            public AnEndpoint()
-            {
+            public AnEndpoint() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
                     c.Pipeline.Register(typeof(ParticipatingInTransportTransactionBehavior), "Behavior interested in the transport transaction");
                     c.ConfigureSqlServerTransport().TransportTransactionMode = TransportTransactionMode.SendsAtomicWithReceive;
                 });
-            }
         }
     }
 }

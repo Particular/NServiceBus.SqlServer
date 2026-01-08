@@ -26,7 +26,7 @@
                     });
                 })
                 .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
-                .Run(TimeSpan.FromSeconds(10));
+                .Run();
 
             Assert.Multiple(() =>
             {
@@ -36,25 +36,15 @@
             });
         }
 
-        class InitiatingMessage : IMessage
-        {
-        }
+        class InitiatingMessage : IMessage;
 
-        class FollowUpCompletedCommand : IMessage
-        {
-        }
+        class FollowUpCompletedCommand : IMessage;
 
-        class FollowUpCompletedEvent : IEvent
-        {
-        }
+        class FollowUpCompletedEvent : IEvent;
 
-        class FollowUpRolledbackCommand : IMessage
-        {
-        }
+        class FollowUpRolledbackCommand : IMessage;
 
-        class FollowUpRolledbackEvent : IEvent
-        {
-        }
+        class FollowUpRolledbackEvent : IEvent;
 
         class MyContext : ScenarioContext
         {
@@ -62,32 +52,25 @@
             public bool FollowUpCommittedEventReceived { get; set; }
             public bool FollowUpRolledbackCommandReceived { get; set; }
             public bool FollowUpRolledbackEventReceived { get; set; }
-
             public bool InHandlerTransactionEscalatedToDTC { get; set; }
+
+            public void MaybeMarkAsCompleted() => MarkAsCompleted(FollowUpCommittedCommandReceived, FollowUpCommittedEventReceived);
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
         {
-            public AnEndpoint()
-            {
+            public AnEndpoint() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
                 });
-            }
 
-            class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
+            class ImmediateDispatchHandlers(MyContext scenarioContext) : IHandleMessages<InitiatingMessage>,
                 IHandleMessages<FollowUpCompletedCommand>,
                 IHandleMessages<FollowUpCompletedEvent>,
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
-                readonly MyContext scenarioContext;
-                public ImmediateDispatchHandlers(MyContext scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
                     //HINT: this scope is never completed
@@ -124,6 +107,10 @@
                             await context.Publish(new FollowUpCompletedEvent(), publishOptions);
 
                             scenarioContext.InHandlerTransactionEscalatedToDTC = Transaction.Current.TransactionInformation.DistributedIdentifier != Guid.Empty;
+                            if (scenarioContext.InHandlerTransactionEscalatedToDTC)
+                            {
+                                scenarioContext.MarkAsFailed(new InvalidOperationException("Transaction was escalated to DTC"));
+                            }
                         }
 
                         scope.Complete();
@@ -135,24 +122,28 @@
                 public Task Handle(FollowUpCompletedEvent message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpCommittedEventReceived = true;
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpCompletedCommand completedCommand, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpCommittedCommandReceived = true;
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackCommand message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpRolledbackCommandReceived = true;
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackEvent message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpRolledbackEventReceived = true;
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
             }

@@ -32,7 +32,6 @@
                     });
                     b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent()));
                 })
-
                 .WithEndpoint(new Subscriber(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
@@ -42,13 +41,12 @@
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
                         ]);
                     });
-                    b.When(async (session, ctx) =>
+                    b.When(async (session, _) =>
                     {
                         await session.Subscribe<MyEvent>();
                     });
                 })
-                .Done(c => c.GotTheEvent)
-                .Run(TimeSpan.FromSeconds(30));
+                .Run();
 
             Assert.That(beforeMigration.GotTheEvent, Is.True);
 
@@ -61,9 +59,8 @@
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
                         c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     });
-                    b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
+                    b.When((session, ctx) => session.Publish(new MyEvent()));
                 })
-
                 .WithEndpoint(new Subscriber(_connectionString, false), b =>
                 {
                     b.CustomConfig(c =>
@@ -73,21 +70,17 @@
                             new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
                         ]);
                     });
-                    b.When(async (session, ctx) =>
+                    b.When(async (session, _) =>
                     {
                         await session.Subscribe<MyEvent>();
                     });
                 })
-                .Done(c => c.GotTheEvent)
-                .Run(TimeSpan.FromSeconds(30));
+                .Run();
 
             Assert.That(publisherMigrated.GotTheEvent, Is.True);
 
             //Subscriber migrated and in compatibility mode
-            var subscriberMigratedRunSettings = new RunSettings
-            {
-                TestExecutionTimeout = TimeSpan.FromSeconds(30)
-            };
+            var subscriberMigratedRunSettings = new RunSettings();
             subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
             var subscriberMigrated = await Scenario.Define<Context>()
                 .WithEndpoint(new Publisher(_connectionString, true), b =>
@@ -97,9 +90,8 @@
                         c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
                         c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
                     });
-                    b.When(c => c.SubscribedMessageDriven && c.SubscribedNative, (session, ctx) => session.Publish(new MyEvent()));
+                    b.When(c => c is { SubscribedMessageDriven: true, SubscribedNative: true }, (session, _) => session.Publish(new MyEvent()));
                 })
-
                 .WithEndpoint(new Subscriber(_connectionString, true), b =>
                 {
                     b.CustomConfig(c =>
@@ -115,7 +107,6 @@
                         ctx.SubscribedNative = true;
                     });
                 })
-                .Done(c => c.GotTheEvent)
                 .Run(subscriberMigratedRunSettings);
 
             Assert.That(subscriberMigrated.GotTheEvent, Is.True);
@@ -124,11 +115,10 @@
             var compatModeDisabled = await Scenario.Define<Context>()
                 .WithEndpoint<Publisher>(b =>
                 {
-                    b.When(c => c.EndpointsStarted, (session, ctx) => session.Publish(new MyEvent()));
+                    b.When((session, ctx) => session.Publish(new MyEvent()));
                 })
                 .WithEndpoint<Subscriber>()
-                .Done(c => c.GotTheEvent)
-                .Run(TimeSpan.FromSeconds(30));
+                .Run();
 
             Assert.That(compatModeDisabled.GotTheEvent, Is.True);
         }
@@ -147,8 +137,7 @@
 
             }
 
-            public Publisher(string connectionString, bool supportsPublishSubscribe)
-            {
+            public Publisher(string connectionString, bool supportsPublishSubscribe) =>
                 EndpointSetup(new CustomizedServer(_connectionString, supportsPublishSubscribe), (c, rd) =>
                 {
                     c.OnEndpointSubscribed<Context>((s, context) =>
@@ -159,7 +148,6 @@
                         }
                     });
                 }).IncludeType<TestingInMemorySubscriptionPersistence>();
-            }
         }
 
         public class Subscriber : EndpointConfigurationBuilder
@@ -168,33 +156,24 @@
             {
             }
 
-            public Subscriber(string connectionString, bool supportsPublishSubscribe)
-            {
+            public Subscriber(string connectionString, bool supportsPublishSubscribe) =>
                 EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
                     {
                         c.DisableFeature<AutoSubscribe>();
                     },
                     metadata => metadata.RegisterPublisherFor<MyEvent>(typeof(Publisher)));
-            }
 
-            public class Handler : IHandleMessages<MyEvent>
+            public class Handler(Context scenarioContext) : IHandleMessages<MyEvent>
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(MyEvent @event, IMessageHandlerContext context)
                 {
                     scenarioContext.GotTheEvent = true;
-                    return Task.FromResult(0);
+                    scenarioContext.MarkAsCompleted();
+                    return Task.CompletedTask;
                 }
             }
         }
 
-        public class MyEvent : IEvent
-        {
-        }
+        public class MyEvent : IEvent;
     }
 }

@@ -22,8 +22,7 @@
             var publisherMigrated = await Scenario.Define<Context>()
                 .WithEndpoint<MigratedPublisher>(b => b.When(c => c.SubscribedMessageDriven, (session, ctx) => session.Publish(new MyEvent())))
                 .WithEndpoint<Subscriber>(b => b.When((session, ctx) => session.Subscribe<MyEvent>()))
-                .Done(c => c.GotTheEvent)
-                .Run(TimeSpan.FromSeconds(30));
+                .Run();
 
             Assert.That(publisherMigrated.GotTheEvent, Is.True);
         }
@@ -36,8 +35,7 @@
 
         public class MigratedPublisher : EndpointConfigurationBuilder
         {
-            public MigratedPublisher()
-            {
+            public MigratedPublisher() =>
                 EndpointSetup<DefaultPublisher>(c =>
                 {
                     c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
@@ -49,13 +47,11 @@
                         }
                     });
                 }).IncludeType<TestingInMemorySubscriptionPersistence>();
-            }
         }
 
         public class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber()
-            {
+            public Subscriber() =>
                 EndpointSetup(new CustomizedServer(ConnectionString, false), (c, sd) =>
                 {
                     //SqlServerTransport no longer implements message-driven pub sub interface so we need to configure Publishers "manually"
@@ -65,26 +61,18 @@
                     ]);
                     c.DisableFeature<AutoSubscribe>();
                 });
-            }
 
-            public class Handler : IHandleMessages<MyEvent>
+            public class Handler(Context scenarioContext) : IHandleMessages<MyEvent>
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(MyEvent @event, IMessageHandlerContext context)
                 {
                     scenarioContext.GotTheEvent = true;
+                    scenarioContext.MarkAsCompleted();
                     return Task.FromResult(0);
                 }
             }
         }
 
-        public class MyEvent : IEvent
-        {
-        }
+        public class MyEvent : IEvent;
     }
 }

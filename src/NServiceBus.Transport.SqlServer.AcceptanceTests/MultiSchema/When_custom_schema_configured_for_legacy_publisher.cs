@@ -12,13 +12,14 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
         static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
         [Test]
-        public Task Should_receive_event()
+        public async Task Should_receive_event()
         {
-            return Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<LegacyPublisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, s => s.Subscribe(typeof(Event))))
-                .Done(c => c.EventReceived)
+                .WithEndpoint<Subscriber>(b => b.When(s => s.Subscribe(typeof(Event))))
                 .Run();
+
+            Assert.That(context.EventReceived, Is.True);
         }
 
         class Context : ScenarioContext
@@ -29,8 +30,7 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
 
         class LegacyPublisher : EndpointConfigurationBuilder
         {
-            public LegacyPublisher()
-            {
+            public LegacyPublisher() =>
                 EndpointSetup(new CustomizedServer(_connectionString, false),
                     (c, rd) =>
                     {
@@ -43,20 +43,18 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
                         c.OnEndpointSubscribed<Context>((s, context) =>
                         {
                             if (s.SubscriberEndpoint.Contains(
-                                AcceptanceTesting.Customization.Conventions
-                                    .EndpointNamingConvention(typeof(Subscriber))))
+                                    AcceptanceTesting.Customization.Conventions
+                                        .EndpointNamingConvention(typeof(Subscriber))))
                             {
                                 context.Subscribed = true;
                             }
                         });
                     });
-            }
         }
 
         class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber()
-            {
+            public Subscriber() =>
                 EndpointSetup(new CustomizedServer(_connectionString), (c, sd) =>
                 {
                     var publisherEndpoint =
@@ -70,27 +68,18 @@ namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
                         AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
                     c.ConfigureRouting().UseSchemaForEndpoint(publisherEndpoint, "sender");
                 });
-            }
 
-            class EventHandler : IHandleMessages<Event>
+            class EventHandler(Context scenarioContext) : IHandleMessages<Event>
             {
-                readonly Context scenarioContext;
-
-                public EventHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
                     scenarioContext.EventReceived = true;
-                    return Task.FromResult(0);
+                    scenarioContext.MarkAsCompleted();
+                    return Task.CompletedTask;
                 }
             }
         }
 
-        public class Event : IEvent
-        {
-        }
+        public class Event : IEvent;
     }
 }

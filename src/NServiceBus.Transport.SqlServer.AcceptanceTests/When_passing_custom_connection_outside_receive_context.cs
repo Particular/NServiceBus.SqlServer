@@ -38,8 +38,7 @@
 
                     await bus.SendLocal(new MarkerMessage());
                 }))
-                .Done(c => c.MarkerMessageReceived)
-                .Run(TimeSpan.FromMinutes(1));
+                .Run();
 
             Assert.Multiple(() =>
             {
@@ -76,31 +75,20 @@
                         completedScope.Complete();
                     }
                 }))
-                .Done(c => c.SendFromCompletedScopeReceived && c.PublishFromCompletedScopeReceived)
-                .Run(TimeSpan.FromMinutes(1));
+                .Run();
 
             Assert.That(transactionId, Is.EqualTo(Guid.Empty));
         }
 
-        class MarkerMessage : IMessage
-        {
-        }
+        class MarkerMessage : IMessage;
 
-        class CommandFromCompletedScope : IMessage
-        {
-        }
+        class CommandFromCompletedScope : IMessage;
 
-        class EventFromCompletedScope : IEvent
-        {
-        }
+        class EventFromCompletedScope : IEvent;
 
-        class CommandFromRollbackedScope : IMessage
-        {
-        }
+        class CommandFromRollbackedScope : IMessage;
 
-        class EventFromRollbackedScope : IEvent
-        {
-        }
+        class EventFromRollbackedScope : IEvent;
 
         class MyContext : ScenarioContext
         {
@@ -109,12 +97,13 @@
             public bool PublishFromCompletedScopeReceived { get; set; }
             public bool SendFromRollbackedScopeReceived { get; set; }
             public bool PublishFromRollbackedScopeReceived { get; set; }
+
+            public void MaybeMarkAsCompleted() => MarkAsCompleted(SendFromCompletedScopeReceived, PublishFromCompletedScopeReceived);
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
         {
-            public AnEndpoint()
-            {
+            public AnEndpoint() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
@@ -125,24 +114,17 @@
                     routing.RouteToEndpoint(typeof(CommandFromCompletedScope), anEndpointName);
                     routing.RouteToEndpoint(typeof(CommandFromRollbackedScope), anEndpointName);
                 });
-            }
 
-            class ReplyHandler : IHandleMessages<CommandFromCompletedScope>,
+            class ReplyHandler(MyContext scenarioContext) : IHandleMessages<CommandFromCompletedScope>,
                 IHandleMessages<EventFromCompletedScope>,
                 IHandleMessages<CommandFromRollbackedScope>,
                 IHandleMessages<EventFromRollbackedScope>,
                 IHandleMessages<MarkerMessage>
             {
-                readonly MyContext scenarioContext;
-                public ReplyHandler(MyContext scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(CommandFromCompletedScope commandFromCompletedScope, IMessageHandlerContext context)
                 {
                     scenarioContext.SendFromCompletedScopeReceived = true;
-
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
@@ -156,21 +138,21 @@
                 public Task Handle(CommandFromRollbackedScope message, IMessageHandlerContext context)
                 {
                     scenarioContext.SendFromRollbackedScopeReceived = true;
-
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromRollbackedScope message, IMessageHandlerContext context)
                 {
                     scenarioContext.PublishFromRollbackedScopeReceived = true;
-
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(MarkerMessage message, IMessageHandlerContext context)
                 {
                     scenarioContext.MarkerMessageReceived = true;
-
+                    scenarioContext.MarkAsCompleted();
                     return Task.CompletedTask;
                 }
             }

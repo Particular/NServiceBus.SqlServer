@@ -16,7 +16,7 @@
         [Test]
         public async Task Should_use_transaction_in_transport_operations()
         {
-            var context = await Scenario.Define<MyContext>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<AnEndpoint>(c =>
                 {
                     c.DoNotFailOnErrorMessages();
@@ -25,66 +25,49 @@
                         await bus.SendLocal(new InitiatingMessage());
                     });
                 })
-                .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
-                .Run(TimeSpan.FromSeconds(10));
+                .Run();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(context.FollowUpRolledbackCommandReceived, Is.False);
                 Assert.That(context.FollowUpRolledbackEventReceived, Is.False);
-            });
+            }
         }
 
-        class InitiatingMessage : IMessage
-        {
-        }
+        class InitiatingMessage : IMessage;
 
-        class FollowUpCommittedCommand : IMessage
-        {
-        }
+        class FollowUpCommittedCommand : IMessage;
 
-        class FollowUpCommittedEvent : IEvent
-        {
-        }
+        class FollowUpCommittedEvent : IEvent;
 
-        class FollowUpRolledbackCommand : IMessage
-        {
-        }
+        class FollowUpRolledbackCommand : IMessage;
 
-        class FollowUpRolledbackEvent : IEvent
-        {
-        }
+        class FollowUpRolledbackEvent : IEvent;
 
-        class MyContext : ScenarioContext
+        class Context : ScenarioContext
         {
             public bool FollowUpCommittedCommandReceived { get; set; }
             public bool FollowUpCommittedEventReceived { get; set; }
             public bool FollowUpRolledbackCommandReceived { get; set; }
             public bool FollowUpRolledbackEventReceived { get; set; }
+
+            public void MaybeMarkAsCompleted() => MarkAsCompleted(FollowUpCommittedCommandReceived, FollowUpCommittedEventReceived);
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
         {
-            public AnEndpoint()
-            {
+            public AnEndpoint() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
                 });
-            }
 
-            class ImmediateDispatchHandlers : IHandleMessages<InitiatingMessage>,
+            class ImmediateDispatchHandlers(Context scenarioContext) : IHandleMessages<InitiatingMessage>,
                 IHandleMessages<FollowUpCommittedCommand>,
                 IHandleMessages<FollowUpCommittedEvent>,
                 IHandleMessages<FollowUpRolledbackCommand>,
                 IHandleMessages<FollowUpRolledbackEvent>
             {
-                readonly MyContext scenarioContext;
-                public ImmediateDispatchHandlers(MyContext scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public async Task Handle(InitiatingMessage message, IMessageHandlerContext context)
                 {
                     using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
@@ -130,25 +113,28 @@
                 public Task Handle(FollowUpCommittedEvent message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpCommittedEventReceived = true;
-
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpCommittedCommand message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpCommittedCommandReceived = true;
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackCommand message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpRolledbackCommandReceived = true;
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(FollowUpRolledbackEvent message, IMessageHandlerContext context)
                 {
                     scenarioContext.FollowUpRolledbackEventReceived = true;
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
             }

@@ -53,8 +53,7 @@
                     }
 
                 }))
-                .Done(c => c.SendFromCommittedTransactionReceived && c.PublishFromCommittedTransactionReceived)
-                .Run(TimeSpan.FromMinutes(1));
+                .Run();
 
             Assert.Multiple(() =>
             {
@@ -63,21 +62,13 @@
             });
         }
 
-        class CommandFromCommittedTransaction : IMessage
-        {
-        }
+        class CommandFromCommittedTransaction : IMessage;
 
-        class CommandFromRolledbackTransaction : IMessage
-        {
-        }
+        class CommandFromRolledbackTransaction : IMessage;
 
-        class EventFromRollbackedTransaction : IEvent
-        {
-        }
+        class EventFromRollbackedTransaction : IEvent;
 
-        class EventFromCommittedTransaction : IEvent
-        {
-        }
+        class EventFromCommittedTransaction : IEvent;
 
         class MyContext : ScenarioContext
         {
@@ -85,12 +76,13 @@
             public bool PublishFromCommittedTransactionReceived { get; set; }
             public bool SendFromRolledbackTransactionReceived { get; set; }
             public bool PublishFromRolledbackTransactionReceived { get; set; }
+
+            public void MaybeMarkAsCompleted() => MarkAsCompleted(SendFromCommittedTransactionReceived && PublishFromCommittedTransactionReceived);
         }
 
         class AnEndpoint : EndpointConfigurationBuilder
         {
-            public AnEndpoint()
-            {
+            public AnEndpoint() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     c.LimitMessageProcessingConcurrencyTo(1);
@@ -101,44 +93,37 @@
                     routing.RouteToEndpoint(typeof(CommandFromCommittedTransaction), anEndpointName);
                     routing.RouteToEndpoint(typeof(CommandFromRolledbackTransaction), anEndpointName);
                 });
-            }
 
-            class ReplyHandler : IHandleMessages<CommandFromRolledbackTransaction>,
+            class ReplyHandler(MyContext scenarioContext) : IHandleMessages<CommandFromRolledbackTransaction>,
                 IHandleMessages<CommandFromCommittedTransaction>,
                 IHandleMessages<EventFromRollbackedTransaction>,
                 IHandleMessages<EventFromCommittedTransaction>
             {
-                readonly MyContext scenarioContext;
-                public ReplyHandler(MyContext scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(CommandFromRolledbackTransaction message, IMessageHandlerContext context)
                 {
                     scenarioContext.SendFromRolledbackTransactionReceived = true;
-
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(CommandFromCommittedTransaction message, IMessageHandlerContext context)
                 {
                     scenarioContext.SendFromCommittedTransactionReceived = true;
-
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromRollbackedTransaction message, IMessageHandlerContext context)
                 {
                     scenarioContext.PublishFromRolledbackTransactionReceived = true;
-
+                    scenarioContext.MarkAsFailed(new InvalidOperationException("Message from rolledback transaction should not be received"));
                     return Task.CompletedTask;
                 }
 
                 public Task Handle(EventFromCommittedTransaction message, IMessageHandlerContext context)
                 {
                     scenarioContext.PublishFromCommittedTransactionReceived = true;
-
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
             }

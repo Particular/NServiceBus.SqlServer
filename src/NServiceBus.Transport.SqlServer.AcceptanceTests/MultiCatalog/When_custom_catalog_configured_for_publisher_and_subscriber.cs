@@ -11,17 +11,18 @@
         static string SubscriberConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");
 
         [Test]
-        public Task Should_receive_event()
+        public async Task Should_receive_event()
         {
-            return Scenario.Define<Context>()
+            var context = await Scenario.Define<Context>()
                 .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
+                .WithEndpoint<Subscriber>(b => b.When(async (s, ctx) =>
                 {
                     await s.Subscribe(typeof(Event)).ConfigureAwait(false);
                     ctx.Subscribed = true;
                 }))
-                .Done(c => c.EventReceived)
                 .Run();
+
+            Assert.That(context.EventReceived, Is.True);
         }
 
         class Context : ScenarioContext
@@ -55,18 +56,13 @@
                 });
             }
 
-            class EventHandler : IHandleMessages<Event>
+            class EventHandler(Context scenarioContext) : IHandleMessages<Event>
             {
-                readonly Context scenarioContext;
-                public EventHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
                     scenarioContext.EventReceived = true;
-                    return Task.FromResult(0);
+                    scenarioContext.MarkAsCompleted();
+                    return Task.CompletedTask;
                 }
             }
         }

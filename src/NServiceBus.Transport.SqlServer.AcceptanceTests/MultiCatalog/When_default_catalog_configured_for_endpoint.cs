@@ -21,13 +21,12 @@
                 }
 
                 var context = await Scenario.Define<Context>()
-                                            .WithEndpoint<SenderWithCustomCatalog>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
-                                            {
-                                                ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
-                                                ctx.Finished = true;
-                                            }))
-                                            .Done(c => c.Finished)
-                                            .Run();
+                    .WithEndpoint<SenderWithCustomCatalog>(b => b.When(async (s, ctx) =>
+                    {
+                        ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
+                    }))
+                    .Done(c => c.EndpointsStarted)
+                    .Run();
 
                 Assert.That(context.TablesFound, Is.True);
             }
@@ -37,16 +36,15 @@
         public async Task It_should_be_able_to_send_messages()
         {
             var context = await Scenario.Define<Context>()
-                                        .WithEndpoint<SenderWithCustomCatalog>(c => c.When(s => s.Send(new Message())))
-                                        .WithEndpoint<ReceiverWithCustomCatalog>()
-                                        .Done(c => c.ReplyReceived)
-                                        .Run();
+                .WithEndpoint<SenderWithCustomCatalog>(c => c.When(s => s.Send(new Message())))
+                .WithEndpoint<ReceiverWithCustomCatalog>()
+                .Run();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(context.MessageReceived, Is.True);
                 Assert.That(context.ReplyReceived, Is.True);
-            });
+            }
         }
 
         class Context : ScenarioContext
@@ -57,9 +55,7 @@
             public static string SenderEndpointName = "default-catalog-test_sender";
             public static string ReceiverEndpointName = "default-catalog-test-receiver";
 
-            public bool Finished { get; set; }
             public bool TablesFound { get; set; }
-
             public bool ReplyReceived { get; set; }
             public bool MessageReceived { get; set; }
         }
@@ -81,15 +77,12 @@
                 })
                 .CustomEndpointName(Context.SenderEndpointName);
 
-
-            class Handler : IHandleMessages<Reply>
+            class Handler(Context scenarioContext) : IHandleMessages<Reply>
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext) => this.scenarioContext = scenarioContext;
-
                 public async Task Handle(Reply message, IMessageHandlerContext context)
                 {
                     scenarioContext.ReplyReceived = true;
+                    scenarioContext.MarkAsCompleted();
                     await Task.CompletedTask;
                 }
             }
@@ -109,11 +102,8 @@
                 })
                 .CustomEndpointName(Context.ReceiverEndpointName);
 
-            class Handler : IHandleMessages<Message>
+            class Handler(Context scenarioContext) : IHandleMessages<Message>
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext) => this.scenarioContext = scenarioContext;
-
                 public async Task Handle(Message message, IMessageHandlerContext context)
                 {
                     scenarioContext.MessageReceived = true;
@@ -122,12 +112,8 @@
             }
         }
 
-        public class Message : ICommand
-        {
-        }
+        public class Message : ICommand;
 
-        public class Reply : IMessage
-        {
-        }
+        public class Reply : IMessage;
     }
 }
