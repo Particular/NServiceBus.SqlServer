@@ -1,80 +1,63 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using Features;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+
+public class When_custom_schema_configured_for_publisher_and_subscriber : NServiceBusAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using Features;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
+    [Test]
+    public Task Should_receive_event() =>
+        Scenario.Define<Context>()
+            .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
+            .WithEndpoint<Subscriber>(b => b.When(async (s, ctx) =>
+            {
+                await s.Subscribe(typeof(Event)).ConfigureAwait(false);
+                ctx.Subscribed = true;
+            }))
+            .Run();
 
-    public class When_custom_schema_configured_for_publisher_and_subscriber : NServiceBusAcceptanceTest
+    class Context : ScenarioContext
     {
-        [Test]
-        public Task Should_receive_event()
-        {
-            return Scenario.Define<Context>()
-                .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
-                {
-                    await s.Subscribe(typeof(Event)).ConfigureAwait(false);
-                    ctx.Subscribed = true;
-                }))
-                .Done(c => c.EventReceived)
-                .Run();
-        }
+        public bool Subscribed { get; set; }
+    }
 
-        class Context : ScenarioContext
-        {
-            public bool EventReceived { get; set; }
-            public bool Subscribed { get; set; }
-        }
-
-        class Publisher : EndpointConfigurationBuilder
-        {
-            public Publisher()
+    class Publisher : EndpointConfigurationBuilder
+    {
+        public Publisher() =>
+            EndpointSetup<DefaultPublisher>(b =>
             {
-                EndpointSetup<DefaultPublisher>(b =>
-                {
-                    var transport = b.ConfigureSqlServerTransport();
-                    transport.DefaultSchema = "sender";
-                    transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
-                    transport.Subscriptions.DisableCaching = true;
-                });
-            }
-        }
+                var transport = b.ConfigureSqlServerTransport();
+                transport.DefaultSchema = "sender";
+                transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
+                transport.Subscriptions.DisableCaching = true;
+            });
+    }
 
-        class Subscriber : EndpointConfigurationBuilder
-        {
-            public Subscriber()
+    class Subscriber : EndpointConfigurationBuilder
+    {
+        public Subscriber() =>
+            EndpointSetup<DefaultServer>(c =>
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    var transport = c.ConfigureSqlServerTransport();
-                    transport.DefaultSchema = "receiver";
-                    transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
+                var transport = c.ConfigureSqlServerTransport();
+                transport.DefaultSchema = "receiver";
+                transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
 
-                    c.DisableFeature<AutoSubscribe>();
-                });
-            }
+                c.DisableFeature<AutoSubscribe>();
+            });
 
-            class EventHandler : IHandleMessages<Event>
-            {
-                readonly Context scenarioContext;
-                public EventHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
-                public Task Handle(Event message, IMessageHandlerContext context)
-                {
-                    scenarioContext.EventReceived = true;
-                    return Task.FromResult(0);
-                }
-            }
-        }
-
-        public class Event : IEvent
+        class EventHandler(Context scenarioContext) : IHandleMessages<Event>
         {
+            public Task Handle(Event message, IMessageHandlerContext context)
+            {
+                scenarioContext.MarkAsCompleted();
+                return Task.FromResult(0);
+            }
         }
     }
+
+    public class Event : IEvent;
 }

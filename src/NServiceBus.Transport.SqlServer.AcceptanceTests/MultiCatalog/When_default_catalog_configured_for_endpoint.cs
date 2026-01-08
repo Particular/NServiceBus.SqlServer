@@ -1,73 +1,69 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiCatalog;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using Microsoft.Data.SqlClient;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+
+public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using Microsoft.Data.SqlClient;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-
-    public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptanceTest
+    [Test]
+    public async Task It_creates_queues_in_the_correct_database()
     {
-        [Test]
-        public async Task It_creates_queues_in_the_correct_database()
+        var connectionString = WithCustomCatalog(GetDefaultConnectionString(), Context.SenderCatalog);
+        using (var connection = new SqlConnection(connectionString))
         {
-            var connectionString = WithCustomCatalog(GetDefaultConnectionString(), Context.SenderCatalog);
-            using (var connection = new SqlConnection(connectionString))
+            // Confirm tables do not exist prior to starting the endpoint.
+            if (await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection))
             {
-                // Confirm tables do not exist prior to starting the endpoint.
-                if (await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection))
-                {
-                    await SqlUtilities.DropTable(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
-                }
-
-                var context = await Scenario.Define<Context>()
-                                            .WithEndpoint<SenderWithCustomCatalog>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
-                                            {
-                                                ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
-                                                ctx.Finished = true;
-                                            }))
-                                            .Done(c => c.Finished)
-                                            .Run();
-
-                Assert.That(context.TablesFound, Is.True);
+                await SqlUtilities.DropTable(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
             }
-        }
 
-        [Test]
-        public async Task It_should_be_able_to_send_messages()
-        {
             var context = await Scenario.Define<Context>()
-                                        .WithEndpoint<SenderWithCustomCatalog>(c => c.When(s => s.Send(new Message())))
-                                        .WithEndpoint<ReceiverWithCustomCatalog>()
-                                        .Done(c => c.ReplyReceived)
-                                        .Run();
+                .WithEndpoint<SenderWithCustomCatalog>(b => b.When(async (s, ctx) =>
+                {
+                    ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
+                }))
+                .Done(c => c.EndpointsStarted)
+                .Run();
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(context.MessageReceived, Is.True);
-                Assert.That(context.ReplyReceived, Is.True);
-            });
+            Assert.That(context.TablesFound, Is.True);
         }
+    }
 
-        class Context : ScenarioContext
+    [Test]
+    public async Task It_should_be_able_to_send_messages()
+    {
+        var context = await Scenario.Define<Context>()
+            .WithEndpoint<SenderWithCustomCatalog>(c => c.When(s => s.Send(new Message())))
+            .WithEndpoint<ReceiverWithCustomCatalog>()
+            .Run();
+
+        using (Assert.EnterMultipleScope())
         {
-            public static string SenderCatalog = "nservicebus1";
-            public static string ReceiverCatalog = "nservicebus2";
-            public static string ConnectionStringCatalog = "nservicebus";
-            public static string SenderEndpointName = "default-catalog-test_sender";
-            public static string ReceiverEndpointName = "default-catalog-test-receiver";
-
-            public bool Finished { get; set; }
-            public bool TablesFound { get; set; }
-
-            public bool ReplyReceived { get; set; }
-            public bool MessageReceived { get; set; }
+            Assert.That(context.MessageReceived, Is.True);
+            Assert.That(context.ReplyReceived, Is.True);
         }
+    }
 
-        class SenderWithCustomCatalog : EndpointConfigurationBuilder
-        {
-            public SenderWithCustomCatalog() =>
-                _ = EndpointSetup<DefaultServer>(b =>
+    class Context : ScenarioContext
+    {
+        public static string SenderCatalog = "nservicebus1";
+        public static string ReceiverCatalog = "nservicebus2";
+        public static string ConnectionStringCatalog = "nservicebus";
+        public static string SenderEndpointName = "default-catalog-test_sender";
+        public static string ReceiverEndpointName = "default-catalog-test-receiver";
+
+        public bool TablesFound { get; set; }
+        public bool ReplyReceived { get; set; }
+        public bool MessageReceived { get; set; }
+    }
+
+    class SenderWithCustomCatalog : EndpointConfigurationBuilder
+    {
+        public SenderWithCustomCatalog() =>
+            _ = EndpointSetup<DefaultServer>(b =>
                 {
                     var transport = new SqlServerTransport(WithCustomCatalog(GetDefaultConnectionString(), Context.ConnectionStringCatalog))
                     {
@@ -81,24 +77,21 @@
                 })
                 .CustomEndpointName(Context.SenderEndpointName);
 
-
-            class Handler : IHandleMessages<Reply>
+        class Handler(Context scenarioContext) : IHandleMessages<Reply>
+        {
+            public async Task Handle(Reply message, IMessageHandlerContext context)
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext) => this.scenarioContext = scenarioContext;
-
-                public async Task Handle(Reply message, IMessageHandlerContext context)
-                {
-                    scenarioContext.ReplyReceived = true;
-                    await Task.CompletedTask;
-                }
+                scenarioContext.ReplyReceived = true;
+                scenarioContext.MarkAsCompleted();
+                await Task.CompletedTask;
             }
         }
+    }
 
-        class ReceiverWithCustomCatalog : EndpointConfigurationBuilder
-        {
-            public ReceiverWithCustomCatalog() =>
-                _ = EndpointSetup<DefaultServer>(b =>
+    class ReceiverWithCustomCatalog : EndpointConfigurationBuilder
+    {
+        public ReceiverWithCustomCatalog() =>
+            _ = EndpointSetup<DefaultServer>(b =>
                 {
                     var transport = new SqlServerTransport(WithCustomCatalog(GetDefaultConnectionString(), Context.ConnectionStringCatalog))
                     {
@@ -109,25 +102,17 @@
                 })
                 .CustomEndpointName(Context.ReceiverEndpointName);
 
-            class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
+        {
+            public async Task Handle(Message message, IMessageHandlerContext context)
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext) => this.scenarioContext = scenarioContext;
-
-                public async Task Handle(Message message, IMessageHandlerContext context)
-                {
-                    scenarioContext.MessageReceived = true;
-                    await context.Reply(new Reply());
-                }
+                scenarioContext.MessageReceived = true;
+                await context.Reply(new Reply());
             }
         }
-
-        public class Message : ICommand
-        {
-        }
-
-        public class Reply : IMessage
-        {
-        }
     }
+
+    public class Message : ICommand;
+
+    public class Reply : IMessage;
 }

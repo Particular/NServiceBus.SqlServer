@@ -1,48 +1,47 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.MultiSchema;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+
+public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
+    public const string ReceiverSchema = "receiver";
 
-    public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
+    public class Context : ScenarioContext
     {
-        public const string ReceiverSchema = "receiver";
+        public bool MessageReceived { get; set; }
+    }
 
-        public class Context : ScenarioContext
+    public class Receiver : EndpointConfigurationBuilder
+    {
+        public Receiver()
         {
-            public bool MessageReceived { get; set; }
+            EndpointSetup<DefaultServer>(c =>
+            {
+                c.ConfigureSqlServerTransport().DefaultSchema = ReceiverSchema;
+            });
         }
 
-        public class Receiver : EndpointConfigurationBuilder
+        class Handler : IHandleMessages<Message>
         {
-            public Receiver()
+            readonly Context scenarioContext;
+            public Handler(Context scenarioContext)
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    c.ConfigureSqlServerTransport().DefaultSchema = ReceiverSchema;
-                });
+                this.scenarioContext = scenarioContext;
             }
 
-            class Handler : IHandleMessages<Message>
+            public Task Handle(Message message, IMessageHandlerContext context)
             {
-                readonly Context scenarioContext;
-                public Handler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
+                scenarioContext.MessageReceived = true;
 
-                public Task Handle(Message message, IMessageHandlerContext context)
-                {
-                    scenarioContext.MessageReceived = true;
-
-                    return Task.FromResult(0);
-                }
+                return Task.FromResult(0);
             }
         }
+    }
 
-        public class Message : IMessage
-        {
-        }
+    public class Message : IMessage
+    {
     }
 }

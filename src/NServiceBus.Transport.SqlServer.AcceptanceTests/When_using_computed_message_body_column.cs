@@ -1,57 +1,56 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests;
+
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+
+public class When_using_computed_message_body_column : NServiceBusAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-
-    public class When_using_computed_message_body_column : NServiceBusAcceptanceTest
+    [Test]
+    public async Task Simple_send_is_received()
     {
-        [Test]
-        public async Task Simple_send_is_received()
-        {
-            var context = await Scenario.Define<Context>()
-                .WithEndpoint<Endpoint>(b => b.When((session, c) => session.SendLocal(new MyMessage())))
-                .Done(c => c.WasCalled)
-                .Run();
+        var context = await Scenario.Define<Context>()
+            .WithEndpoint<Endpoint>(b => b.When((session, c) => session.SendLocal(new MyMessage())))
+            .Done(c => c.WasCalled)
+            .Run();
 
-            Assert.That(context.WasCalled, Is.True);
-        }
-        class Context : ScenarioContext
-        {
-            public bool WasCalled { get; set; }
-        }
+        Assert.That(context.WasCalled, Is.True);
+    }
+    class Context : ScenarioContext
+    {
+        public bool WasCalled { get; set; }
+    }
 
-        class Endpoint : EndpointConfigurationBuilder
+    class Endpoint : EndpointConfigurationBuilder
+    {
+        public Endpoint()
         {
-            public Endpoint()
+            EndpointSetup<DefaultServer>(config =>
             {
-                EndpointSetup<DefaultServer>(config =>
-                {
-                    var transportConfig = config.ConfigureSqlServerTransport();
-                    transportConfig.CreateMessageBodyComputedColumn = true;
-                });
+                var transportConfig = config.ConfigureSqlServerTransport();
+                transportConfig.CreateMessageBodyComputedColumn = true;
+            });
+        }
+
+        public class MyMessageHandler : IHandleMessages<MyMessage>
+        {
+            readonly Context scenarioContext;
+            public MyMessageHandler(Context scenarioContext)
+            {
+                this.scenarioContext = scenarioContext;
             }
 
-            public class MyMessageHandler : IHandleMessages<MyMessage>
+            public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                readonly Context scenarioContext;
-                public MyMessageHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
-                public Task Handle(MyMessage message, IMessageHandlerContext context)
-                {
-                    scenarioContext.WasCalled = true;
-                    return Task.FromResult(0);
-                }
+                scenarioContext.WasCalled = true;
+                return Task.FromResult(0);
             }
         }
+    }
 
-        public class MyMessage : IMessage
-        {
-        }
+    public class MyMessage : IMessage
+    {
     }
 }
