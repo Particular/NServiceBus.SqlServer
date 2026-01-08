@@ -40,11 +40,12 @@
                 }))
                 .Run();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
+                Assert.That(context.MarkerMessageReceived, Is.True);
                 Assert.That(context.SendFromRollbackedScopeReceived, Is.False);
                 Assert.That(context.PublishFromRollbackedScopeReceived, Is.False);
-            });
+            }
         }
 
         [Test]
@@ -131,7 +132,7 @@
                 public Task Handle(EventFromCompletedScope message, IMessageHandlerContext context)
                 {
                     scenarioContext.PublishFromCompletedScopeReceived = true;
-
+                    scenarioContext.MaybeMarkAsCompleted();
                     return Task.CompletedTask;
                 }
 
