@@ -16,32 +16,22 @@ public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAc
 
     public class Receiver : EndpointConfigurationBuilder
     {
-        public Receiver()
-        {
+        public Receiver() =>
             EndpointSetup<DefaultServer>(c =>
             {
                 c.ConfigureSqlServerTransport().DefaultSchema = ReceiverSchema;
             });
-        }
 
-        class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageReceived = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 }

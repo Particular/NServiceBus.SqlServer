@@ -36,7 +36,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
         configuration.UseTransport(transport);
         this.endpointName = endpointName;
 
-        return Task.FromResult(0);
+        return Task.CompletedTask;
     }
 
     public async Task Cleanup()

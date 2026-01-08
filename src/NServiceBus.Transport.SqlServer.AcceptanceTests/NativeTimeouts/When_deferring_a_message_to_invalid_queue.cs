@@ -41,7 +41,6 @@ public class When_deferring_a_message_to_invalid_queue : NServiceBusAcceptanceTe
                     return session.Send(new MyMessage(), options);
                 }))
             .WithEndpoint<ErrorSpy>()
-            .Done(c => c.MessageForwardedToErrorQueue)
             .Run();
 
         Assert.Multiple(() =>
@@ -59,41 +58,28 @@ public class When_deferring_a_message_to_invalid_queue : NServiceBusAcceptanceTe
 
     public class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
+        public Endpoint() =>
             EndpointSetup<DefaultServer>(config =>
             {
                 config.SendFailedMessagesTo(Conventions.EndpointNamingConvention(typeof(ErrorSpy)));
             });
-        }
     }
 
     public class ErrorSpy : EndpointConfigurationBuilder
     {
-        public ErrorSpy()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public ErrorSpy() => EndpointSetup<DefaultServer>();
 
-        class Handler : IHandleMessages<MyMessage>
+        class Handler(Context scenarioContext) : IHandleMessages<MyMessage>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
                 scenarioContext.Headers = context.MessageHeaders;
                 scenarioContext.MessageForwardedToErrorQueue = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class MyMessage : IMessage
-    {
-    }
+    public class MyMessage : IMessage;
 }

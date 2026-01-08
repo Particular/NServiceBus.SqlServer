@@ -45,12 +45,10 @@ public class When_using_computed_message_body_column : NServiceBusAcceptanceTest
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
                 scenarioContext.WasCalled = true;
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class MyMessage : IMessage
-    {
-    }
+    public class MyMessage : IMessage;
 }

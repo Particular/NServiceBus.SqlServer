@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Customization;
 using NServiceBus.AcceptanceTests;
@@ -61,7 +62,7 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
         var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse);
 
         var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
-        await queueCreator.CreateQueueIfNecessary(new[] { endpoint }, null);
+        await queueCreator.CreateQueueIfNecessary([endpoint], null);
 
         var tableBasedQueueCache = new TableBasedQueueCache(
             (address, isStreamSupported) =>
@@ -75,10 +76,10 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
         var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
         using (var connection = await connectionFactory.OpenNewConnection())
-        using (var transaction = connection.BeginTransaction())
+        using (var transaction = await connection.BeginTransactionAsync())
         {
             await SendMessage(new Message(), TimeSpan.FromSeconds(5));
-            transaction.Commit();
+            await transaction.CommitAsync();
 
             Task SendMessage<T>(T message, TimeSpan ttbr)
             {
@@ -102,33 +103,19 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
     bool QueueIsEmpty()
     {
         var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
-        using (var connection = new SqlConnection(connectionString))
-        {
-            connection.Open();
-            using (var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection))
-            {
-                var numberOfMessagesInQueue = (int)command.ExecuteScalar();
-                return numberOfMessagesInQueue == 0;
-            }
-        }
+        using var connection = new SqlConnection(connectionString);
+        connection.Open();
+        using var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection);
+        var numberOfMessagesInQueue = (int)command.ExecuteScalar();
+        return numberOfMessagesInQueue == 0;
     }
 
     class TestEndpoint : EndpointConfigurationBuilder
     {
-        public TestEndpoint()
+        public TestEndpoint() => EndpointSetup<DefaultServer>(config => config.UseSerialization<SystemJsonSerializer>());
+
+        class MessageHandler(Context testContext) : IHandleMessages<Message>
         {
-            EndpointSetup<DefaultServer>(config => config.UseSerialization<SystemJsonSerializer>());
-        }
-
-        class MessageHandler : IHandleMessages<Message>
-        {
-            readonly Context testContext;
-
-            public MessageHandler(Context testContext)
-            {
-                this.testContext = testContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 testContext.MessageWasHandled = true;
@@ -137,9 +124,7 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
         }
     }
 
-    public class Message : IMessage
-    {
-    }
+    public class Message : IMessage;
 
     class Context : ScenarioContext
     {

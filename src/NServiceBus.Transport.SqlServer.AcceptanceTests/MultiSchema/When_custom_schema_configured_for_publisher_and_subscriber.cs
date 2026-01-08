@@ -54,7 +54,7 @@ public class When_custom_schema_configured_for_publisher_and_subscriber : NServi
             public Task Handle(Event message, IMessageHandlerContext context)
             {
                 scenarioContext.MarkAsCompleted();
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }

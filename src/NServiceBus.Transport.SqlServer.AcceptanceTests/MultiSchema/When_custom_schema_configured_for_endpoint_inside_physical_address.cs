@@ -18,7 +18,6 @@ public class When_custom_schema_configured_for_endpoint_inside_physical_address 
         var ctx = await Scenario.Define<Context>()
             .WithEndpoint<Sender>(b => b.When((bus, c) => bus.Send(new Message())))
             .WithEndpoint<Receiver>()
-            .Done(c => c.MessageReceived)
             .Run();
 
         Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
@@ -26,8 +25,7 @@ public class When_custom_schema_configured_for_endpoint_inside_physical_address 
 
     public class Sender : EndpointConfigurationBuilder
     {
-        public Sender()
-        {
+        public Sender() =>
             EndpointSetup<DefaultServer>((c, r) =>
             {
                 var receiverAddress = ConfigurationHelpers.BuildAddressWithSchema(EndpointNamingConvention(typeof(Receiver)), ReceiverSchema);
@@ -39,6 +37,5 @@ public class When_custom_schema_configured_for_endpoint_inside_physical_address 
                         new RouteTableEntry(typeof(Message), UnicastRoute.CreateFromPhysicalAddress(receiverAddress))
                     ]);
             });
-        }
     }
 }

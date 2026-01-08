@@ -31,44 +31,28 @@ public class When_deferring_multiple_messages : NServiceBusAcceptanceTest
 
                 await session.Send(new MyMessage { Which = "Short" }, options);
             }))
-            .Done(c => c.WasCalled)
             .Run();
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(context.WasCalled, Is.True);
-            Assert.That(context.WhichWasCalled, Is.EqualTo("Short"));
-        });
+        Assert.That(context.WhichWasCalled, Is.EqualTo("Short"));
     }
 
     public class Context : ScenarioContext
     {
-        public bool WasCalled { get; set; }
         public string WhichWasCalled { get; set; }
     }
 
     public class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public Endpoint() => EndpointSetup<DefaultServer>();
 
-        public class MyMessageHandler : IHandleMessages<MyMessage>
+        public class MyMessageHandler(Context testContext) : IHandleMessages<MyMessage>
         {
-            public MyMessageHandler(Context testContext)
-            {
-                this.testContext = testContext;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                testContext.WasCalled = true;
                 testContext.WhichWasCalled = message.Which;
-                return Task.FromResult(0);
+                testContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
-
-            Context testContext;
         }
     }
 

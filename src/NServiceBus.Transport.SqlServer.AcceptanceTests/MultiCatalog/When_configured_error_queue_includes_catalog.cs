@@ -23,7 +23,6 @@ public class When_configured_error_queue_includes_catalog : MultiCatalogAcceptan
                 b.When((bus, c) => bus.SendLocal(new Message()));
             })
             .WithEndpoint<ErrorSpy>()
-            .Done(c => c.FailedMessageProcessed)
             .Run();
 
         Assert.That(ctx.FailedMessageProcessed, Is.True, "Message should be moved to error queue in custom schema");
@@ -54,38 +53,26 @@ public class When_configured_error_queue_includes_catalog : MultiCatalogAcceptan
 
         class Handler : IHandleMessages<Message>
         {
-            public Task Handle(Message message, IMessageHandlerContext context)
-            {
-                throw new Exception("Simulated exception");
-            }
+            public Task Handle(Message message, IMessageHandlerContext context) => throw new Exception("Simulated exception");
         }
     }
 
     public class ErrorSpy : EndpointConfigurationBuilder
     {
-        public ErrorSpy()
-        {
-            EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => { });
-        }
+        public ErrorSpy() => EndpointSetup(new CustomizedServer(SpyConnectionString), (c, sd) => { });
 
-        class Handler : IHandleMessages<Message>
+        class Handler(Context scenarioContext) : IHandleMessages<Message>
         {
-            readonly Context scenarioContext;
-            public Handler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.FailedMessageProcessed = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class Message : ICommand { }
+    public class Message : ICommand;
 
     static string SenderConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus1");
     static string SpyConnectionString => WithCustomCatalog(GetDefaultConnectionString(), "nservicebus2");

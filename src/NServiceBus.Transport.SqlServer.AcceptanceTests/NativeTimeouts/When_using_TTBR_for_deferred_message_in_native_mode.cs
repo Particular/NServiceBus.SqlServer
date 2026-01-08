@@ -21,7 +21,6 @@ public class When_using_TTBR_for_deferred_message_in_native_mode : NServiceBusAc
 
                 return session.Send(new MyMessage(), options);
             }))
-            .Done(c => c.WasCalled)
             .Run());
 
         Assert.That(exception.Message, Does.Contain("Delayed delivery of messages with TimeToBeReceived set is not supported. Remove the TimeToBeReceived attribute to delay messages of this type."));
@@ -34,29 +33,18 @@ public class When_using_TTBR_for_deferred_message_in_native_mode : NServiceBusAc
 
     public class Endpoint : EndpointConfigurationBuilder
     {
-        public Endpoint()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public Endpoint() => EndpointSetup<DefaultServer>();
 
-        public class MyMessageHandler : IHandleMessages<MyMessage>
+        public class MyMessageHandler(Context scenarioContext) : IHandleMessages<MyMessage>
         {
-            readonly Context scenarioContext;
-            public MyMessageHandler(Context scenarioContext)
-            {
-                this.scenarioContext = scenarioContext;
-            }
-
             public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                scenarioContext.WasCalled = true;
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
     [TimeToBeReceived("00:00:10")]
-    public class MyMessage : IMessage
-    {
-    }
+    public class MyMessage : IMessage;
 }

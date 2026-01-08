@@ -11,12 +11,11 @@ public class When_catalog_with_special_characters_configured_for_endpoint : Mult
     [Test]
     public async Task Should_be_able_to_send_messages_to_the_endpoint()
     {
-        await Scenario.Define<Context>()
+        var context = await Scenario.Define<Context>()
             .WithEndpoint<AnEndpoint>(c => c.When(s => s.SendLocal(new Message())))
-            .Done(c => c.MessageReceived)
             .Run();
 
-        Assert.Pass();
+        Assert.That(context.MessageReceived, Is.True);
     }
 
     public class AnEndpoint : EndpointConfigurationBuilder
@@ -29,15 +28,13 @@ public class When_catalog_with_special_characters_configured_for_endpoint : Mult
             public Task Handle(Message message, IMessageHandlerContext context)
             {
                 scenarioContext.MessageReceived = true;
-
-                return Task.FromResult(0);
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
             }
         }
     }
 
-    public class Message : ICommand
-    {
-    }
+    public class Message : ICommand;
 
     class Context : ScenarioContext
     {

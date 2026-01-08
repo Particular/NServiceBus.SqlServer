@@ -31,9 +31,6 @@ public class When_custom_schema_configured_for_local_endpoint : NServiceBusAccep
 
     public class Receiver : EndpointConfigurationBuilder
     {
-        public Receiver()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public Receiver() => EndpointSetup<DefaultServer>();
     }
 }

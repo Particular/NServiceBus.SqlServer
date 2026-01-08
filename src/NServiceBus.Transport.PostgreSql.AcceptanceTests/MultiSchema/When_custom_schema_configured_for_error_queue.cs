@@ -80,7 +80,7 @@ public class When_custom_schema_configured_for_error_queue : NServiceBusAcceptan
             {
                 scenarioContext.FailedMessageProcessed = true;
 
-                return Task.FromResult(0);
+                return Task.CompletedTask;
             }
         }
     }

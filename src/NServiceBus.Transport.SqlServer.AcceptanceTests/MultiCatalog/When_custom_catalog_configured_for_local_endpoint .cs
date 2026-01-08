@@ -30,9 +30,6 @@ public class When_custom_catalog_configured_for_local_endpoint : MultiCatalogAcc
 
     public class Receiver : EndpointConfigurationBuilder
     {
-        public Receiver()
-        {
-            EndpointSetup<DefaultServer>();
-        }
+        public Receiver() => EndpointSetup<DefaultServer>();
     }
 }
