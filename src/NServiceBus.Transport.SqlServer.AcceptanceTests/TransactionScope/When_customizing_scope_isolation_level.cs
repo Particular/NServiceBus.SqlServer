@@ -1,75 +1,74 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.TransactionScope
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.TransactionScope;
+
+using System.Threading.Tasks;
+using System.Transactions;
+using AcceptanceTesting;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+
+public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
 {
-    using System.Threading.Tasks;
-    using System.Transactions;
-    using AcceptanceTesting;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-
-    public class When_customizing_scope_isolation_level : NServiceBusAcceptanceTest
+    [Test]
+    public async Task Should_honor_configured_level()
     {
-        [Test]
-        public async Task Should_honor_configured_level()
+        Requires.DtcSupport();
+
+        var context = await Scenario.Define<Context>()
+            .WithEndpoint<Endpoint>(c => c.When(b => b.SendLocal(new MyMessage())))
+            .Done(c => c.Done)
+            .Run();
+
+        Assert.Multiple(() =>
         {
-            Requires.DtcSupport();
+            Assert.That(context.AmbientTransactionPresent, Is.True, "There should be an ambient transaction present");
+            Assert.That(context.IsolationLevel, Is.EqualTo(IsolationLevel.RepeatableRead), "Ambient transaction should have configured isolation level");
+        });
+    }
 
-            var context = await Scenario.Define<Context>()
-                .WithEndpoint<Endpoint>(c => c.When(b => b.SendLocal(new MyMessage())))
-                .Done(c => c.Done)
-                .Run();
+    public class MyMessage : IMessage
+    {
+    }
 
-            Assert.Multiple(() =>
+    class Context : ScenarioContext
+    {
+        public bool Done { get; set; }
+        public bool AmbientTransactionPresent { get; set; }
+        public IsolationLevel IsolationLevel { get; set; }
+    }
+
+    class Endpoint : EndpointConfigurationBuilder
+    {
+        public Endpoint()
+        {
+            EndpointSetup<DefaultServer>(c =>
             {
-                Assert.That(context.AmbientTransactionPresent, Is.True, "There should be an ambient transaction present");
-                Assert.That(context.IsolationLevel, Is.EqualTo(IsolationLevel.RepeatableRead), "Ambient transaction should have configured isolation level");
+                var transport = c.ConfigureSqlServerTransport();
+                transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
+                transport.TransactionScope.IsolationLevel = IsolationLevel.RepeatableRead;
             });
         }
 
-        public class MyMessage : IMessage
+        class MyMessageHandler : IHandleMessages<MyMessage>
         {
-        }
-
-        class Context : ScenarioContext
-        {
-            public bool Done { get; set; }
-            public bool AmbientTransactionPresent { get; set; }
-            public IsolationLevel IsolationLevel { get; set; }
-        }
-
-        class Endpoint : EndpointConfigurationBuilder
-        {
-            public Endpoint()
+            readonly Context scenarioContext;
+            public MyMessageHandler(Context scenarioContext)
             {
-                EndpointSetup<DefaultServer>(c =>
-                {
-                    var transport = c.ConfigureSqlServerTransport();
-                    transport.TransportTransactionMode = TransportTransactionMode.TransactionScope;
-                    transport.TransactionScope.IsolationLevel = IsolationLevel.RepeatableRead;
-                });
+                this.scenarioContext = scenarioContext;
             }
 
-            class MyMessageHandler : IHandleMessages<MyMessage>
+            public Task Handle(MyMessage message, IMessageHandlerContext context)
             {
-                readonly Context scenarioContext;
-                public MyMessageHandler(Context scenarioContext)
+                var ambientTransactionPresent = Transaction.Current != null;
+
+                scenarioContext.AmbientTransactionPresent = ambientTransactionPresent;
+                if (ambientTransactionPresent)
                 {
-                    this.scenarioContext = scenarioContext;
+                    scenarioContext.IsolationLevel = Transaction.Current.IsolationLevel;
                 }
+                scenarioContext.Done = true;
 
-                public Task Handle(MyMessage message, IMessageHandlerContext context)
-                {
-                    var ambientTransactionPresent = Transaction.Current != null;
-
-                    scenarioContext.AmbientTransactionPresent = ambientTransactionPresent;
-                    if (ambientTransactionPresent)
-                    {
-                        scenarioContext.IsolationLevel = Transaction.Current.IsolationLevel;
-                    }
-                    scenarioContext.Done = true;
-
-                    return Task.FromResult(0);
-                }
+                return Task.FromResult(0);
             }
         }
     }

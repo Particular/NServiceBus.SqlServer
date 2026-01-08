@@ -1,177 +1,176 @@
-﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativePubSub
+﻿namespace NServiceBus.Transport.SqlServer.AcceptanceTests.NativePubSub;
+
+using System;
+using System.Threading.Tasks;
+using AcceptanceTesting;
+using AcceptanceTesting.Support;
+using Configuration.AdvancedExtensibility;
+using Features;
+using NServiceBus.AcceptanceTests;
+using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
+using Routing.MessageDrivenSubscriptions;
+using Conventions = AcceptanceTesting.Customization.Conventions;
+
+public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
 {
-    using System;
-    using System.Threading.Tasks;
-    using AcceptanceTesting;
-    using AcceptanceTesting.Support;
-    using Configuration.AdvancedExtensibility;
-    using Features;
-    using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
-    using NUnit.Framework;
-    using Routing.MessageDrivenSubscriptions;
-    using Conventions = AcceptanceTesting.Customization.Conventions;
+    static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
+    static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-    public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
+    [Test]
+    public async Task Should_not_lose_any_events()
     {
-        static string PublisherEndpoint => Conventions.EndpointNamingConvention(typeof(Publisher));
-        static readonly string _connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
+        var subscriptionStorage = new TestingInMemorySubscriptionStorage();
 
-        [Test]
-        public async Task Should_not_lose_any_events()
-        {
-            var subscriptionStorage = new TestingInMemorySubscriptionStorage();
-
-            //Before migration begins
-            var beforeMigration = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(_connectionString, false), b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                    });
-                    b.When(c => c.SubscribedMessageDriven, (session, _) => session.Publish(new MyEvent()));
-                })
-
-                .WithEndpoint(new Subscriber(_connectionString, false), b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig",
-                        [
-                            new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
-                        ]);
-                    });
-                    b.When(async (session, _) =>
-                    {
-                        await session.Subscribe<MyEvent>();
-                    });
-                })
-                .Run();
-
-            Assert.That(beforeMigration.GotTheEvent, Is.True);
-
-            //Subscriber migrated and in compatibility mode.
-            var subscriberMigratedRunSettings = new RunSettings();
-            subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
-            var subscriberMigrated = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(_connectionString, false), b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                    });
-                    b.When(c => c.SubscribedMessageDriven, (session, _) => session.Publish(new MyEvent()));
-                })
-                .WithEndpoint<Subscriber>(b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
-                        var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
-                        compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
-                    });
-                    b.When(async (session, ctx) =>
-                    {
-                        //Subscribes both using native feature and message-driven
-                        await session.Subscribe<MyEvent>();
-                        ctx.SubscribedNative = true;
-                    });
-                })
-                .Done(c => c is { GotTheEvent: true, SubscribedNative: true }) //we ensure the subscriber did subscriber with the native mechanism
-                .Run(subscriberMigratedRunSettings);
-
-            Assert.That(subscriberMigrated.GotTheEvent, Is.True);
-
-            //Publisher migrated and in compatibility mode
-            var publisherMigratedRunSettings = new RunSettings();
-            publisherMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
-            var publisherMigrated = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(_connectionString, true), b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
-                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
-                    });
-                    b.When(c => c is { SubscribedMessageDriven: true, SubscribedNative: true }, (session, ctx) => session.Publish(new MyEvent()));
-                })
-                .WithEndpoint<Subscriber>(b =>
-                {
-                    b.CustomConfig(c =>
-                    {
-                        c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
-                        var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
-                        compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
-                    });
-                    b.When(async (session, ctx) =>
-                    {
-                        await session.Subscribe<MyEvent>();
-                        ctx.SubscribedNative = true;
-                    });
-                })
-                .Run(publisherMigratedRunSettings);
-
-            Assert.That(publisherMigrated.GotTheEvent, Is.True);
-
-            //Compatibility mode disabled in both publisher and subscriber
-            var compatModeDisabled = await Scenario.Define<Context>()
-                .WithEndpoint(new Publisher(_connectionString, true), b =>
-                {
-                    b.When((session, _) => session.Publish(new MyEvent()));
-                })
-                .WithEndpoint<Subscriber>()
-                .Run();
-
-            Assert.That(compatModeDisabled.GotTheEvent, Is.True);
-        }
-
-        public class Context : ScenarioContext
-        {
-            public bool GotTheEvent { get; set; }
-            public bool SubscribedMessageDriven { get; set; }
-            public bool SubscribedNative { get; set; }
-        }
-
-        public class Publisher : EndpointConfigurationBuilder
-        {
-            public Publisher(string connectionString, bool supportsPublishSubscribe) =>
-                EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
-                {
-                    c.OnEndpointSubscribed<Context>((s, context) =>
-                    {
-                        if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
-                        {
-                            context.SubscribedMessageDriven = true;
-                        }
-                    });
-                }).IncludeType<TestingInMemorySubscriptionPersistence>();
-        }
-
-        public class Subscriber : EndpointConfigurationBuilder
-        {
-            public Subscriber() : this(_connectionString, true)
+        //Before migration begins
+        var beforeMigration = await Scenario.Define<Context>()
+            .WithEndpoint(new Publisher(_connectionString, false), b =>
             {
-            }
-
-            public Subscriber(string connectionString, bool supportsPublishSubscribe) =>
-                EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
-                    {
-                        c.DisableFeature<AutoSubscribe>();
-                    },
-                    metadata => metadata.RegisterPublisherFor<MyEvent>(typeof(Publisher)));
-
-            public class Handler(Context scenarioContext) : IHandleMessages<MyEvent>
-            {
-                public Task Handle(MyEvent @event, IMessageHandlerContext context)
+                b.CustomConfig(c =>
                 {
-                    scenarioContext.GotTheEvent = true;
-                    scenarioContext.MarkAsCompleted();
-                    return Task.CompletedTask;
-                }
-            }
-        }
+                    c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
+                });
+                b.When(c => c.SubscribedMessageDriven, (session, _) => session.Publish(new MyEvent()));
+            })
 
-        public class MyEvent : IEvent;
+            .WithEndpoint(new Subscriber(_connectionString, false), b =>
+            {
+                b.CustomConfig(c =>
+                {
+                    c.GetSettings().GetOrCreate<Publishers>().AddOrReplacePublishers("LegacyConfig",
+                    [
+                        new PublisherTableEntry(typeof(MyEvent), PublisherAddress.CreateFromEndpointName(PublisherEndpoint))
+                    ]);
+                });
+                b.When(async (session, _) =>
+                {
+                    await session.Subscribe<MyEvent>();
+                });
+            })
+            .Run();
+
+        Assert.That(beforeMigration.GotTheEvent, Is.True);
+
+        //Subscriber migrated and in compatibility mode.
+        var subscriberMigratedRunSettings = new RunSettings();
+        subscriberMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
+        var subscriberMigrated = await Scenario.Define<Context>()
+            .WithEndpoint(new Publisher(_connectionString, false), b =>
+            {
+                b.CustomConfig(c =>
+                {
+                    c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
+                });
+                b.When(c => c.SubscribedMessageDriven, (session, _) => session.Publish(new MyEvent()));
+            })
+            .WithEndpoint<Subscriber>(b =>
+            {
+                b.CustomConfig(c =>
+                {
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+                    var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
+                    compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
+                });
+                b.When(async (session, ctx) =>
+                {
+                    //Subscribes both using native feature and message-driven
+                    await session.Subscribe<MyEvent>();
+                    ctx.SubscribedNative = true;
+                });
+            })
+            .Done(c => c is { GotTheEvent: true, SubscribedNative: true }) //we ensure the subscriber did subscriber with the native mechanism
+            .Run(subscriberMigratedRunSettings);
+
+        Assert.That(subscriberMigrated.GotTheEvent, Is.True);
+
+        //Publisher migrated and in compatibility mode
+        var publisherMigratedRunSettings = new RunSettings();
+        publisherMigratedRunSettings.Set("DoNotCleanNativeSubscriptions", true);
+        var publisherMigrated = await Scenario.Define<Context>()
+            .WithEndpoint(new Publisher(_connectionString, true), b =>
+            {
+                b.CustomConfig(c =>
+                {
+                    c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+                });
+                b.When(c => c is { SubscribedMessageDriven: true, SubscribedNative: true }, (session, ctx) => session.Publish(new MyEvent()));
+            })
+            .WithEndpoint<Subscriber>(b =>
+            {
+                b.CustomConfig(c =>
+                {
+                    c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+                    var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
+                    compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
+                });
+                b.When(async (session, ctx) =>
+                {
+                    await session.Subscribe<MyEvent>();
+                    ctx.SubscribedNative = true;
+                });
+            })
+            .Run(publisherMigratedRunSettings);
+
+        Assert.That(publisherMigrated.GotTheEvent, Is.True);
+
+        //Compatibility mode disabled in both publisher and subscriber
+        var compatModeDisabled = await Scenario.Define<Context>()
+            .WithEndpoint(new Publisher(_connectionString, true), b =>
+            {
+                b.When((session, _) => session.Publish(new MyEvent()));
+            })
+            .WithEndpoint<Subscriber>()
+            .Run();
+
+        Assert.That(compatModeDisabled.GotTheEvent, Is.True);
     }
+
+    public class Context : ScenarioContext
+    {
+        public bool GotTheEvent { get; set; }
+        public bool SubscribedMessageDriven { get; set; }
+        public bool SubscribedNative { get; set; }
+    }
+
+    public class Publisher : EndpointConfigurationBuilder
+    {
+        public Publisher(string connectionString, bool supportsPublishSubscribe) =>
+            EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
+            {
+                c.OnEndpointSubscribed<Context>((s, context) =>
+                {
+                    if (s.SubscriberEndpoint.Contains(Conventions.EndpointNamingConvention(typeof(Subscriber))))
+                    {
+                        context.SubscribedMessageDriven = true;
+                    }
+                });
+            }).IncludeType<TestingInMemorySubscriptionPersistence>();
+    }
+
+    public class Subscriber : EndpointConfigurationBuilder
+    {
+        public Subscriber() : this(_connectionString, true)
+        {
+        }
+
+        public Subscriber(string connectionString, bool supportsPublishSubscribe) =>
+            EndpointSetup(new CustomizedServer(connectionString, supportsPublishSubscribe), (c, rd) =>
+                {
+                    c.DisableFeature<AutoSubscribe>();
+                },
+                metadata => metadata.RegisterPublisherFor<MyEvent>(typeof(Publisher)));
+
+        public class Handler(Context scenarioContext) : IHandleMessages<MyEvent>
+        {
+            public Task Handle(MyEvent @event, IMessageHandlerContext context)
+            {
+                scenarioContext.GotTheEvent = true;
+                scenarioContext.MarkAsCompleted();
+                return Task.CompletedTask;
+            }
+        }
+    }
+
+    public class MyEvent : IEvent;
 }
