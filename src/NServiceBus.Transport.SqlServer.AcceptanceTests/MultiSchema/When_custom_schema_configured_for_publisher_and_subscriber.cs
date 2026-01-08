@@ -10,29 +10,24 @@
     public class When_custom_schema_configured_for_publisher_and_subscriber : NServiceBusAcceptanceTest
     {
         [Test]
-        public Task Should_receive_event()
-        {
-            return Scenario.Define<Context>()
+        public Task Should_receive_event() =>
+            Scenario.Define<Context>()
                 .WithEndpoint<Publisher>(b => b.When(c => c.Subscribed, session => session.Publish(new Event())))
-                .WithEndpoint<Subscriber>(b => b.When(c => c.EndpointsStarted, async (s, ctx) =>
+                .WithEndpoint<Subscriber>(b => b.When(async (s, ctx) =>
                 {
                     await s.Subscribe(typeof(Event)).ConfigureAwait(false);
                     ctx.Subscribed = true;
                 }))
-                .Done(c => c.EventReceived)
                 .Run();
-        }
 
         class Context : ScenarioContext
         {
-            public bool EventReceived { get; set; }
             public bool Subscribed { get; set; }
         }
 
         class Publisher : EndpointConfigurationBuilder
         {
-            public Publisher()
-            {
+            public Publisher() =>
                 EndpointSetup<DefaultPublisher>(b =>
                 {
                     var transport = b.ConfigureSqlServerTransport();
@@ -40,13 +35,11 @@
                     transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
                     transport.Subscriptions.DisableCaching = true;
                 });
-            }
         }
 
         class Subscriber : EndpointConfigurationBuilder
         {
-            public Subscriber()
-            {
+            public Subscriber() =>
                 EndpointSetup<DefaultServer>(c =>
                 {
                     var transport = c.ConfigureSqlServerTransport();
@@ -55,26 +48,17 @@
 
                     c.DisableFeature<AutoSubscribe>();
                 });
-            }
 
-            class EventHandler : IHandleMessages<Event>
+            class EventHandler(Context scenarioContext) : IHandleMessages<Event>
             {
-                readonly Context scenarioContext;
-                public EventHandler(Context scenarioContext)
-                {
-                    this.scenarioContext = scenarioContext;
-                }
-
                 public Task Handle(Event message, IMessageHandlerContext context)
                 {
-                    scenarioContext.EventReceived = true;
+                    scenarioContext.MarkAsCompleted();
                     return Task.FromResult(0);
                 }
             }
         }
 
-        public class Event : IEvent
-        {
-        }
+        public class Event : IEvent;
     }
 }
