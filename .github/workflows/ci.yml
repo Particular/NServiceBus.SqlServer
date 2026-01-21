@@ -65,7 +65,7 @@ jobs:
         uses: azure/login@v2.3.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
-      - name: Setup PostgreSql 15.x
+      - name: Setup PostgreSQL
         uses: Particular/setup-postgres-action@v1.1.0
         with:
           connection-string-name: PostgreSqlTransportConnectionString
