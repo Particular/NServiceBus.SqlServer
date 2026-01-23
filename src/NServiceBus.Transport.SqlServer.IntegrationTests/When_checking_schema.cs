@@ -33,7 +33,7 @@
             using (var connection = await dbConnectionFactory.OpenNewConnection())
             {
                 var type = await queue.CheckHeadersColumnType(connection);
-                Assert.AreEqual("nvarchar", type);
+                Assert.That(type, Is.EqualTo("nvarchar"));
             }
         }
 

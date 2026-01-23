@@ -16,7 +16,7 @@
                 .Done(c => c.WasCalled)
                 .Run();
 
-            Assert.IsTrue(context.WasCalled);
+            Assert.That(context.WasCalled, Is.True);
         }
         class Context : ScenarioContext
         {

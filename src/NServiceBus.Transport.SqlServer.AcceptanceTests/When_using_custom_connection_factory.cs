@@ -3,10 +3,8 @@
     using System;
     using System.Threading.Tasks;
     using AcceptanceTesting;
-    using AcceptanceTesting.Customization;
     using Microsoft.Data.SqlClient;
     using NServiceBus.AcceptanceTests;
-    using NServiceBus.AcceptanceTests.EndpointTemplates;
     using NUnit.Framework;
 
     public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
@@ -19,7 +17,7 @@
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            Assert.True(ctx.MessageReceived, "Message should be properly received");
+            Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
         }
 
         static string GetConnectionString() =>
