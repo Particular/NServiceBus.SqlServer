@@ -20,8 +20,8 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
         // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.That(expectedNextDelayedMessage, Is.EqualTo(strategy.NextDelayedMessage));
-        Assert.That(DateTime.MaxValue, Is.EqualTo(strategy.NextExecutionTime));
+        Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+        Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
     }
 
     [Test]
@@ -35,8 +35,8 @@ public class BackOffStrategyTests
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
         // We ignore calculating the time to wait, because that's not interesting in this test.
-        Assert.That(expectedNextDelayedMessage, Is.EqualTo(strategy.NextDelayedMessage));
-        Assert.That(DateTime.MaxValue, Is.EqualTo(strategy.NextExecutionTime));
+        Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
+        Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
     }
 
     [Test]

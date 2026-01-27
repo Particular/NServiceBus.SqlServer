@@ -27,7 +27,7 @@
 
             Assert.That(transport.Transport.ConnectionString, Is.EqualTo("connectionString"));
             Assert.That(transport.Transport.DefaultSchema, Is.EqualTo("schema"));
-            Assert.That(transport.Transport.ExpiredMessagesPurger.PurgeOnStartup, Is.EqualTo(true));
+            Assert.That(transport.Transport.ExpiredMessagesPurger.PurgeOnStartup, Is.True);
             Assert.That(transport.Transport.ExpiredMessagesPurger.PurgeBatchSize, Is.EqualTo(100));
             Assert.That(transport.Transport.QueuePeeker.Delay, Is.EqualTo(TimeSpan.FromSeconds(1)));
             Assert.That(transport.Transport.QueuePeeker.MaxRecordsToPeek, Is.EqualTo(100));
@@ -35,7 +35,7 @@
             Assert.That(transport.Transport.DelayedDelivery.TableSuffix, Is.EqualTo("suffix"));
             Assert.That(transport.Transport.DelayedDelivery.BatchSize, Is.EqualTo(100));
 
-            Assert.That(transport.Transport.Subscriptions.DisableCaching, Is.EqualTo(true));
+            Assert.That(transport.Transport.Subscriptions.DisableCaching, Is.True);
             Assert.That(transport.Transport.Subscriptions.CacheInvalidationPeriod, Is.EqualTo(TimeSpan.FromSeconds(1)));
             Assert.That(transport.Transport.Subscriptions.SubscriptionTableName.Qualify("dbo", "nsb").QuotedQualifiedName, Is.EqualTo("[catalog].[schema].[table]"));
         }

@@ -14,7 +14,7 @@
             var address = "my.tb[e@[my.[sch@ma]@[my.c@ta]]og]";
             var canonicalAddress = parser.Parse(address).Address;
 
-            Assert.That(address, Is.EqualTo(canonicalAddress));
+            Assert.That(canonicalAddress, Is.EqualTo(address));
         }
     }
 }

@@ -23,8 +23,8 @@
 
             Assert.That(failureInfo, Is.Not.Null);
             Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(1));
-            Assert.That(exception, Is.SameAs(failureInfo.Exception));
-            Assert.That(extensions, Is.SameAs(failureInfo.Context));
+            Assert.That(failureInfo.Exception, Is.SameAs(exception));
+            Assert.That(failureInfo.Context, Is.SameAs(extensions));
         }
 
         [Test]
@@ -42,7 +42,7 @@
 
             Assert.That(failureInfo, Is.Not.Null);
             Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
-            Assert.That(secondException, Is.SameAs(failureInfo.Exception));
+            Assert.That(failureInfo.Exception, Is.SameAs(secondException));
         }
 
         [Test]
