@@ -35,7 +35,7 @@
 
             var ctx = await onReceived.Task;
 
-            Assert.NotNull(ctx);
+            Assert.That(ctx, Is.Not.Null);
         }
     }
 

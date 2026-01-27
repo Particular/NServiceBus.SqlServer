@@ -34,8 +34,8 @@
                 .Done(c => c.WasCalled)
                 .Run();
 
-            Assert.True(context.WasCalled);
-            Assert.AreEqual("Short", context.WhichWasCalled);
+            Assert.That(context.WasCalled, Is.True);
+            Assert.That(context.WhichWasCalled, Is.EqualTo("Short"));
         }
 
         public class Context : ScenarioContext

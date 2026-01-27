@@ -28,8 +28,8 @@
                 .Done(c => c.FollowUpCommittedCommandReceived && c.FollowUpCommittedEventReceived)
                 .Run(TimeSpan.FromSeconds(10));
 
-            Assert.IsFalse(context.FollowUpRolledbackCommandReceived);
-            Assert.IsFalse(context.FollowUpRolledbackEventReceived);
+            Assert.That(context.FollowUpRolledbackCommandReceived, Is.False);
+            Assert.That(context.FollowUpRolledbackEventReceived, Is.False);
         }
 
         class InitiatingMessage : IMessage

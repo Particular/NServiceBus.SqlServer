@@ -22,7 +22,7 @@
                 .Done(c => c.FailedMessageProcessed)
                 .Run();
 
-            Assert.True(ctx.FailedMessageProcessed, "Message should be moved to error queue in custom schema");
+            Assert.That(ctx.FailedMessageProcessed, Is.True, "Message should be moved to error queue in custom schema");
         }
 
         public class Context : ScenarioContext

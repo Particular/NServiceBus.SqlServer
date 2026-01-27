@@ -72,7 +72,7 @@
                     })
                     .Run();
 
-                Assert.True(MessageExistsInErrorQueue(connectionString), "The message should have been moved to the error queue");
+                Assert.That(MessageExistsInErrorQueue(connectionString), Is.True, "The message should have been moved to the error queue");
             }
             finally
             {

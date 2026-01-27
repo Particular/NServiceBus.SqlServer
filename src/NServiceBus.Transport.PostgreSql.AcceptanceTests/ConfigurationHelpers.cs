@@ -1,7 +1,6 @@
 ﻿using NServiceBus;
 using NServiceBus.Configuration.AdvancedExtensibility;
 using NServiceBus.Transport;
-using NServiceBus.Transport.PostgreSql;
 
 static class ConfigurationHelpers
 {

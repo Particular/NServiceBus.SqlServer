@@ -11,7 +11,7 @@
         {
             var ex = Assert.Throws<Exception>(() => ConnectionAttributesParser.Parse(@"Data Source=.\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=true"));
 
-            StringAssert.Contains("Initial Catalog property is mandatory in the connection string.", ex.Message);
+            Assert.That(ex.Message, Does.Contain("Initial Catalog property is mandatory in the connection string."));
         }
 
         [TestCase("Initial catalog=my.catalog")]
@@ -22,17 +22,17 @@
         {
             var attributes = ConnectionAttributesParser.Parse(connectionString);
 
-            Assert.AreEqual("my.catalog", attributes.Catalog);
+            Assert.That(attributes.Catalog, Is.EqualTo("my.catalog"));
         }
 
         [TestCase("Initial Catalog=incorrect.catalog")]
         [TestCase("Database=incorrect.catalog")]
         public void It_overrides_catalog_with_default_catalog(string connectionString)
         {
-            var defaultCatalog = "correct.catalog";
+            const string defaultCatalog = "correct.catalog";
             var attributes = ConnectionAttributesParser.Parse(connectionString, defaultCatalog);
 
-            Assert.AreEqual(defaultCatalog, attributes.Catalog);
+            Assert.That(attributes.Catalog, Is.EqualTo(defaultCatalog));
         }
     }
 }

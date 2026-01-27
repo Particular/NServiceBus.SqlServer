@@ -39,7 +39,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
                 var messagesSent = await purger.Purge(queue);
 
-                Assert.AreEqual(2, messagesSent);
+                Assert.That(messagesSent, Is.EqualTo(2));
             }
         }
 
@@ -65,7 +65,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
             var messagesSent = await purger.Purge(queue);
 
-            Assert.AreEqual(0, messagesSent);
+            Assert.That(messagesSent, Is.EqualTo(0));
         }
 
         [Test]

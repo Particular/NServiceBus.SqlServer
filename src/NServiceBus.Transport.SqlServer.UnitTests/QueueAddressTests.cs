@@ -22,7 +22,7 @@
         {
             var address = new QueueAddress(tableName, schemaName, catalogName);
 
-            Assert.AreEqual(expectedAddress, address.Value);
+            Assert.That(address.Value, Is.EqualTo(expectedAddress));
         }
 
 
@@ -51,9 +51,9 @@
         {
             var parsedAddress = QueueAddress.Parse(transportAddress);
 
-            Assert.AreEqual(expectedTableName, parsedAddress.Table);
-            Assert.AreEqual(expectedSchema, parsedAddress.Schema);
-            Assert.AreEqual(expectedCatalog, parsedAddress.Catalog);
+            Assert.That(parsedAddress.Table, Is.EqualTo(expectedTableName));
+            Assert.That(parsedAddress.Schema, Is.EqualTo(expectedSchema));
+            Assert.That(parsedAddress.Catalog, Is.EqualTo(expectedCatalog));
         }
     }
 }
