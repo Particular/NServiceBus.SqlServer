@@ -7,11 +7,14 @@ namespace NServiceBus.Transport.PostgreSql
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Logging;
     using Npgsql;
     using NServiceBus.Transport.Sql.Shared;
 
     class QueueCreator
     {
+        static ILog Logger = LogManager.GetLogger<QueueCreator>();
+
         public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
         {
             this.sqlConstants = sqlConstants;
@@ -56,11 +59,12 @@ namespace NServiceBus.Transport.PostgreSql
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
-            catch (PostgresException ex) when (ex.SqlState == "23505")
+            catch (PostgresException ex) when (ex.SqlState is "23505" or "42P07")
             {
-                //PostgreSQL error code 23505: unique_violation is returned
+                //PostgreSQL error code 23505: unique_violation or 42P07: relation already exists, is returned
                 //if the table creation is executed concurrently by multiple transactions
                 //In this case we want to discard the exception and continue
+                Logger.Debug($"{canonicalQueueAddress} already exists.", ex);
             }
 
             if (createMessageBodyColumn)
