@@ -59,10 +59,11 @@ namespace NServiceBus.Transport.PostgreSql
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
-            catch (PostgresException ex) when (ex.SqlState is "23505" or "42P07")
+            catch (PostgresException ex) when (ex.SqlState is PostgresErrorCodes.DuplicateTable or  // 42P07
+                PostgresErrorCodes.DuplicateObject or  // 42710
+                PostgresErrorCodes.UniqueViolation)    // 23505
             {
-                //PostgreSQL error code 23505: unique_violation or 42P07: relation already exists, is returned
-                //if the table creation is executed concurrently by multiple transactions
+                //This happens if the table creation is executed concurrently by multiple transactions
                 //In this case we want to discard the exception and continue
                 Logger.Debug($"{canonicalQueueAddress} already exists.", ex);
             }
