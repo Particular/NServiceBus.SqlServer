@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" AutomaticVersionRange="false" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageReference Include="NUnit" Version="4.5.0" />
     <PackageReference Include="NUnit.Analyzers" Version="4.12.0" />
