@@ -11,13 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="10.0.1" AutomaticVersionRange="false" />
-    <PackageReference Include="NServiceBus" Version="10.0.0" />
+    <PackageReference Include="Npgsql" AutomaticVersionRange="false" />
+    <PackageReference Include="NServiceBus" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Particular.Obsoletes" Version="1.0.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Particular.Packaging" Version="4.5.0" PrivateAssets="All" />
+    <PackageReference Include="Particular.Obsoletes" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Particular.Packaging" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
