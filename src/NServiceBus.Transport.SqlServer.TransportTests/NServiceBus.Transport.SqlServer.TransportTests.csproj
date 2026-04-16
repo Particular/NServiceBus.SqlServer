@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SqlClientV7Switches.cs" Link="SqlClientV7Switches.cs" />
+    <Compile Include="..\SqlClientV7Switches.cs" />
   </ItemGroup>
 
   <ItemGroup>
