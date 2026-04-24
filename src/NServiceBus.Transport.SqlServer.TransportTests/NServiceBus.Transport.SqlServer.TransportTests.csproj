@@ -11,10 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\SqlClientV7Switches.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.0" />
     <PackageReference Include="NServiceBus.TransportTests.Sources" Version="10.1.3" />
