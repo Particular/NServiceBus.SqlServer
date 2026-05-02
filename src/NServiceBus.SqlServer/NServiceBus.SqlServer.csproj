@@ -17,7 +17,7 @@
 
   <ItemGroup>
 
-    <PackageReference Include="NServiceBus" Version="8.2.6" />
+    <PackageReference Include="NServiceBus" Version="8.2.7" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" AutomaticVersionRange="false" />
   </ItemGroup>
 
