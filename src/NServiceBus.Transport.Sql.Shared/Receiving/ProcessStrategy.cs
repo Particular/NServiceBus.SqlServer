@@ -56,7 +56,7 @@ namespace NServiceBus.Transport.Sql.Shared
             try
             {
                 var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
-                _ = errorContext.Message.Headers.Remove(ForwardHeader);
+                _ = errorContext.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
             }
