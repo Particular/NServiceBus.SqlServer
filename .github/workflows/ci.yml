@@ -29,18 +29,18 @@ jobs:
           SECRETS_AVAILABLE: ${{ secrets.SECRETS_AVAILABLE }}
         run: exit $(If ($env:SECRETS_AVAILABLE -eq 'true') { 0 } Else { 1 })
       - name: Checkout
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v5.1.0
+        uses: actions/setup-dotnet@v5.2.0
         with:
           global-json-file: global.json
       - name: Build
         run: dotnet build src --configuration Release
       - name: Upload packages
         if: matrix.name == 'Windows'
-        uses: actions/upload-artifact@v6.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: NuGet packages
           path: nugets/
@@ -62,11 +62,11 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Azure login
-        uses: azure/login@v2.3.0
+        uses: azure/login@v3.0.0
         with:
           creds: ${{ secrets.AZURE_ACI_CREDENTIALS }}
-      - name: Setup PostgreSql 15.x
-        uses: Particular/setup-postgres-action@v1.0.2
+      - name: Setup PostgreSQL
+        uses: Particular/setup-postgres-action@v1.1.0
         with:
           connection-string-name: PostgreSqlTransportConnectionString
           init-script: './.github/workflows/scripts/init-postgres.sql'
