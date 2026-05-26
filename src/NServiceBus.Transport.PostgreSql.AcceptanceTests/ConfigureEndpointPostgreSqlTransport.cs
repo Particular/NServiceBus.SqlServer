@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using Npgsql;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
-using NServiceBus.Transport.PostgreSql;
-using NServiceBus.Transport.SqlServer;
 
 public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecution
 {

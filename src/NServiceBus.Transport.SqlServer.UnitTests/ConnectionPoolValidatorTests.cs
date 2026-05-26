@@ -10,7 +10,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -18,7 +18,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; min pool size = 20; max pool size=120");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]
@@ -26,7 +26,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Min Pool Size = 20;");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -34,7 +34,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = true");
 
-            Assert.IsFalse(result.IsValid);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
@@ -42,7 +42,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = false");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.That(result.IsValid, Is.True);
         }
 
         [Test]
@@ -50,7 +50,7 @@
         {
             var result = ConnectionPoolValidator.Validate("Initial Catalog = xxx; Pooling = no");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.That(result.IsValid, Is.True);
         }
     }
 }

@@ -21,7 +21,7 @@
                 .Done(c => c.MessageReceived)
                 .Run();
 
-            Assert.True(ctx.MessageReceived, "Message should be properly received");
+            Assert.That(ctx.MessageReceived, Is.True, "Message should be properly received");
         }
 
         public class Sender : EndpointConfigurationBuilder
