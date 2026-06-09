@@ -11,23 +11,16 @@ using Unicast.Queuing;
 
 using static System.String;
 
-class PostgreSqlTableBasedQueue : TableBasedQueue
+class PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported)
+    : TableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
 {
-    readonly PostgreSqlConstants postgreSqlConstants;
-
-    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
-    {
-        postgreSqlConstants = sqlConstants;
-    }
+    readonly string sendCommand = Format(sqlConstants.SendText, qualifiedTableName);
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var sendCommand = Format(postgreSqlConstants.SendText, qualifiedTableName);
-
             using (var command = connection.CreateCommand())
             {
                 command.CommandType = CommandType.Text;
