@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.3" AutomaticVersionRange="false" />
-    <PackageReference Include="NServiceBus" Version="10.2.4" />
+    <PackageReference Include="NServiceBus" Version="10.2.5" />
   </ItemGroup>
 
   <ItemGroup>
