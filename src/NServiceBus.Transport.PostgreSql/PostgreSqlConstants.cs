@@ -60,7 +60,7 @@ SELECT COALESCE(cast((SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE S
 DO $$
 BEGIN
 
-IF EXISTS (
+IF NOT EXISTS (
    SELECT FROM information_schema.tables 
    WHERE  table_schema = '{0}'
    AND    table_name   = '{1}'
@@ -69,11 +69,11 @@ THEN
     RETURN;
 END IF;
 
-IF NOT EXISTS (
+IF EXISTS (
     SELECT FROM information_schema.columns 
     WHERE  table_schema = '{0}'
     AND table_name='{1}' 
-    AND column_name='StringBody'
+    AND column_name='bodystring'
     )
 THEN
     RETURN;
@@ -85,7 +85,7 @@ IF EXISTS (
     SELECT FROM information_schema.columns 
     WHERE  table_schema = '{0}'
     AND table_name='{1}' 
-    AND column_name='StringBody'
+    AND column_name='bodystring'
     )
 THEN
     
