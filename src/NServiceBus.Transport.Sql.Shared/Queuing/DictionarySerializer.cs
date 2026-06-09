@@ -11,7 +11,7 @@
         {
             using var stream = new MemoryStream();
             serializer.WriteObject(stream, instance);
-            return stream.TryGetBuffer(out var buffer) ? Encoding.UTF8.GetString(buffer) : Encoding.UTF8.GetString(stream.GetBuffer());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
 
         public static Dictionary<string, string> DeSerialize(string json)
