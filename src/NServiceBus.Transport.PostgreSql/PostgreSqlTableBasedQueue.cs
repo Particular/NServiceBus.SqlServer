@@ -21,16 +21,14 @@ class PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifi
     {
         try
         {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandType = CommandType.Text;
-                command.CommandText = sendCommand;
-                command.Transaction = transaction;
+            using var command = connection.CreateCommand();
+            command.CommandType = CommandType.Text;
+            command.CommandText = sendCommand;
+            command.Transaction = transaction;
 
-                message.PrepareSendCommand(command);
+            message.PrepareSendCommand(command);
 
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
         // see: PostgreSQL: Documentation: 16: Appendix A. PostgreSQL Error Codes
         catch (NpgsqlException ex) when (ex.SqlState == "42P01")
