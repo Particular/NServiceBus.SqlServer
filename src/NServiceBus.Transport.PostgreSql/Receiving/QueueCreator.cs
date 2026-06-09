@@ -11,18 +11,8 @@ namespace NServiceBus.Transport.PostgreSql
     using Npgsql;
     using NServiceBus.Transport.Sql.Shared;
 
-    class QueueCreator
+    class QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
     {
-        static ILog Logger = LogManager.GetLogger<QueueCreator>();
-
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
-        {
-            this.sqlConstants = sqlConstants;
-            this.connectionFactory = connectionFactory;
-            this.addressTranslator = addressTranslator;
-            this.createMessageBodyColumn = createMessageBodyColumn;
-        }
-
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
@@ -97,9 +87,6 @@ namespace NServiceBus.Transport.PostgreSql
             return BitConverter.ToInt64(hashText, 0);
         }
 
-        ISqlConstants sqlConstants;
-        DbConnectionFactory connectionFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
-        bool createMessageBodyColumn;
+        static readonly ILog Logger = LogManager.GetLogger<QueueCreator>();
     }
 }
