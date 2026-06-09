@@ -1,6 +1,7 @@
 ﻿namespace NServiceBus.Transport.SqlServer.UnitTests.DelayedDelivery;
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
@@ -19,12 +20,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // We ignore calculating the time to wait, because that's not interesting in this test.
             Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
             Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
-        });
+        }
     }
 
     [Test]
@@ -37,12 +38,12 @@ public class BackOffStrategyTests
 
         await strategy.WaitForNextExecution().ConfigureAwait(false);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // We ignore calculating the time to wait, because that's not interesting in this test.
             Assert.That(strategy.NextDelayedMessage, Is.EqualTo(expectedNextDelayedMessage));
             Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
-        });
+        }
     }
 
     [Test]
@@ -116,11 +117,11 @@ public class BackOffStrategyTests
         var x = RoundOff(now, now.AddMilliseconds(999));
         var y = RoundOff(now, now.AddMilliseconds(1001));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(x, Is.EqualTo(0));
             Assert.That(y, Is.EqualTo(1));
-        });
+        }
     }
 
     [Test]
@@ -143,6 +144,52 @@ public class BackOffStrategyTests
         Assert.That(timeProvider.DueTime, Is.EqualTo(oneMillisecond));
     }
 
+    [Test]
+    public void When_Multiple_DueTimes_Are_Registered_Concurrently_Should_Use_Earliest_Execution_Time()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var strategy = new BackOffStrategy(timeProvider);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var earliestDueTime = now.AddMilliseconds(1);
+        var dueTimes = Enumerable.Range(1, 1000)
+            .Select(offset => now.AddMilliseconds(offset))
+            .Reverse()
+            .ToArray();
+
+        Parallel.ForEach(dueTimes, strategy.RegisterNewDueTime);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(earliestDueTime));
+            Assert.That(strategy.NextDelayedMessage, Is.Not.EqualTo(DateTime.MinValue));
+        }
+    }
+
+    [Test]
+    public async Task When_DueTime_Is_Registered_While_Waiting_Should_Complete_After_Next_WakeUp()
+    {
+        var timeProvider = new CaptureWhenTimerDueTimeProvider();
+        var strategy = new BackOffStrategy(timeProvider);
+        strategy.RegisterNewDueTime(DateTime.MinValue);
+
+        var waitTask = strategy.WaitForNextExecution();
+
+        await timeProvider.TimerCreated.ConfigureAwait(false);
+        var dueTime = timeProvider.GetUtcNow().UtcDateTime.AddMilliseconds(100);
+        strategy.RegisterNewDueTime(dueTime);
+
+        Assert.That(waitTask.IsCompleted, Is.False);
+
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+        await waitTask.ConfigureAwait(false);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(strategy.NextDelayedMessage, Is.EqualTo(dueTime));
+            Assert.That(strategy.NextExecutionTime, Is.EqualTo(DateTime.MaxValue));
+        }
+    }
+
     /// <summary>
     /// Prevent flaky tests by allowing 999ms offset
     /// </summary>
@@ -155,11 +202,15 @@ public class BackOffStrategyTests
     class CaptureWhenTimerDueTimeProvider : FakeTimeProvider
     {
         public TimeSpan DueTime { get; private set; }
+        public Task TimerCreated => timerCreated.Task;
 
         public override ITimer CreateTimer(TimerCallback callback, object state, TimeSpan dueTime, TimeSpan period)
         {
             DueTime = dueTime;
+            _ = timerCreated.TrySetResult();
             return base.CreateTimer(callback, state, dueTime, period);
         }
+
+        readonly TaskCompletionSource timerCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }
