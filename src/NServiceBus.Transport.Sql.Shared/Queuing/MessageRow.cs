@@ -34,7 +34,7 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             command.AddParameter("Id", DbType.Guid, id);
             command.AddParameter("TimeToBeReceivedMs", DbType.Int32, timeToBeReceived);
-            command.AddParameter("Headers", DbType.String, headers);
+            command.AddParameter("Headers", DbType.String, headers, -1);
             command.AddParameter("Body", DbType.Binary, bodyBytes, -1);
         }
 
