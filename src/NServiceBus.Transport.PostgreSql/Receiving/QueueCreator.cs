@@ -91,7 +91,8 @@ namespace NServiceBus.Transport.PostgreSql
         static long CalculateLockId(string text)
         {
             var byteContents = Encoding.Unicode.GetBytes(text);
-            var hashText = SHA256.Create().ComputeHash(byteContents);
+            using var sha256 = SHA256.Create();
+            var hashText = sha256.ComputeHash(byteContents);
 
             //HINT: we assume that the first byte has the same collision probability as any other part of the hash
             return BitConverter.ToInt64(hashText, 0);
