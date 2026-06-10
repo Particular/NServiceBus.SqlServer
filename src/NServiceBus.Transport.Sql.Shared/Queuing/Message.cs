@@ -23,16 +23,13 @@
         {
             var parsedHeaders = string.IsNullOrEmpty(originalHeaders)
                 ? []
-                : DictionarySerializer.DeSerialize(originalHeaders);
+                : DictionarySerializer.Deserialize(originalHeaders);
 
             Headers = parsedHeaders;
         }
 
-        public void ResetHeaders()
-        {
-            InitializeHeaders();
-        }
+        public void ResetHeaders() => InitializeHeaders();
 
-        string originalHeaders;
+        readonly string originalHeaders;
     }
 }

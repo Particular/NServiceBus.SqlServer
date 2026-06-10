@@ -22,7 +22,7 @@ public class DictionarySerializerTests
         var serialized = DictionarySerializer.Serialize(before);
         Approver.Verify(serialized);
 
-        var after = DictionarySerializer.DeSerialize(serialized);
+        var after = DictionarySerializer.Deserialize(serialized);
 
         AssertDictionariesAreTheSame(before, after);
     }
@@ -35,7 +35,7 @@ public class DictionarySerializerTests
         var serialized = DictionarySerializer.Serialize(before);
         Approver.Verify(serialized);
 
-        var after = DictionarySerializer.DeSerialize(serialized);
+        var after = DictionarySerializer.Deserialize(serialized);
 
         AssertDictionariesAreTheSame(before, after);
     }
@@ -68,7 +68,7 @@ public class DictionarySerializerTests
         var serialized = DictionarySerializer.Serialize(before);
         Approver.Verify(serialized);
 
-        var after = DictionarySerializer.DeSerialize(serialized);
+        var after = DictionarySerializer.Deserialize(serialized);
 
         AssertDictionariesAreTheSame(before, after);
     }
@@ -89,7 +89,7 @@ public class DictionarySerializerTests
         var serialized = DictionarySerializer.Serialize(before);
         Approver.Verify(serialized);
 
-        var after = DictionarySerializer.DeSerialize(serialized);
+        var after = DictionarySerializer.Deserialize(serialized);
 
         AssertDictionariesAreTheSame(before, after);
     }
@@ -97,7 +97,7 @@ public class DictionarySerializerTests
     [Test]
     public void Can_deserialize_empty_json_object()
     {
-        var after = DictionarySerializer.DeSerialize("{}");
+        var after = DictionarySerializer.Deserialize("{}");
 
         Assert.That(after, Is.Empty);
     }
@@ -105,7 +105,7 @@ public class DictionarySerializerTests
     [Test]
     public void Can_deserialize_null_values()
     {
-        var after = DictionarySerializer.DeSerialize("""{"keyWithNull":null}""");
+        var after = DictionarySerializer.Deserialize("""{"keyWithNull":null}""");
 
         Assert.That(after, Has.Count.EqualTo(1));
         Assert.That(after["keyWithNull"], Is.Null);
@@ -114,7 +114,7 @@ public class DictionarySerializerTests
     [Test]
     public void Can_deserialize_empty_values()
     {
-        var after = DictionarySerializer.DeSerialize("""{"keyWithEmpty":""}""");
+        var after = DictionarySerializer.Deserialize("""{"keyWithEmpty":""}""");
 
         Assert.That(after, Has.Count.EqualTo(1));
         Assert.That(after["keyWithEmpty"], Is.Empty);
@@ -123,7 +123,7 @@ public class DictionarySerializerTests
     [Test]
     public void Deserializing_json_null_returns_null()
     {
-        var after = DictionarySerializer.DeSerialize("null");
+        var after = DictionarySerializer.Deserialize("null");
 
         Assert.That(after, Is.Null);
     }
