@@ -11,18 +11,8 @@ namespace NServiceBus.Transport.PostgreSql
     using Npgsql;
     using NServiceBus.Transport.Sql.Shared;
 
-    class QueueCreator
+    class QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
     {
-        static ILog Logger = LogManager.GetLogger<QueueCreator>();
-
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
-        {
-            this.sqlConstants = sqlConstants;
-            this.connectionFactory = connectionFactory;
-            this.addressTranslator = addressTranslator;
-            this.createMessageBodyColumn = createMessageBodyColumn;
-        }
-
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
             using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
@@ -91,15 +81,12 @@ namespace NServiceBus.Transport.PostgreSql
         static long CalculateLockId(string text)
         {
             var byteContents = Encoding.Unicode.GetBytes(text);
-            var hashText = SHA256.Create().ComputeHash(byteContents);
+            var hashText = SHA256.HashData(byteContents);
 
             //HINT: we assume that the first byte has the same collision probability as any other part of the hash
             return BitConverter.ToInt64(hashText, 0);
         }
 
-        ISqlConstants sqlConstants;
-        DbConnectionFactory connectionFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
-        bool createMessageBodyColumn;
+        static readonly ILog Logger = LogManager.GetLogger<QueueCreator>();
     }
 }
