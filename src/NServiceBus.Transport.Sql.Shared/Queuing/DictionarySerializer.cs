@@ -9,22 +9,18 @@
     {
         public static string Serialize(Dictionary<string, string> instance)
         {
-            using (var stream = new MemoryStream())
-            {
-                serializer.WriteObject(stream, instance);
-                return Encoding.UTF8.GetString(stream.ToArray());
-            }
+            using var stream = new MemoryStream();
+            serializer.WriteObject(stream, instance);
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
 
         public static Dictionary<string, string> DeSerialize(string json)
         {
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            {
-                return (Dictionary<string, string>)serializer.ReadObject(stream);
-            }
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            return (Dictionary<string, string>)serializer.ReadObject(stream);
         }
 
-        static DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Dictionary<string, string>), new DataContractJsonSerializerSettings
+        static readonly DataContractJsonSerializer serializer = new(typeof(Dictionary<string, string>), new DataContractJsonSerializerSettings
         {
             UseSimpleDictionaryFormat = true
         });
