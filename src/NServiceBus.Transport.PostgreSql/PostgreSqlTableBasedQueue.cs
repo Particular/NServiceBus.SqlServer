@@ -11,33 +11,24 @@ using Unicast.Queuing;
 
 using static System.String;
 
-class PostgreSqlTableBasedQueue : TableBasedQueue
+class PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported)
+    : TableBasedQueue(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
 {
-    readonly PostgreSqlConstants postgreSqlConstants;
-
-    public PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifiedTableName, string queueName, bool isStreamSupported) :
-        base(sqlConstants, qualifiedTableName, queueName, isStreamSupported)
-    {
-        postgreSqlConstants = sqlConstants;
-    }
+    readonly string sendCommand = Format(sqlConstants.SendText, qualifiedTableName);
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var sendCommand = Format(postgreSqlConstants.SendText, qualifiedTableName);
+            using var command = connection.CreateCommand();
+            command.CommandType = CommandType.Text;
+            command.CommandText = sendCommand;
+            command.Transaction = transaction;
 
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandType = CommandType.Text;
-                command.CommandText = sendCommand;
-                command.Transaction = transaction;
+            message.PrepareSendCommand(command);
 
-                message.PrepareSendCommand(command);
-
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
         // see: PostgreSQL: Documentation: 16: Appendix A. PostgreSQL Error Codes
         catch (NpgsqlException ex) when (ex.SqlState == "42P01")
