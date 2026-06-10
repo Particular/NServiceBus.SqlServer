@@ -37,7 +37,7 @@ class ReceiveCountdownEvent
         }
     }
 
-    public struct Signaler(ReceiveCountdownEvent parent) : IDisposable
+    public sealed class Signaler(ReceiveCountdownEvent parent) : IDisposable
     {
         bool signalled;
 
