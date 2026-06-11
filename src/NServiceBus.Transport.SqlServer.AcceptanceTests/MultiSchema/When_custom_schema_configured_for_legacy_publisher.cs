@@ -64,8 +64,11 @@ public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcc
                 transport.DefaultSchema = "receiver";
                 transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
 
+#pragma warning disable CS0618 // Type or member is obsolete
+                // When message-driven compatibility mode is obsoleted with an error this test can be removed
                 c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode().RegisterPublisher(typeof(Event),
                     AcceptanceTesting.Customization.Conventions.EndpointNamingConvention(typeof(LegacyPublisher)));
+#pragma warning restore CS0618 // Type or member is obsolete
                 c.ConfigureRouting().UseSchemaForEndpoint(publisherEndpoint, "sender");
             });
 
