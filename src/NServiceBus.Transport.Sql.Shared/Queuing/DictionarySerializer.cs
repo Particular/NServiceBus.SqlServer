@@ -28,16 +28,17 @@ namespace NServiceBus.Transport.Sql.Shared
 
             return string.Create(json.Length + slashCount, json, static (destination, source) =>
             {
-                var position = 0;
-                foreach (var c in source)
+                var remaining = source.AsSpan();
+                int idx;
+                while ((idx = remaining.IndexOf('/')) >= 0)
                 {
-                    if (c == '/')
-                    {
-                        destination[position++] = '\\';
-                    }
-
-                    destination[position++] = c;
+                    remaining[..idx].CopyTo(destination);
+                    destination[idx] = '\\';
+                    destination[idx + 1] = '/';
+                    destination = destination[(idx + 2)..];
+                    remaining = remaining[(idx + 1)..];
                 }
+                remaining.CopyTo(destination);
             });
         }
 
