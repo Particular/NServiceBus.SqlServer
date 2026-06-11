@@ -312,7 +312,7 @@ namespace NServiceBus
             TreatAsErrorFromVersion = "10.0.0",
             RemoveInVersion = "11.0.0")]
         public static SubscriptionMigrationModeSettings EnableMessageDrivenPubSubCompatibilityMode(
-                this TransportExtensions<SqlServerTransport> transportExtensions)
+            this TransportExtensions<SqlServerTransport> transportExtensions)
         {
             var subscriptionMigrationModeSettings = transportExtensions.Routing().EnableMessageDrivenPubSubCompatibilityMode();
 
