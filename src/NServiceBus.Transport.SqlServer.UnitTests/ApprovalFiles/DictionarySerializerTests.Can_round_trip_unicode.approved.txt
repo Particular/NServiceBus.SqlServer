@@ -1,0 +1,1 @@
+{"ümlaut":"äöü","emoji":"\uD83D\uDE80","japanese":"こんにちは","arabic":"مرحبا","newline":"line1\r\nline2","tab":"value\twith\ttabs"}

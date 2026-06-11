@@ -1,28 +1,50 @@
-﻿namespace NServiceBus.Transport.Sql.Shared
+﻿#nullable enable
+
+namespace NServiceBus.Transport.Sql.Shared
 {
+    using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Runtime.Serialization.Json;
-    using System.Text;
+    using System.Text.Encodings.Web;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
 
-    static class DictionarySerializer
+    static partial class DictionarySerializer
     {
-        public static string Serialize(Dictionary<string, string> instance)
+        public static string Serialize(Dictionary<string, string> dictionary)
+            => EscapeDataContractCompatible(JsonSerializer.Serialize(dictionary, Context.DictionaryStringString));
+
+        public static Dictionary<string, string>? Deserialize(string value)
+            => JsonSerializer.Deserialize(value, Context.DictionaryStringString);
+
+        static string EscapeDataContractCompatible(string json)
         {
-            using var stream = new MemoryStream();
-            serializer.WriteObject(stream, instance);
-            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
+            var span = json.AsSpan();
+            var slashCount = span.Count('/');
+
+            if (slashCount == 0)
+            {
+                return json;
+            }
+
+            return string.Create(json.Length + slashCount, json, static (destination, source) =>
+            {
+                var remaining = source.AsSpan();
+                int idx;
+                while ((idx = remaining.IndexOf('/')) >= 0)
+                {
+                    remaining[..idx].CopyTo(destination);
+                    destination[idx] = '\\';
+                    destination[idx + 1] = '/';
+                    destination = destination[(idx + 2)..];
+                    remaining = remaining[(idx + 1)..];
+                }
+                remaining.CopyTo(destination);
+            });
         }
 
-        public static Dictionary<string, string> DeSerialize(string json)
-        {
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-            return (Dictionary<string, string>)serializer.ReadObject(stream);
-        }
+        static readonly HeaderSerializationContext Context = new(new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
-        static readonly DataContractJsonSerializer serializer = new(typeof(Dictionary<string, string>), new DataContractJsonSerializerSettings
-        {
-            UseSimpleDictionaryFormat = true
-        });
+        [JsonSerializable(typeof(Dictionary<string, string>))]
+        sealed partial class HeaderSerializationContext : JsonSerializerContext;
     }
 }
