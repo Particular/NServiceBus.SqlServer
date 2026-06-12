@@ -61,8 +61,11 @@ public class When_custom_catalog_configured_for_legacy_publisher : MultiCatalogA
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>
             {
                 var routing = c.ConfigureRouting();
+#pragma warning disable CS0618 // Type or member is obsolete
+                // When message-driven compatibility mode is obsoleted with an error this test can be removed
                 routing.EnableMessageDrivenPubSubCompatibilityMode()
                     .RegisterPublisher(typeof(Event), PublisherEndpoint);
+#pragma warning restore CS0618 // Type or member is obsolete
                 routing.UseCatalogForEndpoint(PublisherEndpoint, "nservicebus1");
             });
         }

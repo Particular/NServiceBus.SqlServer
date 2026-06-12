@@ -67,7 +67,10 @@ public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
             {
                 b.CustomConfig(c =>
                 {
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // When message-driven compatibility mode is obsoleted with an error this test can be removed
                     c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+#pragma warning restore CS0618 // Type or member is obsolete
                     var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
                     compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                 });
@@ -92,7 +95,10 @@ public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
                 b.CustomConfig(c =>
                 {
                     c.UsePersistence<TestingInMemoryPersistence, StorageType.Subscriptions>().UseStorage(subscriptionStorage);
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // When message-driven compatibility mode is obsoleted with an error this test can be removed
                     c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+#pragma warning restore CS0618 // Type or member is obsolete
                 });
                 b.When(c => c is { SubscribedMessageDriven: true, SubscribedNative: true }, (session, ctx) => session.Publish(new MyEvent()));
             })
@@ -100,7 +106,10 @@ public class When_migrating_subscriber_first : NServiceBusAcceptanceTest
             {
                 b.CustomConfig(c =>
                 {
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // When message-driven compatibility mode is obsoleted with an error this test can be removed
                     c.ConfigureRouting().EnableMessageDrivenPubSubCompatibilityMode();
+#pragma warning restore CS0618 // Type or member is obsolete
                     var compatModeSettings = new SubscriptionMigrationModeSettings(c.GetSettings());
                     compatModeSettings.RegisterPublisher(typeof(MyEvent), PublisherEndpoint);
                 });
