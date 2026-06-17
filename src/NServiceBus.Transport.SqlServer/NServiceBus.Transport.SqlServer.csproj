@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.5" AutomaticVersionRange="false" />
-    <PackageReference Include="NServiceBus" Version="10.2.5" />
+    <PackageReference Include="NServiceBus" Version="10.2.6" />
   </ItemGroup>
 
   <ItemGroup>
