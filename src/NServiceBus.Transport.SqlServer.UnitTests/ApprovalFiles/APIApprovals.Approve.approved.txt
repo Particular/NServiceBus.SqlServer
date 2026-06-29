@@ -33,6 +33,9 @@ namespace NServiceBus
     public class QueuePeekerOptions
     {
         public System.TimeSpan Delay { get; set; }
+        [System.Obsolete("The queue peek batch size has no effect and should be removed from the configurat" +
+            "ion. Will be treated as an error from version 10.0.0. Will be removed in version" +
+            " 11.0.0.", false)]
         public int? MaxRecordsToPeek { get; set; }
     }
     public static class SendOptionsExtensions

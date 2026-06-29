@@ -241,7 +241,13 @@ namespace NServiceBus
                 transportExtensions.Transport.QueuePeeker.Delay = delay.Value;
             }
 
-            transportExtensions.Transport.QueuePeeker.MaxRecordsToPeek = peekBatchSize;
+            if (peekBatchSize.HasValue)
+            {
+                // Assigning a value logs a warning that the peek batch size has no effect.
+#pragma warning disable CS0618 // Type or member is obsolete
+                transportExtensions.Transport.QueuePeeker.MaxRecordsToPeek = peekBatchSize;
+#pragma warning restore CS0618 // Type or member is obsolete
+            }
 
             return transportExtensions;
         }
