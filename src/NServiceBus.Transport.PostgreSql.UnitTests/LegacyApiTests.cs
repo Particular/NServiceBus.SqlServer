@@ -13,7 +13,7 @@
             var transport = configuration.UseTransport<PostgreSqlTransport>();
             transport.ConnectionString("connectionString");
             transport.DefaultSchema("schema");
-            transport.QueuePeekerOptions(TimeSpan.FromSeconds(1), 100);
+            transport.QueuePeekerOptions(TimeSpan.FromSeconds(1));
 
             var nativeDelayedDelivery = transport.NativeDelayedDelivery();
             nativeDelayedDelivery.TableSuffix("suffix");
@@ -29,7 +29,6 @@
                 Assert.That(transport.Transport.ConnectionString, Is.EqualTo("connectionString"));
                 Assert.That(transport.Transport.DefaultSchema, Is.EqualTo("schema"));
                 Assert.That(transport.Transport.QueuePeeker.Delay, Is.EqualTo(TimeSpan.FromSeconds(1)));
-                Assert.That(transport.Transport.QueuePeeker.MaxRecordsToPeek, Is.EqualTo(100));
 
                 Assert.That(transport.Transport.DelayedDelivery.TableSuffix, Is.EqualTo("suffix"));
                 Assert.That(transport.Transport.DelayedDelivery.BatchSize, Is.EqualTo(100));

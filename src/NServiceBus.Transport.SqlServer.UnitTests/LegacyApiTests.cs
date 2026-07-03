@@ -14,7 +14,7 @@ public class LegacyApiTests
         transport.ConnectionString("connectionString");
         transport.DefaultSchema("schema");
         transport.PurgeExpiredMessagesOnStartup(100);
-        transport.QueuePeekerOptions(TimeSpan.FromSeconds(1), 100);
+        transport.QueuePeekerOptions(TimeSpan.FromSeconds(1));
 
         var nativeDelayedDelivery = transport.NativeDelayedDelivery();
         nativeDelayedDelivery.TableSuffix("suffix");
@@ -32,7 +32,6 @@ public class LegacyApiTests
             Assert.That(transport.Transport.ExpiredMessagesPurger.PurgeOnStartup, Is.EqualTo(true));
             Assert.That(transport.Transport.ExpiredMessagesPurger.PurgeBatchSize, Is.EqualTo(100));
             Assert.That(transport.Transport.QueuePeeker.Delay, Is.EqualTo(TimeSpan.FromSeconds(1)));
-            Assert.That(transport.Transport.QueuePeeker.MaxRecordsToPeek, Is.EqualTo(100));
 
             Assert.That(transport.Transport.DelayedDelivery.TableSuffix, Is.EqualTo("suffix"));
             Assert.That(transport.Transport.DelayedDelivery.BatchSize, Is.EqualTo(100));
