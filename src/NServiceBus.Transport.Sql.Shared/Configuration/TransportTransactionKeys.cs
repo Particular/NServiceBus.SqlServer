@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.Sql.Shared
+namespace NServiceBus.Transport.Sql.Shared
 {
     class TransportTransactionKeys
     {
@@ -7,5 +7,10 @@
         public const string SqlTransaction = "System.Data.SqlClient.SqlTransaction";
 
         public const string IsUserProvidedTransaction = "SqlServer.Transaction.IsUserProvided";
+
+        // Well-known key read by downstream components (e.g. SQL persistence) to detect that they must not reuse the receive connection and transaction
+        public const string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
+
+        public const string State = "SqlTransport.TransportTransactionState";
     }
 }

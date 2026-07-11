@@ -1,4 +1,4 @@
-﻿namespace NServiceBus.Transport.Sql.Shared;
+namespace NServiceBus.Transport.Sql.Shared;
 
 using System;
 using System.Data.Common;
@@ -9,124 +9,128 @@ static class TransportTransactions
     public static TransportTransaction NoTransaction(DbConnection connection)
     {
         var transportTransaction = new TransportTransaction();
+
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.NoTransaction);
         transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
+
         return transportTransaction;
-    }
-
-    public static bool IsNoTransaction(this TransportTransaction transportTransaction, out DbConnection connection)
-    {
-        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
-        transportTransaction.TryGet(out Transaction ambientTransaction);
-
-        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection);
-
-        return nativeTransaction == null && ambientTransaction == null;
     }
 
     public static TransportTransaction ReceiveOnly(DbConnection connection, DbTransaction transaction)
     {
         var transportTransaction = new TransportTransaction();
 
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.ReceiveOnly);
         transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
         transportTransaction.Set(TransportTransactionKeys.SqlTransaction, transaction);
 
-        //this indicates to MessageDispatcher that it should not reuse connection or transaction for sends
-        transportTransaction.Set(ReceiveOnlyTransactionMode, true);
+        //downstream components (e.g. SQL persistence) use this well-known entry to detect that they must not reuse the receive connection and transaction
+        transportTransaction.Set(TransportTransactionKeys.ReceiveOnlyTransactionMode, true);
 
         return transportTransaction;
     }
-
-    public static bool IsReceiveOnly(this TransportTransaction transportTransaction) => transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool _);
 
     public static TransportTransaction SendsAtomicWithReceive(DbConnection connection, DbTransaction transaction)
     {
         var transportTransaction = new TransportTransaction();
 
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.SendsAtomicWithReceive);
         transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
         transportTransaction.Set(TransportTransactionKeys.SqlTransaction, transaction);
 
         return transportTransaction;
-    }
-
-    public static bool IsSendsAtomicWithReceive(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
-    {
-        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
-        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection);
-        transportTransaction.TryGet(ProcessWithNativeTransaction.ReceiveOnlyTransactionMode, out bool receiveOnly);
-
-        return transaction != null && connection != null && !receiveOnly;
     }
 
     public static TransportTransaction TransactionScope(Transaction transaction)
     {
         var transportTransaction = new TransportTransaction();
 
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.TransactionScope);
         transportTransaction.Set(transaction);
 
         return transportTransaction;
     }
 
-    public static bool IsTransactionScope(this TransportTransaction transportTransaction)
-    {
-        transportTransaction.TryGet(out Transaction ambientTransaction);
-        return ambientTransaction != null;
-    }
-
-    public static bool OutsideOfHandler(this TransportTransaction transportTransaction)
-    {
-        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
-        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection nativeConnection);
-        transportTransaction.TryGet(out Transaction ambientTransaction);
-
-        return nativeTransaction == null && nativeConnection == null && ambientTransaction == null;
-    }
-
     public static TransportTransaction UserProvided(DbConnection connection)
     {
-        var result = new TransportTransaction();
+        var transportTransaction = new TransportTransaction();
 
-        result.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
-        result.Set(TransportTransactionKeys.SqlConnection, connection);
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.UserProvided);
+        transportTransaction.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
+        transportTransaction.Set(TransportTransactionKeys.SqlConnection, connection);
 
-        return result;
+        return transportTransaction;
     }
 
     public static TransportTransaction UserProvided(DbTransaction transaction)
     {
-        var result = new TransportTransaction();
+        var transportTransaction = new TransportTransaction();
 
-        result.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
-        result.Set(TransportTransactionKeys.SqlTransaction, transaction);
+        transportTransaction.Set(TransportTransactionKeys.State, TransportTransactionState.UserProvided);
+        transportTransaction.Set(TransportTransactionKeys.IsUserProvidedTransaction, true);
+        transportTransaction.Set(TransportTransactionKeys.SqlTransaction, transaction);
 
-        return result;
+        return transportTransaction;
     }
 
-    public static bool IsUserProvided(this TransportTransaction transportTransaction, out DbConnection connection, out DbTransaction transaction)
-    {
-        connection = null;
-        transaction = null;
+    public static TransportTransactionState GetState(this TransportTransaction transportTransaction) =>
+        transportTransaction.TryGet(TransportTransactionKeys.State, out TransportTransactionState state)
+            ? state
+            : InferState(transportTransaction);
 
+    /// <summary>
+    /// Returns the connection to dispatch on and, if present, the transaction the sends should take part in.
+    /// Falls back to the transaction's connection when only a transaction was provided.
+    /// </summary>
+    public static (DbConnection connection, DbTransaction transaction) GetConnectionAndTransaction(this TransportTransaction transportTransaction)
+    {
+        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction transaction);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection connection);
+
+        connection ??= transaction?.Connection
+            ?? throw new Exception($"Invalid {nameof(TransportTransaction)} state. It contains no SqlTransaction or SqlConnection objects.");
+
+        return (connection, transaction);
+    }
+
+    // TransportTransaction instances that were not created by this transport carry no explicit state: the core
+    // creates an empty one for dispatches outside the message processing pipeline, and external integrations
+    // hand-roll instances containing a connection and/or transaction. For those the state is derived from the
+    // entries present in the transaction.
+    static TransportTransactionState InferState(TransportTransaction transportTransaction)
+    {
         transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool isUserProvided);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction nativeTransaction);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection connection);
+        transportTransaction.TryGet(out Transaction ambientTransaction);
 
         if (isUserProvided)
         {
-            transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out transaction);
-
-            if (transaction != null)
-            {
-                connection = transaction.Connection;
-            }
-            else if (transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out connection))
-            {
-                transaction = null;
-            }
-            else
-            {
-                throw new Exception($"Invalid {nameof(TransportTransaction)} state. Transaction provided by the user but contains no SqlTransaction or SqlConnection objects.");
-            }
+            return TransportTransactionState.UserProvided;
         }
 
-        return isUserProvided;
+        if (nativeTransaction == null && ambientTransaction == null)
+        {
+            return connection == null
+                ? TransportTransactionState.OutsideHandler
+                : TransportTransactionState.NoTransaction;
+        }
+
+        if (transportTransaction.TryGet(TransportTransactionKeys.ReceiveOnlyTransactionMode, out bool _))
+        {
+            return TransportTransactionState.ReceiveOnly;
+        }
+
+        if (nativeTransaction != null && connection != null)
+        {
+            return TransportTransactionState.SendsAtomicWithReceive;
+        }
+
+        if (ambientTransaction != null)
+        {
+            return TransportTransactionState.TransactionScope;
+        }
+
+        throw new Exception($"{nameof(TransportTransaction)} is in invalid state.");
     }
-    internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
 }
