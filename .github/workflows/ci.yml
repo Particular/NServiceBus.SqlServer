@@ -46,7 +46,7 @@ jobs:
           path: nugets/
           retention-days: 7
       - name: Install SQL Server
-        uses: Particular/install-sql-server-action@00c601fe12b0325b924d998027476d4e88c6b144
+        uses: Particular/install-sql-server-action@372e4754121e0f520cbac87750e717ce6f77bd9c
         with:
           connection-string-env-var: SqlServerTransportConnectionString
           catalog: nservicebus
