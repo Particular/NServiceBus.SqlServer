@@ -50,6 +50,7 @@ jobs:
         with:
           connection-string-env-var: SqlServerTransportConnectionString
           catalog: nservicebus
+          enable-distributed-transactions: true
       - name: Prepare SQL Server
         run: |
           echo "Create extra databases"
