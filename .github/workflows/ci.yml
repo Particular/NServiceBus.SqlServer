@@ -45,12 +45,23 @@ jobs:
           name: NuGet packages
           path: nugets/
           retention-days: 7
-      - name: Install SQL Server
-        uses: Particular/install-sql-server-action@v2.0.0
-        with:
-          connection-string-env-var: SqlServerTransportConnectionString
-          catalog: nservicebus
-          enable-distributed-transactions: true
+      - parallel:    
+        - name: Install SQL Server
+          id: setup-sql
+          uses: Particular/install-sql-server-action@v2.0.0
+          with:
+            connection-string-env-var: SqlServerTransportConnectionString
+            catalog: nservicebus
+            enable-distributed-transactions: true
+        - name: Setup PostgreSQL
+          id: setup-postgre
+          uses: Particular/setup-postgres-action@v2.0.0
+          with:
+            connection-string-name: PostgreSqlTransportConnectionString
+            init-script: './.github/workflows/scripts/init-postgres.sql'
+            tag: SqlTransport
+            registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+            registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Prepare SQL Server
         run: |
           echo "Create extra databases"
@@ -62,13 +73,5 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
-      - name: Setup PostgreSQL
-        uses: Particular/setup-postgres-action@v2.0.0
-        with:
-          connection-string-name: PostgreSqlTransportConnectionString
-          init-script: './.github/workflows/scripts/init-postgres.sql'
-          tag: SqlTransport
-          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
         uses: Particular/run-tests-action@v1.7.0
