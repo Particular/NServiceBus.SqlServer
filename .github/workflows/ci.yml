@@ -63,7 +63,7 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
       - name: Setup PostgreSQL
-        uses: Particular/setup-postgres-action@v2.0.0
+        uses: Particular/setup-postgres-action@v3.0.0
         with:
           connection-string-name: PostgreSqlTransportConnectionString
           init-script: './.github/workflows/scripts/init-postgres.sql'
