@@ -7,101 +7,63 @@ using System.Data.Common;
 using System.Transactions;
 
 /// <summary>
-/// Lifts the transport-specific entries stored in the <see cref="Transport.TransportTransaction"/> into
-/// typed properties. The storage contract is unchanged: the well-known string keys keep being written so
-/// components that read them directly (e.g. SQL persistence) keep working.
+/// Lifts the transport-specific state stored in the <see cref="Transport.TransportTransaction"/> into a
+/// typed record the dispatcher can pattern match on. The storage contract is unchanged: the well-known
+/// string keys keep being written so components that read them directly (e.g. SQL persistence) keep working.
 /// </summary>
 static class TransportTransactionExtensions
 {
     extension(TransportTransaction transportTransaction)
     {
         /// <summary>
-        /// The connection the outgoing messages are dispatched on. Falls back to the connection the native
-        /// transaction was created on when only a transaction is present. Null when the transaction does not
-        /// carry a connection.
+        /// The context in which the transaction was created. Transport-created transactions carry the state
+        /// explicitly; for transactions created outside the transport the state is derived from the entries
+        /// present in the transaction.
         /// </summary>
-        public DbConnection? Connection
+        public SqlTransportTransactionState State =>
+            transportTransaction.TryGet(TransportTransactionKeys.State, out SqlTransportTransactionState? state)
+                ? state!
+                : InferState(transportTransaction);
+    }
+
+    // TransportTransaction instances that were not created by this transport carry no explicit state: the core
+    // creates an empty one for dispatches outside the message processing pipeline, and external integrations
+    // hand-roll instances containing a connection and/or transaction. For those the state is derived from the
+    // entries present in the transaction.
+    static SqlTransportTransactionState InferState(TransportTransaction transportTransaction)
+    {
+        transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool isUserProvided);
+        transportTransaction.TryGet(TransportTransactionKeys.ReceiveOnlyTransactionMode, out bool receiveOnly);
+        transportTransaction.TryGet(out Transaction? ambientTransaction);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection? connection);
+        transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction? nativeTransaction);
+
+        if (isUserProvided)
         {
-            get => transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection? connection)
-                ? connection
-                : transportTransaction.NativeTransaction?.Connection;
-            set
-            {
-                if (value == null)
-                {
-                    transportTransaction.Remove(TransportTransactionKeys.SqlConnection);
-                }
-                else
-                {
-                    transportTransaction.Set(TransportTransactionKeys.SqlConnection, value);
-                }
-            }
+            return new SqlTransportTransactionState.UserProvided(
+                connection ?? nativeTransaction?.Connection ?? throw new Exception($"Invalid {nameof(TransportTransaction)} state. It contains no SqlTransaction or SqlConnection objects."),
+                nativeTransaction);
         }
 
-        /// <summary>
-        /// The native transaction the outgoing messages take part in, when there is one. Null when the
-        /// transaction does not carry one.
-        /// </summary>
-        public DbTransaction? NativeTransaction
+        if (nativeTransaction == null && ambientTransaction == null)
         {
-            get => transportTransaction.TryGet(TransportTransactionKeys.SqlTransaction, out DbTransaction? transaction) ? transaction : null;
-            set
-            {
-                if (value == null)
-                {
-                    transportTransaction.Remove(TransportTransactionKeys.SqlTransaction);
-                }
-                else
-                {
-                    transportTransaction.Set(TransportTransactionKeys.SqlTransaction, value);
-                }
-            }
+            return connection == null
+                ? SqlTransportTransactionState.OutsideHandler.Instance
+                : new SqlTransportTransactionState.NoTransaction(connection);
         }
 
-        /// <summary>
-        /// The context in which the transaction was created, derived from the entries present in the
-        /// transaction. The transport records the mode implicitly at creation time through the combination
-        /// of connection, native transaction and well-known flags it stores, so the state can never drift
-        /// out of sync with the contents.
-        /// </summary>
-        public TransportTransactionState State
+        if (receiveOnly)
         {
-            get
-            {
-                transportTransaction.TryGet(TransportTransactionKeys.IsUserProvidedTransaction, out bool isUserProvided);
-                transportTransaction.TryGet(TransportTransactionKeys.ReceiveOnlyTransactionMode, out bool receiveOnly);
-                transportTransaction.TryGet(out Transaction? ambientTransaction);
-
-                // The Connection property falls back to the transaction's connection, so the raw entry is
-                // checked here to detect a native transaction without a stored connection, which is invalid.
-                transportTransaction.TryGet(TransportTransactionKeys.SqlConnection, out DbConnection? connection);
-
-                if (isUserProvided)
-                {
-                    return TransportTransactionState.UserProvided;
-                }
-
-                if (transportTransaction.NativeTransaction == null && ambientTransaction == null)
-                {
-                    return connection == null
-                        ? TransportTransactionState.OutsideHandler
-                        : TransportTransactionState.NoTransaction;
-                }
-
-                if (receiveOnly)
-                {
-                    return TransportTransactionState.ReceiveOnly;
-                }
-
-                if (transportTransaction.NativeTransaction != null && connection != null)
-                {
-                    return TransportTransactionState.SendsAtomicWithReceive;
-                }
-
-                return ambientTransaction != null
-                    ? TransportTransactionState.TransactionScope
-                    : throw new Exception($"{nameof(TransportTransaction)} is in invalid state.");
-            }
+            return new SqlTransportTransactionState.ReceiveOnly(connection!, nativeTransaction!);
         }
+
+        if (nativeTransaction != null && connection != null)
+        {
+            return new SqlTransportTransactionState.SendsAtomicWithReceive(connection, nativeTransaction);
+        }
+
+        return ambientTransaction != null
+            ? new SqlTransportTransactionState.AmbientTransaction(ambientTransaction)
+            : throw new Exception($"{nameof(TransportTransaction)} is in invalid state.");
     }
 }

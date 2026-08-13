@@ -8,6 +8,7 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using System.Transactions;
     using Transport;
+    using static SqlTransportTransactionState;
 
     class MessageDispatcher : IMessageDispatcher
     {
@@ -52,9 +53,9 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task DispatchIsolated(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
-            if (transportTransaction.State == TransportTransactionState.UserProvided)
+            if (transportTransaction.State is UserProvided userProvided)
             {
-                await Dispatch(operations, transportTransaction.Connection, transportTransaction.NativeTransaction, cancellationToken).ConfigureAwait(false);
+                await Dispatch(operations, userProvided.Connection, userProvided.NativeTransaction, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -77,8 +78,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 // There is no receive transaction the sends could take part in, either because dispatch
                 // happens outside the message processing pipeline or because the receive transaction must
                 // not be used for sends. Dispatch on a dedicated connection with its own transaction.
-                case TransportTransactionState.OutsideHandler:
-                case TransportTransactionState.ReceiveOnly:
+                case OutsideHandler:
+                case ReceiveOnly:
                     {
                         using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
                         using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
@@ -90,27 +91,31 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 // The receive connection can be reused but there is no receive transaction, so the sends
                 // get their own short-lived transaction.
-                case TransportTransactionState.NoTransaction:
+                case NoTransaction noTransaction:
                     {
-                        var connection = transportTransaction.Connection;
-                        using var transaction = connection.BeginTransaction();
+                        using var transaction = noTransaction.Connection.BeginTransaction();
 
-                        await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        await Dispatch(operations, noTransaction.Connection, transaction, cancellationToken).ConfigureAwait(false);
                         transaction.Commit();
                         break;
                     }
 
                 // The sends take part in the receive transaction or in the transaction provided by the user.
-                case TransportTransactionState.SendsAtomicWithReceive:
-                case TransportTransactionState.UserProvided:
+                case SendsAtomicWithReceive sendsAtomicWithReceive:
                     {
-                        await Dispatch(operations, transportTransaction.Connection, transportTransaction.NativeTransaction, cancellationToken).ConfigureAwait(false);
+                        await Dispatch(operations, sendsAtomicWithReceive.Connection, sendsAtomicWithReceive.NativeTransaction, cancellationToken).ConfigureAwait(false);
+                        break;
+                    }
+
+                case UserProvided userProvided:
+                    {
+                        await Dispatch(operations, userProvided.Connection, userProvided.NativeTransaction, cancellationToken).ConfigureAwait(false);
                         break;
                     }
 
                 // The ambient transaction covers both the receive and the sends; a new connection enlists
                 // in it automatically.
-                case TransportTransactionState.TransactionScope:
+                case AmbientTransaction:
                     {
                         using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
 
@@ -119,7 +124,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     }
 
                 default:
-                    throw new Exception($"Unsupported transport transaction state: {state}.");
+                    throw new Exception($"Unsupported transport transaction state: {state.GetType().Name}.");
             }
         }
 
