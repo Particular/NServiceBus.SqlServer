@@ -52,10 +52,9 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task DispatchIsolated(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
-            if (transportTransaction.GetState() == TransportTransactionState.UserProvided)
+            if (transportTransaction.State == TransportTransactionState.UserProvided)
             {
-                var (connection, transaction) = transportTransaction.GetConnectionAndTransaction();
-                await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                await Dispatch(operations, transportTransaction.Connection, transportTransaction.NativeTransaction, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -71,7 +70,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task DispatchDefault(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
         {
-            var state = transportTransaction.GetState();
+            var state = transportTransaction.State;
 
             switch (state)
             {
@@ -93,7 +92,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 // get their own short-lived transaction.
                 case TransportTransactionState.NoTransaction:
                     {
-                        var (connection, _) = transportTransaction.GetConnectionAndTransaction();
+                        var connection = transportTransaction.Connection;
                         using var transaction = connection.BeginTransaction();
 
                         await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
@@ -105,9 +104,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 case TransportTransactionState.SendsAtomicWithReceive:
                 case TransportTransactionState.UserProvided:
                     {
-                        var (connection, transaction) = transportTransaction.GetConnectionAndTransaction();
-
-                        await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        await Dispatch(operations, transportTransaction.Connection, transportTransaction.NativeTransaction, cancellationToken).ConfigureAwait(false);
                         break;
                     }
 
