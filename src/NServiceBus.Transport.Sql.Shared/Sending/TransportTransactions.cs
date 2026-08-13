@@ -8,7 +8,6 @@ static class TransportTransactions
     public static TransportTransaction NoTransaction(DbConnection connection) =>
         new()
         {
-            State = TransportTransactionState.NoTransaction,
             Connection = connection
         };
 
@@ -16,7 +15,6 @@ static class TransportTransactions
     {
         var transportTransaction = new TransportTransaction
         {
-            State = TransportTransactionState.ReceiveOnly,
             Connection = connection,
             NativeTransaction = transaction
         };
@@ -30,17 +28,13 @@ static class TransportTransactions
     public static TransportTransaction SendsAtomicWithReceive(DbConnection connection, DbTransaction transaction) =>
         new()
         {
-            State = TransportTransactionState.SendsAtomicWithReceive,
             Connection = connection,
             NativeTransaction = transaction
         };
 
     public static TransportTransaction TransactionScope(Transaction transaction)
     {
-        var transportTransaction = new TransportTransaction
-        {
-            State = TransportTransactionState.TransactionScope
-        };
+        var transportTransaction = new TransportTransaction();
 
         transportTransaction.Set(transaction);
 
@@ -51,7 +45,6 @@ static class TransportTransactions
     {
         var transportTransaction = new TransportTransaction
         {
-            State = TransportTransactionState.UserProvided,
             Connection = connection
         };
 
@@ -64,7 +57,6 @@ static class TransportTransactions
     {
         var transportTransaction = new TransportTransaction
         {
-            State = TransportTransactionState.UserProvided,
             NativeTransaction = transaction
         };
 
