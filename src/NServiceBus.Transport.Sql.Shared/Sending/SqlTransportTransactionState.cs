@@ -3,13 +3,13 @@
 namespace NServiceBus.Transport.Sql.Shared;
 
 using System.Data.Common;
-using System.Transactions;
 
 /// <summary>
 /// Describes the context in which a <see cref="Transport.TransportTransaction"/> was created, allowing the
 /// dispatcher to determine how outgoing messages relate to the receive transaction. Each state carries
-/// exactly the data it needs. The hierarchy is a stepping stone towards a closed hierarchy in C# 15,
-/// which will make the dispatcher's pattern match exhaustive.
+/// exactly the data the dispatcher needs to act on it, so the states that dispatch on their own connection
+/// carry nothing at all. The hierarchy is a stepping stone towards a closed hierarchy in C# 15, which will
+/// make the dispatcher's pattern match exhaustive.
 /// </summary>
 abstract record SqlTransportTransactionState
 {
@@ -23,13 +23,19 @@ abstract record SqlTransportTransactionState
     public sealed record NoTransaction(DbConnection Connection) : SqlTransportTransactionState;
 
     /// <summary>Sends must not take part in the receive transaction. Outgoing messages get a dedicated connection and transaction.</summary>
-    public sealed record ReceiveOnly(DbConnection Connection, DbTransaction NativeTransaction) : SqlTransportTransactionState;
+    public sealed record ReceiveOnly : SqlTransportTransactionState
+    {
+        public static readonly ReceiveOnly Instance = new();
+    }
 
     /// <summary>Outgoing messages take part in the receive connection and transaction.</summary>
     public sealed record SendsAtomicWithReceive(DbConnection Connection, DbTransaction NativeTransaction) : SqlTransportTransactionState;
 
     /// <summary>An ambient transaction is active. New connections enlist in it automatically.</summary>
-    public sealed record AmbientTransaction(Transaction Ambient) : SqlTransportTransactionState;
+    public sealed record AmbientTransaction : SqlTransportTransactionState
+    {
+        public static readonly AmbientTransaction Instance = new();
+    }
 
     /// <summary>The user supplied their own connection or transaction through the send or publish options.</summary>
     public sealed record UserProvided(DbConnection Connection, DbTransaction? NativeTransaction) : SqlTransportTransactionState;
