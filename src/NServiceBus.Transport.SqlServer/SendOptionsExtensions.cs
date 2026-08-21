@@ -3,8 +3,7 @@
     using System;
     using Extensibility;
     using Microsoft.Data.SqlClient;
-    using Transport;
-    using Transport.SqlServer;
+    using Transport.Sql.Shared;
 
     /// <summary>
     /// Adds transport specific settings to SendOptions
@@ -23,10 +22,7 @@
             // Which is exactly what will happen after NServiceBus dispatches this message immediately.
             options.RequireImmediateDispatch();
 
-            var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, transaction.Connection);
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
+            var transportTransaction = TransportTransactions.UserProvided(transaction);
             options.GetExtensions().Set(transportTransaction);
         }
 
@@ -44,10 +40,7 @@
 
             options.RequireImmediateDispatch();
 
-            var transportTransaction = new TransportTransaction();
-            transportTransaction.Set(SettingsKeys.IsUserProvidedTransactionKey, true);
-            transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
-
+            var transportTransaction = TransportTransactions.UserProvided(connection);
             options.GetExtensions().Set(transportTransaction);
         }
 

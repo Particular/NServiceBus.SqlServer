@@ -97,6 +97,5 @@ namespace NServiceBus.Transport.Sql.Shared
         IsolationLevel isolationLevel = IsolationLevelMapper.Map(transactionOptions.IsolationLevel);
         FailureInfoStorage failureInfoStorage = failureInfoStorage;
         readonly IExceptionClassifier exceptionClassifier = exceptionClassifier;
-        internal static string ReceiveOnlyTransactionMode = "SqlTransport.ReceiveOnlyTransactionMode";
     }
 }
