@@ -43,6 +43,21 @@ RETURNING rs.id,
         rs.Headers, rs.Body;
 ";
 
+    // Same contract as ReceiveText, plus:
+    // - only considers rows past @Anchor, so the scan seeks over the contended head of the queue
+    //   (competing instances' locked in-flight rows and dead tuples of recent deletes)
+    // - additionally returns the sequence number so the receiver can advance its anchor
+    public string AnchoredReceiveText { get; set; } = @"
+DELETE FROM {0} rs
+WHERE rs.id = (SELECT id FROM {0} WHERE Seq > @Anchor ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
+RETURNING rs.id,
+        CASE WHEN Expires IS NULL
+        THEN 0
+        WHEN Expires > now() AT TIME ZONE 'UTC' THEN 0 ELSE 1
+        END Expired,
+        rs.Headers, rs.Body, rs.Seq::bigint;
+";
+
     public string MoveDueDelayedMessageText { get; set; } = @"
 WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
 RETURNING id, headers, body)

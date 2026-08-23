@@ -21,7 +21,8 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
-                var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                var receiveResult = await TryReceiveAnchored(connection, transaction, cancellationToken)
+                    .ConfigureAwait(false);
                 receiveCountdownEventSignaler.Signal();
 
                 if (receiveResult.IsEmpty)
@@ -36,6 +37,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         .DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken)
                         .ConfigureAwait(false);
                     await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                    Anchor.Advance(receiveResult.RowVersion);
                     return;
                 }
 
@@ -45,10 +47,12 @@ namespace NServiceBus.Transport.Sql.Shared
                         cancellationToken).ConfigureAwait(false))
                 {
                     await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                    Anchor.Advance(receiveResult.RowVersion);
                     return;
                 }
 
                 await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                Anchor.Advance(receiveResult.RowVersion);
             }
             catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
@@ -57,6 +61,8 @@ namespace NServiceBus.Transport.Sql.Shared
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+                // the receive transaction rolled back and the message is visible again
+                Anchor.Reset();
                 return;
             }
 

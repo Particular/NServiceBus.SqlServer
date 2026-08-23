@@ -102,6 +102,12 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             }
 
             public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+                => CountReceive(cancellationToken);
+
+            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+                => CountReceive(cancellationToken);
+
+            Task<MessageReadResult> CountReceive(CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 

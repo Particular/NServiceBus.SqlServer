@@ -209,7 +209,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 return new SqlServerMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
-                    queuePeeker, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
+                    queuePeeker, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, queuePeekerOptions.Delay, subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
 
             }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 

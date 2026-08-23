@@ -106,6 +106,38 @@ OUTPUT
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
+        // Same contract as ReceiveText, plus:
+        // - only considers rows past @Anchor, so the scan seeks over the contended head of the
+        //   queue index (competing instances' locked in-flight rows and ghost records of recent
+        //   deletes) instead of walking it row by row on every receive
+        // - additionally outputs the row version so the receiver can advance its anchor
+        public string AnchoredReceiveText { get; set; } = @"
+DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
+IF ( (512 & @@OPTIONS) = 512 ) SET @NOCOUNT = 'ON';
+SET NOCOUNT ON;
+
+WITH message AS (
+    SELECT TOP(1) *
+    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+    WHERE RowVersion > @Anchor
+    ORDER BY RowVersion)
+DELETE FROM message
+OUTPUT
+    deleted.Id,
+    CASE WHEN deleted.Expires IS NULL
+        THEN 0
+        ELSE CASE WHEN deleted.Expires > GETUTCDATE()
+            THEN 0
+            ELSE 1
+        END
+    END,
+    deleted.Headers,
+    deleted.Body,
+    deleted.RowVersion;
+
+IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
+IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
+
         public string MoveDueDelayedMessageText { get; set; } = @"
 ;WITH message AS (
     SELECT TOP(@BatchSize) *
