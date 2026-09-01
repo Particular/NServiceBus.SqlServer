@@ -266,7 +266,12 @@ namespace NServiceBus.Transport.Sql.Shared
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly Lock lockObject = new();
-        readonly ReceiveAnchor receiveAnchor = new(headRescanInterval: emptyBatchBackoff);
+        static readonly TimeSpan MinimumHeadRescanInterval = TimeSpan.FromSeconds(1);
+        // The head rescan is the expensive from-head receive that picks up messages which
+        // reappeared behind the anchor (e.g. rolled back on another instance). Its interval
+        // trades that pickup latency against paying the old contended head-scan cost, so it
+        // must not shrink with an aggressively tuned peek delay (e.g. 100ms) — floor it at 1s.
+        readonly ReceiveAnchor receiveAnchor = new(emptyBatchBackoff > MinimumHeadRescanInterval ? emptyBatchBackoff : MinimumHeadRescanInterval);
         CancellationTokenSource lastBatchCancellationSource;
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
