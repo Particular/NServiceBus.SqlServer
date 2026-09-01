@@ -53,9 +53,20 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public void Reset() => Interlocked.Exchange(ref value, 0);
 
+        /// <summary>
+        /// Gates the empty-receive fallback scan from the head of the queue. With wide processing
+        /// concurrency, many receives can hit an empty anchored seek at the same moment; a single
+        /// from-head probe settles whether the queue is really empty, so only the gate winner runs
+        /// it and the rest report no message.
+        /// </summary>
+        public bool TryEnterHeadScan() => Interlocked.CompareExchange(ref headScanActive, 1, 0) == 0;
+
+        public void ExitHeadScan() => Interlocked.Exchange(ref headScanActive, 0);
+
         readonly TimeProvider timeProvider;
         readonly TimeSpan headRescanInterval;
         long value;
         long lastHeadRescanTimestamp;
+        int headScanActive;
     }
 }

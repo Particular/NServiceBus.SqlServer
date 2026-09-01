@@ -71,4 +71,22 @@ public class ReceiveAnchorTests
         // 1.6s elapsed with continuous receives: a head rescan must still have become due
         Assert.That(anchor.GetCurrent(), Is.EqualTo(0));
     }
+
+    [Test]
+    public void Only_one_empty_fallback_head_scan_runs_at_a_time()
+    {
+        // With wide processing concurrency, many receives can hit an empty anchored seek at the
+        // same moment; only one of them may pay the expensive from-head fallback scan.
+        var anchor = new ReceiveAnchor(TimeSpan.FromSeconds(1), new FakeTimeProvider());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(anchor.TryEnterHeadScan(), Is.True, "first caller wins the gate");
+            Assert.That(anchor.TryEnterHeadScan(), Is.False, "concurrent caller must not also scan");
+        });
+
+        anchor.ExitHeadScan();
+
+        Assert.That(anchor.TryEnterHeadScan(), Is.True, "gate reopens after the scan completes");
+    }
 }
