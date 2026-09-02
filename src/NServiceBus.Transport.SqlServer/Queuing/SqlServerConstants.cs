@@ -106,25 +106,42 @@ OUTPUT
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
+        // Only one endpoint instance at a time moves due delayed messages. The application lock
+        // is owned by the surrounding transaction, so it is always released on commit/rollback.
+        // Without the election, every instance scans the matured head of the [Due] index past the
+        // other instances' locked batches on every poll — on scaled-out endpoints with large
+        // delayed-message volumes that contention grows with the instance count, while a single
+        // mover drains the table just as fast. Losers do not touch the table at all and simply
+        // re-check shortly.
         public string MoveDueDelayedMessageText { get; set; } = @"
-;WITH message AS (
-    SELECT TOP(@BatchSize) *
-    FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
-    WHERE Due < GETUTCDATE())
-DELETE FROM message
-OUTPUT
-    NEWID(),
-    NULL,
-    NULL,
-    1,
-    NULL,
-    deleted.Headers,
-    deleted.Body
-INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
+DECLARE @moverLock int;
+EXEC @moverLock = sp_getapplock @Resource = '{0}_mover', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+IF @moverLock >= 0
+BEGIN
+    ;WITH message AS (
+        SELECT TOP(@BatchSize) *
+        FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+        WHERE Due < GETUTCDATE())
+    DELETE FROM message
+    OUTPUT
+        NEWID(),
+        NULL,
+        NULL,
+        1,
+        NULL,
+        deleted.Headers,
+        deleted.Body
+    INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
 
-SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
-FROM {0} WITH (READPAST)
-ORDER BY Due";
+    SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
+    FROM {0} WITH (READPAST)
+    ORDER BY Due
+END
+ELSE
+BEGIN
+    -- another instance is moving due messages; check again shortly
+    SELECT GETUTCDATE() as UtcNow, DATEADD(ms, 900, GETUTCDATE()) as NextDue
+END";
 
         public string PeekText { get; set; } = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
