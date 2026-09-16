@@ -14,8 +14,26 @@
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+                // WORKAROUND: opening the connection is deliberately not cancellable.
+                //
+                // Cancelling an OpenAsync that is auto enlisting in this scope's transaction
+                // deadlocks inside Microsoft.Data.SqlClient. The client finishes the open the caller
+                // has already abandoned and enlists it on one thread, while the dispose below rolls
+                // the transaction back on another, and the two take the connection monitor and the
+                // parser lock in opposite orders. This peek then never completes, so
+                // MessageReceiver.StopReceive waits on it forever and the endpoint never shuts down.
+                //
+                // TODO: undo this workaround, passing cancellationToken to OpenNewConnection again,
+                // once https://github.com/dotnet/SqlClient/issues/4696 is fixed and the minimum
+                // Microsoft.Data.SqlClient version this transport depends on carries the fix.
+                //
+                // Until then the open is bounded by Connect Timeout rather than by the token. The
+                // check above, TryPeek below, and the Task.Delay at the end of this method all still
+                // observe the token, so shutdown stays prompt in the normal case.
+                using (var connection = await connectionFactory.OpenNewConnection(CancellationToken.None).ConfigureAwait(false))
                 {
                     messageCount = await inputQueue.TryPeek(connection, null, cancellationToken: cancellationToken).ConfigureAwait(false);
 
