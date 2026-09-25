@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.Sql.Shared
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable) : IDelayedMessageStore
+    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand) : IDelayedMessageStore
     {
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
@@ -45,10 +45,9 @@ namespace NServiceBus.Transport.Sql.Shared
             var command = connection.CreateCommand();
             await using var commandDisposer = command.ConfigureAwait(false);
             command.Transaction = transaction;
-            command.CommandText = moveDueCommand;
             command.CommandType = CommandType.Text;
+            moveDueCommand.Populate(command, batchSize);
 
-            command.AddParameter("BatchSize", DbType.Int32, batchSize);
             var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             await using var readerDisposer = reader.ConfigureAwait(false);
             if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -70,6 +69,5 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         readonly string storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-        readonly string moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
     }
 }
