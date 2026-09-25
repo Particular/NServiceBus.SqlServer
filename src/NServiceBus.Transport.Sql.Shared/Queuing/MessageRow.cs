@@ -14,9 +14,9 @@ namespace NServiceBus.Transport.Sql.Shared
     {
         MessageRow() { }
 
-        public static async Task<MessageReadResult> Read(DbDataReader dataReader, bool isStreamSupported, bool readRowVersion = false, CancellationToken cancellationToken = default)
+        public static async Task<MessageReadResult> Read(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken = default)
         {
-            var row = await ReadRow(dataReader, isStreamSupported, readRowVersion, cancellationToken).ConfigureAwait(false);
+            var row = await ReadRow(dataReader, isStreamSupported, cancellationToken).ConfigureAwait(false);
             return row.TryParse();
         }
 
@@ -37,22 +37,16 @@ namespace NServiceBus.Transport.Sql.Shared
             BodyParameter.Add(command, body);
         }
 
-        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, bool readRowVersion, CancellationToken cancellationToken)
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
         {
             var row = new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
-                body = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
+                body = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false),
+                rowVersion = await dataReader.GetFieldValueAsync<long>(4, cancellationToken).ConfigureAwait(false)
             };
-
-            if (readRowVersion)
-            {
-                // must be the last column read: with CommandBehavior.SequentialAccess columns
-                // can only be read in ordinal order
-                row.rowVersion = await dataReader.GetFieldValueAsync<long>(4, cancellationToken).ConfigureAwait(false);
-            }
 
             return row;
         }

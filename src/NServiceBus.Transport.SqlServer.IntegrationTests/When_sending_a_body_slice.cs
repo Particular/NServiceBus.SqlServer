@@ -31,7 +31,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 await transaction.CommitAsync();
             }
 
-            var result = await queue.TryReceive(connection, null);
+            var result = await queue.TryReceive(connection, null, 0);
 
             Assert.That(result.Message.Body.ToArray(), Is.EqualTo(body.ToArray()).AsCollection);
         }
@@ -59,7 +59,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 await Task.Delay(50);
                 await using var transaction = await connection.BeginTransactionAsync();
                 await delayedMessageTable.MoveDueMessages(10, connection, transaction);
-                result = await queue.TryReceive(connection, transaction);
+                result = await queue.TryReceive(connection, transaction, 0);
                 await transaction.CommitAsync();
             }
 

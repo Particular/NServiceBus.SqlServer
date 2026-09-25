@@ -38,6 +38,17 @@ namespace NServiceBus
         } = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// Interval between receives sweeping the whole queue from its head, to pick up rows that are left behind
+        /// When not set, receives are not anchored and always scan from the head of the queue
+        /// </summary>
+        /// <remarks>
+        /// A row may be left behind if message handling has errors, because of commit delays, or other instances of the endpoint
+        /// commit out of order. This will be clamped to a minimum of 1 second, and should be higher than the peek delay for best
+        /// performance we recommend 5-10x the peek delay, but no more than a few seconds. 
+        /// </remarks>
+        public TimeSpan? HeadSweepInterval { get; set; }
+
+        /// <summary>
         /// Maximal number of records to peek.
         /// </summary>
         [ObsoleteMetadata(

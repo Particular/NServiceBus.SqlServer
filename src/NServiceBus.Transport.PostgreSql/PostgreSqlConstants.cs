@@ -34,21 +34,6 @@ FROM params;";
     //      https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
     public string ReceiveText { get; set; } = @"
 DELETE FROM {0} rs
-WHERE rs.id = (SELECT id FROM {0} ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
-RETURNING rs.id,
-        CASE WHEN Expires IS NULL
-        THEN 0
-        WHEN Expires > now() AT TIME ZONE 'UTC' THEN 0 ELSE 1
-        END Expired,
-        rs.Headers, rs.Body;
-";
-
-    // Same contract as ReceiveText, plus:
-    // - only considers rows past @Anchor, so the scan seeks over the contended head of the queue
-    //   (competing instances' locked in-flight rows and dead tuples of recent deletes)
-    // - additionally returns the sequence number so the receiver can advance its anchor
-    public string AnchoredReceiveText { get; set; } = @"
-DELETE FROM {0} rs
 WHERE rs.id = (SELECT id FROM {0} WHERE Seq > @Anchor ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING rs.id,
         CASE WHEN Expires IS NULL
@@ -97,8 +82,10 @@ LEFT JOIN LATERAL (
 WHERE NOT mover.acquired OR next.Due IS NOT NULL";
 
     public string PeekText { get; set; } = @"
-SELECT COALESCE(cast((SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED) 
-- (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED) + 1 AS int), 0);";
+WITH lowest AS (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED),
+highest AS (SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED)
+SELECT COALESCE(cast((SELECT seq FROM highest) - (SELECT seq FROM lowest) + 1 AS int), 0),
+COALESCE((SELECT seq FROM lowest), 0)::bigint;";
 
     public string AddMessageBodyStringColumn { get; set; } = @"
 DO $$

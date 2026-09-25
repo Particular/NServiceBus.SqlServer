@@ -34,7 +34,7 @@ public class When_receive_takes_long_to_complete
             var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
             queue.FormatPeekCommand();
-            peekCount = await queue.TryPeek(connection, transaction, null, cancellationToken);
+            peekCount = (await queue.TryPeek(connection, transaction, null, cancellationToken)).MessageCount;
         }
 
         txCompletionSource.SetResult();
@@ -84,7 +84,7 @@ public class When_receive_takes_long_to_complete
             await using var connection = await connectionFactory.OpenNewConnection();
             var transaction = await connection.BeginTransactionAsync();
 
-            await queue.TryReceive(connection, transaction);
+            await queue.TryReceive(connection, transaction, 0);
 
             started.SetResult();
 

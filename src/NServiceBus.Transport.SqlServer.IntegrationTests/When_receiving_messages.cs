@@ -101,9 +101,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
-                => CountReceive(cancellationToken);
-
             public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
                 => CountReceive(cancellationToken);
 
@@ -112,7 +109,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 NumberOfReceives++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", string.Empty, new byte[0], false))
+                    ? MessageReadResult.Success(new Message("1", string.Empty, new byte[0], false), 0)
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
@@ -122,11 +119,11 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 CancellationToken cancellationToken = default) =>
                 throw new NotImplementedException();
 
-            public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+            public override Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 
-                return Task.FromResult(NumberOfPeeks == 1 ? queueSize : 0);
+                return Task.FromResult(NumberOfPeeks == 1 ? new PeekResult(queueSize, 1) : PeekResult.Empty);
             }
         }
     }

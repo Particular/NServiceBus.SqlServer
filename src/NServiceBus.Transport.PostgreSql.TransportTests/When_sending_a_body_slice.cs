@@ -28,7 +28,7 @@ public class When_sending_a_body_slice
 
         await using (var transaction = await connection.BeginTransactionAsync())
         {
-            var result = await queue.TryReceive(connection, transaction, CancellationToken.None);
+            var result = await queue.TryReceive(connection, transaction, 0, CancellationToken.None);
             await transaction.CommitAsync();
 
             Assert.That(result.Message.Body.ToArray(), Is.EqualTo(body.ToArray()).AsCollection);
@@ -58,7 +58,7 @@ public class When_sending_a_body_slice
             await Task.Delay(50);
             await using var transaction = await connection.BeginTransactionAsync();
             await delayedMessageTable.MoveDueMessages(10, connection, transaction, CancellationToken.None);
-            result = await queue.TryReceive(connection, transaction, CancellationToken.None);
+            result = await queue.TryReceive(connection, transaction, 0, CancellationToken.None);
             await transaction.CommitAsync();
         }
 

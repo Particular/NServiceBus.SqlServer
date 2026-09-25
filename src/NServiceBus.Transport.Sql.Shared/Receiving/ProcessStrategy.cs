@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data.Common;
@@ -11,9 +11,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
     abstract class ProcessStrategy
     {
-        protected TableBasedQueue InputQueue;
+        TableBasedQueue inputQueue;
         protected TableBasedQueue ErrorQueue;
-        protected ReceiveAnchor Anchor;
 
         OnMessage onMessage;
         OnError onError;
@@ -26,11 +25,10 @@ namespace NServiceBus.Transport.Sql.Shared
             log = LogManager.GetLogger(GetType());
         }
 
-        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, ReceiveAnchor receiveAnchor, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
+        public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
         {
-            InputQueue = inputQueue;
+            this.inputQueue = inputQueue;
             ErrorQueue = errorQueue;
-            Anchor = receiveAnchor;
 
             this.onMessage = onMessage;
             this.onError = onError;
@@ -41,44 +39,14 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public void StopTrimmingExpiredFailureInfo() => failureInfoStorage.StopTrimmingExpiredEntries();
 
-        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Receives seeking past the anchor (the contended head region of the queue: other
-        /// instances' locked in-flight rows and remains of recently consumed rows). When nothing
-        /// is found past the anchor, rescans once from the head so messages that reappeared
-        /// behind it (for example rolled back on another instance) are found before the queue is
-        /// declared empty. The rescan is gated: with wide processing concurrency many receives
-        /// hit an empty seek at the same moment, and a single from-head probe settles whether the
-        /// queue is really empty — the rest report no message without paying for the scan.
-        /// </summary>
-        protected async Task<MessageReadResult> TryReceiveAnchored(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
-        {
-            var anchor = Anchor.GetCurrent();
-            var receiveResult = await InputQueue.TryReceive(connection, transaction, anchor, cancellationToken).ConfigureAwait(false);
-
-            if (receiveResult.IsEmpty && anchor > 0 && Anchor.TryEnterHeadScan())
-            {
-                try
-                {
-                    receiveResult = await InputQueue.TryReceive(connection, transaction, 0, cancellationToken).ConfigureAwait(false);
-                }
-                finally
-                {
-                    Anchor.ExitHeadScan();
-                }
-            }
-
-            return receiveResult;
-        }
+        public abstract Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default);
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)
             {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, InputQueue.Name, context);
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, inputQueue.Name, context);
                 await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
@@ -90,7 +58,7 @@ namespace NServiceBus.Transport.Sql.Shared
             message.ResetHeaders();
             try
             {
-                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
+                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, inputQueue.Name, context);
                 _ = errorContext.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
@@ -116,7 +84,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 //This is not a delayed message. Process in local endpoint instance.
                 return false;
             }
-            if (forwardDestination == InputQueue.Name)
+            if (forwardDestination == inputQueue.Name)
             {
                 //Do not forward the message. Process in local endpoint instance.
                 return false;

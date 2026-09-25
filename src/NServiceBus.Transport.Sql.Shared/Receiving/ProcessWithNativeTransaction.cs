@@ -11,8 +11,7 @@ namespace NServiceBus.Transport.Sql.Shared
     class ProcessWithNativeTransaction(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier, bool transactionForReceiveOnly = false)
         : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
+        public override async Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -25,21 +24,18 @@ namespace NServiceBus.Transport.Sql.Shared
                     var transaction = await connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
                     await using (transaction.ConfigureAwait(false))
                     {
-                        var receiveResult = await TryReceiveAnchored(connection, transaction, cancellationToken).ConfigureAwait(false);
-                        receiveCountdownEventSignaler.Signal();
+                        var receiveResult = await receiveAttempt.Receive(connection, transaction, cancellationToken).ConfigureAwait(false);
 
                         if (receiveResult.IsEmpty)
                         {
-                            await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
-                            return;
+                            return ProcessOutcome.NoMessage;
                         }
 
                         if (receiveResult.IsPoison)
                         {
                             await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
                             await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-                            Anchor.Advance(receiveResult.RowVersion);
-                            return;
+                            return ProcessOutcome.Committed;
                         }
 
                         message = receiveResult.Message;
@@ -47,8 +43,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
                         {
                             await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-                            Anchor.Advance(receiveResult.RowVersion);
-                            return;
+                            return ProcessOutcome.Committed;
                         }
 
                         var transportTransaction = transactionForReceiveOnly
@@ -58,18 +53,15 @@ namespace NServiceBus.Transport.Sql.Shared
                         if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
                         {
                             await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-                            // the message is visible at the head of the queue again; rescan from the
-                            // head so the immediate retry finds it
-                            Anchor.Reset();
-                            return;
+                            return ProcessOutcome.RolledBack;
                         }
 
                         await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-                        Anchor.Advance(receiveResult.RowVersion);
                     }
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                return ProcessOutcome.Committed;
             }
             catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
@@ -78,8 +70,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
-                // the receive transaction rolled back and the message is visible again
-                Anchor.Reset();
+                return ProcessOutcome.RolledBack;
             }
         }
 
