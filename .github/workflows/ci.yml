@@ -79,16 +79,9 @@ jobs:
       - parallel:
         - name: Run SQL Server tests
           uses: Particular/run-tests-action@v1.9.0
-          with:
-            projects: |
-              src/NServiceBus.Transport.SqlServer.AcceptanceTests/NServiceBus.Transport.SqlServer.AcceptanceTests.csproj
-              src/NServiceBus.Transport.SqlServer.IntegrationTests/NServiceBus.Transport.SqlServer.IntegrationTests.csproj
-              src/NServiceBus.Transport.SqlServer.TransportTests/NServiceBus.Transport.SqlServer.TransportTests.csproj
-              src/NServiceBus.Transport.SqlServer.UnitTests/NServiceBus.Transport.SqlServer.UnitTests.csproj
+          env:
+            SqlServerTransport_TESTS_TRACK: SqlServer
         - name: Run PostgreSQL tests
           uses: Particular/run-tests-action@v1.9.0
-          with:
-            projects: |
-              src/NServiceBus.Transport.PostgreSql.AcceptanceTests/NServiceBus.Transport.PostgreSql.AcceptanceTests.csproj
-              src/NServiceBus.Transport.PostgreSql.TransportTests/NServiceBus.Transport.PostgreSql.TransportTests.csproj
-              src/NServiceBus.Transport.PostgreSql.UnitTests/NServiceBus.Transport.PostgreSql.UnitTests.csproj
+          env:
+            SqlServerTransport_TESTS_TRACK: PostgreSql
