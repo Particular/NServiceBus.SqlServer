@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\NonParallelizableFixturesAttribute.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_message_handling_pipeline_is_invoked.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_ReplyTo_address_does_not_exist.cs" />
     <Compile Include="..\NServiceBus.Transport.SqlServer.AcceptanceTests\When_using_brackets_around_endpoint_names.cs" />

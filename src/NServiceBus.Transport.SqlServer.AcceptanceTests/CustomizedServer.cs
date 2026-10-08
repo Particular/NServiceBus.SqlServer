@@ -12,6 +12,7 @@ public class CustomizedServer : DefaultServer
     public CustomizedServer(string connectionString, bool supportsPublishSubscribe = true, bool supportsDelayedDelivery = true)
     {
         var transport = new SqlServerTransport(connectionString, supportsDelayedDelivery, supportsPublishSubscribe);
+        transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
 
         TransportConfiguration = new ConfigureEndpointSqlServerTransport(transport);
     }
