@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Npgsql;
 using NServiceBus;
 using NServiceBus.Transport;
+using NServiceBus.Transport.PostgreSql;
 using NServiceBus.TransportTests;
+using NUnit.Framework;
 using QueueAddress = NServiceBus.Transport.QueueAddress;
 
 public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInfrastructure
@@ -28,6 +30,7 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 
         postgreSqlTransport.DelayedDelivery.TableSuffix = "Delayed";
         postgreSqlTransport.Subscriptions.DisableCaching = true;
+        postgreSqlTransport.Subscriptions.SubscriptionTableName = new SubscriptionTableName($"SubscriptionRouting_{TestContext.CurrentContext.Test.ID.Replace('-', '_')}", "public");
 
         var receivers = new[]
         {
