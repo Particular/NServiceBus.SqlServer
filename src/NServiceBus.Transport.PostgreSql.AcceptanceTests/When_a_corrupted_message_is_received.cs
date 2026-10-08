@@ -13,6 +13,7 @@ using NServiceBus.AcceptanceTests;
 using NServiceBus.AcceptanceTests.EndpointTemplates;
 using NUnit.Framework;
 
+[NonParallelizable] // Purges and asserts on the shared error queue table.
 public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
 {
     [SetUp]

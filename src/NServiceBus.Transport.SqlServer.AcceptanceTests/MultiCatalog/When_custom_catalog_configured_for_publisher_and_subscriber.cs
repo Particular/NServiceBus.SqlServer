@@ -37,7 +37,7 @@ public class When_custom_catalog_configured_for_publisher_and_subscriber : Multi
         {
             var transport = new SqlServerTransport(PublisherConnectionString);
             transport.Subscriptions.DisableCaching = true;
-            transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+            transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) => { });
         }
@@ -48,7 +48,7 @@ public class When_custom_catalog_configured_for_publisher_and_subscriber : Multi
         public Subscriber()
         {
             var transport = new SqlServerTransport(SubscriberConnectionString);
-            transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+            transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>
             {

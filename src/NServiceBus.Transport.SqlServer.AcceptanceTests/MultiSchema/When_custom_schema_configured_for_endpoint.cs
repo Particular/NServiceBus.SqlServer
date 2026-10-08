@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using AcceptanceTesting;
 using NServiceBus.AcceptanceTests;
 using NServiceBus.AcceptanceTests.EndpointTemplates;
+using NUnit.Framework;
 
+[NonParallelizable] // Subclasses share the nested endpoint types, so they would share queue names.
 public abstract class When_custom_schema_configured_for_endpoint : NServiceBusAcceptanceTest
 {
     public const string ReceiverSchema = "receiver";

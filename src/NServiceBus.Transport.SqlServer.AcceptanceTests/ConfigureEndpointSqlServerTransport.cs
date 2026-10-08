@@ -19,6 +19,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
 
         transport = new SqlServerTransport(connectionString);
         transport.Subscriptions.DisableCaching = true;
+        transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
 
         //On non windows operating systems we need to explicitly set the transaction mode to SendsAtomicWithReceive since distributed transactions is not available there
         if (!OperatingSystem.IsWindows() && transport.TransportTransactionMode == TransportTransactionMode.TransactionScope)
