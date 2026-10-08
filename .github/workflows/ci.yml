@@ -39,14 +39,9 @@ jobs:
         with:
           global-json-file: global.json
       - name: Build
+        id: build
         run: dotnet build src --configuration Release
-      - name: Upload packages
-        if: matrix.name == 'Windows'
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: NuGet packages
-          path: nugets/
-          retention-days: 7
+        background: true
       - parallel:
         - name: Install SQL Server
           uses: Particular/install-sql-server-action@v3.0.0
@@ -61,6 +56,15 @@ jobs:
             init-script: './.github/workflows/scripts/init-postgres.sql'
             registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
             registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Wait for build
+        wait: build
+      - name: Upload packages
+        if: matrix.name == 'Windows'
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: NuGet packages
+          path: nugets/
+          retention-days: 7
       - name: Prepare SQL Server
         run: |
           echo "Create extra databases"
@@ -72,5 +76,19 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
-      - name: Run tests
-        uses: Particular/run-tests-action@v1.9.0
+      - parallel:
+        - name: Run SQL Server tests
+          uses: Particular/run-tests-action@v1.9.0
+          with:
+            projects: |
+              src/NServiceBus.Transport.SqlServer.AcceptanceTests/NServiceBus.Transport.SqlServer.AcceptanceTests.csproj
+              src/NServiceBus.Transport.SqlServer.IntegrationTests/NServiceBus.Transport.SqlServer.IntegrationTests.csproj
+              src/NServiceBus.Transport.SqlServer.TransportTests/NServiceBus.Transport.SqlServer.TransportTests.csproj
+              src/NServiceBus.Transport.SqlServer.UnitTests/NServiceBus.Transport.SqlServer.UnitTests.csproj
+        - name: Run PostgreSQL tests
+          uses: Particular/run-tests-action@v1.9.0
+          with:
+            projects: |
+              src/NServiceBus.Transport.PostgreSql.AcceptanceTests/NServiceBus.Transport.PostgreSql.AcceptanceTests.csproj
+              src/NServiceBus.Transport.PostgreSql.TransportTests/NServiceBus.Transport.PostgreSql.TransportTests.csproj
+              src/NServiceBus.Transport.PostgreSql.UnitTests/NServiceBus.Transport.PostgreSql.UnitTests.csproj
