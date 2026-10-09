@@ -167,6 +167,7 @@ namespace NServiceBus.Transport.SqlServer
                     Native = true,
                     Suffix = delayedDelivery.TableSuffix,
                     delayedDelivery.BatchSize,
+                    delayedDelivery.DelayedMessageMoveLockDelay,
                 });
 
                 var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(), delayedDelivery.TableSuffix);
@@ -180,7 +181,13 @@ namespace NServiceBus.Transport.SqlServer
                 var mainReceiverInputQueueAddress = ToTransportAddress(receiveSettings[0].ReceiveAddress);
 
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
-                var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
+                var delayedQueueTable = delayedQueueCanonicalAddress.QualifiedTableName;
+
+                IMoveDueDelayedMessagesCommand moveDueCommand = delayedDelivery.DelayedMessageMoveLockDelay is { } lockDelay
+                    ? new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable, lockDelay)
+                    : new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+
+                var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable, moveDueCommand);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;

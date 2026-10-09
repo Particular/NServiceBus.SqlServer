@@ -15,10 +15,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
+        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand)
         {
             storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
+            this.moveDueCommand = moveDueCommand;
         }
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
@@ -50,10 +50,9 @@ namespace NServiceBus.Transport.Sql.Shared
             using (var command = connection.CreateCommand())
             {
                 command.Transaction = transaction;
-                command.CommandText = moveDueCommand;
                 command.CommandType = CommandType.Text;
+                moveDueCommand.Populate(command, batchSize);
 
-                command.AddParameter("BatchSize", DbType.Int32, batchSize);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -77,6 +76,6 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         string storeCommand;
-        string moveDueCommand;
+        readonly IMoveDueDelayedMessagesCommand moveDueCommand;
     }
 }

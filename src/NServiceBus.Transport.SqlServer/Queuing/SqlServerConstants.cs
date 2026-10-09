@@ -126,6 +126,38 @@ SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
 FROM {0} WITH (READPAST)
 ORDER BY Due";
 
+        // Elects a single mover via a transaction-owned app lock, avoiding index-scan contention between
+        // scaled-out instances. Losers skip the table and re-check after @LockDelayMs.
+        public string MoveDueDelayedMessageWithLockText { get; set; } = @"
+DECLARE @moverLock int;
+EXEC @moverLock = sp_getapplock @Resource = '{0}_mover', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+IF @moverLock >= 0
+BEGIN
+    ;WITH message AS (
+        SELECT TOP(@BatchSize) *
+        FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+        WHERE Due < GETUTCDATE())
+    DELETE FROM message
+    OUTPUT
+        NEWID(),
+        NULL,
+        NULL,
+        1,
+        NULL,
+        deleted.Headers,
+        deleted.Body
+    INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
+
+    SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
+    FROM {0} WITH (READPAST)
+    ORDER BY Due
+END
+ELSE
+BEGIN
+    -- another instance is moving due messages; check again shortly
+    SELECT GETUTCDATE() as UtcNow, DATEADD(ms, @LockDelayMs, GETUTCDATE()) as NextDue
+END";
+
         public string PeekText { get; set; } = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
 
