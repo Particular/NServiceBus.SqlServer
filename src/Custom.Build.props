@@ -5,4 +5,21 @@
     <MinVerAutoIncrement>patch</MinVerAutoIncrement>
   </PropertyGroup>
 
+  <!--
+    A test project declares its track with <TestTrack>. Tracks run concurrently in CI, each against its own database
+    engine, and set SqlServerTransport_TESTS_TRACK so that the other tracks' assemblies ignore themselves. A project
+    that declares no track runs in every track.
+  -->
+  <ItemGroup Condition="'$(TestTrack)' != ''">
+    <Compile Include="$(MSBuildThisFileDirectory)TestTrack\IncludeInTestTrackAttribute.cs" Link="IncludeInTestTrackAttribute.cs" />
+    <AssemblyAttribute Include="IncludeInTestTrackAttribute">
+      <_Parameter1>$(TestTrack)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- An unknown name would match no track, so the assembly would be ignored everywhere. -->
+  <Target Name="ValidateTestTrack" BeforeTargets="CoreCompile" Condition="'$(TestTrack)' != '' and '$(TestTrack)' != 'SqlServer' and '$(TestTrack)' != 'PostgreSql'">
+    <Error Text="TestTrack '$(TestTrack)' in $(MSBuildProjectName) must be SqlServer or PostgreSql." />
+  </Target>
+
 </Project>
