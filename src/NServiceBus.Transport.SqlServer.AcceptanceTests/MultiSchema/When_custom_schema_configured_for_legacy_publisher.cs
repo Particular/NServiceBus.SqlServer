@@ -37,7 +37,7 @@ public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcc
                     var transport = c.ConfigureSqlServerTransport();
 
                     transport.DefaultSchema = "sender";
-                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
+                    transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
                     transport.Subscriptions.DisableCaching = true;
 
                     c.OnEndpointSubscribed<Context>((s, context) =>
@@ -62,7 +62,7 @@ public class When_custom_schema_configured_for_legacy_publisher : NServiceBusAcc
 
                 var transport = c.ConfigureSqlServerTransport();
                 transport.DefaultSchema = "receiver";
-                transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo");
+                transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
 
 #pragma warning disable CS0618 // Type or member is obsolete
                 // When message-driven compatibility mode is obsoleted with an error this test can be removed

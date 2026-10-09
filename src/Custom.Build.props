@@ -12,6 +12,7 @@
   -->
   <ItemGroup Condition="'$(TestTrack)' != ''">
     <Compile Include="$(MSBuildThisFileDirectory)TestTrack\IncludeInTestTrackAttribute.cs" Link="IncludeInTestTrackAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestTrack\NonParallelizableFixturesAttribute.cs" Link="NonParallelizableFixturesAttribute.cs" />
     <AssemblyAttribute Include="IncludeInTestTrackAttribute">
       <_Parameter1>$(TestTrack)</_Parameter1>
     </AssemblyAttribute>

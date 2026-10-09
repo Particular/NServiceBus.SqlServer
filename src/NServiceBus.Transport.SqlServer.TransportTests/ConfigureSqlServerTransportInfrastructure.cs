@@ -29,6 +29,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
 
         sqlServerTransport.DelayedDelivery.TableSuffix = "Delayed";
         sqlServerTransport.Subscriptions.DisableCaching = true;
+        sqlServerTransport.Subscriptions.SubscriptionTableName = new NServiceBus.Transport.SqlServer.SubscriptionTableName($"SubscriptionRouting_{TestContext.CurrentContext.Test.ID.Replace('-', '_')}", "dbo");
 
         var receivers = new[]
         {
@@ -56,7 +57,8 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
             {
                 errorQueueName,
                 inputQueueName,
-                sqlServerTransport.Testing.DelayedDeliveryQueue
+                sqlServerTransport.Testing.DelayedDeliveryQueue,
+                sqlServerTransport.Testing.SubscriptionTable
             };
 
             using (var conn = new SqlConnection(ConnectionString))

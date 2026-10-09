@@ -37,7 +37,7 @@ public class When_custom_catalog_configured_for_legacy_publisher : MultiCatalogA
                 (c, rd) =>
                 {
                     var transport = c.ConfigureSqlServerTransport();
-                    transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+                    transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
                     transport.Subscriptions.DisableCaching = true;
 
                     c.OnEndpointSubscribed<Context>((s, context) =>
@@ -56,7 +56,7 @@ public class When_custom_catalog_configured_for_legacy_publisher : MultiCatalogA
         public Subscriber()
         {
             var transport = new SqlServerTransport(SubscriberConnectionString);
-            transport.Subscriptions.SubscriptionTableName = new SubscriptionTableName("SubscriptionRouting", "dbo", "nservicebus");
+            transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>
             {
