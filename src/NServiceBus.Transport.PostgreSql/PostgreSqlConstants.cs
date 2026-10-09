@@ -34,13 +34,13 @@ FROM params;";
     //      https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
     public string ReceiveText { get; set; } = @"
 DELETE FROM {0} rs
-WHERE rs.id = (SELECT id FROM {0} ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
+WHERE rs.id = (SELECT id FROM {0} WHERE Seq > @Anchor ORDER BY Seq LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING rs.id,
         CASE WHEN Expires IS NULL
         THEN 0
         WHEN Expires > now() AT TIME ZONE 'UTC' THEN 0 ELSE 1
         END Expired,
-        rs.Headers, rs.Body;
+        rs.Headers, rs.Body, rs.Seq::bigint;
 ";
 
     public string MoveDueDelayedMessageText { get; set; } = @"
@@ -53,8 +53,10 @@ FROM {0}
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
     public string PeekText { get; set; } = @"
-SELECT COALESCE(cast((SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED) 
-- (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED) + 1 AS int), 0);";
+WITH lowest AS (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED),
+highest AS (SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED)
+SELECT COALESCE(cast((SELECT seq FROM highest) - (SELECT seq FROM lowest) + 1 AS int), 0),
+COALESCE((SELECT seq FROM lowest), 0)::bigint;";
 
     public string AddMessageBodyStringColumn { get; set; } = @"
 DO $$

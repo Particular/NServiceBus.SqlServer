@@ -80,7 +80,7 @@
                 using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
                 using (var tx = connection.BeginTransaction())
                 {
-                    await tableBasedQueue.TryReceive(connection, tx, cancellationToken);
+                    await tableBasedQueue.TryReceive(connection, tx, 0, cancellationToken);
                     await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds), cancellationToken);
                     tx.Commit();
                     scope.Complete();

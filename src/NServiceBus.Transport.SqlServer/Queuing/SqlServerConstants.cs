@@ -89,6 +89,7 @@ SET NOCOUNT ON;
 WITH message AS (
     SELECT TOP(1) *
     FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+    WHERE RowVersion > @Anchor
     ORDER BY RowVersion)
 DELETE FROM message
 OUTPUT
@@ -101,7 +102,8 @@ OUTPUT
         END
     END,
     deleted.Headers,
-    deleted.Body;
+    deleted.Body,
+    deleted.RowVersion;
 
 IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
@@ -127,7 +129,7 @@ FROM {0} WITH (READPAST)
 ORDER BY Due";
 
         public string PeekText { get; set; } = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id, isnull(min([RowVersion]), 0) LowestRowVersion FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
 
         public string AddMessageBodyStringColumn { get; set; } = @"
 IF NOT EXISTS (
