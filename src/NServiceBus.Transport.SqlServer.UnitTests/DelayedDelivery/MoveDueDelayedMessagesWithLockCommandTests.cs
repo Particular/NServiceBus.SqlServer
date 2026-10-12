@@ -9,10 +9,10 @@ public class MoveDueDelayedMessagesWithLockCommandTests
     [TestCase(1000, 1000)]
     [TestCase(1000.1, 1001)]
     [TestCase(0.5, 1)]
-    public void Populates_parameters_with_lock_delay_rounded_up_to_whole_milliseconds(double lockDelayMs, int expectedLockDelayMs)
+    public void Populates_parameters_with_lock_retry_interval_rounded_up_to_whole_milliseconds(double lockRetryIntervalMs, int expectedLockRetryIntervalMs)
     {
         var sqlConstants = new SqlServerConstants();
-        var moveDueCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, "[delayed]", "[input]", TimeSpan.FromMilliseconds(lockDelayMs));
+        var moveDueCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, "[delayed]", "[input]", TimeSpan.FromMilliseconds(lockRetryIntervalMs));
         using var command = new SqlCommand();
 
         moveDueCommand.Populate(command, 42);
@@ -21,7 +21,7 @@ public class MoveDueDelayedMessagesWithLockCommandTests
         {
             Assert.That(command.CommandText, Is.EqualTo(string.Format(sqlConstants.MoveDueDelayedMessageWithLockText, "[delayed]", "[input]")));
             Assert.That(command.Parameters["BatchSize"].Value, Is.EqualTo(42));
-            Assert.That(command.Parameters["LockDelayMs"].Value, Is.EqualTo(expectedLockDelayMs));
+            Assert.That(command.Parameters["LockRetryIntervalMs"].Value, Is.EqualTo(expectedLockRetryIntervalMs));
         }
     }
 }

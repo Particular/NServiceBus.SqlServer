@@ -4,7 +4,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
-    using NServiceBus.Transport.Sql.Shared;
+    using Sql.Shared;
     using NUnit.Framework;
 
     public class When_moving_due_delayed_messages
@@ -74,11 +74,13 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             {
                 await table.MoveDueMessages(2, holder.Connection, holder.Transaction, CancellationToken);
 
-                var before = DateTime.UtcNow;
-                var nextDue = await MoveInTransaction(table, 10, CancellationToken);
-                var after = DateTime.UtcNow;
+                var result = await MoveInTransaction(table, 10, CancellationToken);
 
-                Assert.That(await Count(inputTable, CancellationToken), Is.Zero, "The second mover should not move any messages while the lock is held");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(result, Is.EqualTo(new MoveDueResult.LockNotAcquired(LockRetryInterval)));
+                    Assert.That(await Count(inputTable, CancellationToken), Is.Zero, "The second mover should not move any messages while the lock is held");
+                }
 
                 holder.Transaction.Commit();
             }
@@ -100,14 +102,14 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         DelayedMessageTable CreateLockedTable() =>
             new(sqlConstants, delayedTable.QualifiedTableName,
-                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName, LockDelay));
+                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName, LockRetryInterval));
 
-        async Task<DateTime> MoveInTransaction(DelayedMessageTable table, int batchSize, CancellationToken cancellationToken)
+        async Task<MoveDueResult> MoveInTransaction(DelayedMessageTable table, int batchSize, CancellationToken cancellationToken)
         {
             using var tx = await OpenTransaction(cancellationToken);
-            var nextDue = await table.MoveDueMessages(batchSize, tx.Connection, tx.Transaction, cancellationToken);
+            var result = await table.MoveDueMessages(batchSize, tx.Connection, tx.Transaction, cancellationToken);
             tx.Transaction.Commit();
-            return nextDue;
+            return result;
         }
 
         async Task<OpenTx> OpenTransaction(CancellationToken cancellationToken)
@@ -171,7 +173,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             }
         }
 
-        static readonly TimeSpan LockDelay = TimeSpan.FromSeconds(5);
+        static readonly TimeSpan LockRetryInterval = TimeSpan.FromSeconds(5);
         const string InputQueue = "MoveDueDelayedMessagesTests";
 
         readonly SqlServerConstants sqlConstants = new();

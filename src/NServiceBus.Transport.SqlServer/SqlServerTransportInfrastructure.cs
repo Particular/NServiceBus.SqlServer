@@ -183,8 +183,8 @@ namespace NServiceBus.Transport.SqlServer
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
                 var delayedQueueTable = delayedQueueCanonicalAddress.QualifiedTableName;
 
-                IMoveDueDelayedMessagesCommand moveDueCommand = delayedDelivery.DelayedMessageMoveLockDelay is { } lockDelay
-                    ? new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable, lockDelay)
+                IMoveDueDelayedMessagesCommand moveDueCommand = delayedDelivery.DelayedMessageMoveLockDelay is { } lockRetryInterval
+                    ? new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable, lockRetryInterval)
                     : new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable);
 
                 var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable, moveDueCommand);
