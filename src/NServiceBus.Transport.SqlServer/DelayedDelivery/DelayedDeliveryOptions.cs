@@ -38,10 +38,10 @@
         } = 100;
 
         /// <summary>
-        /// When set, only one endpoint instance at a time moves due delayed messages to the input queue.
-        /// Instances that fail to acquire the lock skip the move and check again after this delay.
+        /// Only one endpoint instance at a time moves due delayed messages to the input queue.
+        /// Instances that fail to acquire the lock skip the move and retry after this interval. Defaults to 1 second.
         ///
-        /// When <c>null</c> (the default), every instance moves due delayed messages independently.
+        /// When <c>null</c>, every instance moves due delayed messages independently.
         /// </summary>
         public TimeSpan? DelayedMessageMoveLockDelay
         {
@@ -56,6 +56,6 @@
 
                 field = value;
             }
-        }
+        } = TimeSpan.FromSeconds(1);
     }
 }

@@ -6,11 +6,11 @@ using NUnit.Framework;
 public class DelayedDeliveryOptionsTests
 {
     [Test]
-    public void DelayedMessageMoveLockDelay_defaults_to_null()
+    public void DelayedMessageMoveLockDelay_defaults_to_one_second()
     {
         var options = new DelayedDeliveryOptions();
 
-        Assert.That(options.DelayedMessageMoveLockDelay, Is.Null);
+        Assert.That(options.DelayedMessageMoveLockDelay, Is.EqualTo(TimeSpan.FromSeconds(1)));
     }
 
     [Test]
