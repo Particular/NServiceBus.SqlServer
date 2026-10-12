@@ -15,6 +15,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand) : IDelayedMessageStore
     {
+        const int RetryLockAfterMsColumn = 2;
+
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         /// <summary>
@@ -38,8 +40,7 @@ namespace NServiceBus.Transport.Sql.Shared
             OnStoreDelayedMessage?.Invoke(null, DateTime.UtcNow.Add(dueAfter));
         }
 
-        /// <returns>The time of the next timeout due</returns>
-        public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
+        public async Task<MoveDueResult> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
             CancellationToken cancellationToken = default)
         {
             var command = connection.CreateCommand();
@@ -53,7 +54,13 @@ namespace NServiceBus.Transport.Sql.Shared
             if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 // No timeouts waiting
-                return DateTime.MinValue;
+                return new MoveDueResult.Moved(DateTime.MinValue);
+            }
+
+            if (!await reader.IsDBNullAsync(RetryLockAfterMsColumn, cancellationToken).ConfigureAwait(false))
+            {
+                var retryLockAfter = TimeSpan.FromMilliseconds(reader.GetInt32(RetryLockAfterMsColumn));
+                return new MoveDueResult.LockNotAcquired(retryLockAfter);
             }
 
             // Normalizing in case of clock drift between executing machine and database instance
@@ -62,10 +69,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
             if (sqlNextDue <= sqlNow)
             {
-                return DateTime.UtcNow;
+                return new MoveDueResult.Moved(DateTime.UtcNow);
             }
 
-            return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
+            return new MoveDueResult.Moved(DateTime.UtcNow.Add(sqlNextDue - sqlNow));
         }
 
         readonly string storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);

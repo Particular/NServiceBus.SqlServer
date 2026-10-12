@@ -5,16 +5,16 @@ namespace NServiceBus.Transport.SqlServer
     using System.Data.Common;
     using NServiceBus.Transport.Sql.Shared;
 
-    class MoveDueDelayedMessagesWithLockCommand(SqlServerConstants sqlConstants, string delayedQueueTable, string inputQueueTable, TimeSpan lockDelay) : IMoveDueDelayedMessagesCommand
+    class MoveDueDelayedMessagesWithLockCommand(SqlServerConstants sqlConstants, string delayedQueueTable, string inputQueueTable, TimeSpan lockRetryInterval) : IMoveDueDelayedMessagesCommand
     {
         public void Populate(DbCommand command, int batchSize)
         {
             command.CommandText = commandText;
             command.AddParameter("BatchSize", DbType.Int32, batchSize);
-            command.AddParameter("LockDelayMs", DbType.Int32, lockDelayMs);
+            command.AddParameter("LockRetryIntervalMs", DbType.Int32, lockRetryIntervalMs);
         }
 
         readonly string commandText = string.Format(sqlConstants.MoveDueDelayedMessageWithLockText, delayedQueueTable, inputQueueTable);
-        readonly int lockDelayMs = (int)Math.Ceiling(lockDelay.TotalMilliseconds);
+        readonly int lockRetryIntervalMs = (int)Math.Ceiling(lockRetryInterval.TotalMilliseconds);
     }
 }

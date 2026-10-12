@@ -60,13 +60,23 @@ namespace NServiceBus.Transport.Sql.Shared
                 {
                     try
                     {
-                        var nextDueTime = await ExecuteOnce(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
-                        backOffStrategy.RegisterNewDueTime(nextDueTime);
+                        var result = await ExecuteOnce(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
 
                         dueDelayedMessageProcessorCircuitBreaker.Success();
 
-                        await backOffStrategy.WaitForNextExecution(moveDelayedMessagesCancellationToken)
-                            .ConfigureAwait(false);
+                        switch (result)
+                        {
+                            case MoveDueResult.LockNotAcquired(var retryAfter):
+                                await Task.Delay(retryAfter, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                                break;
+                            case MoveDueResult.Moved(var nextDue):
+                                backOffStrategy.RegisterNewDueTime(nextDue);
+                                await backOffStrategy.WaitForNextExecution(moveDelayedMessagesCancellationToken)
+                                    .ConfigureAwait(false);
+                                break;
+                            default:
+                                throw new InvalidOperationException($"Unexpected {nameof(MoveDueResult)}: {result}");
+                        }
                     }
                     catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, moveDelayedMessagesCancellationToken))
                     {
@@ -86,19 +96,19 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        async Task<DateTime> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
+        async Task<MoveDueResult> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
         {
             var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
                        .ConfigureAwait(false);
             await using var connectionDisposer = connection.ConfigureAwait(false);
             var transaction = await connection.BeginTransactionAsync(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             await using var transactionDisposer = transaction.ConfigureAwait(false);
-            var nextDueTime = await table
+            var result = await table
                 .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
                 .ConfigureAwait(false);
             await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
 
-            return nextDueTime;
+            return result;
         }
 
         /// <summary>
