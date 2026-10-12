@@ -131,6 +131,9 @@ ORDER BY Due";
         public string MoveDueDelayedMessageWithLockText { get; set; } = @"
 DECLARE @moverLock int;
 EXEC @moverLock = sp_getapplock @Resource = '{0}_mover', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+
+IF @moverLock < -1 THROW 50000, 'sp_getapplock failed for delayed mover', 1;
+
 IF @moverLock >= 0
 BEGIN
     ;WITH message AS (
