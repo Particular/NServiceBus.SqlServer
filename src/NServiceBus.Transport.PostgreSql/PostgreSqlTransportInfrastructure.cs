@@ -168,7 +168,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             {
                 Native = true,
                 Suffix = delayedDelivery.TableSuffix,
-                delayedDelivery.BatchSize
+                delayedDelivery.BatchSize,
+                delayedDelivery.DelayedMessageMoveLockDelay,
             });
 
             var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
@@ -184,8 +185,12 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
             var delayedQueueTable = delayedQueueCanonicalAddress.QualifiedTableName;
-            var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable,
-                new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable));
+
+            IMoveDueDelayedMessagesCommand moveDueCommand = delayedDelivery.DelayedMessageMoveLockDelay is { } lockRetryInterval
+                ? new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable, lockRetryInterval)
+                : new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+
+            var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable, moveDueCommand);
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;

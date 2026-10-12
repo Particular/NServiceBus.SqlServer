@@ -36,5 +36,26 @@
                 field = value;
             }
         } = 100;
+
+        /// <summary>
+        /// Only one endpoint instance at a time moves due delayed messages to the input queue.
+        /// Instances that fail to acquire the lock skip the move and retry after this interval. Defaults to 1 second.
+        ///
+        /// When <c>null</c>, every instance moves due delayed messages independently.
+        /// </summary>
+        public TimeSpan? DelayedMessageMoveLockDelay
+        {
+            get;
+            set
+            {
+                if (value.HasValue)
+                {
+                    ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value.Value, TimeSpan.Zero);
+                    ArgumentOutOfRangeException.ThrowIfGreaterThan(value.Value, TimeSpan.FromMilliseconds(int.MaxValue));
+                }
+
+                field = value;
+            }
+        } = TimeSpan.FromSeconds(1);
     }
 }
