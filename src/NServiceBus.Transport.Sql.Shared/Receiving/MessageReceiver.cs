@@ -65,7 +65,6 @@ namespace NServiceBus.Transport.Sql.Shared
             maxConcurrency = limitations.MaxConcurrency;
             concurrencyLimiter = new SemaphoreSlim(limitations.MaxConcurrency);
 
-            lastHeadSweep = timeProvider.GetTimestamp();
             messageReceivingCancellationTokenSource = new CancellationTokenSource();
             messageProcessingCancellationTokenSource = new CancellationTokenSource();
             messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
@@ -213,14 +212,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
-                // A busy queue never ends a batch, so the peek alone would rarely find rows stranded behind the
-                // anchor. Periodically sweeping from the head finds them wherever they are, including rows the
-                // batch's peek skipped because they were locked in flight at the time.
-                if (headSweepInterval is { } interval && timeProvider.GetElapsedTime(lastHeadSweep) >= interval)
-                {
-                    receiveState.SweepFromHead();
-                    lastHeadSweep = timeProvider.GetTimestamp();
-                }
+                // A busy queue never ends a batch, so periodically sweep from the head to find rows stranded behind the anchor
+                headSweepSchedule.SweepIfDue(receiveState);
 
                 _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
                     localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
@@ -277,10 +270,8 @@ namespace NServiceBus.Transport.Sql.Shared
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly Lock lockObject = new();
-        readonly TimeSpan? headSweepInterval = headSweepInterval is { } interval && interval < MinimumHeadSweepInterval ? MinimumHeadSweepInterval : headSweepInterval;
-        long lastHeadSweep;
         readonly ReceiveState receiveState = new(anchoringEnabled: headSweepInterval.HasValue);
-        static readonly TimeSpan MinimumHeadSweepInterval = TimeSpan.FromSeconds(1);
+        readonly HeadSweepSchedule headSweepSchedule = new(headSweepInterval, timeProvider);
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
@@ -297,5 +288,30 @@ namespace NServiceBus.Transport.Sql.Shared
         public ISubscriptionManager Subscriptions { get; } = subscriptionManager;
         public string Id { get; } = receiverId;
         public string ReceiveAddress { get; } = receiveAddress;
+
+        sealed class HeadSweepSchedule
+        {
+            public HeadSweepSchedule(TimeSpan? interval, TimeProvider timeProvider)
+            {
+                this.interval = interval < MinimumInterval ? MinimumInterval : interval;
+                this.timeProvider = timeProvider;
+                lastSweep = timeProvider.GetTimestamp();
+            }
+
+            public void SweepIfDue(ReceiveState receiveState)
+            {
+                if (interval is { } due && timeProvider.GetElapsedTime(lastSweep) >= due)
+                {
+                    receiveState.SweepFromHead();
+                    lastSweep = timeProvider.GetTimestamp();
+                }
+            }
+
+            readonly TimeSpan? interval;
+            readonly TimeProvider timeProvider;
+            long lastSweep;
+
+            static readonly TimeSpan MinimumInterval = TimeSpan.FromSeconds(1);
+        }
     }
 }
