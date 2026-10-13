@@ -9,7 +9,7 @@ namespace NServiceBus.Transport.Sql.Shared
     /// A single receive handed to a <see cref="ProcessStrategy"/> by the receive loop.
     /// Owns the anchored query and reports back to the loop (the receive latch, the batch backoff and stopping an empty batch).
     /// </summary>
-    sealed class ReceiveAttempt(TableBasedQueue inputQueue, ReceiveState receiveState, ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationTokenSource stopBatchCancellationTokenSource)
+    sealed class ReceiveAttempt(TableBasedQueue inputQueue, ReceiveCursor receiveCursor, BatchActivity batchActivity, ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationTokenSource stopBatchCancellationTokenSource)
     {
         public async Task<MessageReadResult> Receive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
@@ -19,16 +19,16 @@ namespace NServiceBus.Transport.Sql.Shared
             }
             receiveStarted = true;
 
-            var anchor = receiveState.GetAnchor();
+            var anchor = receiveCursor.GetAnchor();
             var receiveResult = await inputQueue.TryReceive(connection, transaction, anchor.Anchor, cancellationToken).ConfigureAwait(false);
 
             if (receiveResult != MessageReadResult.NoMessage)
             {
                 receivedRowVersion = receiveResult.RowVersion;
-                receiveState.MarkReceived();
+                batchActivity.MarkReceived();
             }
 
-            receiveState.AdvanceOrEndSweep(anchor, receivedRowVersion);
+            receiveCursor.AdvanceOrEndSweep(anchor, receivedRowVersion);
 
             receiveCountdownEventSignaler.Signal();
 
@@ -54,10 +54,10 @@ namespace NServiceBus.Transport.Sql.Shared
             switch (outcome)
             {
                 case ProcessOutcome.Committed:
-                    receiveState.AdvanceAnchor(rowVersion);
+                    receiveCursor.AdvanceAnchor(rowVersion);
                     break;
                 case ProcessOutcome.RolledBack:
-                    receiveState.RescanFrom(rowVersion);
+                    receiveCursor.RescanFrom(rowVersion);
                     break;
                 case ProcessOutcome.NoMessage:
                 default:

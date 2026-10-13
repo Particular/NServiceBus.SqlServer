@@ -35,8 +35,8 @@
             this.criticalErrorAction = criticalErrorAction;
             this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
             this.exceptionClassifier = exceptionClassifier;
-            receiveState = new ReceiveState(anchoringEnabled);
-            headSweepSchedule = new HeadSweepSchedule(headSweepInterval, timeProvider, receiveState);
+            receiveCursor = new ReceiveCursor(anchoringEnabled);
+            headSweepSchedule = new HeadSweepSchedule(headSweepInterval, timeProvider, receiveCursor);
             Subscriptions = subscriptionManager;
             Id = receiverId;
             ReceiveAddress = receiveAddress;
@@ -189,7 +189,7 @@
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            var previousBatchResult = receiveState.BeginNextBatch();
+            var previousBatchResult = batchActivity.BeginNextBatch();
             if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
             {
                 await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
@@ -204,7 +204,7 @@
                 return;
             }
 
-            receiveState.ApplyPeekResult(peekResult.LowestRowVersion);
+            receiveCursor.ApplyPeekResult(peekResult.LowestRowVersion);
 
             messageReceivingCancellationToken.ThrowIfCancellationRequested();
 
@@ -247,7 +247,7 @@
             using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
-                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveState, latchSignaler, stopBatchCancellationTokenSource);
+                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveCursor, batchActivity, latchSignaler, stopBatchCancellationTokenSource);
                 try
                 {
                     // We need to force the method to continue asynchronously because SqlConnection
@@ -297,7 +297,8 @@
         readonly bool purgeAllMessagesOnStartup;
         readonly IExceptionClassifier exceptionClassifier;
         TimeSpan waitTimeCircuitBreaker;
-        readonly ReceiveState receiveState;
+        readonly ReceiveCursor receiveCursor;
+        readonly BatchActivity batchActivity = new();
         readonly HeadSweepSchedule headSweepSchedule;
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
@@ -318,11 +319,11 @@
 
         sealed class HeadSweepSchedule
         {
-            public HeadSweepSchedule(TimeSpan interval, TimeProvider timeProvider, ReceiveState receiveState)
+            public HeadSweepSchedule(TimeSpan interval, TimeProvider timeProvider, ReceiveCursor receiveCursor)
             {
                 this.interval = interval;
                 this.timeProvider = timeProvider;
-                this.receiveState = receiveState;
+                this.receiveCursor = receiveCursor;
                 lastSweep = timeProvider.GetTimestamp();
             }
 
@@ -330,14 +331,14 @@
             {
                 if (timeProvider.GetElapsedTime(lastSweep) >= interval)
                 {
-                    receiveState.SweepFromHead();
+                    receiveCursor.SweepFromHead();
                     lastSweep = timeProvider.GetTimestamp();
                 }
             }
 
             readonly TimeSpan interval;
             readonly TimeProvider timeProvider;
-            readonly ReceiveState receiveState;
+            readonly ReceiveCursor receiveCursor;
             long lastSweep;
         }
     }
