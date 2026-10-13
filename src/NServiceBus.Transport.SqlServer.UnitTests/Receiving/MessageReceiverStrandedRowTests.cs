@@ -170,12 +170,11 @@ public class MessageReceiverStrandedRowTests
 
     class InMemoryPeeker : IPeekMessagesInQueue
     {
-        public TimeSpan PeekDelay => TimeSpan.FromMilliseconds(200);
 
         public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
             => Task.FromResult(((InMemoryQueue)inputQueue).Peek());
 
-        public Task WaitForPeekDelay(CancellationToken cancellationToken = default) => Task.Delay(PeekDelay, cancellationToken);
+        public Task WaitForPeekDelay(CancellationToken cancellationToken = default) => Task.Delay(TimeSpan.FromMilliseconds(200), cancellationToken);
     }
 
     class CommittingStrategy(IExceptionClassifier exceptionClassifier) : ProcessStrategy(null, exceptionClassifier, null)

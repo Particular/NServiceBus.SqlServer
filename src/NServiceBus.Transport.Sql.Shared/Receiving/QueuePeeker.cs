@@ -43,8 +43,6 @@
             return Task.Delay(peekDelay, cancellationToken);
         }
 
-        public TimeSpan PeekDelay => peekDelay;
-
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();
     }
 }

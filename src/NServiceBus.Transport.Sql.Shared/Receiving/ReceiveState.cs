@@ -6,20 +6,34 @@ namespace NServiceBus.Transport.Sql.Shared
     /// Per-receiver state shared between the receive loop and the concurrent receives it starts.
     /// </summary>
     /// <remarks>
-    /// The anchor lets receive queries seek past the contended head of the queue index. The head
-    /// accumulates other receivers' in-flight (locked, delete-pending) rows and ghost records of
-    /// recently deleted rows; scanning over it makes every receive more expensive as more
-    /// competing instances are added.
+    /// Messages are received in sequence number order, oldest first. Without anchoring, each attempt
+    /// to pop the next message off the head of the queue requires wading past rows deleted by
+    /// open transactions or ghost records. As the number of competing receivers increases, the
+    /// number of deleted records and ghost records that must be skipped increases, which
+    /// increases database load.
     /// <para>
-    /// Rows can become visible behind the anchor: rolled back here or on another instance, or
-    /// committed out of row version order. When that is detected (a local rollback, or a peek
-    /// whose lowest row is behind the anchor) a sweep starts just before them. Receives seek from
-    /// the sweep instead of the anchor, hopping from one stranded row to the next, until a receive
-    /// reaches the anchor again; commits keep advancing the anchor meanwhile without affecting it.
+    /// The anchor remembers how far into the queue we have received, so receive queries can seek
+    /// past the contended head, reducing database load. Anchoring is only enabled when
+    /// <see cref="QueuePeekerOptions.HeadSweepInterval"/> is set.
     /// </para>
     /// <para>
-    /// The sweep should also be triggered periodically, as out-of-order commits can also leave gaps
-    /// in message processing.
+    /// Two anchors are held:
+    /// <list type="bullet">
+    /// <item>The high-water anchor: the highest sequence number received. It only moves forward.</item>
+    /// <item>The sweep anchor: set when an earlier row is found that the high-water anchor would
+    /// skip.</item>
+    /// </list>
+    /// Rows can be missed because a transaction rolled back, or because messages finished
+    /// sending in a different order to the one they started in, so an earlier row shows up late.
+    /// The sweep anchor is set when:
+    /// <list type="bullet">
+    /// <item>a local receive rolls back;</item>
+    /// <item>the peek query finds an earlier row than the high-water anchor;</item>
+    /// <item><see cref="QueuePeekerOptions.HeadSweepInterval"/> elapses, which sweeps from the
+    /// start of the queue to catch anything the peek could not see.</item>
+    /// </list>
+    /// While set, receives seek from the sweep anchor instead, hopping from one missed row to the
+    /// next, until a receive finds nothing behind the high-water anchor and the sweep ends.
     /// </para>
     /// </remarks>
     class ReceiveState(bool anchoringEnabled)
@@ -29,13 +43,13 @@ namespace NServiceBus.Transport.Sql.Shared
             var sweep = Interlocked.Read(ref sweepAnchor);
             return sweep != NoSweep
                 ? ReceiveAnchor.Sweep(sweep)
-                : ReceiveAnchor.Fast(Interlocked.Read(ref anchor));
+                : ReceiveAnchor.HighWater(Interlocked.Read(ref highWaterAnchor));
         }
 
         public void ApplyPeekResult(long lowestRowVersion)
         {
             var seekFrom = lowestRowVersion - 1;
-            if (seekFrom < Interlocked.Read(ref anchor))
+            if (seekFrom < Interlocked.Read(ref highWaterAnchor))
             {
                 StartOrLowerSweep(seekFrom);
             }
@@ -46,11 +60,11 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         /// <summary>
-        /// Sweeps from the start of the queue, finding rows stranded anywhere behind the anchor
+        /// Sweeps from the start of the queue, finding rows stranded anywhere behind the high-water anchor
         /// </summary>
         public void SweepFromHead()
         {
-            if (Interlocked.Read(ref anchor) > 0)
+            if (Interlocked.Read(ref highWaterAnchor) > 0)
             {
                 StartOrLowerSweep(0);
             }
@@ -63,10 +77,10 @@ namespace NServiceBus.Transport.Sql.Shared
                 return;
             }
 
-            var current = Interlocked.Read(ref anchor);
+            var current = Interlocked.Read(ref highWaterAnchor);
             while (rowVersion > current)
             {
-                var witnessed = Interlocked.CompareExchange(ref anchor, rowVersion, current);
+                var witnessed = Interlocked.CompareExchange(ref highWaterAnchor, rowVersion, current);
                 if (witnessed == current)
                 {
                     break;
@@ -82,31 +96,29 @@ namespace NServiceBus.Transport.Sql.Shared
         public void RescanFrom(long rowVersion)
         {
             var seekFrom = rowVersion - 1;
-            if (seekFrom < Interlocked.Read(ref anchor))
+            if (seekFrom < Interlocked.Read(ref highWaterAnchor))
             {
                 StartOrLowerSweep(seekFrom);
             }
         }
 
         /// <summary>
-        /// After a sweep receive: if it found a message left behind the anchor, the sweep carries on
+        /// After a sweep receive: if it found a message left behind the high-water anchor, the sweep carries on
         /// from that message; if it found nothing left behind, the sweep is over.
         /// </summary>
         public void AdvanceOrEndSweep(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
-            if (usedAnchor.Kind == AnchorKind.Fast)
+            if (usedAnchor.Kind == AnchorKind.Sweep)
             {
-                return;
-            }
-
-            // don't end a sweep that a rollback has moved further back since this receive started
-            if (receivedRowVersion is { } rowVersion && rowVersion < Interlocked.Read(ref anchor))
-            {
-                MoveSweepPast(rowVersion);
-            }
-            else
-            {
-                _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.Anchor);
+                // don't end a sweep that a rollback has moved further back since this receive started
+                if (receivedRowVersion is { } rowVersion && rowVersion < Interlocked.Read(ref highWaterAnchor))
+                {
+                    MoveSweepPast(rowVersion);
+                }
+                else
+                {
+                    _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.Anchor);
+                }
             }
         }
 
@@ -148,16 +160,16 @@ namespace NServiceBus.Transport.Sql.Shared
 
         const long NoSweep = long.MaxValue;
 
-        long anchor;
+        long highWaterAnchor;
         long sweepAnchor = NoSweep;
         // starts set so the first batch does not wait for the peek delay
         int receivedInBatch = 1;
     }
 
-    enum AnchorKind { Fast, Sweep }
+    enum AnchorKind { HighWater, Sweep }
     readonly record struct ReceiveAnchor(long Anchor, AnchorKind Kind)
     {
-        public static ReceiveAnchor Fast(long anchor) => new(anchor, AnchorKind.Fast);
+        public static ReceiveAnchor HighWater(long anchor) => new(anchor, AnchorKind.HighWater);
         public static ReceiveAnchor Sweep(long anchor) => new(anchor, AnchorKind.Sweep);
     }
 }
