@@ -18,7 +18,8 @@ class SqlServerMessageReceiver(
     IPurgeQueues queuePurger,
     IExpiredMessagesPurger expiredMessagesPurger,
     IPeekMessagesInQueue queuePeeker,
-    TimeSpan? headSweepInterval,
+    bool anchoringEnabled,
+    TimeSpan headSweepInterval,
     SchemaInspector schemaInspector,
     TimeSpan waitTimeCircuitBreaker,
     ISubscriptionManager subscriptionManager,
@@ -27,7 +28,7 @@ class SqlServerMessageReceiver(
     TimeProvider timeProvider)
     : MessageReceiver(transport, receiverId,
         receiveAddress, errorQueueAddress, criticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-        queuePeeker, headSweepInterval, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier, timeProvider)
+        queuePeeker, anchoringEnabled, headSweepInterval, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier, timeProvider)
 {
     public override async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
         CancellationToken cancellationToken = default)
