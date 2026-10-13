@@ -3,7 +3,7 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading;
 
     /// <summary>
-    /// Per-receiver state shared between the receive loop and the concurrent receives it starts.
+    /// Where in the queue the next receive seeks from, shared between the receive loop and the concurrent receives it starts.
     /// </summary>
     /// <remarks>
     /// Messages are received in sequence number order, oldest first. Without anchoring, each attempt
@@ -36,7 +36,7 @@ namespace NServiceBus.Transport.Sql.Shared
     /// next, until a receive finds nothing behind the high-water anchor and the sweep ends.
     /// </para>
     /// </remarks>
-    class ReceiveState(bool anchoringEnabled)
+    class ReceiveCursor(bool anchoringEnabled)
     {
         public ReceiveAnchor GetAnchor()
         {
@@ -152,23 +152,12 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        /// <summary>
-        /// Starts a new "receive" batch and returns whether the previous batch received any messages
-        /// </summary>
-        public LastBatchResult BeginNextBatch() => Interlocked.Exchange(ref hasReceivedAnyMessagesInBatch, false)
-            ? LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch
-            : LastBatchResult.LastBatchWasEmpty;
-        public void MarkReceived() => Interlocked.Exchange(ref hasReceivedAnyMessagesInBatch, true);
 
         const long NoSweep = long.MaxValue;
 
         long highWaterAnchor;
         long sweepAnchor = NoSweep;
-        // starts set so the first batch does not wait for the peek delay
-        bool hasReceivedAnyMessagesInBatch = true;
     }
-
-    enum LastBatchResult { PreviousBatchHadResultsOrNoPreviousBatch, LastBatchWasEmpty }
 
     enum AnchorKind { HighWater, Sweep }
     readonly record struct ReceiveAnchor(long Anchor, AnchorKind Kind)

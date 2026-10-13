@@ -173,7 +173,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            var previousBatchResult = receiveState.BeginNextBatch();
+            var previousBatchResult = batchActivity.BeginNextBatch();
             if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
             {
                 await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
@@ -188,7 +188,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 return;
             }
 
-            receiveState.ApplyPeekResult(peekResult.LowestRowVersion);
+            receiveCursor.ApplyPeekResult(peekResult.LowestRowVersion);
 
             messageReceivingCancellationToken.ThrowIfCancellationRequested();
 
@@ -214,7 +214,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
                 // Waiting on the concurrency limiter may have taken longer than the sweep interval
-                headSweepSchedule.SweepIfDue(receiveState);
+                headSweepSchedule.SweepIfDue(receiveCursor);
 
                 _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
                     localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
@@ -231,7 +231,7 @@ namespace NServiceBus.Transport.Sql.Shared
             using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
-                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveState, latchSignaler, stopBatchCancellationTokenSource);
+                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveCursor, batchActivity, latchSignaler, stopBatchCancellationTokenSource);
                 try
                 {
                     // We need to force the method to continue asynchronously because SqlConnection
@@ -271,7 +271,8 @@ namespace NServiceBus.Transport.Sql.Shared
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
         readonly Lock lockObject = new();
-        readonly ReceiveState receiveState = new(anchoringEnabled);
+        readonly ReceiveCursor receiveCursor = new(anchoringEnabled);
+        readonly BatchActivity batchActivity = new();
         readonly HeadSweepSchedule headSweepSchedule = new(headSweepInterval, timeProvider);
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
@@ -299,11 +300,11 @@ namespace NServiceBus.Transport.Sql.Shared
                 lastSweep = timeProvider.GetTimestamp();
             }
 
-            public void SweepIfDue(ReceiveState receiveState)
+            public void SweepIfDue(ReceiveCursor receiveCursor)
             {
                 if (timeProvider.GetElapsedTime(lastSweep) >= interval)
                 {
-                    receiveState.SweepFromHead();
+                    receiveCursor.SweepFromHead();
                     lastSweep = timeProvider.GetTimestamp();
                 }
             }

@@ -14,9 +14,10 @@ public class ReceiveAttemptTests
     {
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
-        var state = new ReceiveState(anchoringEnabled: true);
-        _ = state.BeginNextBatch();
-        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), state, latch.GetSignaler(), stopBatch);
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var batchActivity = new BatchActivity();
+        _ = batchActivity.BeginNextBatch();
+        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, batchActivity, latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
 
@@ -24,7 +25,7 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.True, "empty receive stops the batch");
-            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "nothing received");
+            Assert.That(batchActivity.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "nothing received");
         });
     }
 
@@ -33,10 +34,11 @@ public class ReceiveAttemptTests
     {
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
-        var state = new ReceiveState(anchoringEnabled: true);
-        _ = state.BeginNextBatch();
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var batchActivity = new BatchActivity();
+        _ = batchActivity.BeginNextBatch();
         var message = MessageReadResult.Success(new Message("1", string.Empty, Array.Empty<byte>(), false), 1);
-        var attempt = new ReceiveAttempt(new FakeQueue(message), state, latch.GetSignaler(), stopBatch);
+        var attempt = new ReceiveAttempt(new FakeQueue(message), cursor, batchActivity, latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
 
@@ -44,15 +46,15 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.False, "batch continues");
-            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch), "message received");
+            Assert.That(batchActivity.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch), "message received");
         });
     }
 
     [Test]
     public async Task Receives_only_once()
     {
-        var state = new ReceiveState(anchoringEnabled: true);
-        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), state, new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
 
@@ -62,43 +64,43 @@ public class ReceiveAttemptTests
     [Test]
     public async Task Committing_advances_the_anchor_to_the_received_row()
     {
-        var state = new ReceiveState(anchoringEnabled: true);
-        var attempt = CreateAttempt(state, MessageReadResult.Success(CreateMessage(), 10));
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 10));
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
         attempt.Settle(ProcessOutcome.Committed);
 
-        Assert.That(state.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
     }
 
     [Test]
     public async Task Rolling_back_retreats_the_anchor_to_the_received_row()
     {
-        var state = new ReceiveState(anchoringEnabled: true);
-        var attempt = CreateAttempt(state, MessageReadResult.Success(CreateMessage(), 7));
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 7));
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
-        state.AdvanceAnchor(10); // a concurrent receive committed a later row
+        cursor.AdvanceAnchor(10); // a concurrent receive committed a later row
         attempt.Settle(ProcessOutcome.RolledBack);
 
-        Assert.That(state.GetAnchor().Anchor, Is.EqualTo(6));
+        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(6));
     }
 
     [Test]
     public void Settling_without_a_received_row_keeps_the_anchor()
     {
         // e.g. the receive query itself failed (a deadlock victim) and consumed nothing
-        var state = new ReceiveState(anchoringEnabled: true);
-        state.AdvanceAnchor(10);
-        var attempt = CreateAttempt(state, MessageReadResult.NoMessage);
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.AdvanceAnchor(10);
+        var attempt = CreateAttempt(cursor, MessageReadResult.NoMessage);
 
         attempt.Settle(ProcessOutcome.RolledBack);
 
-        Assert.That(state.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
     }
 
-    static ReceiveAttempt CreateAttempt(ReceiveState state, MessageReadResult result) =>
-        new(new FakeQueue(result), state, new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
+    static ReceiveAttempt CreateAttempt(ReceiveCursor cursor, MessageReadResult result) =>
+        new(new FakeQueue(result), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
     static Message CreateMessage() => new("1", string.Empty, Array.Empty<byte>(), false);
 
