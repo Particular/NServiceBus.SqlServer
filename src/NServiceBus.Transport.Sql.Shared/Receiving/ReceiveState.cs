@@ -14,7 +14,7 @@ namespace NServiceBus.Transport.Sql.Shared
     /// <para>
     /// The anchor remembers how far into the queue we have received, so receive queries can seek
     /// past the contended head, reducing database load. Anchoring is only enabled when
-    /// <see cref="QueuePeekerOptions.HeadSweepInterval"/> is set.
+    /// <see cref="QueuePeekerOptions.EnableReceiveAnchoring"/> is set.
     /// </para>
     /// <para>
     /// Two anchors are held:

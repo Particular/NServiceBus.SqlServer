@@ -206,7 +206,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
                 hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-                queuePeeker, transport.QueuePeeker.HeadSweepInterval, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
+                queuePeeker, transport.QueuePeeker.EnableReceiveAnchoring, transport.QueuePeeker.HeadSweepInterval, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
                 subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier, TimeProvider.System);
         }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 

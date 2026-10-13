@@ -17,7 +17,8 @@
             Func<string, TableBasedQueue> queueFactory,
             IPurgeQueues queuePurger,
             IPeekMessagesInQueue queuePeeker,
-            TimeSpan? headSweepInterval,
+            bool anchoringEnabled,
+            TimeSpan headSweepInterval,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
             bool purgeAllMessagesOnStartup,
@@ -34,7 +35,7 @@
             this.criticalErrorAction = criticalErrorAction;
             this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
             this.exceptionClassifier = exceptionClassifier;
-            receiveState = new ReceiveState(anchoringEnabled: headSweepInterval.HasValue);
+            receiveState = new ReceiveState(anchoringEnabled);
             headSweepSchedule = new HeadSweepSchedule(headSweepInterval, timeProvider, receiveState);
             Subscriptions = subscriptionManager;
             Id = receiverId;
@@ -317,9 +318,9 @@
 
         sealed class HeadSweepSchedule
         {
-            public HeadSweepSchedule(TimeSpan? interval, TimeProvider timeProvider, ReceiveState receiveState)
+            public HeadSweepSchedule(TimeSpan interval, TimeProvider timeProvider, ReceiveState receiveState)
             {
-                this.interval = interval < MinimumInterval ? MinimumInterval : interval;
+                this.interval = interval;
                 this.timeProvider = timeProvider;
                 this.receiveState = receiveState;
                 lastSweep = timeProvider.GetTimestamp();
@@ -327,19 +328,17 @@
 
             public void SweepIfDue()
             {
-                if (interval is { } due && timeProvider.GetElapsedTime(lastSweep) >= due)
+                if (timeProvider.GetElapsedTime(lastSweep) >= interval)
                 {
                     receiveState.SweepFromHead();
                     lastSweep = timeProvider.GetTimestamp();
                 }
             }
 
-            readonly TimeSpan? interval;
+            readonly TimeSpan interval;
             readonly TimeProvider timeProvider;
             readonly ReceiveState receiveState;
             long lastSweep;
-
-            static readonly TimeSpan MinimumInterval = TimeSpan.FromSeconds(1);
         }
     }
 }

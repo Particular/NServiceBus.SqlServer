@@ -13,13 +13,13 @@ class SqlServerMessageReceiver : MessageReceiver
         string errorQueueAddress, Action<string, Exception, CancellationToken> criticalErrorAction,
         Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
         Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger,
-        IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, TimeSpan? headSweepInterval,
+        IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker, bool anchoringEnabled, TimeSpan headSweepInterval,
         SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker,
         ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup, IExceptionClassifier exceptionClassifier,
         TimeProvider timeProvider)
         : base(transport, receiverId,
         receiveAddress, errorQueueAddress, criticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-        queuePeeker, headSweepInterval, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier, timeProvider)
+        queuePeeker, anchoringEnabled, headSweepInterval, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier, timeProvider)
     {
         this.expiredMessagesPurger = expiredMessagesPurger;
         this.schemaInspector = schemaInspector;
