@@ -34,7 +34,7 @@ public class ReceiveStateTests
         state.RescanFrom(150);
         state.SweepFromHead();
 
-        Assert.That(state.GetAnchor(), Is.EqualTo(ReceiveAnchor.Fast(0)));
+        Assert.That(state.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(0)));
     }
 
     [Test]
@@ -189,7 +189,7 @@ public class ReceiveStateTests
 
         state.SweepFromHead();
 
-        Assert.That(state.GetAnchor(), Is.EqualTo(ReceiveAnchor.Fast(0)));
+        Assert.That(state.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(0)));
     }
 
     [Test]

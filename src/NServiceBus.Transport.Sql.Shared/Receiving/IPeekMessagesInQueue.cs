@@ -11,7 +11,5 @@ namespace NServiceBus.Transport.Sql.Shared
         Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default);
 
         Task WaitForPeekDelay(CancellationToken cancellationToken = default);
-
-        TimeSpan PeekDelay { get; }
     }
 }

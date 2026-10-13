@@ -79,8 +79,6 @@ public class MessageReceiverBackoffTests
     {
         int peekCount;
 
-        public TimeSpan PeekDelay => peekDelay;
-
         public int PeekCount => Volatile.Read(ref peekCount);
 
         public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
