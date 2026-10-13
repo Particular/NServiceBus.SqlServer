@@ -229,9 +229,9 @@ namespace NServiceBus.Transport.Sql.Shared
             ReceiveCountdownEvent receiveLatch, CancellationToken messageProcessingCancellationToken)
         {
             using var latchSignaler = receiveLatch.GetSignaler();
-            var receiveAttempt = new ReceiveAttempt(inputQueue, receiveState, latchSignaler, stopBatchCancellationTokenSource);
             try
             {
+                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveState, latchSignaler, stopBatchCancellationTokenSource);
                 try
                 {
                     // We need to force the method to continue asynchronously because SqlConnection
