@@ -212,7 +212,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
 
-                // A busy queue never ends a batch, so periodically sweep from the head to find rows stranded behind the anchor
+                // Waiting on the concurrency limiter may have taken longer than the sweep interval
                 headSweepSchedule.SweepIfDue(receiveState);
 
                 _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
