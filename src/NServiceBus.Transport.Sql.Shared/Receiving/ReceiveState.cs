@@ -153,18 +153,22 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         /// <summary>
-        /// Starts a new "receive" batch and returns true if the previous batch received anything
+        /// Starts a new "receive" batch and returns whether the previous batch received any messages
         /// </summary>
-        public bool BeginBatch() => Interlocked.Exchange(ref receivedInBatch, 0) == 1;
-        public void MarkReceived() => Interlocked.Exchange(ref receivedInBatch, 1);
+        public LastBatchResult BeginNextBatch() => Interlocked.Exchange(ref hasReceivedAnyMessagesInBatch, false)
+            ? LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch
+            : LastBatchResult.LastBatchWasEmpty;
+        public void MarkReceived() => Interlocked.Exchange(ref hasReceivedAnyMessagesInBatch, true);
 
         const long NoSweep = long.MaxValue;
 
         long highWaterAnchor;
         long sweepAnchor = NoSweep;
         // starts set so the first batch does not wait for the peek delay
-        int receivedInBatch = 1;
+        bool hasReceivedAnyMessagesInBatch = true;
     }
+
+    enum LastBatchResult { PreviousBatchHadResultsOrNoPreviousBatch, LastBatchWasEmpty }
 
     enum AnchorKind { HighWater, Sweep }
     readonly record struct ReceiveAnchor(long Anchor, AnchorKind Kind)

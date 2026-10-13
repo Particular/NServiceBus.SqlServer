@@ -197,23 +197,23 @@ public class ReceiveStateTests
     {
         var state = new ReceiveState(anchoringEnabled: true);
 
-        Assert.That(state.BeginBatch(), Is.True);
+        Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch));
     }
 
     [Test]
     public void Reports_whether_the_previous_batch_received_anything()
     {
         var state = new ReceiveState(anchoringEnabled: true);
-        _ = state.BeginBatch();
+        _ = state.BeginNextBatch();
 
-        Assert.That(state.BeginBatch(), Is.False, "nothing received in the previous batch");
+        Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "nothing received in the previous batch");
 
         state.MarkReceived();
 
         Assert.Multiple(() =>
         {
-            Assert.That(state.BeginBatch(), Is.True, "previous batch received a message");
-            Assert.That(state.BeginBatch(), Is.False, "starting a batch clears the flag");
+            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch), "previous batch received a message");
+            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "starting a batch clears the flag");
         });
     }
 }

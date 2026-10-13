@@ -173,8 +173,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            // each receive of the previous batch reports into the state before signalling its latch
-            if (!receiveState.BeginBatch())
+            var previousBatchResult = receiveState.BeginNextBatch();
+            if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
             {
                 await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
             }

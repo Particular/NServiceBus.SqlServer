@@ -15,7 +15,7 @@ public class ReceiveAttemptTests
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
         var state = new ReceiveState(anchoringEnabled: true);
-        _ = state.BeginBatch();
+        _ = state.BeginNextBatch();
         var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), state, latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
@@ -24,7 +24,7 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.True, "empty receive stops the batch");
-            Assert.That(state.BeginBatch(), Is.False, "nothing received");
+            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "nothing received");
         });
     }
 
@@ -34,7 +34,7 @@ public class ReceiveAttemptTests
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
         var state = new ReceiveState(anchoringEnabled: true);
-        _ = state.BeginBatch();
+        _ = state.BeginNextBatch();
         var message = MessageReadResult.Success(new Message("1", string.Empty, Array.Empty<byte>(), false), 1);
         var attempt = new ReceiveAttempt(new FakeQueue(message), state, latch.GetSignaler(), stopBatch);
 
@@ -44,7 +44,7 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.False, "batch continues");
-            Assert.That(state.BeginBatch(), Is.True, "message received");
+            Assert.That(state.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch), "message received");
         });
     }
 
