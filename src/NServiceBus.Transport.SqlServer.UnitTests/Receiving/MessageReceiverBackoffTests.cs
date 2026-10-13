@@ -3,55 +3,49 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus.Extensibility;
-using NServiceBus.Transport;
-using NServiceBus.Transport.Sql.Shared;
-using NServiceBus.Unicast.Messages;
+using Extensibility;
+using Transport;
+using Sql.Shared;
+using Unicast.Messages;
 using NUnit.Framework;
 
 public class MessageReceiverBackoffTests
 {
     [Test]
-    public async Task Backs_off_peeking_when_receives_come_up_empty()
+    public async Task WhenPeekReportsMessagesButReceivesComeUpEmpty_ThenWaitAPeekDelayBeforePeekingAgain()
     {
-        // Simulates a node in a multi-node (competing consumer) setup that keeps losing the race
-        // for messages: peek reports a backlog, but every receive comes up empty because other
-        // nodes grabbed the messages. Without a backoff the pump re-peeks in a hot loop, which
-        // multiplies the load on the queue table by the number of nodes.
-        var peeker = new CountingPeeker(peekDelay: TimeSpan.FromMilliseconds(200));
-        var receiver = CreateReceiver(peeker);
+        var peekerReportingBacklog = new CountingPeeker(
+            peekingReportesMessageCountOf: 10,
+            signalAfterPeeks: 10);
+        var queueWhereOtherNodesWinEveryReceive = new FakeQueue(() => MessageReadResult.NoMessage);
+        var receiver = CreateReceiver(peekerReportingBacklog, queueWhereOtherNodesWinEveryReceive);
 
         await receiver.Initialize(new PushRuntimeSettings(8), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled)).ConfigureAwait(false);
         await receiver.StartReceive().ConfigureAwait(false);
-        await Task.Delay(TimeSpan.FromMilliseconds(700)).ConfigureAwait(false);
+        await peekerReportingBacklog.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         await receiver.StopReceive().ConfigureAwait(false);
 
-        // ~700ms with a 200ms backoff allows for a handful of peek iterations; an unthrottled
-        // pump reaches hundreds.
-        Assert.That(peeker.PeekCount, Is.LessThanOrEqualTo(6));
+        Assert.That(peekerReportingBacklog.PeekDelayCount, Is.GreaterThanOrEqualTo(10 - 1 /* account for race between signal and peek */));
     }
 
     [Test]
-    public async Task Does_not_back_off_when_the_batch_received_messages()
+    public async Task WhenPeekReportsMessagesAndBatchReceivesMessages_ThenDoesNotWaitOnPeekDelayBeforePeekingAgain()
     {
         // each batch receives one message and then comes up empty, ending the batch early
-        var messageAvailable = 0;
-        var queue = new FakeQueue(() => Interlocked.Exchange(ref messageAvailable, 0) == 1
+        var messageWaitingAfterPeek = 0;
+        var queue = new FakeQueue(() => Interlocked.Exchange(ref messageWaitingAfterPeek, 0) == 1
             ? MessageReadResult.Success(new Message("1", string.Empty, Array.Empty<byte>(), false), 0)
             : MessageReadResult.NoMessage);
-        var peeker = new CountingPeeker(peekDelay: TimeSpan.FromMilliseconds(200), onPeek: () => Interlocked.Exchange(ref messageAvailable, 1));
+        var peeker = new CountingPeeker(peekingReportesMessageCountOf: 10, signalAfterPeeks: 10, onPeek: () => Interlocked.Exchange(ref messageWaitingAfterPeek, 1));
         var receiver = CreateReceiver(peeker, queue);
 
         await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled)).ConfigureAwait(false);
         await receiver.StartReceive().ConfigureAwait(false);
-        await Task.Delay(TimeSpan.FromMilliseconds(700)).ConfigureAwait(false);
+        await peeker.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         await receiver.StopReceive().ConfigureAwait(false);
 
-        Assert.That(peeker.PeekCount, Is.GreaterThan(20));
+        Assert.That(peeker.PeekDelayCount, Is.EqualTo(0));
     }
-
-    static MessageReceiver CreateReceiver(CountingPeeker peeker) =>
-        CreateReceiver(peeker, new FakeQueue(() => MessageReadResult.NoMessage));
 
     static MessageReceiver CreateReceiver(CountingPeeker peeker, FakeQueue queue)
     {
@@ -76,20 +70,31 @@ public class MessageReceiverBackoffTests
             TimeProvider.System);
     }
 
-    class CountingPeeker(TimeSpan peekDelay, Action onPeek = null) : IPeekMessagesInQueue
+    class CountingPeeker(int peekingReportesMessageCountOf, int signalAfterPeeks, Action onPeek = null) : IPeekMessagesInQueue
     {
+        readonly TaskCompletionSource peeksSignaled = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int peekCount;
+        int peekDelayCount;
 
         public int PeekCount => Volatile.Read(ref peekCount);
+        public int PeekDelayCount => Volatile.Read(ref peekDelayCount);
+        public Task PeeksSignaled => peeksSignaled.Task;
 
         public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
-            Interlocked.Increment(ref peekCount);
+            if (Interlocked.Increment(ref peekCount) >= signalAfterPeeks)
+            {
+                peeksSignaled.TrySetResult();
+            }
             onPeek?.Invoke();
-            return Task.FromResult(new PeekResult(10, 1));
+            return Task.FromResult(new PeekResult(peekingReportesMessageCountOf, 1));
         }
 
-        public Task WaitForPeekDelay(CancellationToken cancellationToken = default) => Task.Delay(peekDelay, cancellationToken);
+        public async Task WaitForPeekDelay(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref peekDelayCount);
+            await Task.Yield();
+        }
     }
 
     class ReceivingStrategy(IExceptionClassifier exceptionClassifier) : ProcessStrategy(null, exceptionClassifier, null)
