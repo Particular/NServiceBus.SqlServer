@@ -42,7 +42,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, 0).ConfigureAwait(false);
                 Assert.That(message.Message.Expired, Is.False);
             }
         }
@@ -75,7 +75,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, 0).ConfigureAwait(false);
                 Assert.That(message.Message.Expired, Is.False);
             }
         }
@@ -108,7 +108,7 @@
                     transaction.Commit();
                 }
 
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+                var message = await queue.TryReceive(connection, null, 0).ConfigureAwait(false);
                 Assert.That(message.Message.Expired, Is.True);
             }
         }
