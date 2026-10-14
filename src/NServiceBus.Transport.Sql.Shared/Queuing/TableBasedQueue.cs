@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.isStreamSupported = isStreamSupported;
         }
 
-        public virtual async Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, long seekAfter, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             var command = connection.CreateCommand();
             await using var commandDisposer = command.ConfigureAwait(false);
@@ -30,6 +30,7 @@ namespace NServiceBus.Transport.Sql.Shared
             command.CommandType = CommandType.Text;
             command.Transaction = transaction;
             command.CommandText = peekCommand;
+            command.AddParameter("Anchor", DbType.Int64, seekAfter);
 
             var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
             await using var readerDisposer = reader.ConfigureAwait(false);

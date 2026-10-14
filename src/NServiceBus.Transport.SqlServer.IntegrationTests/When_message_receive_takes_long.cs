@@ -61,7 +61,7 @@
             await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
             await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             tableBasedQueue.FormatPeekCommand();
-            await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
+            await tableBasedQueue.TryPeek(connection, tx, 0, PeekTimeoutInSeconds, cancellationToken);
             scope.Complete();
         }
 

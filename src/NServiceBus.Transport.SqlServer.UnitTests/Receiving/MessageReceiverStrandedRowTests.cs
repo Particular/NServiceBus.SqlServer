@@ -174,6 +174,33 @@ public class MessageReceiverStrandedRowTests
         Assert.That(anchors.Count(anchor => anchor == HeadOfQueue), Is.EqualTo(1), "the head should be swept once per interval");
     }
 
+    [Test]
+    public async Task WhenABatchReceivedMessages_ThenTheNextPeekIsFromTheAnchor_AndWhenItWaitedForThePeekDelay_ThenThePeekIsFromTheHead()
+    {
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(start: 100, count: 3));
+        var peeker = new ScriptedPeeker(new PeekResult(messageCount: 3, lowestRowVersion: 100), PeekResult.Empty);
+        var receiver = CreateReceiver(queue, peeker, new FakeTimeProvider(), headSweepInterval: TimeSpan.FromDays(999));
+
+        await receiver.Initialize(new PushRuntimeSettings(4), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
+        await receiver.StartReceive(CancellationToken);
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (PeekCount(peeker) < 3 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(20, CancellationToken);
+        }
+        await receiver.StopReceive(CancellationToken);
+
+        Assert.That(peeker.SeekAfters.Take(3), Is.EqualTo(new long[] { HeadOfQueue, 102, HeadOfQueue }));
+    }
+
+    static int PeekCount(ScriptedPeeker peeker)
+    {
+        lock (peeker.SeekAfters)
+        {
+            return peeker.SeekAfters.Count;
+        }
+    }
+
     const long HeadOfQueue = 0;
 
     static MessageReceiver CreateReceiver(InMemoryQueue queue, IPeekMessagesInQueue peeker, TimeProvider timeProvider, TimeSpan? headSweepInterval = null)
@@ -266,8 +293,17 @@ public class MessageReceiverStrandedRowTests
     /// </summary>
     class ScriptedPeeker(params PeekResult[] results) : IPeekMessagesInQueue
     {
-        public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
-            => Task.FromResult(results[Math.Min(peeks++, results.Length - 1)]);
+        public List<long> SeekAfters { get; } = [];
+
+        public Task<PeekResult> Peek(TableBasedQueue inputQueue, long seekAfter, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
+        {
+            lock (SeekAfters)
+            {
+                SeekAfters.Add(seekAfter);
+            }
+
+            return Task.FromResult(results[Math.Min(peeks++, results.Length - 1)]);
+        }
 
         public Task WaitForPeekDelay(CancellationToken cancellationToken = default) => Task.Delay(TimeSpan.FromMilliseconds(200), cancellationToken);
 

@@ -119,7 +119,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 CancellationToken cancellationToken = default) =>
                 throw new NotImplementedException();
 
-            public override Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+            public override Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, long seekAfter, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 

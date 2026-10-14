@@ -46,6 +46,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 : ReceiveAnchor.HighWater(Interlocked.Read(ref highWaterAnchor));
         }
 
+        public long GetHighWaterAnchor() => Interlocked.Read(ref highWaterAnchor);
+
         public void ApplyPeekResult(long lowestRowVersion)
         {
             var seekAfter = lowestRowVersion - 1;

@@ -175,7 +175,7 @@ ELSE
     SELECT GETUTCDATE() as UtcNow, NULL as NextDue, CAST(0 AS bit) as LockAcquired";
 
         public string PeekText { get; set; } = @"
-SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id, isnull(min([RowVersion]), 0) LowestRowVersion FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";
+SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id, isnull(min([RowVersion]), 0) LowestRowVersion FROM {0} WITH (READPAST, READCOMMITTEDLOCK) WHERE [RowVersion] > @Anchor";
 
         public string AddMessageBodyStringColumn { get; set; } = @"
 IF NOT EXISTS (

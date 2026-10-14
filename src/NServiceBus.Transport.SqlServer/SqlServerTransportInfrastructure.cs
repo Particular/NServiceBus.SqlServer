@@ -120,7 +120,8 @@ namespace NServiceBus.Transport.SqlServer
                 guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
-            var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
+            var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay,
+                queuePeekerOptions.EnableReceiveAnchoring && queuePeekerOptions.EnablePeekAnchoring);
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
