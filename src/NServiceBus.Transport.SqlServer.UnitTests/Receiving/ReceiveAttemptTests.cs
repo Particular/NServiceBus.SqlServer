@@ -10,14 +10,14 @@ using NUnit.Framework;
 public class ReceiveAttemptTests
 {
     [Test]
-    public async Task Signals_the_latch_and_stops_the_batch_when_nothing_was_received()
+    public async Task WhenAReceiveIsAttempted_AndNothingIsReceived_ThenSignalsTheLatchAndStopsTheBatch()
     {
+        var noMessagesQueue = new FakeQueue(MessageReadResult.NoMessage);
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
-        var cursor = new ReceiveCursor(anchoringEnabled: true);
         var batchActivity = new BatchActivity();
         _ = batchActivity.BeginNextBatch();
-        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, batchActivity, latch.GetSignaler(), stopBatch);
+        var attempt = new ReceiveAttempt(noMessagesQueue, new ReceiveCursor(anchoringEnabled: true), batchActivity, latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken);
 
@@ -30,7 +30,7 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public async Task Signals_the_latch_and_marks_the_batch_when_a_message_was_received()
+    public async Task WhenAReceiveIsAttempted_AndAMessageIsReceived_ThenSignalsTheLatchAndAllowsTheBatchToContinue()
     {
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
@@ -51,7 +51,7 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public async Task Receives_only_once()
+    public async Task WhenAReceiveHasAlreadyBeenAttempted_AndReceiveIsCalledAgain_ThenThrows()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
@@ -62,7 +62,7 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public async Task Committing_advances_the_anchor_to_the_received_row()
+    public async Task WhenAMessageIsReceived_AndTheAttemptIsCommitted_ThenTheAnchorAdvancesToTheReceivedRow()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 10));
@@ -74,7 +74,7 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public async Task Rolling_back_retreats_the_anchor_to_the_received_row()
+    public async Task WhenAMessageIsReceived_AndTheAnchorAdvancesPastIt_AndTheAttemptIsRolledBack_ThenTheAnchorRetreatsToTheReceivedRow()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 7));
@@ -87,13 +87,13 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public void Settling_without_a_received_row_keeps_the_anchor()
+    public void WhenTheReceiveQueryThrows_AndTheAttemptIsRolledBack_ThenTheAnchorIsUnchanged()
     {
-        // e.g. the receive query itself failed (a deadlock victim) and consumed nothing
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
-        var attempt = CreateAttempt(cursor, MessageReadResult.NoMessage);
+        var attempt = new ReceiveAttempt(new ThrowingQueue(), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
+        Assert.ThrowsAsync<InvalidOperationException>(() => attempt.Receive(null, null, CancellationToken));
         attempt.Settle(ProcessOutcome.RolledBack);
 
         Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
@@ -110,6 +110,15 @@ public class ReceiveAttemptTests
     {
         public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
             => Task.FromResult(result);
+
+        protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    class ThrowingQueue() : TableBasedQueue(new SqlServerConstants(), "[dbo].[queue]", "queue", false)
+    {
+        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Receive query failed");
 
         protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
