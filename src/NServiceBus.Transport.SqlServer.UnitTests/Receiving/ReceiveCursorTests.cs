@@ -1,77 +1,75 @@
 namespace NServiceBus.Transport.SqlServer.UnitTests.Receiving;
 
-using NServiceBus.Transport.Sql.Shared;
+using Sql.Shared;
 using NUnit.Framework;
 
 public class ReceiveCursorTests
 {
     [Test]
-    public void Starts_at_the_head_of_the_queue()
+    public void WhenCreated_ThenTheAnchorIsAtTheHeadOfTheQueue()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(0));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(0));
     }
 
     [Test]
-    public void Advances_monotonically()
+    public void WhenTheAnchorAdvances_AndALowerRowIsCommittedLater_ThenTheAnchorDoesNotMoveBack()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-
         cursor.AdvanceAnchor(10);
+
         cursor.AdvanceAnchor(5); // out-of-order completion of a concurrent receive must not move the anchor back
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
     }
 
     [Test]
-    public void Stays_at_the_head_of_the_queue_when_anchoring_is_disabled()
+    public void WhenAnchoringIsDisabled_AndTheCursorIsMoved_ThenTheAnchorStaysAtTheHeadOfTheQueue()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: false);
 
         cursor.ApplyPeekResult(100);
         cursor.AdvanceAnchor(200);
         cursor.RescanFrom(150);
-        cursor.SweepFromHead();
 
         Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(0)));
     }
 
     [Test]
-    public void Retreats_to_just_before_a_rolled_back_row()
+    public void WhenTheAnchorHasAdvanced_AndAnEarlierRowIsRolledBack_ThenTheAnchorIsSetSoItWouldRefetchThatRow()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-
         cursor.AdvanceAnchor(10);
+
         cursor.RescanFrom(7);
 
-        // anchored receives seek strictly past the anchor, so row 7 is visible again
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(6));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
     }
 
     [Test]
-    public void Retreating_never_moves_the_anchor_forward()
+    public void WhenARowPastTheAnchorIsRolledBack_ThenTheAnchorDoesNotMoveForward()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-
         cursor.AdvanceAnchor(5);
+
         cursor.RescanFrom(10); // the rolled back row is already past the anchor
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(5));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(5));
     }
 
     [Test]
-    public void A_peek_past_the_anchor_moves_it_forward_past_the_churned_head()
+    public void WhenAPeekFindsARowPastTheAnchor_ThenTheAnchorMovesForwardPastTheChurnedHead()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
 
         cursor.ApplyPeekResult(20);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(19));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(19));
     }
 
     [Test]
-    public void A_peek_behind_the_anchor_starts_a_sweep_that_commits_do_not_skip()
+    public void WhenAPeekFindsARowBehindTheAnchor_AndALaterRowIsCommitted_ThenTheSweepIsNotSkipped()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -79,11 +77,11 @@ public class ReceiveCursorTests
         cursor.ApplyPeekResult(4);
         cursor.AdvanceAnchor(20); // a concurrent receive commits a later row
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(3));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
     }
 
     [Test]
-    public void A_rollback_starts_a_sweep_that_commits_do_not_skip()
+    public void WhenARowIsRolledBack_AndALaterRowIsCommitted_ThenTheSweepIsNotSkipped()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -91,11 +89,11 @@ public class ReceiveCursorTests
         cursor.RescanFrom(7);
         cursor.AdvanceAnchor(20);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(6));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
     }
 
     [Test]
-    public void A_rollback_lowers_a_running_sweep()
+    public void WhenASweepIsRunning_AndAnEarlierRowIsRolledBack_ThenTheSweepIsLowered()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -103,11 +101,11 @@ public class ReceiveCursorTests
 
         cursor.RescanFrom(4);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(3));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
     }
 
     [Test]
-    public void A_sweep_receive_that_finds_a_stranded_row_moves_the_sweep_past_it()
+    public void WhenASweepIsRunning_AndAReceiveFindsAStrandedRow_ThenTheSweepMovesPastIt()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -115,11 +113,11 @@ public class ReceiveCursorTests
 
         cursor.AdvanceOrEndSweep(cursor.GetAnchor(), 5);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(5));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(5));
     }
 
     [Test]
-    public void A_sweep_receive_that_reaches_the_anchor_ends_the_sweep()
+    public void WhenASweepIsRunning_AndAReceiveReachesTheAnchor_ThenTheSweepEnds()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -128,11 +126,11 @@ public class ReceiveCursorTests
 
         cursor.AdvanceOrEndSweep(cursor.GetAnchor(), 21);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(20));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(20));
     }
 
     [Test]
-    public void An_empty_sweep_receive_ends_the_sweep()
+    public void WhenASweepIsRunning_AndAReceiveFindsNothing_ThenTheSweepEnds()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -140,11 +138,11 @@ public class ReceiveCursorTests
 
         cursor.AdvanceOrEndSweep(cursor.GetAnchor(), null);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
     }
 
     [Test]
-    public void A_receive_from_an_earlier_sweep_does_not_end_a_lowered_one()
+    public void WhenASweepIsLowered_AndAReceiveFromTheEarlierSweepCompletes_ThenTheLoweredSweepContinues()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -154,11 +152,11 @@ public class ReceiveCursorTests
         cursor.RescanFrom(3); // rolled back while the earlier receive's query ran
         cursor.AdvanceOrEndSweep(staleSeek, 11);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(2));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(2));
     }
 
     [Test]
-    public void A_receive_from_the_anchor_does_not_touch_the_sweep()
+    public void WhenASweepStarts_AndAReceiveFromTheAnchorCompletes_ThenTheSweepIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -167,11 +165,11 @@ public class ReceiveCursorTests
         cursor.RescanFrom(7);
         cursor.AdvanceOrEndSweep(anchoredSeek, 11);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(6));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
     }
 
     [Test]
-    public void A_head_sweep_seeks_from_the_start_of_the_queue()
+    public void WhenSweepingFromTheHead_AndALaterRowIsCommitted_ThenTheSweepSeeksFromTheStartOfTheQueue()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.AdvanceAnchor(10);
@@ -183,7 +181,7 @@ public class ReceiveCursorTests
     }
 
     [Test]
-    public void A_head_sweep_is_not_needed_while_the_anchor_is_at_the_head()
+    public void WhenTheAnchorIsAtTheHead_AndSweepingFromTheHead_ThenNoSweepStarts()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
 

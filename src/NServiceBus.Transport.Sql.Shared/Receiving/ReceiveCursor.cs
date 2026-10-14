@@ -48,14 +48,14 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public void ApplyPeekResult(long lowestRowVersion)
         {
-            var seekFrom = lowestRowVersion - 1;
-            if (seekFrom < Interlocked.Read(ref highWaterAnchor))
+            var seekAfter = lowestRowVersion - 1;
+            if (seekAfter < Interlocked.Read(ref highWaterAnchor))
             {
-                StartOrLowerSweep(seekFrom);
+                StartOrLowerSweep(seekAfter);
             }
             else
             {
-                AdvanceAnchor(seekFrom);
+                AdvanceAnchor(seekAfter);
             }
         }
 
@@ -95,10 +95,10 @@ namespace NServiceBus.Transport.Sql.Shared
         /// </summary>
         public void RescanFrom(long rowVersion)
         {
-            var seekFrom = rowVersion - 1;
-            if (seekFrom < Interlocked.Read(ref highWaterAnchor))
+            var seekAfter = rowVersion - 1;
+            if (seekAfter < Interlocked.Read(ref highWaterAnchor))
             {
-                StartOrLowerSweep(seekFrom);
+                StartOrLowerSweep(seekAfter);
             }
         }
 
@@ -117,17 +117,17 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
                 else
                 {
-                    _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.Anchor);
+                    _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.SeekAfter);
                 }
             }
         }
 
-        void StartOrLowerSweep(long seekFrom)
+        void StartOrLowerSweep(long seekAfter)
         {
             var current = Interlocked.Read(ref sweepAnchor);
-            while (seekFrom < current)
+            while (seekAfter < current)
             {
-                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, seekFrom, current);
+                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, seekAfter, current);
                 if (witnessed == current)
                 {
                     break;
@@ -160,9 +160,9 @@ namespace NServiceBus.Transport.Sql.Shared
     }
 
     enum AnchorKind { HighWater, Sweep }
-    readonly record struct ReceiveAnchor(long Anchor, AnchorKind Kind)
+    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind)
     {
-        public static ReceiveAnchor HighWater(long anchor) => new(anchor, AnchorKind.HighWater);
-        public static ReceiveAnchor Sweep(long anchor) => new(anchor, AnchorKind.Sweep);
+        public static ReceiveAnchor HighWater(long seekAfter) => new(seekAfter, AnchorKind.HighWater);
+        public static ReceiveAnchor Sweep(long seekAfter) => new(seekAfter, AnchorKind.Sweep);
     }
 }

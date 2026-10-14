@@ -228,14 +228,14 @@ public class MessageReceiverStrandedRowTests
             }
         }
 
-        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
         {
             long? received = null;
             int receiveNumber;
 
             lock (rows)
             {
-                var past = rows.GetViewBetween(anchor + 1, long.MaxValue);
+                var past = rows.GetViewBetween(seekAfter + 1, long.MaxValue);
                 if (past.Count > 0)
                 {
                     received = past.Min;
@@ -245,7 +245,7 @@ public class MessageReceiverStrandedRowTests
                 receiveNumber = ++receives;
             }
 
-            OnReceive?.Invoke(anchor, receiveNumber, received);
+            OnReceive?.Invoke(seekAfter, receiveNumber, received);
 
             return Task.FromResult(received is { } rowVersion
                 ? MessageReadResult.Success(new Message(rowVersion.ToString(), string.Empty, Array.Empty<byte>(), false), rowVersion)
