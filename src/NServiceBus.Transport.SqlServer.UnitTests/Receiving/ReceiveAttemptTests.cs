@@ -91,7 +91,7 @@ public class ReceiveAttemptTests
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 7));
 
         _ = await attempt.Receive(null, null, CancellationToken);
-        cursor.AdvanceAnchor(10); // a concurrent receive committed a later row
+        cursor.ReceivedFromHighWater(10); // a concurrent receive committed a later row
         attempt.Settle(ProcessOutcome.RolledBack);
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
@@ -101,7 +101,7 @@ public class ReceiveAttemptTests
     public void WhenTheReceiveQueryThrows_AndTheAttemptIsRolledBack_ThenTheAnchorIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.AdvanceAnchor(10);
+        cursor.ReceivedFromHighWater(10);
         var attempt = new ReceiveAttempt(new ThrowingQueue(), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
         Assert.ThrowsAsync<InvalidOperationException>(() => attempt.Receive(null, null, CancellationToken));
