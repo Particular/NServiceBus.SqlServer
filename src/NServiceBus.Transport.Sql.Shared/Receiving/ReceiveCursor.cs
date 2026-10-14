@@ -103,12 +103,21 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         /// <summary>
-        /// After a sweep receive: if it found a message left behind the high-water anchor, the sweep carries on
-        /// from that message; if it found nothing left behind, the sweep is over.
+        /// Moves the anchor as soon as a receive returns, before the message is processed; the row is locked,
+        /// so no other receive can take it, and a rollback calls <see cref="RescanFrom"/>.
+        /// A high-water receive advances past the received row. A sweep receive that found a row left behind
+        /// the high-water anchor carries on from it; otherwise the sweep is over.
         /// </summary>
-        public void AdvanceOrEndSweep(ReceiveAnchor usedAnchor, long? receivedRowVersion)
+        public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
-            if (usedAnchor.Kind == AnchorKind.Sweep)
+            if (usedAnchor.Kind == AnchorKind.HighWater)
+            {
+                if (receivedRowVersion is { } received)
+                {
+                    AdvanceAnchor(received);
+                }
+            }
+            else
             {
                 // don't end a sweep that a rollback has moved further back since this receive started
                 if (receivedRowVersion is { } rowVersion && rowVersion < Interlocked.Read(ref highWaterAnchor))

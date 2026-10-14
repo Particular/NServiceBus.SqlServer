@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 batchActivity.MarkReceived();
             }
 
-            receiveCursor.AdvanceOrEndSweep(anchor, receivedRowVersion);
+            receiveCursor.Received(anchor, receivedRowVersion);
 
             receiveCountdownEventSignaler.Signal();
 
@@ -41,27 +41,13 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         /// <summary>
-        /// Moves the anchor according to what happened to the received row.
+        /// Rescans from the received row if it rolled back. The anchor already moved past it on receive.
         /// </summary>
         public void Settle(ProcessOutcome outcome)
         {
-            if (receivedRowVersion is not { } rowVersion)
+            if (outcome == ProcessOutcome.RolledBack && receivedRowVersion is { } rowVersion)
             {
-                // Nothing received - no matter the reported outcome, do nothing
-                return;
-            }
-
-            switch (outcome)
-            {
-                case ProcessOutcome.Committed:
-                    receiveCursor.AdvanceAnchor(rowVersion);
-                    break;
-                case ProcessOutcome.RolledBack:
-                    receiveCursor.RescanFrom(rowVersion);
-                    break;
-                case ProcessOutcome.NoMessage:
-                default:
-                    break;
+                receiveCursor.RescanFrom(rowVersion);
             }
         }
 

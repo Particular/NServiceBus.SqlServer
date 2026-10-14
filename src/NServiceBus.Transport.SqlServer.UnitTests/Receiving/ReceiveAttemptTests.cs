@@ -62,15 +62,26 @@ public class ReceiveAttemptTests
     }
 
     [Test]
-    public async Task WhenAMessageIsReceived_AndTheAttemptIsCommitted_ThenTheAnchorAdvancesToTheReceivedRow()
+    public async Task WhenAMessageIsReceived_ThenTheAnchorAdvancesToTheReceivedRowBeforeItIsProcessed()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 10));
 
         _ = await attempt.Receive(null, null, CancellationToken);
-        attempt.Settle(ProcessOutcome.Committed);
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
+    }
+
+    [Test]
+    public async Task WhenAMessageIsReceived_AndTheAttemptIsRolledBack_ThenTheAnchorRetreatsToTheReceivedRow()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 10));
+
+        _ = await attempt.Receive(null, null, CancellationToken);
+        attempt.Settle(ProcessOutcome.RolledBack);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(9));
     }
 
     [Test]
