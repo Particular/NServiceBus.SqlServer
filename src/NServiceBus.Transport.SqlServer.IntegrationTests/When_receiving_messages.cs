@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
-    using NServiceBus.Transport.Sql.Shared;
+    using Sql.Shared;
     using NUnit.Framework;
     using SqlServer;
     using Transport;
@@ -101,7 +101,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
                 => CountReceive(cancellationToken);
 
             Task<MessageReadResult> CountReceive(CancellationToken cancellationToken = default)

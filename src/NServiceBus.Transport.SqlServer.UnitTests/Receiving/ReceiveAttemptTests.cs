@@ -70,7 +70,7 @@ public class ReceiveAttemptTests
         _ = await attempt.Receive(null, null, CancellationToken);
         attempt.Settle(ProcessOutcome.Committed);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
     }
 
     [Test]
@@ -83,7 +83,7 @@ public class ReceiveAttemptTests
         cursor.AdvanceAnchor(10); // a concurrent receive committed a later row
         attempt.Settle(ProcessOutcome.RolledBack);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(6));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class ReceiveAttemptTests
         Assert.ThrowsAsync<InvalidOperationException>(() => attempt.Receive(null, null, CancellationToken));
         attempt.Settle(ProcessOutcome.RolledBack);
 
-        Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
     }
 
     static ReceiveAttempt CreateAttempt(ReceiveCursor cursor, MessageReadResult result) =>
@@ -108,7 +108,7 @@ public class ReceiveAttemptTests
 
     class FakeQueue(MessageReadResult result) : TableBasedQueue(new SqlServerConstants(), "[dbo].[queue]", "queue", false)
     {
-        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
             => Task.FromResult(result);
 
         protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
@@ -117,7 +117,7 @@ public class ReceiveAttemptTests
 
     class ThrowingQueue() : TableBasedQueue(new SqlServerConstants(), "[dbo].[queue]", "queue", false)
     {
-        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+        public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("Receive query failed");
 
         protected override Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)

@@ -20,7 +20,7 @@ namespace NServiceBus.Transport.Sql.Shared
             receiveStarted = true;
 
             var anchor = receiveCursor.GetAnchor();
-            var receiveResult = await inputQueue.TryReceive(connection, transaction, anchor.Anchor, cancellationToken).ConfigureAwait(false);
+            var receiveResult = await inputQueue.TryReceive(connection, transaction, anchor.SeekAfter, cancellationToken).ConfigureAwait(false);
 
             if (receiveResult != MessageReadResult.NoMessage)
             {

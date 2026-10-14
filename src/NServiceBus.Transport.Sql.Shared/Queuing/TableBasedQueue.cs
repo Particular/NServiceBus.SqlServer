@@ -49,14 +49,14 @@ namespace NServiceBus.Transport.Sql.Shared
             peekCommand = Format(sqlConstants.PeekText, qualifiedTableName);
         }
 
-        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long anchor, CancellationToken cancellationToken = default)
+        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
         {
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = receiveCommand;
                 command.Transaction = transaction;
                 command.CommandType = CommandType.Text;
-                command.AddParameter("Anchor", DbType.Int64, anchor);
+                command.AddParameter("Anchor", DbType.Int64, seekAfter);
 
                 return await ReadMessage(command, cancellationToken).ConfigureAwait(false);
             }
