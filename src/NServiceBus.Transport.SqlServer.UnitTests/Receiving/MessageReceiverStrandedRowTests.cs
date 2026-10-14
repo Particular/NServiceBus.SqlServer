@@ -16,27 +16,27 @@ using NUnit.Framework;
 public class MessageReceiverStrandedRowTests
 {
     [Test]
-    public async Task WhenProcessingABatch_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpWithinTheBatch()
+    public async Task WhenProcessingALongRunningBatch_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpWithinTheBatch()
     {
-        // The only peek sees the queue as it starts, so the stranded row can only be found by a
-        // head sweep within that batch. Every receive moves the clock on 10ms, so the 1s sweep
-        // interval passes many times over before the batch runs out.
         const long strandedRowVersion = 5;
-        const int receivesBeforeStranding = 300;
+        const int receivesBeforePuttingStrandedRowIntoQueue = 300;
+        // Run the sweep every 10 messages
+        var headSweepInterval = TimeSpan.FromSeconds(1);
+        var eachMessageReceivedProgressesTimeBy = TimeSpan.FromMilliseconds(100);
 
         var timeProvider = new FakeTimeProvider();
-        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(100, 2_000));
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(start: 100, count: 2_000));
         var peeker = new ScriptedPeeker(
-            new PeekResult(messageCount: 2_000, lowestRowVersion: 100),
+            new PeekResult(messageCount: 2_000, lowestRowVersion: 100), // First peek misses stranded row
             PeekResult.Empty); // Force only one batch to be processed by returning empty on every subsequent peek call.
 
         var strandedReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         queue.OnReceive = (_, receiveNumber, rowVersion) =>
         {
-            timeProvider.Advance(TimeSpan.FromMilliseconds(10));
+            timeProvider.Advance(eachMessageReceivedProgressesTimeBy);
 
-            if (receiveNumber == receivesBeforeStranding)
+            if (receiveNumber == receivesBeforePuttingStrandedRowIntoQueue)
             {
                 queue.Add(strandedRowVersion);
             }
@@ -47,7 +47,7 @@ public class MessageReceiverStrandedRowTests
             }
         };
 
-        var receiver = CreateReceiver(queue, peeker, timeProvider);
+        var receiver = CreateReceiver(queue, peeker, timeProvider, headSweepInterval);
 
         await receiver.Initialize(new PushRuntimeSettings(4), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
         await receiver.StartReceive(CancellationToken);
@@ -58,7 +58,7 @@ public class MessageReceiverStrandedRowTests
     }
 
     [Test]
-    public async Task WhenProcessingMessages_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpByTheNextPeek()
+    public async Task WhenProcessingAShortBatch_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpByTheNextPeek()
     {
         // The head sweep interval is never reached, so the stranded row can only be
         // found by the next batch's peek reporting it as the lowest row.
@@ -67,7 +67,7 @@ public class MessageReceiverStrandedRowTests
         var headSweepInterval = TimeSpan.FromDays(999); // The sweep never runs.
 
         var timeProvider = new FakeTimeProvider();
-        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(20, 100));
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(start: 20, count: 100));
         var peeker = new ScriptedPeeker(
             new PeekResult(messageCount: 100, lowestRowVersion: 20),
             new PeekResult(messageCount: 1, lowestRowVersion: strandedRowVersion),
@@ -99,40 +99,82 @@ public class MessageReceiverStrandedRowTests
     }
 
     [Test]
-    public async Task WhenProcessingABatch_TheHeadIsNotSweptOnEveryReceive()
+    public async Task WhenProcessingABatch_AndTheSweepIntervalHasNotPassed_ReceivesContinueFromTheAnchor()
     {
-        // every receive finds a row, so the batch never ends; each one moves the clock on 300ms, so
-        // the 1s minimum sweep interval has passed by the fifth
+        var headSweepInterval = TimeSpan.FromDays(999); // The sweep never runs.
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(start: 100, count: 20));
+        var peeker = new ScriptedPeeker(new PeekResult(messageCount: 20, lowestRowVersion: 100), PeekResult.Empty);
+
         var timeProvider = new FakeTimeProvider();
-        var queue = new InMemoryQueue(Enumerable.Range(100, 10_000).Select(i => (long)i));
         var anchors = new List<long>();
-        var sixReceives = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         queue.OnReceive = (anchor, receiveNumber, _) =>
         {
-            timeProvider.Advance(TimeSpan.FromMilliseconds(300));
+            lock (anchors)
+            {
+                anchors.Add(anchor);
+            }
+
+            if (receiveNumber == 20)
+            {
+                allReceived.TrySetResult();
+            }
+        };
+
+        var receiver = CreateReceiver(queue, peeker, timeProvider, headSweepInterval: headSweepInterval);
+
+        await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
+        await receiver.StartReceive(CancellationToken);
+        var completed = await Task.WhenAny(allReceived.Task, Task.Delay(TimeSpan.FromSeconds(10), CancellationToken));
+        await receiver.StopReceive(CancellationToken);
+
+        Assert.That(completed, Is.SameAs(allReceived.Task), "every row should have been received");
+        Assert.That(anchors, Has.None.LessThan(99), "the head should not be swept before the interval passes");
+    }
+
+    [Test]
+    public async Task WhenProcessingABatch_AndTheSweepIntervalPasses_TheHeadIsSweptOnce()
+    {
+        const int receiveWhenIntervalPasses = 3;
+        var headSweepInterval = TimeSpan.FromSeconds(1);
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(start: 100, count: 20));
+        var peeker = new ScriptedPeeker(new PeekResult(messageCount: 20, lowestRowVersion: 100), PeekResult.Empty);
+
+        var anchors = new List<long>();
+        var allReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var timeProvider = new FakeTimeProvider();
+
+        queue.OnReceive = (anchor, receiveNumber, _) =>
+        {
+            if (receiveNumber == receiveWhenIntervalPasses)
+            {
+                timeProvider.Advance(headSweepInterval);
+            }
 
             lock (anchors)
             {
                 anchors.Add(anchor);
             }
 
-            if (receiveNumber == 6)
+            if (receiveNumber == 20)
             {
-                sixReceives.TrySetResult();
+                allReceived.TrySetResult();
             }
         };
 
-        var receiver = CreateReceiver(queue, new ScriptedPeeker(new PeekResult(10_000, 100)), timeProvider);
+        var receiver = CreateReceiver(queue, peeker, timeProvider, headSweepInterval: headSweepInterval);
 
         await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
         await receiver.StartReceive(CancellationToken);
-        await sixReceives.Task.WaitAsync(TimeSpan.FromSeconds(10), CancellationToken);
+        var completed = await Task.WhenAny(allReceived.Task, Task.Delay(TimeSpan.FromSeconds(10), CancellationToken));
         await receiver.StopReceive(CancellationToken);
 
-        // from the peek's lowest row, then the head sweep, which finds nothing stranded and hands back to the anchor
-        Assert.That(anchors.Take(6), Is.EqualTo(new long[] { 99, 100, 101, 102, 0, 104 }));
+        Assert.That(completed, Is.SameAs(allReceived.Task), "every row should have been received");
+        Assert.That(anchors.Count(anchor => anchor == HeadOfQueue), Is.EqualTo(1), "the head should be swept once per interval");
     }
+
+    const long HeadOfQueue = 0;
 
     static MessageReceiver CreateReceiver(InMemoryQueue queue, IPeekMessagesInQueue peeker, TimeProvider timeProvider, TimeSpan? headSweepInterval = null)
     {
