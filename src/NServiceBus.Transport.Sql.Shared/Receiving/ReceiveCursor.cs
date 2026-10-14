@@ -70,7 +70,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        public void AdvanceAnchor(long rowVersion)
+        void AdvanceAnchor(long rowVersion)
         {
             if (!anchoringEnabled)
             {
@@ -105,30 +105,28 @@ namespace NServiceBus.Transport.Sql.Shared
         /// <summary>
         /// Moves the anchor as soon as a receive returns, before the message is processed; the row is locked,
         /// so no other receive can take it, and a rollback calls <see cref="RescanFrom"/>.
-        /// A high-water receive advances past the received row. A sweep receive that found a row left behind
+        /// A received row past the high-water anchor advances it. A sweep receive that found a row left behind
         /// the high-water anchor carries on from it; otherwise the sweep is over.
         /// </summary>
         public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
-            if (usedAnchor.Kind == AnchorKind.HighWater)
+            if (usedAnchor.Kind == AnchorKind.Sweep)
             {
-                if (receivedRowVersion is { } received)
+                if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highWaterAnchor))
                 {
-                    AdvanceAnchor(received);
+                    MoveSweepPast(receivedRowVersion.Value);
+                    return;
                 }
-            }
-            else
-            {
+
                 // don't end a sweep that a rollback has moved further back since this receive started
-                if (receivedRowVersion is { } rowVersion && rowVersion < Interlocked.Read(ref highWaterAnchor))
-                {
-                    MoveSweepPast(rowVersion);
-                }
-                else
-                {
-                    _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.SeekAfter);
-                }
+                _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.SeekAfter);
             }
+
+            if (receivedRowVersion is { } rowVersion)
+            {
+                AdvanceAnchor(rowVersion);
+            }
+
         }
 
         void StartOrLowerSweep(long seekAfter)
