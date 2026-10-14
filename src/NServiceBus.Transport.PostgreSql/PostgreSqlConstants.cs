@@ -53,8 +53,8 @@ FROM {0}
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
     public string PeekText { get; set; } = @"
-WITH lowest AS (SELECT seq FROM {0} ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED),
-highest AS (SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED)
+WITH lowest AS (SELECT seq FROM {0} WHERE seq > @Anchor ORDER BY seq ASC LIMIT 1 FOR UPDATE SKIP LOCKED),
+highest AS (SELECT seq FROM {0} WHERE seq > @Anchor ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED)
 SELECT COALESCE(cast((SELECT seq FROM highest) - (SELECT seq FROM lowest) + 1 AS int), 0),
 COALESCE((SELECT seq FROM lowest), 0)::bigint;";
 

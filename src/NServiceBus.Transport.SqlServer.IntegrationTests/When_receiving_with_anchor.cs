@@ -123,7 +123,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 }
 
                 queue.FormatPeekCommand();
-                var peek = await queue.TryPeek(receiver, null);
+                var peek = await queue.TryPeek(receiver, null, 0);
                 var fromPeekAnchor = await queue.TryReceive(receiver, null, peek.LowestRowVersion - 1);
 
                 Assert.Multiple(() =>
@@ -149,7 +149,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                     var locked = await queue.TryReceive(inFlight, receiveTransaction, 0);
 
                     queue.FormatPeekCommand();
-                    var peek = await queue.TryPeek(peeker, null);
+                    var peek = await queue.TryPeek(peeker, null, 0);
                     var fromPeekAnchor = await queue.TryReceive(peeker, null, peek.LowestRowVersion - 1);
 
                     Assert.Multiple(() =>
@@ -169,7 +169,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             using (var connection = await dbConnectionFactory.OpenNewConnection())
             {
                 queue.FormatPeekCommand();
-                var peek = await queue.TryPeek(connection, null);
+                var peek = await queue.TryPeek(connection, null, 0);
 
                 Assert.Multiple(() =>
                 {

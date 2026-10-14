@@ -153,7 +153,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
         var queuePurger = new QueuePurger(connectionFactory);
-        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
+        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay,
+                queuePeekerOptions.EnableReceiveAnchoring && queuePeekerOptions.EnablePeekAnchoring);
 
         var queueFactory = new Func<string, PostgreSqlTableBasedQueue>(queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName, true));

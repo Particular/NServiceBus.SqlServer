@@ -46,6 +46,16 @@ namespace NServiceBus
         public bool EnableReceiveAnchoring { get; set; }
 
         /// <summary>
+        /// Anchors the peek past the contended head of the queue while messages keep arriving.
+        /// Only used when <see cref="EnableReceiveAnchoring"/> is set
+        /// </summary>
+        /// <remarks>
+        /// After the peek delay, when the previous batch received nothing, the peek reads the whole queue
+        /// so rows left behind the anchor are still found.
+        /// </remarks>
+        public bool EnablePeekAnchoring { get; set; }
+
+        /// <summary>
         /// Interval between receives sweeping the whole queue from its head, to pick up rows that are left behind the anchor
         /// Only used when <see cref="EnableReceiveAnchoring"/> is set
         /// </summary>

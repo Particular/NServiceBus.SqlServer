@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.Sql.Shared
     interface IPeekMessagesInQueue
 #pragma warning restore CA1711 // Identifiers should not have incorrect suffix
     {
-        Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default);
+        Task<PeekResult> Peek(TableBasedQueue inputQueue, long seekAfter, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default);
 
         Task WaitForPeekDelay(CancellationToken cancellationToken = default);
     }

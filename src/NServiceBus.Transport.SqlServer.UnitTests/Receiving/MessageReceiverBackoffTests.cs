@@ -80,7 +80,7 @@ public class MessageReceiverBackoffTests
         public int PeekDelayCount => Volatile.Read(ref peekDelayCount);
         public Task PeeksSignaled => peeksSignaled.Task;
 
-        public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
+        public Task<PeekResult> Peek(TableBasedQueue inputQueue, long seekAfter, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
             if (Interlocked.Increment(ref peekCount) >= signalAfterPeeks)
             {

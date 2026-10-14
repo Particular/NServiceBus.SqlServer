@@ -67,7 +67,7 @@
                 using (var tx = connection.BeginTransaction())
                 {
                     tableBasedQueue.FormatPeekCommand();
-                    await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
+                    await tableBasedQueue.TryPeek(connection, tx, 0, PeekTimeoutInSeconds, cancellationToken);
                     scope.Complete();
                 }
             }

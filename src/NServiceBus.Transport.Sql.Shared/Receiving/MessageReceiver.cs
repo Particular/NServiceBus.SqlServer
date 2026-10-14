@@ -190,13 +190,16 @@
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
             var previousBatchResult = batchActivity.BeginNextBatch();
+            var peekSeekAfter = receiveCursor.GetHighWaterAnchor();
             if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
             {
                 await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
+                // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
+                peekSeekAfter = 0;
             }
 
             var peekResult = await queuePeeker
-                .Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
+                .Peek(inputQueue, peekSeekAfter, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
                 .ConfigureAwait(false);
 
             if (peekResult.MessageCount == 0)

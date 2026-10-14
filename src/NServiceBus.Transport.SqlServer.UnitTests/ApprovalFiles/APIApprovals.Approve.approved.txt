@@ -33,6 +33,7 @@ namespace NServiceBus
     public class QueuePeekerOptions
     {
         public System.TimeSpan Delay { get; set; }
+        public bool EnablePeekAnchoring { get; set; }
         public bool EnableReceiveAnchoring { get; set; }
         public System.TimeSpan HeadSweepInterval { get; set; }
         [System.Obsolete("The queue peek batch size has no effect and should be removed from the configurat" +
