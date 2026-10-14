@@ -20,10 +20,10 @@ public class MessageReceiverBackoffTests
         var queueWhereOtherNodesWinEveryReceive = new FakeQueue(() => MessageReadResult.NoMessage);
         var receiver = CreateReceiver(peekerReportingBacklog, queueWhereOtherNodesWinEveryReceive);
 
-        await receiver.Initialize(new PushRuntimeSettings(8), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled)).ConfigureAwait(false);
-        await receiver.StartReceive().ConfigureAwait(false);
-        await peekerReportingBacklog.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-        await receiver.StopReceive().ConfigureAwait(false);
+        await receiver.Initialize(new PushRuntimeSettings(8), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled));
+        await receiver.StartReceive();
+        await peekerReportingBacklog.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5));
+        await receiver.StopReceive();
 
         Assert.That(peekerReportingBacklog.PeekDelayCount, Is.GreaterThanOrEqualTo(10 - 1 /* account for race between signal and peek */));
     }
@@ -39,10 +39,10 @@ public class MessageReceiverBackoffTests
         var peeker = new CountingPeeker(peekingReportesMessageCountOf: 10, signalAfterPeeks: 10, onPeek: () => Interlocked.Exchange(ref messageWaitingAfterPeek, 1));
         var receiver = CreateReceiver(peeker, queue);
 
-        await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled)).ConfigureAwait(false);
-        await receiver.StartReceive().ConfigureAwait(false);
-        await peeker.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-        await receiver.StopReceive().ConfigureAwait(false);
+        await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled));
+        await receiver.StartReceive();
+        await peeker.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5));
+        await receiver.StopReceive();
 
         Assert.That(peeker.PeekDelayCount, Is.EqualTo(0));
     }
@@ -101,7 +101,7 @@ public class MessageReceiverBackoffTests
     {
         public override async Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default)
         {
-            var receiveResult = await receiveAttempt.Receive(null, null, cancellationToken).ConfigureAwait(false);
+            var receiveResult = await receiveAttempt.Receive(null, null, cancellationToken);
 
             return receiveResult == MessageReadResult.NoMessage
                 ? ProcessOutcome.NoMessage

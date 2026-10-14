@@ -7,26 +7,30 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
-using NServiceBus.Extensibility;
-using NServiceBus.Transport;
-using NServiceBus.Transport.Sql.Shared;
-using NServiceBus.Unicast.Messages;
+using Extensibility;
+using Transport;
+using Sql.Shared;
+using Unicast.Messages;
 using NUnit.Framework;
 
 public class MessageReceiverStrandedRowTests
 {
     [Test]
-    public async Task Picks_up_a_row_that_reappears_behind_the_anchor_by_the_next_head_sweep()
+    public async Task WhenProcessingABatch_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpWithinTheBatch()
     {
-        // Every receive moves the clock on 10ms, so a head sweep (1s minimum interval) runs every ~100
-        // receives. After 300 receives a row reappears far behind the anchor, as if it rolled back
-        // on another instance; concurrent commits keep advancing the anchor past it.
+        // The only peek sees the queue as it starts, so the stranded row can only be found by a
+        // head sweep within that batch. Every receive moves the clock on 10ms, so the 1s sweep
+        // interval passes many times over before the batch runs out.
         const long strandedRowVersion = 5;
         const int receivesBeforeStranding = 300;
 
         var timeProvider = new FakeTimeProvider();
-        var queue = new InMemoryQueue(Enumerable.Range(100, 10_000).Select(i => (long)i));
-        var strandedReceivedAt = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(100, 2_000));
+        var peeker = new ScriptedPeeker(
+            new PeekResult(messageCount: 2_000, lowestRowVersion: 100),
+            PeekResult.Empty); // Force only one batch to be processed by returning empty on every subsequent peek call.
+
+        var strandedReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         queue.OnReceive = (_, receiveNumber, rowVersion) =>
         {
@@ -39,23 +43,63 @@ public class MessageReceiverStrandedRowTests
 
             if (rowVersion == strandedRowVersion)
             {
-                strandedReceivedAt.TrySetResult(receiveNumber);
+                strandedReceived.TrySetResult();
             }
         };
 
-        var receiver = CreateReceiver(queue, timeProvider);
+        var receiver = CreateReceiver(queue, peeker, timeProvider);
 
-        await receiver.Initialize(new PushRuntimeSettings(4), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken).ConfigureAwait(false);
-        await receiver.StartReceive(CancellationToken).ConfigureAwait(false);
-        var receivedAt = await strandedReceivedAt.Task.WaitAsync(TimeSpan.FromSeconds(10), CancellationToken).ConfigureAwait(false);
-        await receiver.StopReceive(CancellationToken).ConfigureAwait(false);
+        await receiver.Initialize(new PushRuntimeSettings(4), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
+        await receiver.StartReceive(CancellationToken);
+        var completed = await Task.WhenAny(strandedReceived.Task, Task.Delay(TimeSpan.FromSeconds(10), CancellationToken));
+        await receiver.StopReceive(CancellationToken);
 
-        // at most one sweep interval, then the head sweep finds it first
-        Assert.That(receivedAt - receivesBeforeStranding, Is.LessThanOrEqualTo(110));
+        Assert.That(completed, Is.SameAs(strandedReceived.Task), "the head sweep should have reached the stranded row within the batch");
     }
 
     [Test]
-    public async Task Sweeps_from_the_head_once_per_interval_on_a_busy_queue()
+    public async Task WhenProcessingMessages_AndARowReappearsBehindTheAnchor_ThatRowIsPickedUpByTheNextPeek()
+    {
+        // The head sweep interval is never reached, so the stranded row can only be
+        // found by the next batch's peek reporting it as the lowest row.
+        const long strandedRowVersion = 5;
+        const int receivesBeforeStranding = 10;
+        var headSweepInterval = TimeSpan.FromDays(999); // The sweep never runs.
+
+        var timeProvider = new FakeTimeProvider();
+        var queue = new InMemoryQueue(rowVersions: Enumerable.Range(20, 100));
+        var peeker = new ScriptedPeeker(
+            new PeekResult(messageCount: 100, lowestRowVersion: 20),
+            new PeekResult(messageCount: 1, lowestRowVersion: strandedRowVersion),
+            PeekResult.Empty);
+
+        var strandedReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        queue.OnReceive = (_, receiveNumber, rowVersion) =>
+        {
+            if (receiveNumber == receivesBeforeStranding)
+            {
+                queue.Add(strandedRowVersion);
+            }
+
+            if (rowVersion == strandedRowVersion)
+            {
+                strandedReceived.TrySetResult();
+            }
+        };
+
+        var receiver = CreateReceiver(queue, peeker, timeProvider, headSweepInterval: headSweepInterval);
+
+        await receiver.Initialize(new PushRuntimeSettings(4), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
+        await receiver.StartReceive(CancellationToken);
+        var completed = await Task.WhenAny(strandedReceived.Task, Task.Delay(TimeSpan.FromSeconds(10), CancellationToken));
+        await receiver.StopReceive(CancellationToken);
+
+        Assert.That(completed, Is.SameAs(strandedReceived.Task), "the next peek should have moved the anchor back to the stranded row");
+    }
+
+    [Test]
+    public async Task WhenProcessingABatch_TheHeadIsNotSweptOnEveryReceive()
     {
         // every receive finds a row, so the batch never ends; each one moves the clock on 300ms, so
         // the 1s minimum sweep interval has passed by the fifth
@@ -79,18 +123,18 @@ public class MessageReceiverStrandedRowTests
             }
         };
 
-        var receiver = CreateReceiver(queue, timeProvider);
+        var receiver = CreateReceiver(queue, new ScriptedPeeker(new PeekResult(10_000, 100)), timeProvider);
 
-        await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken).ConfigureAwait(false);
-        await receiver.StartReceive(CancellationToken).ConfigureAwait(false);
-        await sixReceives.Task.WaitAsync(TimeSpan.FromSeconds(10), CancellationToken).ConfigureAwait(false);
-        await receiver.StopReceive(CancellationToken).ConfigureAwait(false);
+        await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled), CancellationToken);
+        await receiver.StartReceive(CancellationToken);
+        await sixReceives.Task.WaitAsync(TimeSpan.FromSeconds(10), CancellationToken);
+        await receiver.StopReceive(CancellationToken);
 
         // from the peek's lowest row, then the head sweep, which finds nothing stranded and hands back to the anchor
         Assert.That(anchors.Take(6), Is.EqualTo(new long[] { 99, 100, 101, 102, 0, 104 }));
     }
 
-    static MessageReceiver CreateReceiver(InMemoryQueue queue, TimeProvider timeProvider)
+    static MessageReceiver CreateReceiver(InMemoryQueue queue, IPeekMessagesInQueue peeker, TimeProvider timeProvider, TimeSpan? headSweepInterval = null)
     {
         var classifier = new SqlServerExceptionClassifier();
 
@@ -103,9 +147,9 @@ public class MessageReceiverStrandedRowTests
             _ => new CommittingStrategy(classifier),
             _ => queue,
             new FakePurger(),
-            new InMemoryPeeker(),
+            peeker,
             true,
-            TimeSpan.FromSeconds(1),
+            headSweepInterval ?? TimeSpan.FromSeconds(1),
             TimeSpan.FromSeconds(30),
             new FakeSubscriptionManager(),
             false,
@@ -113,7 +157,19 @@ public class MessageReceiverStrandedRowTests
             timeProvider);
     }
 
-    static CancellationToken CancellationToken => TestContext.CurrentContext.CancellationToken;
+    [SetUp]
+    public void SetUp() => cancellationTokenSource = new CancellationTokenSource();
+
+    [TearDown]
+    public void TearDown()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+
+    CancellationToken CancellationToken => cancellationTokenSource.Token;
+
+    CancellationTokenSource cancellationTokenSource;
 
     /// <summary>
     /// Receives the lowest row strictly past the anchor, like the anchored receive query.
@@ -127,14 +183,6 @@ public class MessageReceiverStrandedRowTests
             lock (rows)
             {
                 _ = rows.Add(rowVersion);
-            }
-        }
-
-        public PeekResult Peek()
-        {
-            lock (rows)
-            {
-                return rows.Count == 0 ? PeekResult.Empty : new PeekResult(rows.Count, rows.Min);
             }
         }
 
@@ -167,22 +215,28 @@ public class MessageReceiverStrandedRowTests
 
         readonly SortedSet<long> rows = [.. rowVersions];
         int receives;
+
+        public InMemoryQueue(IEnumerable<int> rowVersions) : this(rowVersions.Select(i => (long)i)) { }
     }
 
-    class InMemoryPeeker : IPeekMessagesInQueue
+    /// <summary>
+    /// Returns the given peek results in order, then keeps returning the last one.
+    /// </summary>
+    class ScriptedPeeker(params PeekResult[] results) : IPeekMessagesInQueue
     {
-
         public Task<PeekResult> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
-            => Task.FromResult(((InMemoryQueue)inputQueue).Peek());
+            => Task.FromResult(results[Math.Min(peeks++, results.Length - 1)]);
 
         public Task WaitForPeekDelay(CancellationToken cancellationToken = default) => Task.Delay(TimeSpan.FromMilliseconds(200), cancellationToken);
+
+        int peeks;
     }
 
     class CommittingStrategy(IExceptionClassifier exceptionClassifier) : ProcessStrategy(null, exceptionClassifier, null)
     {
         public override async Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default)
         {
-            var receiveResult = await receiveAttempt.Receive(null, null, cancellationToken).ConfigureAwait(false);
+            var receiveResult = await receiveAttempt.Receive(null, null, cancellationToken);
 
             return receiveResult == MessageReadResult.NoMessage
                 ? ProcessOutcome.NoMessage

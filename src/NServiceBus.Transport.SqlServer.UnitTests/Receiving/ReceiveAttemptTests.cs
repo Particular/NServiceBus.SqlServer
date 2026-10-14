@@ -19,7 +19,7 @@ public class ReceiveAttemptTests
         _ = batchActivity.BeginNextBatch();
         var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, batchActivity, latch.GetSignaler(), stopBatch);
 
-        _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
+        _ = await attempt.Receive(null, null, CancellationToken);
 
         Assert.Multiple(() =>
         {
@@ -40,7 +40,7 @@ public class ReceiveAttemptTests
         var message = MessageReadResult.Success(new Message("1", string.Empty, Array.Empty<byte>(), false), 1);
         var attempt = new ReceiveAttempt(new FakeQueue(message), cursor, batchActivity, latch.GetSignaler(), stopBatch);
 
-        _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
+        _ = await attempt.Receive(null, null, CancellationToken);
 
         Assert.Multiple(() =>
         {
@@ -56,7 +56,7 @@ public class ReceiveAttemptTests
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
-        _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
+        _ = await attempt.Receive(null, null, CancellationToken);
 
         Assert.ThrowsAsync<InvalidOperationException>(() => attempt.Receive(null, null, CancellationToken));
     }
@@ -67,7 +67,7 @@ public class ReceiveAttemptTests
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 10));
 
-        _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
+        _ = await attempt.Receive(null, null, CancellationToken);
         attempt.Settle(ProcessOutcome.Committed);
 
         Assert.That(cursor.GetAnchor().Anchor, Is.EqualTo(10));
@@ -79,7 +79,7 @@ public class ReceiveAttemptTests
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         var attempt = CreateAttempt(cursor, MessageReadResult.Success(CreateMessage(), 7));
 
-        _ = await attempt.Receive(null, null, CancellationToken).ConfigureAwait(false);
+        _ = await attempt.Receive(null, null, CancellationToken);
         cursor.AdvanceAnchor(10); // a concurrent receive committed a later row
         attempt.Settle(ProcessOutcome.RolledBack);
 
