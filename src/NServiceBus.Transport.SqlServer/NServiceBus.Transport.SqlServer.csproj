@@ -20,6 +20,10 @@
     <PackageReference Include="Particular.Packaging" Version="4.5.0" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup Label="Pinned Transitive Dependencies for CVEs">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" AutomaticVersionRange="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\NServiceBus.Transport.Sql.Shared\**\*.cs" LinkBase="Shared" />
   </ItemGroup>
