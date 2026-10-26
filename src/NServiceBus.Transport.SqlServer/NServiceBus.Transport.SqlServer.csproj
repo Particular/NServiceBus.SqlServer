@@ -21,6 +21,8 @@
   </ItemGroup>
 
   <ItemGroup Label="Pinned Transitive Dependencies for CVEs">
+    <!-- Pinned to 9.x because Microsoft.Data.SqlClient 6.1.x targets the 9.x line, even though repo-integrity expects framework packages to match the .NET 10 target framework.
+         When this pin is removed or moved to 10.x, also remove the ComponentShouldTargetDotNetLtsVersion ignore in .repointegrity.yml. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" AutomaticVersionRange="false" />
   </ItemGroup>
 
