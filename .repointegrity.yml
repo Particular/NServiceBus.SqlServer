@@ -1,0 +1,6 @@
+ignore:
+  # System.Security.Cryptography.Pkcs is pinned to 9.x, the line Microsoft.Data.SqlClient 6.1.x targets, to address CVEs.
+  # Remove this ignore when that pin is removed or moved to 10.x.
+  - test: ComponentShouldTargetDotNetLtsVersion
+    code: FrameworkPackages
+    path: src/NServiceBus.Transport.SqlServer/NServiceBus.Transport.SqlServer.csproj
