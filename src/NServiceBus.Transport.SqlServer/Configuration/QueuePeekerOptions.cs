@@ -38,6 +38,39 @@ namespace NServiceBus
         } = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// Anchors receives past the contended head of the queue, reducing database load with many competing receivers
+        /// </summary>
+        /// <remarks>
+        /// Rows left behind the anchor are picked up by sweeping from the head of the queue every <see cref="HeadSweepInterval"/>.
+        /// </remarks>
+        public bool EnableReceiveAnchoring { get; set; }
+
+        /// <summary>
+        /// Anchors the peek past the contended head of the queue while messages keep arriving.
+        /// Only used when <see cref="EnableReceiveAnchoring"/> is set
+        /// </summary>
+        /// <remarks>
+        /// After the peek delay, when the previous batch received nothing, the peek reads the whole queue
+        /// so rows left behind the anchor are still found.
+        /// </remarks>
+        public bool EnablePeekAnchoring { get; set; }
+
+        /// <summary>
+        /// Interval between receives sweeping the whole queue from its head, to pick up rows that are left behind the anchor
+        /// Only used when <see cref="EnableReceiveAnchoring"/> is set
+        /// </summary>
+        /// <remarks>
+        /// A row may be left behind if message handling has errors, because of commit delays, or other instances of the endpoint
+        /// commit out of order. Values below 1 second are clamped to 1 second. For best performance it should be higher than the
+        /// peek delay, we recommend 5-10x the peek delay, but no more than a few seconds.
+        /// </remarks>
+        public TimeSpan HeadSweepInterval
+        {
+            get;
+            set => field = value < MinimumHeadSweepInterval ? MinimumHeadSweepInterval : value;
+        } = TimeSpan.FromSeconds(5);
+
+        /// <summary>
         /// Maximal number of records to peek.
         /// </summary>
         [ObsoleteMetadata(
@@ -65,6 +98,7 @@ namespace NServiceBus
             }
         }
 
+        static readonly TimeSpan MinimumHeadSweepInterval = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }
 }

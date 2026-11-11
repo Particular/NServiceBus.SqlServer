@@ -6,18 +6,18 @@
     using System.Transactions;
     using Logging;
 
-    class QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay) : IPeekMessagesInQueue
+    class QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay, bool peekAnchoringEnabled) : IPeekMessagesInQueue
     {
-        public async Task<int> Peek(TableBasedQueue inputQueue, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
+        public async Task<PeekResult> Peek(TableBasedQueue inputQueue, long seekAfter, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
-            var messageCount = 0;
+            var peekResult = PeekResult.Empty;
 
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    messageCount = await inputQueue.TryPeek(connection, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    peekResult = await inputQueue.TryPeek(connection, null, peekAnchoringEnabled ? seekAfter : 0, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     scope.Complete();
                 }
@@ -30,17 +30,17 @@
                 await circuitBreaker.Failure(ex, cancellationToken).ConfigureAwait(false);
             }
 
-            if (messageCount == 0)
-            {
-                if (Logger.IsDebugEnabled)
-                {
-                    Logger.Debug($"Input queue empty. Next peek operation will be delayed for {peekDelay}.");
-                }
+            return peekResult;
+        }
 
-                await Task.Delay(peekDelay, cancellationToken).ConfigureAwait(false);
+        public Task WaitForPeekDelay(CancellationToken cancellationToken = default)
+        {
+            if (Logger.IsDebugEnabled)
+            {
+                Logger.Debug($"Input queue empty. Next peek operation will be delayed for {peekDelay}.");
             }
 
-            return messageCount;
+            return Task.Delay(peekDelay, cancellationToken);
         }
 
         static readonly ILog Logger = LogManager.GetLogger<QueuePeeker>();

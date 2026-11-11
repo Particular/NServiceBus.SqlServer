@@ -9,8 +9,7 @@
     class ProcessWithTransactionScope(TransactionOptions transactionOptions, DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
         : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
+        public override async Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -20,20 +19,18 @@
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
-                    receiveCountdownEventSignaler.Signal();
+                    var receiveResult = await receiveAttempt.Receive(connection, null, cancellationToken).ConfigureAwait(false);
 
                     if (receiveResult == MessageReadResult.NoMessage)
                     {
-                        stopBatchCancellationTokenSource.Cancel();
-                        return;
+                        return ProcessOutcome.NoMessage;
                     }
 
                     if (receiveResult.IsPoison)
                     {
                         await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null, cancellationToken).ConfigureAwait(false);
                         scope.Complete();
-                        return;
+                        return ProcessOutcome.Committed;
                     }
 
                     message = receiveResult.Message;
@@ -41,20 +38,21 @@
                     if (await TryHandleDelayedMessage(receiveResult.Message, connection, null, cancellationToken).ConfigureAwait(false))
                     {
                         scope.Complete();
-                        return;
+                        return ProcessOutcome.Committed;
                     }
 
                     connection.Close();
 
                     if (!await TryProcess(receiveResult.Message, TransportTransactions.TransactionScope(Transaction.Current), context, cancellationToken).ConfigureAwait(false))
                     {
-                        return;
+                        return ProcessOutcome.RolledBack;
                     }
 
                     scope.Complete();
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);
+                return ProcessOutcome.Committed;
             }
             catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {
@@ -63,6 +61,7 @@
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
+                return ProcessOutcome.RolledBack;
             }
         }
 
