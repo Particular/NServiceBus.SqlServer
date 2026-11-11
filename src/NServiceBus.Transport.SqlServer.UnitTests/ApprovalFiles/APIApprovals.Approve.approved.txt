@@ -94,6 +94,7 @@ namespace NServiceBus.Transport.SqlServer
     public class DelayedDeliveryOptions
     {
         public int BatchSize { get; set; }
+        public System.TimeSpan? DelayedMessageMoveLockDelay { get; set; }
         public string TableSuffix { get; set; }
     }
     public class DelayedDeliverySettings
