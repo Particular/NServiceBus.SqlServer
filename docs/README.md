@@ -18,3 +18,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 ## Architecture and design
 
 - [Architecture and design decisions](decisions/) — durable design constraints and rationale
+
+### Decisions recorded in pull requests
+
+- Record the transaction mode when the transport creates the transaction, rather than inferring it during dispatch — [#1756](https://github.com/Particular/NServiceBus.SqlServer/pull/1756)
