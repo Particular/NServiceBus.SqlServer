@@ -17,8 +17,20 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 
 ## Architecture and design
 
-- [Architecture and design decisions](decisions/) — durable design constraints and rationale
+- [SQL Server transport transaction modes](https://docs.particular.net/transports/sql/transactions) — which operations share the receive transaction in each mode
+
+## Upstream contracts
+
+- [NServiceBus: message dispatchers](https://github.com/Particular/NServiceBus/blob/master/docs/message-dispatchers.md) — what the transport must honor when dispatching messages, including batching and dispatch consistency
+- [NServiceBus: message receivers](https://github.com/Particular/NServiceBus/blob/master/docs/message-receivers.md) — what the transport must honor when receiving messages, including concurrency and shutdown
+- [NServiceBus: for downstream components](https://github.com/Particular/NServiceBus/blob/master/docs/README.md#for-downstream-components) — contracts Core documents for downstream components
+
+## Decisions and rationale
+
+- [Architecture and design decisions](decisions/)
 
 ### Decisions recorded in pull requests
 
 - Record the transaction mode when the transport creates the transaction, rather than inferring it during dispatch — [#1756](https://github.com/Particular/NServiceBus.SqlServer/pull/1756)
+
+Keep this index current when a canonical source is added, replaced, or retired; link, do not copy.
