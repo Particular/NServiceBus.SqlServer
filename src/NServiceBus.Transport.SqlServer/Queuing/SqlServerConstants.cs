@@ -133,7 +133,10 @@ SET XACT_ABORT ON;
 DECLARE @moverLock int;
 
 BEGIN TRANSACTION;
-EXEC @moverLock = sp_getapplock @Resource = @MoverLockResource, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+IF DB_ID() = DB_ID(@MoverLockCatalog)
+    EXEC @moverLock = sp_getapplock @Resource = @MoverLockResource, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+ELSE
+    EXEC @moverLock = {2}.sys.sp_getapplock @Resource = @MoverLockResource, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
 
 IF @moverLock < -1
 BEGIN

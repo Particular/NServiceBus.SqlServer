@@ -68,7 +68,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         public async Task Second_mover_skips_while_lock_is_held_and_rest_move_after_holder_commits()
         {
             await StoreDueMessages(4, CancellationToken);
-            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName);
+            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, inputTable.QualifiedTableName);
             var table = new DelayedMessageTable(sqlConstants, delayedTable.QualifiedTableName, command);
 
             using (var holder = await OpenTransaction(CancellationToken))
@@ -99,7 +99,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         public async Task Cancelled_move_releases_the_lock()
         {
             await StoreDueMessages(1, CancellationToken);
-            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName);
+            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, inputTable.QualifiedTableName);
             var table = new DelayedMessageTable(sqlConstants, delayedTable.QualifiedTableName, command);
 
             using var blocker = await OpenUnpooledConnection(CancellationToken);
@@ -150,6 +150,72 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         }
 
         [Test]
+        public async Task Movers_on_different_connection_catalogs_exclude_each_other()
+        {
+            await StoreDueMessages(2, CancellationToken);
+            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, inputTable.QualifiedTableName);
+            var table = new DelayedMessageTable(sqlConstants, delayedTable.QualifiedTableName, command);
+
+            using var blocker = await OpenUnpooledConnection(CancellationToken);
+            using var blockerTransaction = blocker.BeginTransaction();
+            Task<MoveDueResult> moverA = null;
+            SqlConnection moverAConnection = null;
+            try
+            {
+                using (var blockCommand = blocker.CreateCommand())
+                {
+                    blockCommand.Transaction = blockerTransaction;
+                    blockCommand.CommandText = $"SELECT TOP 0 * FROM {inputTable.QualifiedTableName} WITH (TABLOCKX, HOLDLOCK)";
+                    await blockCommand.ExecuteNonQueryAsync(CancellationToken);
+                }
+
+                var otherCatalogConnectionString = new SqlConnectionStringBuilder(connectionString) { InitialCatalog = "nservicebus1", Pooling = false }.ConnectionString;
+                moverAConnection = new SqlConnection(otherCatalogConnectionString);
+                await moverAConnection.OpenAsync(CancellationToken);
+                moverA = table.MoveDueMessages(10, moverAConnection, null, CancellationToken);
+
+                var lockHeld = false;
+                var deadline = DateTime.UtcNow.AddSeconds(10);
+                while (!lockHeld && DateTime.UtcNow < deadline)
+                {
+                    await Task.Delay(100, CancellationToken);
+                    lockHeld = await TryLockOnUnpooledConnection(command.LockResource, CancellationToken) == -1;
+                }
+
+                Assert.That(lockHeld && !moverA.IsCompleted, Is.True, "Mover A should hold the lock while it waits for the input table");
+
+                using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken);
+                cancellation.CancelAfter(TimeSpan.FromSeconds(5));
+                var moverB = await MoveWithoutTransaction(table, 10, cancellation.Token);
+
+                Assert.That(moverB, Is.EqualTo(new MoveDueResult.LockNotAcquired()));
+            }
+            finally
+            {
+                blockerTransaction.Rollback();
+                try
+                {
+                    if (moverA != null)
+                    {
+                        await moverA;
+                    }
+                }
+                finally
+                {
+                    moverAConnection?.Dispose();
+                    // A leaked lock would stay open on the pooled connection and affect later tests
+                    SqlConnection.ClearAllPools();
+                }
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await Count(delayedTable, CancellationToken), Is.Zero);
+                Assert.That(await Count(inputTable, CancellationToken), Is.EqualTo(2));
+            }
+        }
+
+        [Test]
         public async Task Locked_move_leaves_XACT_ABORT_off_on_the_pooled_connection()
         {
             await StoreDueMessages(1, CancellationToken);
@@ -180,7 +246,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         DelayedMessageTable CreateLockedTable() =>
             new(sqlConstants, delayedTable.QualifiedTableName,
-                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName));
+                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, inputTable.QualifiedTableName));
 
         async Task<MoveDueResult> MoveInTransaction(DelayedMessageTable table, int batchSize, CancellationToken cancellationToken)
         {
@@ -212,11 +278,11 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             return result;
         }
 
-        static async Task<int> TryGetAppLock(SqlConnection connection, SqlTransaction transaction, string lockResource, CancellationToken cancellationToken)
+        async Task<int> TryGetAppLock(SqlConnection connection, SqlTransaction transaction, string lockResource, CancellationToken cancellationToken)
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = "DECLARE @result int; EXEC @result = sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0; SELECT @result;";
+            command.CommandText = $"DECLARE @result int; EXEC @result = {delayedTable.QuotedCatalogName}.sys.sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0; SELECT @result;";
             command.Parameters.AddWithValue("r", lockResource);
             return (int)await command.ExecuteScalarAsync(cancellationToken);
         }
