@@ -5,6 +5,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class MoveDueDelayedMessagesCommand(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable) : IMoveDueDelayedMessagesCommand
     {
+        public bool OwnsTransaction => false;
+
         public void Populate(DbCommand command, int batchSize)
         {
             command.CommandText = commandText;

@@ -23,6 +23,8 @@ namespace NServiceBus.Transport.Sql.Shared
             this.moveDueCommand = moveDueCommand;
         }
 
+        public bool MoveOwnsTransaction => moveDueCommand.OwnsTransaction;
+
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         /// <summary>
