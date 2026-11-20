@@ -53,7 +53,12 @@ FROM {0}
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
     // Elects a single mover via a transaction-scoped advisory lock, avoiding contention between scaled-out instances.
-    // PostgreSQL has no conditional batches, so every step filters on the lock result; the scalar subquery keeps that a one-time filter.
+    // PostgreSQL has no conditional batches, so by default every step filters on the lock result
+    // The uncorrelated scalar subquery allows PostgreSQL to use
+    // an InitPlan, evaluating the lock result once. Since the
+    // predicate does not depend on the rows being modified,
+    // PostgreSQL can implement it as a One-Time Filter,
+    // skipping the underlying operation when the lock was not acquired.
     public string MoveDueDelayedMessageWithLockText { get; set; } = @"
 WITH mover AS MATERIALIZED (
     SELECT pg_try_advisory_xact_lock(hashtext('{0}'), hashtext('mover')) AS acquired),
