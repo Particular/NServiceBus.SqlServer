@@ -15,12 +15,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        const int LockAcquiredColumn = 2;
-
-        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand)
+        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
         {
             storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            this.moveDueCommand = moveDueCommand;
+            moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
         }
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
@@ -51,9 +49,10 @@ namespace NServiceBus.Transport.Sql.Shared
             using (var command = connection.CreateCommand())
             {
                 command.Transaction = transaction;
+                command.CommandText = moveDueCommand;
                 command.CommandType = CommandType.Text;
-                moveDueCommand.Populate(command, batchSize);
 
+                command.AddParameter("BatchSize", DbType.Int32, batchSize);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -62,8 +61,8 @@ namespace NServiceBus.Transport.Sql.Shared
                         return new MoveDueResult.Moved(DateTime.MinValue);
                     }
 
-                    if (!await reader.IsDBNullAsync(LockAcquiredColumn, cancellationToken).ConfigureAwait(false)
-                        && !reader.GetBoolean(LockAcquiredColumn))
+                    var lockAcquired = reader.GetBoolean(2);
+                    if (!lockAcquired)
                     {
                         return new MoveDueResult.LockNotAcquired();
                     }
@@ -83,6 +82,6 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         string storeCommand;
-        readonly IMoveDueDelayedMessagesCommand moveDueCommand;
+        string moveDueCommand;
     }
 }

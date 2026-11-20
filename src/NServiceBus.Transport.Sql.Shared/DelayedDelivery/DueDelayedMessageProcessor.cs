@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.Sql.Shared
     class DueDelayedMessageProcessor
     {
         public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier,
-            int batchSize, TimeSpan? lockRetryInterval, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
+            int batchSize, TimeSpan lockRetryInterval, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -16,7 +16,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.connectionFactory = connectionFactory;
             this.exceptionClassifier = exceptionClassifier;
             this.batchSize = batchSize;
-            this.lockRetryInterval = TimeSpan.FromMilliseconds(Math.Ceiling(lockRetryInterval.GetValueOrDefault().TotalMilliseconds));
+            this.lockRetryInterval = lockRetryInterval;
 
             table.OnStoreDelayedMessage += OnDelayedMessageStored;
         }

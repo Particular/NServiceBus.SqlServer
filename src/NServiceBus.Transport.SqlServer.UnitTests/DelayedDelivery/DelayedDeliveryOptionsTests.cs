@@ -22,16 +22,6 @@ public class DelayedDeliveryOptionsTests
     }
 
     [Test]
-    public void DelayedMessageMoveLockDelay_can_be_reset_to_null()
-    {
-        var options = new DelayedDeliveryOptions { DelayedMessageMoveLockDelay = TimeSpan.FromSeconds(1) };
-
-        options.DelayedMessageMoveLockDelay = null;
-
-        Assert.That(options.DelayedMessageMoveLockDelay, Is.Null);
-    }
-
-    [Test]
     public void DelayedMessageMoveLockDelay_rejects_zero()
     {
         var options = new DelayedDeliveryOptions();
