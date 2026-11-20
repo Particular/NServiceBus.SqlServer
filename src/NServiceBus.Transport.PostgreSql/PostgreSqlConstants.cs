@@ -48,7 +48,7 @@ WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due <
 RETURNING id, headers, body)
 INSERT into {1} (id, expires, headers, body) SELECT id, NULL, headers, body FROM message;
 
-SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue, NULL::int as RetryLockAfterMs
+SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue, NULL::boolean as LockAcquired
 FROM {0} 
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
 
@@ -73,7 +73,7 @@ ins AS (
     SELECT id, NULL, headers, body FROM moved)
 SELECT now() AT TIME ZONE 'UTC' AS UtcNow,
        next.Due AS NextDue,
-       CASE WHEN mover.acquired THEN NULL ELSE @LockRetryIntervalMs END AS RetryLockAfterMs
+       mover.acquired AS LockAcquired
 FROM mover
 LEFT JOIN LATERAL (
     SELECT Due FROM {0}

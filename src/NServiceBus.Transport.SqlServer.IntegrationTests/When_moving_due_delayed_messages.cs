@@ -78,7 +78,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
                 using (Assert.EnterMultipleScope())
                 {
-                    Assert.That(result, Is.EqualTo(new MoveDueResult.LockNotAcquired(LockRetryInterval)));
+                    Assert.That(result, Is.EqualTo(new MoveDueResult.LockNotAcquired()));
                     Assert.That(await Count(inputTable, CancellationToken), Is.Zero, "The second mover should not move any messages while the lock is held");
                 }
 
@@ -102,7 +102,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         DelayedMessageTable CreateLockedTable() =>
             new(sqlConstants, delayedTable.QualifiedTableName,
-                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName, LockRetryInterval));
+                new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName));
 
         async Task<MoveDueResult> MoveInTransaction(DelayedMessageTable table, int batchSize, CancellationToken cancellationToken)
         {
@@ -173,7 +173,6 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             }
         }
 
-        static readonly TimeSpan LockRetryInterval = TimeSpan.FromSeconds(5);
         const string InputQueue = "MoveDueDelayedMessagesTests";
 
         readonly SqlServerConstants sqlConstants = new();

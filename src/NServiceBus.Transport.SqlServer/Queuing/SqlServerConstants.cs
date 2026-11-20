@@ -122,12 +122,12 @@ OUTPUT
     deleted.Body
 INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
 
-SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, NULL as RetryLockAfterMs
+SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, CAST(NULL AS bit) as LockAcquired
 FROM {0} WITH (READPAST)
 ORDER BY Due";
 
         // Elects a single mover via a transaction-owned app lock, avoiding index-scan contention between
-        // scaled-out instances. Losers skip the table and return how long to wait before retrying the lock.
+        // scaled-out instances.
         public string MoveDueDelayedMessageWithLockText { get; set; } = @"
 DECLARE @moverLock int;
 EXEC @moverLock = sp_getapplock @Resource = '{0}_mover', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
@@ -151,13 +151,13 @@ BEGIN
         deleted.Body
     INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
 
-    SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, NULL as RetryLockAfterMs
+    SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, CAST(1 AS bit) as LockAcquired
     FROM {0} WITH (READPAST)
     ORDER BY Due
 END
 ELSE
 BEGIN
-    SELECT GETUTCDATE() as UtcNow, NULL as NextDue, @LockRetryIntervalMs as RetryLockAfterMs
+    SELECT GETUTCDATE() as UtcNow, NULL as NextDue, CAST(0 AS bit) as LockAcquired
 END";
 
         public string PeekText { get; set; } = @"

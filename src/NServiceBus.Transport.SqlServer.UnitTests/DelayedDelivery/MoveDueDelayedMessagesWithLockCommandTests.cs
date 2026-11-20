@@ -1,18 +1,15 @@
 namespace NServiceBus.Transport.SqlServer.UnitTests.DelayedDelivery;
 
-using System;
 using Microsoft.Data.SqlClient;
 using NUnit.Framework;
 
 public class MoveDueDelayedMessagesWithLockCommandTests
 {
-    [TestCase(1000, 1000)]
-    [TestCase(1000.1, 1001)]
-    [TestCase(0.5, 1)]
-    public void Populates_parameters_with_lock_retry_interval_rounded_up_to_whole_milliseconds(double lockRetryIntervalMs, int expectedLockRetryIntervalMs)
+    [Test]
+    public void Populates_command_with_only_the_batch_size_parameter()
     {
         var sqlConstants = new SqlServerConstants();
-        var moveDueCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, "[delayed]", "[input]", TimeSpan.FromMilliseconds(lockRetryIntervalMs));
+        var moveDueCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, "[delayed]", "[input]");
         using var command = new SqlCommand();
 
         moveDueCommand.Populate(command, 42);
@@ -21,7 +18,7 @@ public class MoveDueDelayedMessagesWithLockCommandTests
         {
             Assert.That(command.CommandText, Is.EqualTo(string.Format(sqlConstants.MoveDueDelayedMessageWithLockText, "[delayed]", "[input]")));
             Assert.That(command.Parameters["BatchSize"].Value, Is.EqualTo(42));
-            Assert.That(command.Parameters["LockRetryIntervalMs"].Value, Is.EqualTo(expectedLockRetryIntervalMs));
+            Assert.That(command.Parameters.Count, Is.EqualTo(1));
         }
     }
 }
