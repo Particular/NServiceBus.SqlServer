@@ -48,9 +48,38 @@ WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due <
 RETURNING id, headers, body)
 INSERT into {1} (id, expires, headers, body) SELECT id, NULL, headers, body FROM message;
 
-SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue
+SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue, NULL::boolean as LockAcquired
 FROM {0} 
 ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
+
+    // Elects a single mover via a transaction-scoped advisory lock, avoiding contention between scaled-out instances.
+    // PostgreSQL has no conditional batches, so by default every step filters on the lock result
+    // The uncorrelated scalar subquery allows PostgreSQL to use
+    // an InitPlan, evaluating the lock result once. Since the
+    // predicate does not depend on the rows being modified,
+    // PostgreSQL can implement it as a One-Time Filter,
+    // skipping the underlying operation when the lock was not acquired.
+    public string MoveDueDelayedMessageWithLockText { get; set; } = @"
+WITH mover AS MATERIALIZED (
+    SELECT pg_try_advisory_xact_lock(@MoverLockKey) AS acquired),
+moved AS (
+    DELETE FROM {0} WHERE id IN (
+        SELECT id FROM {0}
+        WHERE (SELECT acquired FROM mover) AND Due < now() AT TIME ZONE 'UTC'
+        LIMIT @BatchSize)
+    RETURNING id, headers, body),
+ins AS (
+    INSERT INTO {1} (id, expires, headers, body)
+    SELECT id, NULL, headers, body FROM moved)
+SELECT now() AT TIME ZONE 'UTC' AS UtcNow,
+       next.Due AS NextDue,
+       mover.acquired AS LockAcquired
+FROM mover
+LEFT JOIN LATERAL (
+    SELECT Due FROM {0}
+    WHERE mover.acquired AND id NOT IN (SELECT id FROM moved)
+    ORDER BY Due LIMIT 1) next ON true
+WHERE NOT mover.acquired OR next.Due IS NOT NULL";
 
     public string PeekText { get; set; } = @"
 SELECT COALESCE(cast((SELECT seq FROM {0} ORDER BY seq DESC LIMIT 1 FOR UPDATE SKIP LOCKED) 
