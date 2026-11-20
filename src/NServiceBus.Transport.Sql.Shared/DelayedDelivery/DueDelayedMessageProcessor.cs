@@ -7,8 +7,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DueDelayedMessageProcessor
     {
+        const long MaxLockRetryMilliseconds = 1000;
+
         public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier,
-            int batchSize, TimeSpan? lockRetryInterval, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
+            int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -16,7 +18,6 @@ namespace NServiceBus.Transport.Sql.Shared
             this.connectionFactory = connectionFactory;
             this.exceptionClassifier = exceptionClassifier;
             this.batchSize = batchSize;
-            this.lockRetryInterval = TimeSpan.FromMilliseconds(Math.Ceiling(lockRetryInterval.GetValueOrDefault().TotalMilliseconds));
 
             table.OnStoreDelayedMessage += OnDelayedMessageStored;
         }
@@ -68,7 +69,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         switch (result)
                         {
                             case MoveDueResult.LockNotAcquired:
-                                await Task.Delay(lockRetryInterval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                                await Task.Delay(NextLockRetryDelay(MaxLockRetryMilliseconds, Random.Shared), moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                                 break;
                             case MoveDueResult.Moved(var nextDue):
                                 backOffStrategy.RegisterNewDueTime(nextDue);
@@ -102,6 +103,14 @@ namespace NServiceBus.Transport.Sql.Shared
             var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
                        .ConfigureAwait(false);
             await using var connectionDisposer = connection.ConfigureAwait(false);
+
+            if (table.MoveOwnsTransaction)
+            {
+                return await table
+                    .MoveDueMessages(batchSize, connection, null, moveDelayedMessagesCancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             var transaction = await connection.BeginTransactionAsync(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             await using var transactionDisposer = transaction.ConfigureAwait(false);
             var result = await table
@@ -111,6 +120,11 @@ namespace NServiceBus.Transport.Sql.Shared
 
             return result;
         }
+
+        // Jittered so instances that lost the lock at the same moment do not retry together.
+        // Whole milliseconds, at least one, because Task.Delay truncates and zero would spin.
+        internal static TimeSpan NextLockRetryDelay(long maxMilliseconds, Random random) =>
+            TimeSpan.FromMilliseconds(random.NextInt64(Math.Max(1, maxMilliseconds / 2), maxMilliseconds + 1));
 
         /// <summary>
         /// If a delayed message is stored with a dueTime lower than nextExecution time, then reset nextExecutionTime
@@ -128,7 +142,6 @@ namespace NServiceBus.Transport.Sql.Shared
         readonly IExceptionClassifier exceptionClassifier;
 
         readonly int batchSize;
-        readonly TimeSpan lockRetryInterval;
         // WhenToRunNext whenToRunNext = new();
 
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;

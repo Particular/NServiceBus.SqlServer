@@ -61,7 +61,7 @@ ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
     // skipping the underlying operation when the lock was not acquired.
     public string MoveDueDelayedMessageWithLockText { get; set; } = @"
 WITH mover AS MATERIALIZED (
-    SELECT pg_try_advisory_xact_lock(hashtext('{0}'), hashtext('mover')) AS acquired),
+    SELECT pg_try_advisory_xact_lock(@MoverLockKey) AS acquired),
 moved AS (
     DELETE FROM {0} WHERE id IN (
         SELECT id FROM {0}

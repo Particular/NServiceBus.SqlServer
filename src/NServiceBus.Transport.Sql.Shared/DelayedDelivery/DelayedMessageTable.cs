@@ -17,6 +17,8 @@ namespace NServiceBus.Transport.Sql.Shared
     {
         const int LockAcquiredColumn = 2;
 
+        public bool MoveOwnsTransaction => moveDueCommand.OwnsTransaction;
+
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         /// <summary>
