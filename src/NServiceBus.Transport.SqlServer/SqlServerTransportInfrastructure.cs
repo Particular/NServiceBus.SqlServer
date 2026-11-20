@@ -167,7 +167,7 @@ namespace NServiceBus.Transport.SqlServer
                     Native = true,
                     Suffix = delayedDelivery.TableSuffix,
                     delayedDelivery.BatchSize,
-                    delayedDelivery.DelayedMessageMoveLockDelay,
+                    delayedDelivery.LockRetryInterval,
                 });
 
                 var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(), delayedDelivery.TableSuffix);
@@ -185,7 +185,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
-                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier, delayedDelivery.BatchSize, delayedDelivery.DelayedMessageMoveLockDelay, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier, delayedDelivery.BatchSize, delayedDelivery.LockRetryInterval, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
             }
 
             Receivers = receiveSettings.Select(receiveSetting =>

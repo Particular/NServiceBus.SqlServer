@@ -38,16 +38,19 @@
         } = 100;
 
         /// <summary>
-        /// Only one endpoint instance at a time moves due delayed messages to the input queue.
-        /// Instances that fail to acquire the lock skip the move and retry after this interval. Defaults to 1 second.
+        /// How long an endpoint instance waits before it tries again to move due delayed messages while another instance holds the lock that moves them.
+        /// Must be greater than zero and at most 1 minute. Defaults to 1 second.
         /// </summary>
-        public TimeSpan DelayedMessageMoveLockDelay
+        /// <remarks>
+        /// One endpoint instance at a time moves due delayed messages to the input queue.
+        /// </remarks>
+        public TimeSpan LockRetryInterval
         {
             get;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
-                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, TimeSpan.FromMilliseconds(int.MaxValue));
+                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, TimeSpan.FromMinutes(1));
 
                 field = value;
             }

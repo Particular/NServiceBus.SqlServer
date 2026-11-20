@@ -169,7 +169,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
                 Native = true,
                 Suffix = delayedDelivery.TableSuffix,
                 delayedDelivery.BatchSize,
-                delayedDelivery.DelayedMessageMoveLockDelay,
+                delayedDelivery.LockRetryInterval,
             });
 
             var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
@@ -190,7 +190,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
             dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier,
-                delayedDelivery.BatchSize, delayedDelivery.DelayedMessageMoveLockDelay, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                delayedDelivery.BatchSize, delayedDelivery.LockRetryInterval, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
         }
 
         Receivers = receiveSettings.Select(receiveSetting =>
