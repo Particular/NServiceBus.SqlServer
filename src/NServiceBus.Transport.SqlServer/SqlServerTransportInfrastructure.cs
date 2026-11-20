@@ -184,7 +184,7 @@ namespace NServiceBus.Transport.SqlServer
                 }
                 else
                 {
-                    moveDueCommand = moveDueWithLockCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+                    moveDueCommand = moveDueWithLockCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueCanonicalAddress, inputQueueTable);
                 }
 
                 diagnostics.Add("DelayedDelivery", new
