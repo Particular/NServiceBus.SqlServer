@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        const int RetryLockAfterMsColumn = 2;
+        const int LockAcquiredColumn = 2;
 
         public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand)
         {
@@ -62,10 +62,10 @@ namespace NServiceBus.Transport.Sql.Shared
                         return new MoveDueResult.Moved(DateTime.MinValue);
                     }
 
-                    if (!await reader.IsDBNullAsync(RetryLockAfterMsColumn, cancellationToken).ConfigureAwait(false))
+                    if (!await reader.IsDBNullAsync(LockAcquiredColumn, cancellationToken).ConfigureAwait(false)
+                        && !reader.GetBoolean(LockAcquiredColumn))
                     {
-                        var retryLockAfter = TimeSpan.FromMilliseconds(reader.GetInt32(RetryLockAfterMsColumn));
-                        return new MoveDueResult.LockNotAcquired(retryLockAfter);
+                        return new MoveDueResult.LockNotAcquired();
                     }
 
                     // Normalizing in case of clock drift between executing machine and database instance
