@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
-    using NServiceBus.Transport.Sql.Shared;
+    using Sql.Shared;
     using NUnit.Framework;
     using SqlServer;
     using Transport;
@@ -101,12 +101,15 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 this.successfulReceives = successfulReceives;
             }
 
-            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+            public override Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
+                => CountReceive(cancellationToken);
+
+            Task<MessageReadResult> CountReceive(CancellationToken cancellationToken = default)
             {
                 NumberOfReceives++;
 
                 var readResult = NumberOfReceives <= successfulReceives
-                    ? MessageReadResult.Success(new Message("1", string.Empty, new byte[0], false))
+                    ? MessageReadResult.Success(new Message("1", string.Empty, new byte[0], false), 0)
                     : MessageReadResult.NoMessage;
 
                 return Task.FromResult(readResult);
@@ -116,11 +119,11 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
                 CancellationToken cancellationToken = default) =>
                 throw new NotImplementedException();
 
-            public override Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+            public override Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, long seekAfter, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
             {
                 NumberOfPeeks++;
 
-                return Task.FromResult(NumberOfPeeks == 1 ? queueSize : 0);
+                return Task.FromResult(NumberOfPeeks == 1 ? new PeekResult(queueSize, 1) : PeekResult.Empty);
             }
         }
     }

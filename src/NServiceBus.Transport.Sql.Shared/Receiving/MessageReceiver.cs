@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Threading;
@@ -17,10 +17,13 @@ namespace NServiceBus.Transport.Sql.Shared
             Func<string, TableBasedQueue> queueFactory,
             IPurgeQueues queuePurger,
             IPeekMessagesInQueue queuePeeker,
+            bool anchoringEnabled,
+            TimeSpan headSweepInterval,
             TimeSpan waitTimeCircuitBreaker,
             ISubscriptionManager subscriptionManager,
             bool purgeAllMessagesOnStartup,
-            IExceptionClassifier exceptionClassifier)
+            IExceptionClassifier exceptionClassifier,
+            TimeProvider timeProvider)
         {
             this.transport = transport;
             this.processStrategyFactory = processStrategyFactory;
@@ -32,6 +35,8 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalErrorAction = criticalErrorAction;
             this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
             this.exceptionClassifier = exceptionClassifier;
+            receiveCursor = new ReceiveCursor(anchoringEnabled);
+            headSweepSchedule = new HeadSweepSchedule(headSweepInterval, timeProvider, receiveCursor);
             Subscriptions = subscriptionManager;
             Id = receiverId;
             ReceiveAddress = receiveAddress;
@@ -184,14 +189,25 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            var messageCount = await queuePeeker
-                .Peek(inputQueue, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
+            var previousBatchResult = batchActivity.BeginNextBatch();
+            var peekSeekAfter = receiveCursor.GetHighWaterAnchor();
+            if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
+            {
+                await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
+                // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
+                peekSeekAfter = 0;
+            }
+
+            var peekResult = await queuePeeker
+                .Peek(inputQueue, peekSeekAfter, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
                 .ConfigureAwait(false);
 
-            if (messageCount == 0)
+            if (peekResult.MessageCount == 0)
             {
                 return;
             }
+
+            receiveCursor.ApplyPeekResult(peekResult.LowestRowVersion);
 
             messageReceivingCancellationToken.ThrowIfCancellationRequested();
 
@@ -202,7 +218,7 @@ namespace NServiceBus.Transport.Sql.Shared
             var maximumConcurrentProcessing =
                 messageProcessingCircuitBreaker.IsTriggered || messageReceivingCircuitBreaker.IsTriggered
                     ? 1
-                    : messageCount;
+                    : peekResult.MessageCount;
 
             var receiveLatch = new ReceiveCountdownEvent(maximumConcurrentProcessing);
             for (var i = 0; i < maximumConcurrentProcessing; i++)
@@ -215,6 +231,9 @@ namespace NServiceBus.Transport.Sql.Shared
                 var localConcurrencyLimiter = concurrencyLimiter;
 
                 await localConcurrencyLimiter.WaitAsync(messageReceivingCancellationToken).ConfigureAwait(false);
+
+                // Waiting on the concurrency limiter may have taken longer than the sweep interval
+                headSweepSchedule.SweepIfDue();
 
                 _ = ProcessMessagesSwallowExceptionsAndReleaseConcurrencyLimiter(stopBatchCancellationSource,
                     localConcurrencyLimiter, receiveLatch, messageProcessingCancellationTokenSource.Token);
@@ -231,21 +250,25 @@ namespace NServiceBus.Transport.Sql.Shared
             using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
+                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveCursor, batchActivity, latchSignaler, stopBatchCancellationTokenSource);
                 try
                 {
                     // We need to force the method to continue asynchronously because SqlConnection
                     // in combination with TransactionScope will apply connection pooling and enlistment synchronous in ctor.
                     await Task.Yield();
 
-                    await processStrategy.ProcessMessage(stopBatchCancellationTokenSource, latchSignaler,
-                        messageProcessingCancellationToken)
+                    var outcome = await processStrategy.ProcessMessage(receiveAttempt, messageProcessingCancellationToken)
                         .ConfigureAwait(false);
+                    receiveAttempt.Settle(outcome);
 
                     messageProcessingCircuitBreaker.Success();
                 }
                 catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, messageProcessingCancellationToken))
                 {
                     Logger.Warn("Message processing failed", ex);
+
+                    // a received row that was not processed has rolled back; with no row received there is nothing to settle
+                    receiveAttempt.Settle(ProcessOutcome.RolledBack);
 
                     if (!exceptionClassifier.IsDeadlockException(ex))
                     {
@@ -277,6 +300,9 @@ namespace NServiceBus.Transport.Sql.Shared
         readonly bool purgeAllMessagesOnStartup;
         readonly IExceptionClassifier exceptionClassifier;
         TimeSpan waitTimeCircuitBreaker;
+        readonly ReceiveCursor receiveCursor;
+        readonly BatchActivity batchActivity = new();
+        readonly HeadSweepSchedule headSweepSchedule;
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
@@ -293,5 +319,30 @@ namespace NServiceBus.Transport.Sql.Shared
         public ISubscriptionManager Subscriptions { get; }
         public string Id { get; }
         public string ReceiveAddress { get; }
+
+        sealed class HeadSweepSchedule
+        {
+            public HeadSweepSchedule(TimeSpan interval, TimeProvider timeProvider, ReceiveCursor receiveCursor)
+            {
+                this.interval = interval;
+                this.timeProvider = timeProvider;
+                this.receiveCursor = receiveCursor;
+                lastSweep = timeProvider.GetTimestamp();
+            }
+
+            public void SweepIfDue()
+            {
+                if (timeProvider.GetElapsedTime(lastSweep) >= interval)
+                {
+                    receiveCursor.SweepFromHead();
+                    lastSweep = timeProvider.GetTimestamp();
+                }
+            }
+
+            readonly TimeSpan interval;
+            readonly TimeProvider timeProvider;
+            readonly ReceiveCursor receiveCursor;
+            long lastSweep;
+        }
     }
 }

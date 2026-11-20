@@ -153,7 +153,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
         var queuePurger = new QueuePurger(connectionFactory);
-        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
+        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay,
+                queuePeekerOptions.EnableReceiveAnchoring && queuePeekerOptions.EnablePeekAnchoring);
 
         var queueFactory = new Func<string, PostgreSqlTableBasedQueue>(queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName, true));
@@ -206,8 +207,8 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             return new MessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue,
                 hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
-                queuePeeker, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
-                subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier);
+                queuePeeker, transport.QueuePeeker.EnableReceiveAnchoring, transport.QueuePeeker.HeadSweepInterval, transport.TimeToWaitBeforeTriggeringCircuitBreaker,
+                subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier, TimeProvider.System);
         }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
         var receiveAddresses = Receivers.Values.Select(r => r.ReceiveAddress).ToList();

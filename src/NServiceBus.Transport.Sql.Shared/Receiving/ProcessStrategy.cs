@@ -1,4 +1,4 @@
-namespace NServiceBus.Transport.Sql.Shared
+﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
     using System.Data.Common;
@@ -11,7 +11,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
     abstract class ProcessStrategy
     {
-        protected TableBasedQueue InputQueue;
+        TableBasedQueue inputQueue;
         protected TableBasedQueue ErrorQueue;
 
         OnMessage onMessage;
@@ -27,7 +27,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public void Init(TableBasedQueue inputQueue, TableBasedQueue errorQueue, OnMessage onMessage, OnError onError, Action<string, Exception, CancellationToken> criticalError)
         {
-            InputQueue = inputQueue;
+            this.inputQueue = inputQueue;
             ErrorQueue = errorQueue;
 
             this.onMessage = onMessage;
@@ -35,15 +35,14 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalError = criticalError;
         }
 
-        public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default);
+        public abstract Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default);
 
         protected async Task<bool> TryHandleMessage(Message message, TransportTransaction transportTransaction, ContextBag context, CancellationToken cancellationToken = default)
         {
             //Do not process expired messages
             if (message.Expired == false)
             {
-                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, InputQueue.Name, context);
+                var messageContext = new MessageContext(message.TransportId, message.Headers, message.Body, transportTransaction, inputQueue.Name, context);
                 await onMessage(messageContext, cancellationToken).ConfigureAwait(false);
             }
 
@@ -55,7 +54,7 @@ namespace NServiceBus.Transport.Sql.Shared
             message.ResetHeaders();
             try
             {
-                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, InputQueue.Name, context);
+                var errorContext = new ErrorContext(exception, message.Headers, message.TransportId, message.Body, transportTransaction, processingAttempts, inputQueue.Name, context);
                 _ = errorContext.Headers.Remove(ForwardHeader);
 
                 return await onError(errorContext, cancellationToken).ConfigureAwait(false);
@@ -81,7 +80,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 //This is not a delayed message. Process in local endpoint instance.
                 return false;
             }
-            if (forwardDestination == InputQueue.Name)
+            if (forwardDestination == inputQueue.Name)
             {
                 //Do not forward the message. Process in local endpoint instance.
                 return false;
