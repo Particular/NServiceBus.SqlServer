@@ -8,7 +8,7 @@ namespace NServiceBus.Transport.Sql.Shared
     class DueDelayedMessageProcessor
     {
         public DueDelayedMessageProcessor(DelayedMessageTable table, DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier,
-            int batchSize, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
+            int batchSize, TimeSpan? lockRetryInterval, TimeSpan waitTimeCircuitBreaker, HostSettings hostSettings)
         {
             this.hostSettings = hostSettings;
             this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
@@ -16,6 +16,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.connectionFactory = connectionFactory;
             this.exceptionClassifier = exceptionClassifier;
             this.batchSize = batchSize;
+            this.lockRetryInterval = TimeSpan.FromMilliseconds(Math.Ceiling(lockRetryInterval.GetValueOrDefault().TotalMilliseconds));
 
             table.OnStoreDelayedMessage += OnDelayedMessageStored;
         }
@@ -66,8 +67,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
                         switch (result)
                         {
-                            case MoveDueResult.LockNotAcquired(var retryAfter):
-                                await Task.Delay(retryAfter, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+                            case MoveDueResult.LockNotAcquired:
+                                await Task.Delay(lockRetryInterval, moveDelayedMessagesCancellationToken).ConfigureAwait(false);
                                 break;
                             case MoveDueResult.Moved(var nextDue):
                                 backOffStrategy.RegisterNewDueTime(nextDue);
@@ -127,6 +128,7 @@ namespace NServiceBus.Transport.Sql.Shared
         readonly IExceptionClassifier exceptionClassifier;
 
         readonly int batchSize;
+        readonly TimeSpan lockRetryInterval;
         // WhenToRunNext whenToRunNext = new();
 
         CancellationTokenSource moveDelayedMessagesCancellationTokenSource;
