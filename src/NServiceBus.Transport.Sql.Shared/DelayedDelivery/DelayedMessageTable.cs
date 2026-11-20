@@ -17,10 +17,11 @@ namespace NServiceBus.Transport.Sql.Shared
     {
         const int RetryLockAfterMsColumn = 2;
 
-        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand)
+        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable, TimeSpan lockRetryInterval)
         {
             storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            this.moveDueCommand = moveDueCommand;
+            moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
+            lockRetryIntervalMs = (int)Math.Ceiling(lockRetryInterval.TotalMilliseconds);
         }
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
@@ -51,9 +52,11 @@ namespace NServiceBus.Transport.Sql.Shared
             using (var command = connection.CreateCommand())
             {
                 command.Transaction = transaction;
+                command.CommandText = moveDueCommand;
                 command.CommandType = CommandType.Text;
-                moveDueCommand.Populate(command, batchSize);
 
+                command.AddParameter("BatchSize", DbType.Int32, batchSize);
+                command.AddParameter("LockRetryIntervalMs", DbType.Int32, lockRetryIntervalMs);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -83,6 +86,7 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         string storeCommand;
-        readonly IMoveDueDelayedMessagesCommand moveDueCommand;
+        string moveDueCommand;
+        readonly int lockRetryIntervalMs;
     }
 }

@@ -43,18 +43,9 @@ RETURNING rs.id,
         rs.Headers, rs.Body;
 ";
 
-    public string MoveDueDelayedMessageText { get; set; } = @"
-WITH message as (DELETE FROM {0} WHERE id in (SELECT id from {0} WHERE {0}.Due < now() AT TIME ZONE 'UTC' LIMIT @BatchSize) 
-RETURNING id, headers, body)
-INSERT into {1} (id, expires, headers, body) SELECT id, NULL, headers, body FROM message;
-
-SELECT now() AT TIME ZONE 'UTC' as UtcNow, Due as NextDue, NULL::int as RetryLockAfterMs
-FROM {0} 
-ORDER BY Due LIMIT 1 FOR UPDATE SKIP LOCKED";
-
     // Elects a single mover via a transaction-scoped advisory lock, avoiding contention between scaled-out instances.
     // PostgreSQL has no conditional batches, so every step filters on the lock result; the scalar subquery keeps that a one-time filter.
-    public string MoveDueDelayedMessageWithLockText { get; set; } = @"
+    public string MoveDueDelayedMessageText { get; set; } = @"
 WITH mover AS MATERIALIZED (
     SELECT pg_try_advisory_xact_lock(hashtext('{0}'), hashtext('mover')) AS acquired),
 moved AS (
