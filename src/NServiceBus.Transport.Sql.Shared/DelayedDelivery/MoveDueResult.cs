@@ -6,7 +6,7 @@ namespace NServiceBus.Transport.Sql.Shared
     {
         MoveDueResult() { }
 
-        public sealed record LockNotAcquired(TimeSpan RetryAfter) : MoveDueResult;
+        public sealed record LockNotAcquired : MoveDueResult;
 
         public sealed record Moved(DateTime NextDue) : MoveDueResult;
     }

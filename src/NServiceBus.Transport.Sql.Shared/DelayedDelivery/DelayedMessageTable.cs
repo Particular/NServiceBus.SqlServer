@@ -15,13 +15,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class DelayedMessageTable : IDelayedMessageStore
     {
-        const int RetryLockAfterMsColumn = 2;
-
-        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable, TimeSpan lockRetryInterval)
+        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
         {
             storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
             moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
-            lockRetryIntervalMs = (int)Math.Ceiling(lockRetryInterval.TotalMilliseconds);
         }
 
         public event EventHandler<DateTime> OnStoreDelayedMessage;
@@ -56,7 +53,6 @@ namespace NServiceBus.Transport.Sql.Shared
                 command.CommandType = CommandType.Text;
 
                 command.AddParameter("BatchSize", DbType.Int32, batchSize);
-                command.AddParameter("LockRetryIntervalMs", DbType.Int32, lockRetryIntervalMs);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -65,10 +61,10 @@ namespace NServiceBus.Transport.Sql.Shared
                         return new MoveDueResult.Moved(DateTime.MinValue);
                     }
 
-                    if (!await reader.IsDBNullAsync(RetryLockAfterMsColumn, cancellationToken).ConfigureAwait(false))
+                    var lockAcquired = reader.GetBoolean(2);
+                    if (!lockAcquired)
                     {
-                        var retryLockAfter = TimeSpan.FromMilliseconds(reader.GetInt32(RetryLockAfterMsColumn));
-                        return new MoveDueResult.LockNotAcquired(retryLockAfter);
+                        return new MoveDueResult.LockNotAcquired();
                     }
 
                     // Normalizing in case of clock drift between executing machine and database instance
@@ -87,6 +83,5 @@ namespace NServiceBus.Transport.Sql.Shared
 
         string storeCommand;
         string moveDueCommand;
-        readonly int lockRetryIntervalMs;
     }
 }

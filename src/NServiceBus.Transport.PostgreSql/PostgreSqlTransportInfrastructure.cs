@@ -185,12 +185,12 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
             var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
             var delayedMessageTable = new DelayedMessageTable(sqlConstants,
-                delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable, delayedDelivery.DelayedMessageMoveLockDelay);
+                delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
             dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier,
-                delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                delayedDelivery.BatchSize, delayedDelivery.DelayedMessageMoveLockDelay, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
         }
 
         Receivers = receiveSettings.Select(receiveSetting =>

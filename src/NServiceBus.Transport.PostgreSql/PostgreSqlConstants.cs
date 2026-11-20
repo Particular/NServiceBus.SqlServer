@@ -59,7 +59,7 @@ ins AS (
     SELECT id, NULL, headers, body FROM moved)
 SELECT now() AT TIME ZONE 'UTC' AS UtcNow,
        next.Due AS NextDue,
-       CASE WHEN mover.acquired THEN NULL ELSE @LockRetryIntervalMs END AS RetryLockAfterMs
+       mover.acquired AS LockAcquired
 FROM mover
 LEFT JOIN LATERAL (
     SELECT Due FROM {0}

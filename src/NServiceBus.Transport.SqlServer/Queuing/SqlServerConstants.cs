@@ -107,7 +107,7 @@ IF (@NOCOUNT = 'ON') SET NOCOUNT ON;
 IF (@NOCOUNT = 'OFF') SET NOCOUNT OFF;";
 
         // Elects a single mover via a transaction-owned app lock, avoiding index-scan contention between
-        // scaled-out instances. Losers skip the table and return how long to wait before retrying the lock.
+        // scaled-out instances. Losers skip the table.
         public string MoveDueDelayedMessageText { get; set; } = @"
 DECLARE @moverLock int;
 EXEC @moverLock = sp_getapplock @Resource = '{0}_mover', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
@@ -116,7 +116,7 @@ IF @moverLock < -1 THROW 50000, 'sp_getapplock failed for delayed mover', 1;
 
 IF @moverLock < 0
 BEGIN
-    SELECT GETUTCDATE() as UtcNow, NULL as NextDue, @LockRetryIntervalMs as RetryLockAfterMs;
+    SELECT GETUTCDATE() as UtcNow, NULL as NextDue, CAST(0 AS bit) as LockAcquired;
     RETURN;
 END
 
@@ -135,7 +135,7 @@ OUTPUT
     deleted.Body
 INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
 
-SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, NULL as RetryLockAfterMs
+SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, CAST(1 AS bit) as LockAcquired
 FROM {0} WITH (READPAST)
 ORDER BY Due";
 
