@@ -22,7 +22,7 @@
         public async Task Defaults_to_no_ttbr()
         {
             await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
-            await using (var transaction = connection.BeginTransaction())
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
                 var transportTransaction = new TransportTransaction();
 
@@ -49,7 +49,7 @@
         public async Task Diagnostic_headers_are_ignored()
         {
             await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
-            await using (var transaction = connection.BeginTransaction())
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
                 var transportTransaction = new TransportTransaction();
 
@@ -80,7 +80,7 @@
         public async Task Delivery_constraint_is_respected()
         {
             await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
-            await using (var transaction = connection.BeginTransaction())
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
                 var transportTransaction = new TransportTransaction();
 

@@ -48,7 +48,7 @@
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
             await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            await using var tx = connection.BeginTransaction();
+            await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], new byte[0]);
             await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, cancellationToken);
             tx.Commit();
@@ -59,7 +59,7 @@
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
             await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            await using var tx = connection.BeginTransaction();
+            await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             tableBasedQueue.FormatPeekCommand();
             await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
             scope.Complete();
@@ -69,7 +69,7 @@
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
             await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            await using var tx = connection.BeginTransaction();
+            await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             await tableBasedQueue.TryReceive(connection, tx, cancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds), cancellationToken);
             tx.Commit();
