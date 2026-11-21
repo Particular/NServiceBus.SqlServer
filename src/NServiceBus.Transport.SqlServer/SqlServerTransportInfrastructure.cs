@@ -10,19 +10,9 @@ namespace NServiceBus.Transport.SqlServer
     using NServiceBus.Transport.Sql.Shared;
     using Transport;
 
-    class SqlServerTransportInfrastructure : TransportInfrastructure
+    class SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
+        : TransportInfrastructure
     {
-        public SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
-        {
-            this.transport = transport;
-            this.hostSettings = hostSettings;
-            this.receiveSettings = receiveSettings;
-            this.sendingAddresses = sendingAddresses;
-
-            sqlConstants = new SqlServerConstants();
-            exceptionClassifier = new SqlServerExceptionClassifier();
-        }
-
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
             connectionFactory = CreateConnectionFactory();
@@ -346,12 +336,8 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        readonly SqlServerTransport transport;
-        readonly HostSettings hostSettings;
-        readonly ReceiveSettings[] receiveSettings;
-        readonly string[] sendingAddresses;
-        readonly SqlServerConstants sqlConstants;
-        readonly SqlServerExceptionClassifier exceptionClassifier;
+        readonly SqlServerConstants sqlConstants = new();
+        readonly SqlServerExceptionClassifier exceptionClassifier = new();
 
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;

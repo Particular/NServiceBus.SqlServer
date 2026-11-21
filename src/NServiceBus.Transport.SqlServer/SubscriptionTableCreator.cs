@@ -6,18 +6,8 @@ namespace NServiceBus.Transport.SqlServer
     using Microsoft.Data.SqlClient;
     using NServiceBus.Transport.Sql.Shared;
 
-    class SubscriptionTableCreator
+    class SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
     {
-        ISqlConstants sqlConstants;
-        QualifiedSubscriptionTableName tableName;
-        DbConnectionFactory connectionFactory;
-
-        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, DbConnectionFactory connectionFactory)
-        {
-            this.sqlConstants = sqlConstants;
-            this.tableName = tableName;
-            this.connectionFactory = connectionFactory;
-        }
         public async Task CreateIfNecessary(CancellationToken cancellationToken = default)
         {
             var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);

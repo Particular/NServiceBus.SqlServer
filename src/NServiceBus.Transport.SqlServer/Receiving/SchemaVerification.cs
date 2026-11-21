@@ -7,14 +7,8 @@
     using Logging;
     using NServiceBus.Transport.Sql.Shared;
 
-    class SchemaInspector
+    class SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex)
     {
-        public SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex)
-        {
-            this.openConnection = openConnection;
-            this.validateExpiredIndex = validateExpiredIndex;
-        }
-
         public async Task PerformInspection(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
         {
             if (validateExpiredIndex)
@@ -77,8 +71,7 @@
             }
         }
 
-        Func<SqlTableBasedQueue, CancellationToken, Task<DbConnection>> openConnection;
-        readonly bool validateExpiredIndex;
+        Func<SqlTableBasedQueue, CancellationToken, Task<DbConnection>> openConnection = openConnection;
         static ILog Logger = LogManager.GetLogger<SchemaInspector>();
     }
 }

@@ -7,16 +7,8 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using NServiceBus.Transport.Sql.Shared;
 
-    class QueueCreator
+    class QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
     {
-        public QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
-        {
-            this.sqlConstants = sqlConstants;
-            this.connectionFactory = connectionFactory;
-            this.addressTranslator = addressTranslator;
-            this.createMessageBodyColumn = createMessageBodyColumn;
-        }
-
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
             var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
@@ -86,10 +78,5 @@ namespace NServiceBus.Transport.SqlServer
                 transaction.Commit();
             }
         }
-
-        ISqlConstants sqlConstants;
-        DbConnectionFactory connectionFactory;
-        Func<string, CanonicalQueueAddress> addressTranslator;
-        bool createMessageBodyColumn;
     }
 }
