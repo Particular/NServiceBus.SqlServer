@@ -86,38 +86,74 @@ namespace NServiceBus.Transport.Sql.Shared
         internal static async Task<byte[]> ReadToEnd(Stream stream, CancellationToken cancellationToken = default)
         {
             var pool = ArrayPool<byte>.Shared;
-            var buffer = pool.Rent(InitialBodyBufferSize);
-            var length = 0;
+            var segment = pool.Rent(SegmentSize);
+            var segmentLength = 0;
+            List<byte[]> filledSegments = null;
             try
             {
                 while (true)
                 {
-                    if (length == buffer.Length)
+                    if (segmentLength == segment.Length)
                     {
-                        var larger = pool.Rent(buffer.Length * 2);
-                        buffer.AsSpan(0, length).CopyTo(larger);
-                        ReturnCleared(pool, buffer, length);
-                        buffer = larger;
+                        filledSegments ??= [];
+                        var next = IsPooled(filledSegments.Count + 1) ? pool.Rent(SegmentSize) : new byte[SegmentSize];
+                        filledSegments.Add(segment);
+                        segment = next;
+                        segmentLength = 0;
                     }
 
-                    var read = await stream.ReadAsync(buffer.AsMemory(length), cancellationToken).ConfigureAwait(false);
+                    var read = await stream.ReadAsync(segment.AsMemory(segmentLength), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
                     {
                         break;
                     }
 
-                    length += read;
+                    segmentLength += read;
                 }
 
-                var body = GC.AllocateUninitializedArray<byte>(length);
-                buffer.AsSpan(0, length).CopyTo(body);
+                long length = segmentLength;
+                foreach (var filled in filledSegments ?? [])
+                {
+                    length += filled.Length;
+                }
+
+                if (length > Array.MaxLength)
+                {
+                    throw new IOException($"The message body is larger than the maximum supported size of {Array.MaxLength} bytes.");
+                }
+
+                var body = GC.AllocateUninitializedArray<byte>((int)length);
+                var offset = 0;
+                foreach (var filled in filledSegments ?? [])
+                {
+                    filled.CopyTo(body, offset);
+                    offset += filled.Length;
+                }
+
+                segment.AsSpan(0, segmentLength).CopyTo(body.AsSpan(offset));
                 return body;
             }
             finally
             {
-                ReturnCleared(pool, buffer, length);
+                var segmentIndex = 0;
+                foreach (var filled in filledSegments ?? [])
+                {
+                    if (IsPooled(segmentIndex++))
+                    {
+                        ReturnCleared(pool, filled, filled.Length);
+                    }
+                }
+
+                if (IsPooled(segmentIndex))
+                {
+                    ReturnCleared(pool, segment, segmentLength);
+                }
             }
         }
+
+        // Segments stay below the LOH threshold and only the first MiB is pooled, so a large body
+        // can't leave large or many arrays referenced by the process-wide pool.
+        static bool IsPooled(int segmentIndex) => segmentIndex < PooledSegmentCount;
 
         // Clears only the used part because message bodies may contain sensitive data and the pool is process-wide.
         static void ReturnCleared(ArrayPool<byte> pool, byte[] buffer, int length)
@@ -126,7 +162,8 @@ namespace NServiceBus.Transport.Sql.Shared
             pool.Return(buffer);
         }
 
-        const int InitialBodyBufferSize = 16 * 1024;
+        const int SegmentSize = 64 * 1024;
+        const int PooledSegmentCount = 16;
 
         Guid id;
         bool expired;
