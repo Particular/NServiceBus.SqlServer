@@ -266,17 +266,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
-        readonly object lockObject = new();
-        readonly TransportDefinition transport;
-        readonly string errorQueueAddress;
-        readonly Action<string, Exception, CancellationToken> criticalErrorAction;
-        readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
-        readonly IPurgeQueues queuePurger;
-        readonly Func<string, TableBasedQueue> queueFactory;
-        readonly IPeekMessagesInQueue queuePeeker;
-        readonly bool purgeAllMessagesOnStartup;
-        readonly IExceptionClassifier exceptionClassifier;
-        TimeSpan waitTimeCircuitBreaker;
+        readonly Lock lockObject = new();
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;

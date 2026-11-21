@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Runtime.ExceptionServices;
+    using System.Threading;
     using Extensibility;
 
     // The data structure has fixed maximum size. When the data structure reaches its maximum size,
@@ -70,6 +71,7 @@
         Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
         LinkedList<string> leastRecentlyUsedMessages = new LinkedList<string>();
         object lockObject = new object();
+        readonly Lock lockObject = new();
 
         class FailureInfoNode
         {
