@@ -26,15 +26,15 @@ namespace NServiceBus.Transport.Sql.Shared
                 id = Guid.NewGuid(),
                 timeToBeReceived = toBeReceived == TimeSpan.MaxValue ? null : (int?)toBeReceived.TotalMilliseconds,
                 headers = DictionarySerializer.Serialize(headers),
-                bodyBytes = body.ToArray()
+                body = body
             };
 
-        public void PrepareSendCommand(DbCommand command)
+        public void PrepareSendCommand(DbCommand command, bool isStreamSupported)
         {
             command.AddParameter("Id", DbType.Guid, id);
             command.AddParameter("TimeToBeReceivedMs", DbType.Int32, timeToBeReceived);
             command.AddParameter("Headers", DbType.String, headers, -1);
-            command.AddParameter("Body", DbType.Binary, bodyBytes, -1);
+            BodyParameter.Add(command, body, isStreamSupported);
         }
 
         static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken) =>
@@ -43,14 +43,14 @@ namespace NServiceBus.Transport.Sql.Shared
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
-                bodyBytes = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
+                body = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
             };
 
         MessageReadResult TryParse()
         {
             try
             {
-                return MessageReadResult.Success(new Message(id.ToString(), headers, bodyBytes, expired));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, body, expired));
             }
             catch (Exception ex)
             {
@@ -132,7 +132,7 @@ namespace NServiceBus.Transport.Sql.Shared
         bool expired;
         int? timeToBeReceived;
         string headers;
-        byte[] bodyBytes;
+        ReadOnlyMemory<byte> body;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

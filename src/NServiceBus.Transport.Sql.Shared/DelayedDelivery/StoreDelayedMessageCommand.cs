@@ -17,16 +17,16 @@ namespace NServiceBus.Transport.Sql.Shared
 
             headers["NServiceBus.SqlServer.ForwardDestination"] = destination;
             row.headers = DictionarySerializer.Serialize(headers);
-            row.bodyBytes = body.ToArray();
+            row.body = body;
             row.dueAfter = dueAfter;
             return row;
         }
 
 
-        public void PrepareSendCommand(DbCommand command)
+        public void PrepareSendCommand(DbCommand command, bool isStreamSupported)
         {
             command.AddParameter("Headers", DbType.String, headers, -1);
-            command.AddParameter("Body", DbType.Binary, bodyBytes);
+            BodyParameter.Add(command, body, isStreamSupported);
             command.AddParameter("DueAfterDays", DbType.Int32, dueAfter.Days);
             command.AddParameter("DueAfterHours", DbType.Int32, dueAfter.Hours);
             command.AddParameter("DueAfterMinutes", DbType.Int32, dueAfter.Minutes);
@@ -35,7 +35,7 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         string headers;
-        byte[] bodyBytes;
+        ReadOnlyMemory<byte> body;
         TimeSpan dueAfter;
     }
 }

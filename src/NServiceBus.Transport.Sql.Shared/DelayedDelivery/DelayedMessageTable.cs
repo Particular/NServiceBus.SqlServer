@@ -13,7 +13,7 @@ namespace NServiceBus.Transport.Sql.Shared
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable) : IDelayedMessageStore
+    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable, bool isStreamSupported) : IDelayedMessageStore
     {
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
@@ -31,7 +31,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 command.CommandText = storeCommand;
                 command.CommandType = CommandType.Text;
 
-                messageRow.PrepareSendCommand(command);
+                messageRow.PrepareSendCommand(command, isStreamSupported);
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
 
