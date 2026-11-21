@@ -68,36 +68,22 @@
             }
         }
 
-        Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
-        LinkedList<string> leastRecentlyUsedMessages = new LinkedList<string>();
-        object lockObject = new object();
+        readonly Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
+        readonly LinkedList<string> leastRecentlyUsedMessages = new LinkedList<string>();
         readonly Lock lockObject = new();
 
-        class FailureInfoNode
+        class FailureInfoNode(string messageId, ProcessingFailureInfo failureInfo)
         {
-            public FailureInfoNode(string messageId, ProcessingFailureInfo failureInfo)
-            {
-                FailureInfo = failureInfo;
-                LeastRecentlyUsedEntry = new LinkedListNode<string>(messageId);
-            }
-
-            public ProcessingFailureInfo FailureInfo { get; set; }
-            public LinkedListNode<string> LeastRecentlyUsedEntry { get; }
+            public ProcessingFailureInfo FailureInfo { get; set; } = failureInfo;
+            public LinkedListNode<string> LeastRecentlyUsedEntry { get; } = new(messageId);
         }
 
-        public class ProcessingFailureInfo
+        public class ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
         {
-            public ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
-            {
-                NumberOfProcessingAttempts = numberOfProcessingAttempts;
-                ExceptionDispatchInfo = exceptionDispatchInfo;
-                Context = context;
-            }
-
-            public int NumberOfProcessingAttempts { get; }
+            public int NumberOfProcessingAttempts { get; } = numberOfProcessingAttempts;
             public Exception Exception => ExceptionDispatchInfo.SourceException;
-            ExceptionDispatchInfo ExceptionDispatchInfo { get; }
-            public ContextBag Context { get; }
+            ExceptionDispatchInfo ExceptionDispatchInfo { get; } = exceptionDispatchInfo;
+            public ContextBag Context { get; } = context;
         }
     }
 }

@@ -10,17 +10,18 @@ using System.Transactions;
 using Logging;
 using NServiceBus.Transport.Sql.Shared;
 
-class PostgreSqlTransportInfrastructure : TransportInfrastructure
+class PostgreSqlTransportInfrastructure(
+    PostgreSqlTransport transport,
+    HostSettings hostSettings,
+    ReceiveSettings[] receiveSettings,
+    string[] sendingAddresses)
+    : TransportInfrastructure
 {
     //The limit is 55=63-max(8,8). 63 is the built-in PostgreSQL limit and we also need to reserve space for:
     //  - "_Seq_seq" suffix (8 bytes) used in the auto-created sequence for the main queue table
     //  - ".delayed" suffix (8 bytes) that is used in the delayed messages table
     const int TableQueueNameLimit = 55;
-    readonly PostgreSqlTransport transport;
-    readonly HostSettings hostSettings;
-    readonly ReceiveSettings[] receiveSettings;
-    readonly string[] sendingAddresses;
-    readonly PostgreSqlConstants sqlConstants;
+    readonly PostgreSqlConstants sqlConstants = new();
 
     DueDelayedMessageProcessor dueDelayedMessageProcessor;
     QueueAddressTranslator addressTranslator;
@@ -31,19 +32,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     PostgreSqlDbConnectionFactory connectionFactory;
 
     static ILog Logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
-    readonly PostgreSqlExceptionClassifier exceptionClassifier;
-
-    public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
-        ReceiveSettings[] receiveSettings, string[] sendingAddresses)
-    {
-        this.transport = transport;
-        this.hostSettings = hostSettings;
-        this.receiveSettings = receiveSettings;
-        this.sendingAddresses = sendingAddresses;
-
-        sqlConstants = new PostgreSqlConstants();
-        exceptionClassifier = new PostgreSqlExceptionClassifier();
-    }
+    readonly PostgreSqlExceptionClassifier exceptionClassifier = new();
 
     public override async Task Shutdown(CancellationToken cancellationToken = default)
     {

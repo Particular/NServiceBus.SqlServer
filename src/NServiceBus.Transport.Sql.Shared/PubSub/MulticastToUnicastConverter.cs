@@ -5,12 +5,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading;
     using System.Threading.Tasks;
 
-    class MulticastToUnicastConverter : IMulticastToUnicastConverter
+    class MulticastToUnicastConverter(ISubscriptionStore subscriptions) : IMulticastToUnicastConverter
     {
-        ISubscriptionStore subscriptions;
-
-        public MulticastToUnicastConverter(ISubscriptionStore subscriptions) => this.subscriptions = subscriptions;
-
         public async Task<List<UnicastTransportOperation>> Convert(MulticastTransportOperation transportOperation, CancellationToken cancellationToken = default)
         {
             List<string> subscribers =

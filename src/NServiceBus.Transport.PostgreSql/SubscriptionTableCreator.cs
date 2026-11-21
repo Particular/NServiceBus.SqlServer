@@ -7,19 +7,10 @@ namespace NServiceBus.Transport.PostgreSql
     using Npgsql;
     using NServiceBus.Transport.Sql.Shared;
 
-    class SubscriptionTableCreator
+    class SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, PostgreSqlDbConnectionFactory connectionFactory)
     {
-        ISqlConstants sqlConstants;
-        QualifiedSubscriptionTableName tableName;
-        PostgreSqlDbConnectionFactory connectionFactory;
         static ILog Logger = LogManager.GetLogger<SubscriptionTableCreator>();
 
-        public SubscriptionTableCreator(ISqlConstants sqlConstants, QualifiedSubscriptionTableName tableName, PostgreSqlDbConnectionFactory connectionFactory)
-        {
-            this.sqlConstants = sqlConstants;
-            this.tableName = tableName;
-            this.connectionFactory = connectionFactory;
-        }
         public async Task CreateIfNecessary(CancellationToken cancellationToken = default)
         {
             using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))

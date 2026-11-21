@@ -7,22 +7,10 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using System.Transactions;
 
-    class SubscriptionTable
+    class SubscriptionTable(ISqlConstants sqlConstants, string qualifiedTableName, DbConnectionFactory connectionFactory)
     {
-        ISqlConstants sqlConstants;
-        string qualifiedTableName;
-        DbConnectionFactory connectionFactory;
-        string subscribeCommand;
-        string unsubscribeCommand;
-
-        public SubscriptionTable(ISqlConstants sqlConstants, string qualifiedTableName, DbConnectionFactory connectionFactory)
-        {
-            this.sqlConstants = sqlConstants;
-            this.qualifiedTableName = qualifiedTableName;
-            this.connectionFactory = connectionFactory;
-            subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
-            unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
-        }
+        string subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
+        string unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
 
         public async Task Subscribe(string endpointName, string queueAddress, string topic, CancellationToken cancellationToken = default)
         {

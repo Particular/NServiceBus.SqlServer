@@ -10,17 +10,9 @@ namespace NServiceBus.Transport.Sql.Shared
     using Transport;
     using static SqlTransportTransactionState;
 
-    class MessageDispatcher : IMessageDispatcher
+    class MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        : IMessageDispatcher
     {
-        public MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
-        {
-            this.getCanonicalAddressForm = getCanonicalAddressForm;
-            this.multicastToUnicastConverter = multicastToUnicastConverter;
-            this.tableBasedQueueCache = tableBasedQueueCache;
-            this.delayedMessageTable = delayedMessageTable;
-            this.connectionFactory = connectionFactory;
-        }
-
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
@@ -166,11 +158,6 @@ namespace NServiceBus.Transport.Sql.Shared
             return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction, cancellationToken);
         }
 
-        TableBasedQueueCache tableBasedQueueCache;
-        IDelayedMessageStore delayedMessageTable;
-        DbConnectionFactory connectionFactory;
-        Func<string, string> getCanonicalAddressForm;
-        IMulticastToUnicastConverter multicastToUnicastConverter;
         static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
     }
 }

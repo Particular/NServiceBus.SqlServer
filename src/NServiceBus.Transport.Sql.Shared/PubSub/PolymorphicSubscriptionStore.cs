@@ -7,13 +7,8 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading;
     using System.Threading.Tasks;
 
-    class PolymorphicSubscriptionStore : ISubscriptionStore
+    class PolymorphicSubscriptionStore(SubscriptionTable subscriptionTable) : ISubscriptionStore
     {
-        public PolymorphicSubscriptionStore(SubscriptionTable subscriptionTable)
-        {
-            this.subscriptionTable = subscriptionTable;
-        }
-
         public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var topics = GetTopics(eventType);
@@ -57,6 +52,5 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
         ConcurrentDictionary<Type, string[]> eventTypeToTopicListMap = new ConcurrentDictionary<Type, string[]>();
-        SubscriptionTable subscriptionTable;
     }
 }

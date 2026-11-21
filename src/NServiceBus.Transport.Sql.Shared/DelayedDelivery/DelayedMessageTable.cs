@@ -13,14 +13,8 @@ namespace NServiceBus.Transport.Sql.Shared
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    class DelayedMessageTable : IDelayedMessageStore
+    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable) : IDelayedMessageStore
     {
-        public DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable)
-        {
-            storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-            moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
-        }
-
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         /// <summary>
@@ -76,7 +70,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        string storeCommand;
-        string moveDueCommand;
+        readonly string storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
+        readonly string moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
     }
 }
