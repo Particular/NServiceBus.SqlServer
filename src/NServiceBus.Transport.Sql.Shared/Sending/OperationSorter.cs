@@ -41,10 +41,7 @@
         {
             sealed class MessageIdDestinationEqualityComparer : IEqualityComparer<DeduplicationKey>
             {
-                public bool Equals(DeduplicationKey x, DeduplicationKey y)
-                {
-                    return x.messageId == y.messageId && x.destination == y.destination;
-                }
+                public bool Equals(DeduplicationKey x, DeduplicationKey y) => x.messageId == y.messageId && x.destination == y.destination;
 
                 public int GetHashCode(DeduplicationKey obj)
                 {

@@ -12,15 +12,9 @@
         /// <summary>
         /// Enables specifying schema for a given queue.
         /// </summary>
-        public void UseSchemaForQueue(string queueName, string schema)
-        {
-            schemas[queueName] = schema;
-        }
+        public void UseSchemaForQueue(string queueName, string schema) => schemas[queueName] = schema;
 
-        internal void TryGet(string queueName, out string schema)
-        {
-            schemas.TryGetValue(queueName, out schema);
-        }
+        internal void TryGet(string queueName, out string schema) => schemas.TryGetValue(queueName, out schema);
 
         Dictionary<string, string> schemas = [];
     }

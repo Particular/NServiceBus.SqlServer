@@ -19,16 +19,14 @@ namespace NServiceBus.Transport.Sql.Shared
             return row.TryParse();
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan toBeReceived)
-        {
-            return new MessageRow
+        public static MessageRow From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan toBeReceived) =>
+            new()
             {
                 id = Guid.NewGuid(),
                 timeToBeReceived = toBeReceived == TimeSpan.MaxValue ? null : (int?)toBeReceived.TotalMilliseconds,
                 headers = DictionarySerializer.Serialize(headers),
                 bodyBytes = body.ToArray()
             };
-        }
 
         public void PrepareSendCommand(DbCommand command)
         {
@@ -38,16 +36,14 @@ namespace NServiceBus.Transport.Sql.Shared
             command.AddParameter("Body", DbType.Binary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
-        {
-            return new MessageRow
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken) =>
+            new()
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
                 bodyBytes = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
             };
-        }
 
         MessageReadResult TryParse()
         {

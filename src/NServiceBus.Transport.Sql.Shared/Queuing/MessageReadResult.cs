@@ -18,15 +18,9 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public MessageRow PoisonMessage { get; }
 
-        public static MessageReadResult Poison(MessageRow messageRow)
-        {
-            return new MessageReadResult(null, messageRow);
-        }
+        public static MessageReadResult Poison(MessageRow messageRow) => new(null, messageRow);
 
-        public static MessageReadResult Success(Message message)
-        {
-            return new MessageReadResult(message, null);
-        }
+        public static MessageReadResult Success(Message message) => new(message, null);
 
         bool Equals(MessageReadResult other) => Equals(Message, other.Message) && Equals(PoisonMessage, other.PoisonMessage);
 

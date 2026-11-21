@@ -36,10 +36,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        public void FormatPeekCommand()
-        {
-            peekCommand = Format(sqlConstants.PeekText, qualifiedTableName);
-        }
+        public void FormatPeekCommand() => peekCommand = Format(sqlConstants.PeekText, qualifiedTableName);
 
         public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
@@ -53,10 +50,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        public Task DeadLetter(MessageRow poisonMessage, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
-        {
-            return SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
-        }
+        public Task DeadLetter(MessageRow poisonMessage, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default) => SendRawMessage(poisonMessage, connection, transaction, cancellationToken);
 
         public Task Send(OutgoingMessage message, TimeSpan timeToBeReceived, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
@@ -110,10 +104,7 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        public override string ToString()
-        {
-            return qualifiedTableName;
-        }
+        public override string ToString() => qualifiedTableName;
 
         ISqlConstants sqlConstants;
         protected string qualifiedTableName;

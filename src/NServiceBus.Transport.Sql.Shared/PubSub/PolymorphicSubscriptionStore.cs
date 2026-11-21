@@ -15,27 +15,17 @@ namespace NServiceBus.Transport.Sql.Shared
             return subscriptionTable.GetSubscribers([.. topics], cancellationToken);
         }
 
-        public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
-        {
-            return subscriptionTable.Subscribe(endpointName, endpointAddress, TopicName.From(eventType), cancellationToken);
-        }
+        public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default) => subscriptionTable.Subscribe(endpointName, endpointAddress, TopicName.From(eventType), cancellationToken);
 
-        public Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default)
-        {
-            return subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType), cancellationToken);
-        }
+        public Task Unsubscribe(string endpointName, Type eventType, CancellationToken cancellationToken = default) => subscriptionTable.Unsubscribe(endpointName, TopicName.From(eventType), cancellationToken);
 
-        IEnumerable<string> GetTopics(Type messageType)
-        {
-            return eventTypeToTopicListMap.GetOrAdd(messageType, GenerateTopics);
-        }
+        IEnumerable<string> GetTopics(Type messageType) => eventTypeToTopicListMap.GetOrAdd(messageType, GenerateTopics);
 
         static string[] GenerateTopics(Type messageType) =>
         [
             .. GenerateMessageHierarchy(messageType)
                 .Select(TopicName.From)
-                .ToArray();
-        }
+        ];
 
         static IEnumerable<Type> GenerateMessageHierarchy(Type messageType)
         {

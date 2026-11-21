@@ -21,9 +21,6 @@ namespace NServiceBus.Transport.PostgreSql
             this.schema = schema;
         }
 
-        internal QualifiedSubscriptionTableName Qualify(string defaultSchema)
-        {
-            return new QualifiedSubscriptionTableName(table, schema ?? defaultSchema);
-        }
+        internal QualifiedSubscriptionTableName Qualify(string defaultSchema) => new(table, schema ?? defaultSchema);
     }
 }

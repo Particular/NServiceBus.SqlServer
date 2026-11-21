@@ -103,8 +103,7 @@ class PostgreSqlTransportInfrastructure(
     }
 
 
-    void ConfigureSendInfrastructure()
-    {
+    void ConfigureSendInfrastructure() =>
         Dispatcher = new MessageDispatcher(
             s => addressTranslator.Parse(s).Address,
             new MulticastToUnicastConverter(subscriptionStore),
@@ -230,14 +229,11 @@ class PostgreSqlTransportInfrastructure(
         transport.Testing.SendingAddresses =
             [.. sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName)];
         transport.Testing.ReceiveAddresses =
-            receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
+            [.. receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName)];
         transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
     }
 
-    async Task ValidateDatabaseAccess(CancellationToken cancellationToken)
-    {
-        await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
-    }
+    async Task ValidateDatabaseAccess(CancellationToken cancellationToken) => await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
     async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
     {
