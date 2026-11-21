@@ -22,18 +22,16 @@ public class When_passing_custom_connection_outside_receive_context : NServiceBu
                 //HINT: this scope is never committed
                 using (new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
-                    {
-                        await connection.OpenAsync().ConfigureAwait(false);
+                    using var connection = new SqlConnection(ConnectionString);
+                    await connection.OpenAsync().ConfigureAwait(false);
 
-                        var sendOptions = new SendOptions();
-                        sendOptions.UseCustomSqlConnection(connection);
-                        await bus.Send(new CommandFromRollbackedScope(), sendOptions);
+                    var sendOptions = new SendOptions();
+                    sendOptions.UseCustomSqlConnection(connection);
+                    await bus.Send(new CommandFromRollbackedScope(), sendOptions);
 
-                        var publishOptions = new PublishOptions();
-                        publishOptions.UseCustomSqlConnection(connection);
-                        await bus.Publish(new EventFromRollbackedScope(), publishOptions);
-                    }
+                    var publishOptions = new PublishOptions();
+                    publishOptions.UseCustomSqlConnection(connection);
+                    await bus.Publish(new EventFromRollbackedScope(), publishOptions);
                 }
 
                 await bus.SendLocal(new MarkerMessage());
@@ -56,25 +54,23 @@ public class When_passing_custom_connection_outside_receive_context : NServiceBu
         await Scenario.Define<MyContext>()
             .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
             {
-                using (var completedScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using var completedScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                using (var connection = new SqlConnection(ConnectionString))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
-                    {
-                        await connection.OpenAsync().ConfigureAwait(false);
+                    await connection.OpenAsync().ConfigureAwait(false);
 
-                        var sendOptions = new SendOptions();
-                        sendOptions.UseCustomSqlConnection(connection);
-                        await bus.Send(new CommandFromCompletedScope(), sendOptions);
+                    var sendOptions = new SendOptions();
+                    sendOptions.UseCustomSqlConnection(connection);
+                    await bus.Send(new CommandFromCompletedScope(), sendOptions);
 
-                        var publishOptions = new PublishOptions();
-                        publishOptions.UseCustomSqlConnection(connection);
-                        await bus.Publish(new EventFromCompletedScope(), publishOptions);
-                    }
-
-                    transactionId = Transaction.Current.TransactionInformation.DistributedIdentifier;
-
-                    completedScope.Complete();
+                    var publishOptions = new PublishOptions();
+                    publishOptions.UseCustomSqlConnection(connection);
+                    await bus.Publish(new EventFromCompletedScope(), publishOptions);
                 }
+
+                transactionId = Transaction.Current.TransactionInformation.DistributedIdentifier;
+
+                completedScope.Complete();
             }))
             .Run();
 

@@ -17,25 +17,23 @@ public class When_sending_within_an_ambient_transaction : NServiceBusAcceptanceT
         var context = await Scenario.Define<Context>()
             .WithEndpoint<TransactionalEndpoint>(b => b.When(async (session, ctx) =>
             {
-                using (var tx = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using var tx = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                await session.Send(new MessageThatIsEnlisted
                 {
-                    await session.Send(new MessageThatIsEnlisted
-                    {
-                        SequenceNumber = 1
-                    });
-                    await session.Send(new MessageThatIsEnlisted
-                    {
-                        SequenceNumber = 2
-                    });
+                    SequenceNumber = 1
+                });
+                await session.Send(new MessageThatIsEnlisted
+                {
+                    SequenceNumber = 2
+                });
 
-                    //send another message as well so that we can check the order in the receiver
-                    using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-                    {
-                        await session.Send(new MessageThatIsNotEnlisted());
-                    }
-
-                    tx.Complete();
+                //send another message as well so that we can check the order in the receiver
+                using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    await session.Send(new MessageThatIsNotEnlisted());
                 }
+
+                tx.Complete();
             }))
             .Done(c => c.MessageThatIsNotEnlistedHandlerWasCalled && c.TimesCalled >= 2)
             .Run();

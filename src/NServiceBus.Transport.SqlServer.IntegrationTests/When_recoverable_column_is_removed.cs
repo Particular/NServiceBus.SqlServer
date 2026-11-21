@@ -76,42 +76,36 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
 
         async Task<int> RunTest(Type contextProviderType, DispatchConsistency dispatchConsistency, TableBasedQueue queue, QueuePurger purger, CancellationToken cancellationToken)
         {
-            using (var contextProvider = CreateContext(contextProviderType, dbConnectionFactory))
-            {
-                // Run with Recoverable column in place
+            using var contextProvider = CreateContext(contextProviderType, dbConnectionFactory);
+            // Run with Recoverable column in place
 
-                var operations = new TransportOperations(CreateTransportOperation(id: "1", destination: QueueName, consistency: dispatchConsistency));
-                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, cancellationToken);
-                contextProvider.Complete();
+            var operations = new TransportOperations(CreateTransportOperation(id: "1", destination: QueueName, consistency: dispatchConsistency));
+            await dispatcher.Dispatch(operations, contextProvider.TransportTransaction, cancellationToken);
+            contextProvider.Complete();
 
-                return await purger.Purge(queue, cancellationToken);
-            }
+            return await purger.Purge(queue, cancellationToken);
         }
 
         async Task DropRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} DROP COLUMN Recoverable";
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = cmdText;
-                cmd.CommandType = CommandType.Text;
+            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = cmdText;
+            cmd.CommandType = CommandType.Text;
 
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-            }
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
         }
 
         async Task AddRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} ADD Recoverable bit NOT NULL";
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = cmdText;
-                cmd.CommandType = CommandType.Text;
+            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = cmdText;
+            cmd.CommandType = CommandType.Text;
 
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-            }
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
         }
 
         async Task RemoveQueueIfPresent(string queueName, CancellationToken cancellationToken)
@@ -125,14 +119,12 @@ IF EXISTS (
 BEGIN
     DROP TABLE nservicebus.dbo.[{queueName}]
 END";
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken))
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = cmdText;
-                cmd.CommandType = CommandType.Text;
+            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = cmdText;
+            cmd.CommandType = CommandType.Text;
 
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-            }
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
         }
 
         static IContextProvider CreateContext(Type contextType, SqlServerDbConnectionFactory dbConnectionFactory)

@@ -49,13 +49,11 @@ public abstract class NServiceBusAcceptanceTest
 
     public static uint CreateDeterministicHash(string input)
     {
-        using (var provider = MD5.Create())
-        {
-            var inputBytes = Encoding.Default.GetBytes(input);
-            var hashBytes = provider.ComputeHash(inputBytes);
-            // generate a guid from the hash:
-            return BitConverter.ToUInt32(hashBytes, 0) % 1000000;
-        }
+        using var provider = MD5.Create();
+        var inputBytes = Encoding.Default.GetBytes(input);
+        var hashBytes = provider.ComputeHash(inputBytes);
+        // generate a guid from the hash:
+        return BitConverter.ToUInt32(hashBytes, 0) % 1000000;
     }
 
     [TearDown]

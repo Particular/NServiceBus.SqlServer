@@ -12,24 +12,22 @@ public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptan
     public async Task It_creates_queues_in_the_correct_database()
     {
         var connectionString = WithCustomCatalog(GetDefaultConnectionString(), Context.SenderCatalog);
-        using (var connection = new SqlConnection(connectionString))
+        using var connection = new SqlConnection(connectionString);
+        // Confirm tables do not exist prior to starting the endpoint.
+        if (await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection))
         {
-            // Confirm tables do not exist prior to starting the endpoint.
-            if (await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection))
-            {
-                await SqlUtilities.DropTable(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
-            }
-
-            var context = await Scenario.Define<Context>()
-                .WithEndpoint<SenderWithCustomCatalog>(b => b.When(async (s, ctx) =>
-                {
-                    ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
-                }))
-                .Done(c => c.EndpointsStarted)
-                .Run();
-
-            Assert.That(context.TablesFound, Is.True);
+            await SqlUtilities.DropTable(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
         }
+
+        var context = await Scenario.Define<Context>()
+            .WithEndpoint<SenderWithCustomCatalog>(b => b.When(async (s, ctx) =>
+            {
+                ctx.TablesFound = await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection);
+            }))
+            .Done(c => c.EndpointsStarted)
+            .Run();
+
+        Assert.That(context.TablesFound, Is.True);
     }
 
     [Test]

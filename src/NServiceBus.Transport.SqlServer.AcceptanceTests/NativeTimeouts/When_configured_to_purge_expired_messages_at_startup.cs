@@ -75,28 +75,26 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
 
         var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
-        using (var connection = await connectionFactory.OpenNewConnection())
-        using (var transaction = await connection.BeginTransactionAsync())
+        using var connection = await connectionFactory.OpenNewConnection();
+        using var transaction = await connection.BeginTransactionAsync();
+        await SendMessage(new Message(), TimeSpan.FromSeconds(5));
+        await transaction.CommitAsync();
+
+        Task SendMessage<T>(T message, TimeSpan ttbr)
         {
-            await SendMessage(new Message(), TimeSpan.FromSeconds(5));
-            await transaction.CommitAsync();
+            var messageId = Guid.NewGuid().ToString();
 
-            Task SendMessage<T>(T message, TimeSpan ttbr)
+            var messageBody = System.Text.Json.JsonSerializer.Serialize(message);
+            var messageBytes = System.Text.Encoding.UTF8.GetBytes(messageBody);
+
+            var outgoingMessage = new OutgoingMessage(messageId, new Dictionary<string, string>
             {
-                var messageId = Guid.NewGuid().ToString();
+                [Headers.MessageId] = messageId,
+                [Headers.EnclosedMessageTypes] = typeof(T).ToString(),
+                [Headers.ContentType] = ContentTypes.Json
+            }, messageBytes);
 
-                var messageBody = System.Text.Json.JsonSerializer.Serialize(message);
-                var messageBytes = System.Text.Encoding.UTF8.GetBytes(messageBody);
-
-                var outgoingMessage = new OutgoingMessage(messageId, new Dictionary<string, string>
-                {
-                    [Headers.MessageId] = messageId,
-                    [Headers.EnclosedMessageTypes] = typeof(T).ToString(),
-                    [Headers.ContentType] = ContentTypes.Json
-                }, messageBytes);
-
-                return tableBasedQueue.Send(outgoingMessage, ttbr, connection, transaction);
-            }
+            return tableBasedQueue.Send(outgoingMessage, ttbr, connection, transaction);
         }
     }
 

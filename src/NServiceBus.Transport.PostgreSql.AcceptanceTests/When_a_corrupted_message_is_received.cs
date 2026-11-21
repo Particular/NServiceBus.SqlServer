@@ -45,22 +45,20 @@ public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
                     {
                         var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-                        using (var conn = new NpgsqlConnection(connectionString))
-                        {
-                            await conn.OpenAsync();
-                            var command = conn.CreateCommand();
-                            var guid = Guid.NewGuid();
-                            command.CommandText =
-                                $@"INSERT INTO public.""{endpoint}""(id, expires, headers, body)
-                                    VALUES (@Id,@Expires,@Headers,@Body)";
-                            command.Parameters.Add("Id", NpgsqlDbType.Uuid).Value = guid;
-                            command.Parameters.Add("Expires", NpgsqlDbType.Timestamp).Value = DBNull.Value;
-                            command.Parameters.Add("Headers", NpgsqlDbType.Text).Value = "<corrupted headers";
+                        using var conn = new NpgsqlConnection(connectionString);
+                        await conn.OpenAsync();
+                        var command = conn.CreateCommand();
+                        var guid = Guid.NewGuid();
+                        command.CommandText =
+                            $@"INSERT INTO public.""{endpoint}""(id, expires, headers, body)
+                                VALUES (@Id,@Expires,@Headers,@Body)";
+                        command.Parameters.Add("Id", NpgsqlDbType.Uuid).Value = guid;
+                        command.Parameters.Add("Expires", NpgsqlDbType.Timestamp).Value = DBNull.Value;
+                        command.Parameters.Add("Headers", NpgsqlDbType.Text).Value = "<corrupted headers";
 
-                            command.Parameters.Add("Body", NpgsqlDbType.Bytea).Value = Encoding.UTF8.GetBytes("");
+                        command.Parameters.Add("Body", NpgsqlDbType.Bytea).Value = Encoding.UTF8.GetBytes("");
 
-                            await command.ExecuteNonQueryAsync();
-                        }
+                        await command.ExecuteNonQueryAsync();
                     });
                 })
                 .Done(c =>
@@ -83,34 +81,30 @@ public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
 
     static void PurgeQueues(string connectionString)
     {
-        using (var conn = new NpgsqlConnection(connectionString))
-        {
-            conn.Open();
-            var command = conn.CreateCommand();
-            command.CommandText = $@"
-                    DO $$
-                    BEGIN
-                      IF EXISTS(SELECT * FROM public.""{errorQueueName}"")
-                      then
-                          DELETE FROM public.""{errorQueueName}"";
-                      end if;
-                    END;
-                    $$";
-            command.ExecuteNonQuery();
-        }
+        using var conn = new NpgsqlConnection(connectionString);
+        conn.Open();
+        var command = conn.CreateCommand();
+        command.CommandText = $@"
+                DO $$
+                BEGIN
+                  IF EXISTS(SELECT * FROM public.""{errorQueueName}"")
+                  then
+                      DELETE FROM public.""{errorQueueName}"";
+                  end if;
+                END;
+                $$";
+        command.ExecuteNonQuery();
     }
 
     static bool MessageExistsInErrorQueue(string connectionString)
     {
-        using (var conn = new NpgsqlConnection(connectionString))
-        {
-            conn.Open();
-            var command = conn.CreateCommand();
-            command.CommandText = $@"SELECT COUNT(1) FROM public.""{errorQueueName}""";
-            var sqlDataReader = command.ExecuteReader();
-            sqlDataReader.Read();
-            return sqlDataReader.GetInt32(0) == 1;
-        }
+        using var conn = new NpgsqlConnection(connectionString);
+        conn.Open();
+        var command = conn.CreateCommand();
+        command.CommandText = $@"SELECT COUNT(1) FROM public.""{errorQueueName}""";
+        var sqlDataReader = command.ExecuteReader();
+        sqlDataReader.Read();
+        return sqlDataReader.GetInt32(0) == 1;
     }
 
     string connectionString;

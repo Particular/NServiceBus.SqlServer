@@ -75,19 +75,17 @@ public class When_passing_custom_connection_in_receive_context : NServiceBusAcce
                 //HINT: this scope is never completed
                 using (new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
-                    {
-                        connection.Open();
+                    using var connection = new SqlConnection(ConnectionString);
+                    connection.Open();
 
-                        var sendOptions = new SendOptions();
-                        sendOptions.UseCustomSqlConnection(connection);
-                        sendOptions.RouteToThisEndpoint();
-                        await context.Send(new FollowUpRolledbackCommand(), sendOptions);
+                    var sendOptions = new SendOptions();
+                    sendOptions.UseCustomSqlConnection(connection);
+                    sendOptions.RouteToThisEndpoint();
+                    await context.Send(new FollowUpRolledbackCommand(), sendOptions);
 
-                        var publishOptions = new PublishOptions();
-                        publishOptions.UseCustomSqlConnection(connection);
-                        await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
-                    }
+                    var publishOptions = new PublishOptions();
+                    publishOptions.UseCustomSqlConnection(connection);
+                    await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
                 }
 
                 using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))

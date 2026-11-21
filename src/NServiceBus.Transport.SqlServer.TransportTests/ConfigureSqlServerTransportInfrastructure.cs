@@ -61,21 +61,17 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
                 sqlServerTransport.Testing.SubscriptionTable
             };
 
-            using (var conn = new SqlConnection(ConnectionString))
+            using var conn = new SqlConnection(ConnectionString);
+            await conn.OpenAsync(cancellationToken);
+
+            foreach (var queue in queues)
             {
-                await conn.OpenAsync(cancellationToken);
-
-                foreach (var queue in queues)
+                if (string.IsNullOrWhiteSpace(queue) == false)
                 {
-                    if (string.IsNullOrWhiteSpace(queue) == false)
-                    {
-                        using (var comm = conn.CreateCommand())
-                        {
-                            comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
+                    using var comm = conn.CreateCommand();
+                    comm.CommandText = $"IF OBJECT_ID('{queue}', 'U') IS NOT NULL DROP TABLE {queue}";
 
-                            await comm.ExecuteNonQueryAsync(cancellationToken);
-                        }
-                    }
+                    await comm.ExecuteNonQueryAsync(cancellationToken);
                 }
             }
         }

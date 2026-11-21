@@ -46,25 +46,23 @@ public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
                     {
                         var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-                        using (var conn = new SqlConnection(connectionString))
-                        {
-                            await conn.OpenAsync();
-                            var command = conn.CreateCommand();
-                            var guid = Guid.NewGuid();
-                            command.CommandText =
-                                $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
-                                    VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
-                            command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = guid;
-                            command.Parameters.Add("CorrelationId", SqlDbType.UniqueIdentifier).Value = guid;
-                            command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value = "";
-                            command.Parameters.Add("Recoverable", SqlDbType.Bit).Value = true;
-                            command.Parameters.Add("Expires", SqlDbType.DateTime).Value = DateTime.UtcNow.AddHours(1);
-                            command.Parameters.Add("Headers", SqlDbType.VarChar).Value = "<corrupted headers";
+                        using var conn = new SqlConnection(connectionString);
+                        await conn.OpenAsync();
+                        var command = conn.CreateCommand();
+                        var guid = Guid.NewGuid();
+                        command.CommandText =
+                            $@"INSERT INTO [dbo].[{endpoint}] ([Id],[CorrelationId],[ReplyToAddress],[Recoverable],[Expires],[Headers],[Body])
+                                VALUES (@Id,@CorrelationId,@ReplyToAddress,@Recoverable,@Expires,@Headers,@Body)";
+                        command.Parameters.Add("Id", SqlDbType.UniqueIdentifier).Value = guid;
+                        command.Parameters.Add("CorrelationId", SqlDbType.UniqueIdentifier).Value = guid;
+                        command.Parameters.Add("ReplyToAddress", SqlDbType.VarChar).Value = "";
+                        command.Parameters.Add("Recoverable", SqlDbType.Bit).Value = true;
+                        command.Parameters.Add("Expires", SqlDbType.DateTime).Value = DateTime.UtcNow.AddHours(1);
+                        command.Parameters.Add("Headers", SqlDbType.VarChar).Value = "<corrupted headers";
 
-                            command.Parameters.Add("Body", SqlDbType.VarBinary).Value = Encoding.UTF8.GetBytes("");
+                        command.Parameters.Add("Body", SqlDbType.VarBinary).Value = Encoding.UTF8.GetBytes("");
 
-                            await command.ExecuteNonQueryAsync();
-                        }
+                        await command.ExecuteNonQueryAsync();
                     });
                 })
                 .Done(c =>
@@ -87,29 +85,25 @@ public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
 
     static void PurgeQueues(string connectionString)
     {
-        using (var conn = new SqlConnection(connectionString))
-        {
-            conn.Open();
-            var command = conn.CreateCommand();
-            command.CommandText = $@"IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{errorQueueName}]') AND type in (N'U'))
+        using var conn = new SqlConnection(connectionString);
+        conn.Open();
+        var command = conn.CreateCommand();
+        command.CommandText = $@"IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{errorQueueName}]') AND type in (N'U'))
 BEGIN
     DELETE FROM dbo.{errorQueueName}
 END";
-            command.ExecuteNonQuery();
-        }
+        command.ExecuteNonQuery();
     }
 
     static bool MessageExistsInErrorQueue(string connectionString)
     {
-        using (var conn = new SqlConnection(connectionString))
-        {
-            conn.Open();
-            var command = conn.CreateCommand();
-            command.CommandText = "SELECT COUNT(1) FROM " + errorQueueName;
-            var sqlDataReader = command.ExecuteReader();
-            sqlDataReader.Read();
-            return sqlDataReader.GetInt32(0) == 1;
-        }
+        using var conn = new SqlConnection(connectionString);
+        conn.Open();
+        var command = conn.CreateCommand();
+        command.CommandText = "SELECT COUNT(1) FROM " + errorQueueName;
+        var sqlDataReader = command.ExecuteReader();
+        sqlDataReader.Read();
+        return sqlDataReader.GetInt32(0) == 1;
     }
 
     string connectionString;

@@ -103,25 +103,21 @@ public class ConfigurePostgreSqlTransportInfrastructure : IConfigureTransportInf
 
         foreach (var queue in queues.Where(q => !string.IsNullOrWhiteSpace(q)))
         {
-            using (var comm = conn.CreateCommand())
-            {
-                comm.CommandText = $"DROP TABLE IF EXISTS \"public\".\"{queue}\"; " +
-                                   $"DROP SEQUENCE IF EXISTS \"public\".\"{queue}_seq_seq\";";
+            using var comm = conn.CreateCommand();
+            comm.CommandText = $"DROP TABLE IF EXISTS \"public\".\"{queue}\"; " +
+                               $"DROP SEQUENCE IF EXISTS \"public\".\"{queue}_seq_seq\";";
 
-                await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
         var subscriptionTableName = postgreSqlTransport.Testing.SubscriptionTable;
 
         if (!string.IsNullOrEmpty(subscriptionTableName))
         {
-            using (var comm = conn.CreateCommand())
-            {
-                comm.CommandText = $"DROP TABLE IF EXISTS {subscriptionTableName};";
+            using var comm = conn.CreateCommand();
+            comm.CommandText = $"DROP TABLE IF EXISTS {subscriptionTableName};";
 
-                await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await comm.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
