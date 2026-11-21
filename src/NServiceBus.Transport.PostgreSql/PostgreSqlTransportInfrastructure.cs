@@ -171,7 +171,7 @@ class PostgreSqlTransportInfrastructure(
 
             var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
             var delayedMessageTable = new DelayedMessageTable(sqlConstants,
-                delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable, true);
+                delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;

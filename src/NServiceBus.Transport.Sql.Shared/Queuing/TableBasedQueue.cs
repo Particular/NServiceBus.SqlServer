@@ -107,7 +107,7 @@ namespace NServiceBus.Transport.Sql.Shared
         string peekCommand;
         string receiveCommand;
         string purgeCommand;
-        protected bool isStreamSupported;
+        bool isStreamSupported;
 
         static readonly ILog log = LogManager.GetLogger<TableBasedQueue>();
     }

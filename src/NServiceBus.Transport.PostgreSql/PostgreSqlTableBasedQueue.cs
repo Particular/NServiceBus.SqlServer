@@ -27,7 +27,7 @@ class PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifi
             command.CommandText = sendCommand;
             command.Transaction = transaction;
 
-            message.PrepareSendCommand(command, isStreamSupported);
+            message.PrepareSendCommand(command);
 
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }

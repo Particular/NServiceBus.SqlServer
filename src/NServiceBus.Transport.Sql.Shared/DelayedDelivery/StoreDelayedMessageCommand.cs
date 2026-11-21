@@ -23,10 +23,10 @@ namespace NServiceBus.Transport.Sql.Shared
         }
 
 
-        public void PrepareSendCommand(DbCommand command, bool isStreamSupported)
+        public void PrepareSendCommand(DbCommand command)
         {
             command.AddParameter("Headers", DbType.String, headers, -1);
-            BodyParameter.Add(command, body, isStreamSupported);
+            BodyParameter.Add(command, body);
             command.AddParameter("DueAfterDays", DbType.Int32, dueAfter.Days);
             command.AddParameter("DueAfterHours", DbType.Int32, dueAfter.Hours);
             command.AddParameter("DueAfterMinutes", DbType.Int32, dueAfter.Minutes);

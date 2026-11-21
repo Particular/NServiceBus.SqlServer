@@ -80,7 +80,7 @@ class SqlTableBasedQueue : TableBasedQueue
             command.CommandText = sendCommand;
             command.Transaction = transaction;
 
-            message.PrepareSendCommand(command, isStreamSupported);
+            message.PrepareSendCommand(command);
 
             _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }

@@ -6,5 +6,5 @@ using System.Data.Common;
 static partial class BodyParameter
 {
     // Npgsql writes ReadOnlyMemory<byte> to bytea without copying it.
-    private static partial void SetValue(DbParameter parameter, ReadOnlyMemory<byte> body, bool isStreamSupported) => parameter.Value = body;
+    private static partial void SetValue(DbCommand command, DbParameter parameter, ReadOnlyMemory<byte> body) => parameter.Value = body;
 }
