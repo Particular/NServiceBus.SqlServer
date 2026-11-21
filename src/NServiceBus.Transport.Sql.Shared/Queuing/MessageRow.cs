@@ -1,6 +1,7 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
+    using System.Buffers;
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
@@ -77,14 +78,55 @@ namespace NServiceBus.Transport.Sql.Shared
             }
 
             // Null values will be returned as an empty (zero bytes) Stream.
-            var outStream = new MemoryStream();
-            await using var outStreamDisposer = outStream.ConfigureAwait(false);
             var stream = dataReader.GetStream(bodyIndex);
             await using var streamDisposer = stream.ConfigureAwait(false);
-            // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
-            await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
-            return outStream.ToArray();
+            return await ReadToEnd(stream, cancellationToken).ConfigureAwait(false);
         }
+
+        internal static async Task<byte[]> ReadToEnd(Stream stream, CancellationToken cancellationToken = default)
+        {
+            var pool = ArrayPool<byte>.Shared;
+            var buffer = pool.Rent(InitialBodyBufferSize);
+            var length = 0;
+            try
+            {
+                while (true)
+                {
+                    if (length == buffer.Length)
+                    {
+                        var larger = pool.Rent(buffer.Length * 2);
+                        buffer.AsSpan(0, length).CopyTo(larger);
+                        ReturnCleared(pool, buffer, length);
+                        buffer = larger;
+                    }
+
+                    var read = await stream.ReadAsync(buffer.AsMemory(length), cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    length += read;
+                }
+
+                var body = GC.AllocateUninitializedArray<byte>(length);
+                buffer.AsSpan(0, length).CopyTo(body);
+                return body;
+            }
+            finally
+            {
+                ReturnCleared(pool, buffer, length);
+            }
+        }
+
+        // Clears only the used part because message bodies may contain sensitive data and the pool is process-wide.
+        static void ReturnCleared(ArrayPool<byte> pool, byte[] buffer, int length)
+        {
+            buffer.AsSpan(0, length).Clear();
+            pool.Return(buffer);
+        }
+
+        const int InitialBodyBufferSize = 16 * 1024;
 
         Guid id;
         bool expired;
