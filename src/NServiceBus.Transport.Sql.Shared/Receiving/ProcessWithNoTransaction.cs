@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
                 if (receiveResult == MessageReadResult.NoMessage)
                 {
-                    stopBatchCancellationTokenSource.Cancel();
+                    await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
                     return;
                 }
 

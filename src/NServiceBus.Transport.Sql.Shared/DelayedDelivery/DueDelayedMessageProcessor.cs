@@ -38,7 +38,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public async Task Stop(CancellationToken cancellationToken = default)
         {
-            moveDelayedMessagesCancellationTokenSource?.Cancel();
+            if (moveDelayedMessagesCancellationTokenSource != null)
+            {
+                await moveDelayedMessagesCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+            }
 
             await moveDelayedMessagesTask.ConfigureAwait(false);
 
