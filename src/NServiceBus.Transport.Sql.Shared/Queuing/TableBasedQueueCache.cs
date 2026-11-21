@@ -15,6 +15,6 @@ namespace NServiceBus.Transport.Sql.Shared
             return queue;
         }
 
-        ConcurrentDictionary<string, TableBasedQueue> cache = new ConcurrentDictionary<string, TableBasedQueue>();
+        readonly ConcurrentDictionary<string, TableBasedQueue> cache = [];
     }
 }

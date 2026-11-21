@@ -16,9 +16,9 @@
             return schemas.TryGetValue(endpointName, out schema);
         }
 
-        internal List<EndpointInstance> ToEndpointInstances()
-        {
-            return schemas.Keys.Distinct()
+        internal List<EndpointInstance> ToEndpointInstances() =>
+        [
+            .. schemas.Keys.Distinct()
                 .Select(endpoint => new EndpointInstance(endpoint, null, GetProperties(endpoint)))
                 .ToList();
         }

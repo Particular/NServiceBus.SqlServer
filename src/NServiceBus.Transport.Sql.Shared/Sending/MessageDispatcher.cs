@@ -158,6 +158,6 @@ namespace NServiceBus.Transport.Sql.Shared
             return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction, cancellationToken);
         }
 
-        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
+        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = [];
     }
 }

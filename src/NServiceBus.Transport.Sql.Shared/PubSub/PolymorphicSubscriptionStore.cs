@@ -12,7 +12,7 @@ namespace NServiceBus.Transport.Sql.Shared
         public Task<List<string>> GetSubscribers(Type eventType, CancellationToken cancellationToken = default)
         {
             var topics = GetTopics(eventType);
-            return subscriptionTable.GetSubscribers(topics.ToArray(), cancellationToken);
+            return subscriptionTable.GetSubscribers([.. topics], cancellationToken);
         }
 
         public Task Subscribe(string endpointName, string endpointAddress, Type eventType, CancellationToken cancellationToken = default)
@@ -30,9 +30,9 @@ namespace NServiceBus.Transport.Sql.Shared
             return eventTypeToTopicListMap.GetOrAdd(messageType, GenerateTopics);
         }
 
-        static string[] GenerateTopics(Type messageType)
-        {
-            return GenerateMessageHierarchy(messageType)
+        static string[] GenerateTopics(Type messageType) =>
+        [
+            .. GenerateMessageHierarchy(messageType)
                 .Select(TopicName.From)
                 .ToArray();
         }

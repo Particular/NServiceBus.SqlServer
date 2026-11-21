@@ -12,13 +12,16 @@ namespace NServiceBus.Transport.Sql.Shared
             List<string> subscribers =
                 await subscriptions.GetSubscribers(transportOperation.MessageType, cancellationToken).ConfigureAwait(false);
 
-            return (from subscriber in subscribers
-                    select new UnicastTransportOperation(
-                        transportOperation.Message,
-                        subscriber,
-                        transportOperation.Properties,
-                        transportOperation.RequiredDispatchConsistency
-                )).ToList();
+            return
+            [
+                .. from subscriber in subscribers
+                select new UnicastTransportOperation(
+                    transportOperation.Message,
+                    subscriber,
+                    transportOperation.Properties,
+                    transportOperation.RequiredDispatchConsistency
+                )
+            ];
         }
     }
 }

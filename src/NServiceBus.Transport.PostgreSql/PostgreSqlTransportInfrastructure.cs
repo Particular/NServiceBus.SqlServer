@@ -111,7 +111,6 @@ class PostgreSqlTransportInfrastructure(
             tableBasedQueueCache,
             delayedMessageStore,
             connectionFactory);
-    }
 
     async Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
     {
@@ -203,9 +202,11 @@ class PostgreSqlTransportInfrastructure(
 
         if (hostSettings.SetupInfrastructure)
         {
-            var queuesToCreate = new List<string>();
-            queuesToCreate.AddRange(sendingAddresses);
-            queuesToCreate.AddRange(receiveAddresses);
+            List<string> queuesToCreate =
+            [
+                .. sendingAddresses,
+                .. receiveAddresses
+            ];
 
             var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
 
@@ -219,7 +220,7 @@ class PostgreSqlTransportInfrastructure(
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse,
                 createMessageBodyComputedColumn);
 
-            await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress,
+            await queueCreator.CreateQueueIfNecessary([.. queuesToCreate], delayedQueueCanonicalAddress,
                     cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -227,7 +228,7 @@ class PostgreSqlTransportInfrastructure(
         dueDelayedMessageProcessor?.Start(cancellationToken);
 
         transport.Testing.SendingAddresses =
-            sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
+            [.. sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName)];
         transport.Testing.ReceiveAddresses =
             receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
         transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
