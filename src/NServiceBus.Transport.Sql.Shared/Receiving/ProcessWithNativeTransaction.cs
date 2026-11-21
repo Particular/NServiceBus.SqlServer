@@ -19,44 +19,48 @@ namespace NServiceBus.Transport.Sql.Shared
 
             try
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var transaction = connection.BeginTransaction(isolationLevel))
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using (connection.ConfigureAwait(false))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-                    receiveCountdownEventSignaler.Signal();
-
-                    if (receiveResult == MessageReadResult.NoMessage)
+                    var transaction = connection.BeginTransaction(isolationLevel);
+                    await using (transaction.ConfigureAwait(false))
                     {
-                        stopBatchCancellationTokenSource.Cancel();
-                        return;
-                    }
+                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                        receiveCountdownEventSignaler.Signal();
 
-                    if (receiveResult.IsPoison)
-                    {
-                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
+                        if (receiveResult == MessageReadResult.NoMessage)
+                        {
+                            stopBatchCancellationTokenSource.Cancel();
+                            return;
+                        }
+
+                        if (receiveResult.IsPoison)
+                        {
+                            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
+                            transaction.Commit();
+                            return;
+                        }
+
+                        message = receiveResult.Message;
+
+                        if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
+                        {
+                            transaction.Commit();
+                            return;
+                        }
+
+                        var transportTransaction = transactionForReceiveOnly
+                            ? TransportTransactions.ReceiveOnly(connection, transaction)
+                            : TransportTransactions.SendsAtomicWithReceive(connection, transaction);
+
+                        if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
+                        {
+                            transaction.Rollback();
+                            return;
+                        }
+
                         transaction.Commit();
-                        return;
                     }
-
-                    message = receiveResult.Message;
-
-                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
-                    {
-                        transaction.Commit();
-                        return;
-                    }
-
-                    var transportTransaction = transactionForReceiveOnly
-                        ? TransportTransactions.ReceiveOnly(connection, transaction)
-                        : TransportTransactions.SendsAtomicWithReceive(connection, transaction);
-
-                    if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
-                    {
-                        transaction.Rollback();
-                        return;
-                    }
-
-                    transaction.Commit();
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);

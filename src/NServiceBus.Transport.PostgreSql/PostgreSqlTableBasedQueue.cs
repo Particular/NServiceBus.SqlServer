@@ -21,7 +21,8 @@ class PostgreSqlTableBasedQueue(PostgreSqlConstants sqlConstants, string qualifi
     {
         try
         {
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandType = CommandType.Text;
             command.CommandText = sendCommand;
             command.Transaction = transaction;

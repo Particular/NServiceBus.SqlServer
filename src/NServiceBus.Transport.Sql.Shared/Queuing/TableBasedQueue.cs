@@ -24,7 +24,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public virtual async Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandTimeout = timeoutInSeconds ?? 30;
             command.CommandType = CommandType.Text;
             command.Transaction = transaction;
@@ -38,7 +39,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
         {
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandText = receiveCommand;
             command.Transaction = transaction;
             command.CommandType = CommandType.Text;
@@ -63,7 +65,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 behavior |= CommandBehavior.SequentialAccess;
             }
 
-            using var dataReader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+            var dataReader = await command.ExecuteReaderAsync(behavior, cancellationToken).ConfigureAwait(false);
+            await using var dataReaderDisposer = dataReader.ConfigureAwait(false);
             if (!await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 return MessageReadResult.NoMessage;
@@ -89,7 +92,8 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public async Task<int> Purge(DbConnection connection, CancellationToken cancellationToken = default)
         {
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandText = purgeCommand;
             command.CommandType = CommandType.Text;
 

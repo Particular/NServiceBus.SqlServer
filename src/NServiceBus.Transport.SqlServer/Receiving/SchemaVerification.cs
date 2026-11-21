@@ -30,7 +30,8 @@
         {
             try
             {
-                using var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
                 var indexExists = await check(queue, connection, cancellationToken).ConfigureAwait(false);
 
                 if (!indexExists)
@@ -66,7 +67,8 @@
         {
             try
             {
-                using var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
                 var columnType = await queue.CheckHeadersColumnType(connection, cancellationToken).ConfigureAwait(false);
                 if (string.Equals(columnType, "varchar", StringComparison.OrdinalIgnoreCase))
                 {

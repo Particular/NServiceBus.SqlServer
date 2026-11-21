@@ -23,7 +23,8 @@ namespace NServiceBus.Transport.SqlServer
 
             try
             {
-                using (var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false))
+                var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                await using (connection.ConfigureAwait(false))
                 {
                     var continuePurging = true;
 

@@ -31,7 +31,8 @@ namespace NServiceBus.Transport.SqlServer
 
             if (transport.ConnectionFactory != null)
             {
-                using var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false);
+                var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
                 connectionString = connection.ConnectionString;
             }
 
@@ -276,9 +277,8 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                {
-                }
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
@@ -298,10 +298,9 @@ namespace NServiceBus.Transport.SqlServer
                 {
                     using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);
                     FakePromotableResourceManager.ForceDtc();
-                    using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                    {
-                        scope.Complete();
-                    }
+                    var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                    await using var connectionDisposer = connection.ConfigureAwait(false);
+                    scope.Complete();
                 }
                 catch (NotSupportedException exception)
                 {

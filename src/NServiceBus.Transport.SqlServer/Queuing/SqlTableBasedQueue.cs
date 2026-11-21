@@ -27,7 +27,8 @@ class SqlTableBasedQueue : TableBasedQueue
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
     {
-        using var command = connection.CreateCommand();
+        var command = connection.CreateCommand();
+        await using var commandDisposer = command.ConfigureAwait(false);
         command.CommandText = purgeExpiredCommand;
         command.CommandType = CommandType.Text;
         command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
@@ -37,7 +38,8 @@ class SqlTableBasedQueue : TableBasedQueue
 
     public async Task<bool> CheckExpiresIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using var command = connection.CreateCommand();
+        var command = connection.CreateCommand();
+        await using var commandDisposer = command.ConfigureAwait(false);
         command.CommandText = checkExpiresIndexCommand;
         command.CommandType = CommandType.Text;
 
@@ -47,7 +49,8 @@ class SqlTableBasedQueue : TableBasedQueue
 
     public async Task<bool> CheckNonClusteredRowVersionIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using var command = connection.CreateCommand();
+        var command = connection.CreateCommand();
+        await using var commandDisposer = command.ConfigureAwait(false);
         command.CommandText = checkNonClusteredRowVersionIndexCommand;
         command.CommandType = CommandType.Text;
 
@@ -57,7 +60,8 @@ class SqlTableBasedQueue : TableBasedQueue
 
     public async Task<string> CheckHeadersColumnType(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using var command = connection.CreateCommand();
+        var command = connection.CreateCommand();
+        await using var commandDisposer = command.ConfigureAwait(false);
         command.CommandText = checkHeadersColumnTypeCommand;
         command.CommandType = CommandType.Text;
 
@@ -70,7 +74,8 @@ class SqlTableBasedQueue : TableBasedQueue
         {
             var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
 
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandType = CommandType.Text;
             command.CommandText = sendCommand;
             command.Transaction = transaction;
@@ -114,7 +119,8 @@ class SqlTableBasedQueue : TableBasedQueue
                 return sendCommand;
             }
 
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandText = checkRecoverableColumnCommand;
             command.CommandType = CommandType.Text;
             command.Transaction = transaction;

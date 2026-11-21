@@ -239,7 +239,8 @@ class PostgreSqlTransportInfrastructure(
     {
         try
         {
-            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
             var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
 
             if (!result.IsValid)

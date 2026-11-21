@@ -18,40 +18,43 @@
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
-                    receiveCountdownEventSignaler.Signal();
-
-                    if (receiveResult == MessageReadResult.NoMessage)
+                    var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                    await using (connection.ConfigureAwait(false))
                     {
-                        stopBatchCancellationTokenSource.Cancel();
-                        return;
-                    }
+                        var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
+                        receiveCountdownEventSignaler.Signal();
 
-                    if (receiveResult.IsPoison)
-                    {
-                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null, cancellationToken).ConfigureAwait(false);
+                        if (receiveResult == MessageReadResult.NoMessage)
+                        {
+                            stopBatchCancellationTokenSource.Cancel();
+                            return;
+                        }
+
+                        if (receiveResult.IsPoison)
+                        {
+                            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, null, cancellationToken).ConfigureAwait(false);
+                            scope.Complete();
+                            return;
+                        }
+
+                        message = receiveResult.Message;
+
+                        if (await TryHandleDelayedMessage(receiveResult.Message, connection, null, cancellationToken).ConfigureAwait(false))
+                        {
+                            scope.Complete();
+                            return;
+                        }
+
+                        connection.Close();
+
+                        if (!await TryProcess(receiveResult.Message, TransportTransactions.TransactionScope(Transaction.Current), context, cancellationToken).ConfigureAwait(false))
+                        {
+                            return;
+                        }
+
                         scope.Complete();
-                        return;
                     }
-
-                    message = receiveResult.Message;
-
-                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, null, cancellationToken).ConfigureAwait(false))
-                    {
-                        scope.Complete();
-                        return;
-                    }
-
-                    connection.Close();
-
-                    if (!await TryProcess(receiveResult.Message, TransportTransactions.TransactionScope(Transaction.Current), context, cancellationToken).ConfigureAwait(false))
-                    {
-                        return;
-                    }
-
-                    scope.Complete();
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);

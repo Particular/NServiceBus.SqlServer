@@ -52,8 +52,10 @@ namespace NServiceBus.Transport.Sql.Shared
             }
 
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-            using var transaction = connection.BeginTransaction();
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
+            var transaction = connection.BeginTransaction();
+            await using var transactionDisposer = transaction.ConfigureAwait(false);
             await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
             transaction.Commit();
             scope.Complete();
@@ -71,8 +73,10 @@ namespace NServiceBus.Transport.Sql.Shared
                 case OutsideHandler:
                 case ReceiveOnly:
                     {
-                        using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-                        using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                        var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        await using var connectionDisposer = connection.ConfigureAwait(false);
+                        var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                        await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
                         transaction.Commit();
@@ -83,7 +87,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 // get their own short-lived transaction.
                 case NoTransaction noTransaction:
                     {
-                        using var transaction = noTransaction.Connection.BeginTransaction();
+                        var transaction = noTransaction.Connection.BeginTransaction();
+                        await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, noTransaction.Connection, transaction, cancellationToken).ConfigureAwait(false);
                         transaction.Commit();
@@ -107,7 +112,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 // in it automatically.
                 case AmbientTransaction:
                     {
-                        using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        await using var connectionDisposer = connection.ConfigureAwait(false);
 
                         await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                         break;

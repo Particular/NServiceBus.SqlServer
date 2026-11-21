@@ -15,10 +15,12 @@ namespace NServiceBus.Transport.Sql.Shared
             Message message = null;
             var context = new ContextBag();
 
-            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
             try
             {
-                using var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
                 receiveCountdownEventSignaler.Signal();
 

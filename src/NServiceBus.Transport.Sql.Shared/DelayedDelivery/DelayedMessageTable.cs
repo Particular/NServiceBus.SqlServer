@@ -24,7 +24,8 @@ namespace NServiceBus.Transport.Sql.Shared
             DbTransaction transaction, CancellationToken cancellationToken = default)
         {
             var messageRow = StoreDelayedMessageCommand.From(message.Headers, message.Body, dueAfter, destination);
-            using (var command = connection.CreateCommand())
+            var command = connection.CreateCommand();
+            await using (command.ConfigureAwait(false))
             {
                 command.Transaction = transaction;
                 command.CommandText = storeCommand;
@@ -41,13 +42,15 @@ namespace NServiceBus.Transport.Sql.Shared
         public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
             CancellationToken cancellationToken = default)
         {
-            using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var commandDisposer = command.ConfigureAwait(false);
             command.Transaction = transaction;
             command.CommandText = moveDueCommand;
             command.CommandType = CommandType.Text;
 
             command.AddParameter("BatchSize", DbType.Int32, batchSize);
-            using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await using var readerDisposer = reader.ConfigureAwait(false);
             if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 // No timeouts waiting

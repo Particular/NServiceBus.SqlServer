@@ -20,13 +20,16 @@ namespace NServiceBus.Transport.SqlServer
         }
         public async Task CreateIfNecessary(CancellationToken cancellationToken = default)
         {
-            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
             try
             {
-                using var transaction = connection.BeginTransaction();
+                var transaction = connection.BeginTransaction();
+                await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 
-                using (var command = connection.CreateCommand())
+                var command = connection.CreateCommand();
+                await using (command.ConfigureAwait(false))
                 {
                     command.Transaction = transaction;
                     command.CommandText = sql;

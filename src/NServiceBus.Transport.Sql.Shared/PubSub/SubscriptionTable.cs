@@ -16,8 +16,10 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-                using var command = connection.CreateCommand();
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
+                var command = connection.CreateCommand();
+                await using var commandDisposer = command.ConfigureAwait(false);
                 command.CommandText = subscribeCommand;
 
                 command.AddParameter("Endpoint", DbType.String, endpointName);
@@ -32,8 +34,10 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-                using var command = connection.CreateCommand();
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
+                var command = connection.CreateCommand();
+                await using var commandDisposer = command.ConfigureAwait(false);
                 command.CommandText = unsubscribeCommand;
                 command.AddParameter("Endpoint", DbType.String, endpointName);
                 command.AddParameter("Topic", DbType.String, topic);
@@ -51,15 +55,18 @@ namespace NServiceBus.Transport.Sql.Shared
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-                using var command = connection.CreateCommand();
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
+                var command = connection.CreateCommand();
+                await using var commandDisposer = command.ConfigureAwait(false);
                 command.CommandText = getSubscribersCommand;
                 for (var i = 0; i < topics.Length; i++)
                 {
                     command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
                 }
 
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                await using (reader.ConfigureAwait(false))
                 {
                     while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
                     {
