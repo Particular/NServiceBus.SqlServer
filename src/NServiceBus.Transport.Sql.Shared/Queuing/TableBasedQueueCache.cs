@@ -10,7 +10,7 @@ namespace NServiceBus.Transport.Sql.Shared
             //Get a fully-qualified form of the name so that regardless in which format we get from the core/user, we cache based on a standardized from
             //to avoid having duplicate cache entries for a single table
             var key = addressTranslator(destination);
-            var queue = cache.GetOrAdd(key, x => queueFactory(x, isStreamSupported));
+            var queue = cache.GetOrAdd(key, static (x, state) => state.queueFactory(x, state.isStreamSupported), (queueFactory, isStreamSupported));
 
             return queue;
         }

@@ -26,7 +26,7 @@ namespace NServiceBus.Transport.SqlServer
             return logicalAddressCache.GetOrAdd(key, static key => key.ToSqlQueueAddress());
         }
 
-        public CanonicalQueueAddress Parse(string address) => physicalAddressCache.GetOrAdd(address, TranslatePhysicalAddress);
+        public CanonicalQueueAddress Parse(string address) => physicalAddressCache.GetOrAdd(address, static (key, translator) => translator.TranslatePhysicalAddress(key), this);
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
