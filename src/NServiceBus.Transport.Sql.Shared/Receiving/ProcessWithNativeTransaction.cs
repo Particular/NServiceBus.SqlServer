@@ -37,7 +37,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         if (receiveResult.IsPoison)
                         {
                             await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
-                            transaction.Commit();
+                            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                             return;
                         }
 
@@ -45,7 +45,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
                         if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
                         {
-                            transaction.Commit();
+                            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                             return;
                         }
 
@@ -55,11 +55,11 @@ namespace NServiceBus.Transport.Sql.Shared
 
                         if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
                         {
-                            transaction.Rollback();
+                            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                             return;
                         }
 
-                        transaction.Commit();
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                     }
                 }
 

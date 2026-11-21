@@ -93,7 +93,7 @@ namespace NServiceBus.Transport.Sql.Shared
             var nextDueTime = await table
                 .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
                 .ConfigureAwait(false);
-            transaction.Commit();
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
 
             return nextDueTime;
         }

@@ -32,7 +32,7 @@ namespace NServiceBus.Transport.PostgreSql
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (PostgresException ex) when (ex.SqlState is PostgresErrorCodes.DuplicateTable or  // 42P07
                 PostgresErrorCodes.DuplicateObject or  // 42710

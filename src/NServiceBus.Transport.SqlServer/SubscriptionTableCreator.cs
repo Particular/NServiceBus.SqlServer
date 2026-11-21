@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.SqlServer
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (SqlException e) when (e.Number is 2714 or 1913) //Object already exists
             {

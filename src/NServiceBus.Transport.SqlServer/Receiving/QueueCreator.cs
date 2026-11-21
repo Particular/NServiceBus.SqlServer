@@ -43,7 +43,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -75,7 +75,7 @@ namespace NServiceBus.Transport.SqlServer
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
         }
     }

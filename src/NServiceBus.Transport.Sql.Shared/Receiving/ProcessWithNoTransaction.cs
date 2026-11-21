@@ -35,7 +35,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     await ErrorQueue
                         .DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken)
                         .ConfigureAwait(false);
-                    transaction.Commit();
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                     return;
                 }
 
@@ -44,11 +44,11 @@ namespace NServiceBus.Transport.Sql.Shared
                 if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction,
                         cancellationToken).ConfigureAwait(false))
                 {
-                    transaction.Commit();
+                    await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                     return;
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception ex) when (!exceptionClassifier.IsOperationCancelled(ex, cancellationToken))
             {

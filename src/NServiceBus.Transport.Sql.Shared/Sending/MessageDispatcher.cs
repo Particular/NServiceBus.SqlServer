@@ -57,7 +57,7 @@ namespace NServiceBus.Transport.Sql.Shared
             var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
             await using var transactionDisposer = transaction.ConfigureAwait(false);
             await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
-            transaction.Commit();
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
             scope.Complete();
         }
 
@@ -79,7 +79,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
-                        transaction.Commit();
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                         break;
                     }
 
@@ -91,7 +91,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, noTransaction.Connection, transaction, cancellationToken).ConfigureAwait(false);
-                        transaction.Commit();
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                         break;
                     }
 
