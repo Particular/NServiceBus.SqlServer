@@ -69,7 +69,7 @@
         }
 
         readonly Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
-        readonly LinkedList<string> leastRecentlyUsedMessages = new LinkedList<string>();
+        readonly LinkedList<string> leastRecentlyUsedMessages = [];
         readonly Lock lockObject = new();
 
         class FailureInfoNode(string messageId, ProcessingFailureInfo failureInfo)
