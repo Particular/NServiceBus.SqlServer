@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NServiceBus.Extensibility;
 using NServiceBus.Transport.Sql.Shared;
 using NUnit.Framework;
@@ -71,6 +73,18 @@ public class FailureInfoStorageTests
     }
 
     [Test]
+    public void When_clearing_failure_for_unknown_message_should_not_affect_other_entries()
+    {
+        var messageId = Guid.NewGuid().ToString("D");
+        var storage = GetFailureInfoStorage();
+
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+
+        Assert.DoesNotThrow(() => storage.ClearFailureInfoForMessage(Guid.NewGuid().ToString("D")));
+        Assert.That(storage.TryGetFailureInfoForMessage(messageId, out _), Is.True);
+    }
+
+    [Test]
     public void When_recording_more_than_max_number_of_failures_should_remove_least_recently_used_entry()
     {
         const int MaxElements = 50;
@@ -121,6 +135,50 @@ public class FailureInfoStorageTests
         storage.TryGetFailureInfoForMessage(lruMessageId, out var failureInfo);
 
         Assert.That(failureInfo, Is.Not.Null);
+    }
+
+    [Test]
+    public void When_recording_many_more_failures_than_max_should_keep_most_recent_and_drop_oldest()
+    {
+        const int MaxElements = 50;
+        var storage = new FailureInfoStorage(MaxElements);
+
+        var messageIds = new List<string>();
+        for (var i = 0; i < MaxElements * 10; ++i)
+        {
+            var messageId = Guid.NewGuid().ToString("D");
+            messageIds.Add(messageId);
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(storage.TryGetFailureInfoForMessage(messageIds[0], out _), Is.False);
+            Assert.That(storage.TryGetFailureInfoForMessage(messageIds[^1], out _), Is.True);
+        });
+    }
+
+    [Test]
+    public void When_recording_failures_for_different_messages_concurrently_should_count_attempts_per_message()
+    {
+        const int Messages = 1000;
+        const int Attempts = 3;
+        var storage = new FailureInfoStorage(Messages * 2);
+        var messageIds = Enumerable.Range(0, Messages).Select(_ => Guid.NewGuid().ToString("D")).ToArray();
+
+        Parallel.ForEach(messageIds, messageId =>
+        {
+            for (var attempt = 0; attempt < Attempts; ++attempt)
+            {
+                storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+            }
+        });
+
+        foreach (var messageId in messageIds)
+        {
+            Assert.That(storage.TryGetFailureInfoForMessage(messageId, out var failureInfo), Is.True);
+            Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(Attempts));
+        }
     }
 
     static FailureInfoStorage GetFailureInfoStorage()

@@ -1,82 +1,35 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared
 {
     using System;
-    using System.Collections.Generic;
     using System.Runtime.ExceptionServices;
-    using System.Threading;
+    using BitFaster.Caching.Lru;
     using Extensibility;
 
-    // The data structure has fixed maximum size. When the data structure reaches its maximum size,
-    // the least recently used (LRU) message processing failure is removed from the storage.
     class FailureInfoStorage(int maxElements)
     {
         public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
-            lock (lockObject)
-            {
-                if (failureInfoPerMessage.TryGetValue(messageId, out var node))
-                {
-                    // We have seen this message before, just update the counter and store exception.
-                    node.FailureInfo = new ProcessingFailureInfo(node.FailureInfo.NumberOfProcessingAttempts + 1, ExceptionDispatchInfo.Capture(exception), context);
+            // A message is processed by one receiver at a time, so the read-modify-write needs no lock.
+            var numberOfProcessingAttempts = failureInfoPerMessage.TryGet(messageId, out var existing)
+                ? existing.NumberOfProcessingAttempts + 1
+                : 1;
 
-                    // Maintain invariant: leastRecentlyUsedMessages.First contains the LRU item.
-                    leastRecentlyUsedMessages.Remove(node.LeastRecentlyUsedEntry);
-                    leastRecentlyUsedMessages.AddLast(node.LeastRecentlyUsedEntry);
-                }
-                else
-                {
-                    if (failureInfoPerMessage.Count == maxElements)
-                    {
-                        // We have reached the maximum allowed capacity. Remove the LRU item.
-                        var leastRecentlyUsedEntry = leastRecentlyUsedMessages.First;
-                        failureInfoPerMessage.Remove(leastRecentlyUsedEntry.Value);
-                        leastRecentlyUsedMessages.RemoveFirst();
-                    }
-
-                    var newNode = new FailureInfoNode(
-                        messageId,
-                        new ProcessingFailureInfo(1, ExceptionDispatchInfo.Capture(exception), context));
-
-                    failureInfoPerMessage[messageId] = newNode;
-
-                    // Maintain invariant: leastRecentlyUsedMessages.First contains the LRU item.
-                    leastRecentlyUsedMessages.AddLast(newNode.LeastRecentlyUsedEntry);
-                }
-            }
+            failureInfoPerMessage.AddOrUpdate(messageId, new ProcessingFailureInfo(numberOfProcessingAttempts, ExceptionDispatchInfo.Capture(exception), context));
         }
 
-        public bool TryGetFailureInfoForMessage(string messageId, out ProcessingFailureInfo processingFailureInfo)
-        {
-            lock (lockObject)
-            {
-                if (failureInfoPerMessage.TryGetValue(messageId, out var node))
-                {
-                    processingFailureInfo = node.FailureInfo;
-                    return true;
-                }
-                processingFailureInfo = null;
-                return false;
-            }
-        }
+        public bool TryGetFailureInfoForMessage(string messageId, out ProcessingFailureInfo processingFailureInfo) =>
+            failureInfoPerMessage.TryGet(messageId, out processingFailureInfo);
 
         public void ClearFailureInfoForMessage(string messageId)
         {
-            lock (lockObject)
+            // Probing first keeps the usual miss lock-free; TryRemove takes a bucket lock even when the key is absent.
+            if (failureInfoPerMessage.TryGet(messageId, out _))
             {
-                failureInfoPerMessage.Remove(messageId);
-                leastRecentlyUsedMessages.Remove(messageId);
+                failureInfoPerMessage.TryRemove(messageId);
             }
         }
 
-        readonly Dictionary<string, FailureInfoNode> failureInfoPerMessage = [];
-        readonly LinkedList<string> leastRecentlyUsedMessages = [];
-        readonly Lock lockObject = new();
-
-        class FailureInfoNode(string messageId, ProcessingFailureInfo failureInfo)
-        {
-            public ProcessingFailureInfo FailureInfo { get; set; } = failureInfo;
-            public LinkedListNode<string> LeastRecentlyUsedEntry { get; } = new(messageId);
-        }
+        readonly FastConcurrentLru<string, ProcessingFailureInfo> failureInfoPerMessage = new(maxElements);
 
         public class ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
         {
