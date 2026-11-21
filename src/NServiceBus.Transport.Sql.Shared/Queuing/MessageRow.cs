@@ -29,12 +29,12 @@ namespace NServiceBus.Transport.Sql.Shared
                 body = body
             };
 
-        public void PrepareSendCommand(DbCommand command, bool isStreamSupported)
+        public void PrepareSendCommand(DbCommand command)
         {
             command.AddParameter("Id", DbType.Guid, id);
             command.AddParameter("TimeToBeReceivedMs", DbType.Int32, timeToBeReceived);
             command.AddParameter("Headers", DbType.String, headers, -1);
-            BodyParameter.Add(command, body, isStreamSupported);
+            BodyParameter.Add(command, body);
         }
 
         static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken) =>
@@ -88,7 +88,9 @@ namespace NServiceBus.Transport.Sql.Shared
             var pool = ArrayPool<byte>.Shared;
             var segment = pool.Rent(SegmentSize);
             var segmentLength = 0;
+            long length = 0;
             List<byte[]> filledSegments = null;
+            var completed = false;
             try
             {
                 while (true)
@@ -109,44 +111,46 @@ namespace NServiceBus.Transport.Sql.Shared
                     }
 
                     segmentLength += read;
-                }
-
-                long length = segmentLength;
-                foreach (var filled in filledSegments ?? [])
-                {
-                    length += filled.Length;
-                }
-
-                if (length > Array.MaxLength)
-                {
-                    throw new IOException($"The message body is larger than the maximum supported size of {Array.MaxLength} bytes.");
+                    length += read;
+                    if (length > Array.MaxLength)
+                    {
+                        throw new IOException($"The message body is larger than the maximum supported size of {Array.MaxLength} bytes.");
+                    }
                 }
 
                 var body = GC.AllocateUninitializedArray<byte>((int)length);
                 var offset = 0;
-                foreach (var filled in filledSegments ?? [])
+                if (filledSegments is not null)
                 {
-                    filled.CopyTo(body, offset);
-                    offset += filled.Length;
+                    foreach (var filled in filledSegments)
+                    {
+                        filled.CopyTo(body, offset);
+                        offset += filled.Length;
+                    }
                 }
 
                 segment.AsSpan(0, segmentLength).CopyTo(body.AsSpan(offset));
+                completed = true;
                 return body;
             }
             finally
             {
                 var segmentIndex = 0;
-                foreach (var filled in filledSegments ?? [])
+                if (filledSegments is not null)
                 {
-                    if (IsPooled(segmentIndex++))
+                    foreach (var filled in filledSegments)
                     {
-                        ReturnCleared(pool, filled, filled.Length);
+                        if (IsPooled(segmentIndex++))
+                        {
+                            ReturnCleared(pool, filled, filled.Length);
+                        }
                     }
                 }
 
                 if (IsPooled(segmentIndex))
                 {
-                    ReturnCleared(pool, segment, segmentLength);
+                    // A read that throws may already have written past segmentLength.
+                    ReturnCleared(pool, segment, completed ? segmentLength : segment.Length);
                 }
             }
         }
