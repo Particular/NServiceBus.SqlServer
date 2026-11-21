@@ -26,9 +26,6 @@ namespace NServiceBus.Transport.SqlServer
         public string QualifiedTableName { get; }
         public string QuotedCatalogName { get; }
 
-        string GetCanonicalForm()
-        {
-            return $"{Table}@{SqlServerNameHelper.Quote(Schema)}@{SqlServerNameHelper.Quote(Catalog)}";
-        }
+        string GetCanonicalForm() => $"{Table}@{SqlServerNameHelper.Quote(Schema)}@{SqlServerNameHelper.Quote(Catalog)}";
     }
 }

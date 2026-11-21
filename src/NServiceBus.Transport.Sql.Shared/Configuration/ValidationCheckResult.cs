@@ -8,15 +8,9 @@ namespace NServiceBus.Transport.Sql.Shared
             Message = message;
         }
 
-        public static ValidationCheckResult Valid()
-        {
-            return new ValidationCheckResult(true, null);
-        }
+        public static ValidationCheckResult Valid() => new(true, null);
 
-        public static ValidationCheckResult Invalid(string message)
-        {
-            return new ValidationCheckResult(false, message);
-        }
+        public static ValidationCheckResult Invalid(string message) => new(false, message);
 
         public bool IsValid { get; }
         public string Message { get; }

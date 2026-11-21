@@ -18,39 +18,35 @@ public class When_passing_custom_transaction_outside_receive_context : NServiceB
         var context = await Scenario.Define<MyContext>()
             .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
             {
-                using (var connection = new SqlConnection(ConnectionString))
+                await using var connection = new SqlConnection(ConnectionString);
+                connection.Open();
+
+                SendOptions sendOptions;
+                PublishOptions publishOptions;
+
+                await using (var rolledbackTransaction = connection.BeginTransaction())
                 {
-                    connection.Open();
+                    sendOptions = new SendOptions();
+                    sendOptions.UseCustomSqlTransaction(rolledbackTransaction);
+                    await bus.Send(new CommandFromRolledbackTransaction(), sendOptions);
 
-                    SendOptions sendOptions;
-                    PublishOptions publishOptions;
+                    publishOptions = new PublishOptions();
+                    publishOptions.UseCustomSqlTransaction(rolledbackTransaction);
+                    await bus.Publish(new EventFromRollbackedTransaction(), publishOptions);
 
-                    using (var rolledbackTransaction = connection.BeginTransaction())
-                    {
-                        sendOptions = new SendOptions();
-                        sendOptions.UseCustomSqlTransaction(rolledbackTransaction);
-                        await bus.Send(new CommandFromRolledbackTransaction(), sendOptions);
-
-                        publishOptions = new PublishOptions();
-                        publishOptions.UseCustomSqlTransaction(rolledbackTransaction);
-                        await bus.Publish(new EventFromRollbackedTransaction(), publishOptions);
-
-                        rolledbackTransaction.Rollback();
-                    }
-
-                    using (var committedTransaction = connection.BeginTransaction())
-                    {
-                        sendOptions = new SendOptions();
-                        sendOptions.UseCustomSqlTransaction(committedTransaction);
-                        await bus.Send(new CommandFromCommittedTransaction(), sendOptions);
-
-                        publishOptions = new PublishOptions();
-                        publishOptions.UseCustomSqlTransaction(committedTransaction);
-                        await bus.Publish(new EventFromCommittedTransaction(), publishOptions);
-
-                        committedTransaction.Commit();
-                    }
+                    await rolledbackTransaction.RollbackAsync();
                 }
+
+                await using var committedTransaction = connection.BeginTransaction();
+                sendOptions = new SendOptions();
+                sendOptions.UseCustomSqlTransaction(committedTransaction);
+                await bus.Send(new CommandFromCommittedTransaction(), sendOptions);
+
+                publishOptions = new PublishOptions();
+                publishOptions.UseCustomSqlTransaction(committedTransaction);
+                await bus.Publish(new EventFromCommittedTransaction(), publishOptions);
+
+                await committedTransaction.CommitAsync();
 
             }))
             .Run();

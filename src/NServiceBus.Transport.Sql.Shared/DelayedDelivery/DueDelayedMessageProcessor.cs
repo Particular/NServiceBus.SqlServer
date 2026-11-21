@@ -38,7 +38,10 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public async Task Stop(CancellationToken cancellationToken = default)
         {
-            moveDelayedMessagesCancellationTokenSource?.Cancel();
+            if (moveDelayedMessagesCancellationTokenSource != null)
+            {
+                await moveDelayedMessagesCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+            }
 
             await moveDelayedMessagesTask.ConfigureAwait(false);
 
@@ -85,19 +88,17 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task<DateTime> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
-                       .ConfigureAwait(false))
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    var nextDueTime = await table
-                        .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
-                        .ConfigureAwait(false);
-                    transaction.Commit();
+            var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
+                       .ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
+            var transaction = await connection.BeginTransactionAsync(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
+            await using var transactionDisposer = transaction.ConfigureAwait(false);
+            var nextDueTime = await table
+                .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
+                .ConfigureAwait(false);
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
 
-                    return nextDueTime;
-                }
-            }
+            return nextDueTime;
         }
 
         /// <summary>

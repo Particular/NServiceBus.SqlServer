@@ -3,16 +3,10 @@
     using System;
     using System.Collections.Generic;
 
-    struct SortingResult
+    struct SortingResult(IEnumerable<UnicastTransportOperation> defaultDispatch, IEnumerable<UnicastTransportOperation> isolatedDispatch)
     {
-        public IEnumerable<UnicastTransportOperation> IsolatedDispatch;
-        public IEnumerable<UnicastTransportOperation> DefaultDispatch;
-
-        public SortingResult(IEnumerable<UnicastTransportOperation> defaultDispatch, IEnumerable<UnicastTransportOperation> isolatedDispatch)
-        {
-            DefaultDispatch = defaultDispatch;
-            IsolatedDispatch = isolatedDispatch;
-        }
+        public IEnumerable<UnicastTransportOperation> IsolatedDispatch = isolatedDispatch;
+        public IEnumerable<UnicastTransportOperation> DefaultDispatch = defaultDispatch;
     }
 
     static class OperationSorter
@@ -43,14 +37,11 @@
             return new SortingResult(defaultDispatch?.Values, isolatedDispatch?.Values);
         }
 
-        readonly struct DeduplicationKey
+        readonly struct DeduplicationKey(string messageId, string destination)
         {
             sealed class MessageIdDestinationEqualityComparer : IEqualityComparer<DeduplicationKey>
             {
-                public bool Equals(DeduplicationKey x, DeduplicationKey y)
-                {
-                    return x.messageId == y.messageId && x.destination == y.destination;
-                }
+                public bool Equals(DeduplicationKey x, DeduplicationKey y) => x.messageId == y.messageId && x.destination == y.destination;
 
                 public int GetHashCode(DeduplicationKey obj)
                 {
@@ -63,14 +54,8 @@
 
             public static IEqualityComparer<DeduplicationKey> MessageIdDestinationComparer { get; } = new MessageIdDestinationEqualityComparer();
 
-            readonly string messageId;
-            readonly string destination;
-
-            public DeduplicationKey(string messageId, string destination)
-            {
-                this.messageId = messageId;
-                this.destination = destination;
-            }
+            readonly string messageId = messageId;
+            readonly string destination = destination;
         }
     }
 }

@@ -15,11 +15,14 @@
             try
             {
                 using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                 {
-                    messageCount = await inputQueue.TryPeek(connection, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                    await using (connection.ConfigureAwait(false))
+                    {
+                        messageCount = await inputQueue.TryPeek(connection, null, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                    scope.Complete();
+                        scope.Complete();
+                    }
                 }
 
                 circuitBreaker.Success();

@@ -7,23 +7,26 @@ using Logging;
 using Microsoft.Data.SqlClient;
 using NServiceBus.Transport.Sql.Shared;
 
-class SqlServerMessageReceiver : MessageReceiver
-{
-    public SqlServerMessageReceiver(SqlServerTransport transport, string receiverId, string receiveAddress,
-        string errorQueueAddress, Action<string, Exception, CancellationToken> criticalErrorAction,
-        Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
-        Func<string, TableBasedQueue> queueFactory, IPurgeQueues queuePurger,
-        IExpiredMessagesPurger expiredMessagesPurger, IPeekMessagesInQueue queuePeeker,
-        SchemaInspector schemaInspector, TimeSpan waitTimeCircuitBreaker,
-        ISubscriptionManager subscriptionManager, bool purgeAllMessagesOnStartup, IExceptionClassifier exceptionClassifier)
-        : base(transport, receiverId,
+class SqlServerMessageReceiver(
+    SqlServerTransport transport,
+    string receiverId,
+    string receiveAddress,
+    string errorQueueAddress,
+    Action<string, Exception, CancellationToken> criticalErrorAction,
+    Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
+    Func<string, TableBasedQueue> queueFactory,
+    IPurgeQueues queuePurger,
+    IExpiredMessagesPurger expiredMessagesPurger,
+    IPeekMessagesInQueue queuePeeker,
+    SchemaInspector schemaInspector,
+    TimeSpan waitTimeCircuitBreaker,
+    ISubscriptionManager subscriptionManager,
+    bool purgeAllMessagesOnStartup,
+    IExceptionClassifier exceptionClassifier)
+    : MessageReceiver(transport, receiverId,
         receiveAddress, errorQueueAddress, criticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
         queuePeeker, waitTimeCircuitBreaker, subscriptionManager, purgeAllMessagesOnStartup, exceptionClassifier)
-    {
-        this.expiredMessagesPurger = expiredMessagesPurger;
-        this.schemaInspector = schemaInspector;
-    }
-
+{
     public override async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
         CancellationToken cancellationToken = default)
     {
@@ -48,9 +51,6 @@ class SqlServerMessageReceiver : MessageReceiver
             Logger.Warn("Purger has been selected as a lock victim.", e);
         }
     }
-
-    readonly IExpiredMessagesPurger expiredMessagesPurger;
-    readonly SchemaInspector schemaInspector;
 
     static readonly ILog Logger = LogManager.GetLogger<SqlServerMessageReceiver>();
 }

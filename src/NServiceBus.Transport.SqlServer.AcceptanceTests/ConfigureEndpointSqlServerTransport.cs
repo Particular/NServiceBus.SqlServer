@@ -51,36 +51,34 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
             return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
         };
 
-        using (var conn = await factory().ConfigureAwait(false))
+        await using var conn = await factory().ConfigureAwait(false);
+        var queueAddresses = transport.Testing.ReceiveAddresses;
+        var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
+
+        var commandTextBuilder = new StringBuilder();
+
+        //No clean-up for send-only endpoints
+        if (queueAddresses != null)
         {
-            var queueAddresses = transport.Testing.ReceiveAddresses;
-            var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
-
-            var commandTextBuilder = new StringBuilder();
-
-            //No clean-up for send-only endpoints
-            if (queueAddresses != null)
+            foreach (var address in queueAddresses)
             {
-                foreach (var address in queueAddresses)
-                {
-                    commandTextBuilder.AppendLine($"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}");
-                    commandTextBuilder.AppendLine(
-                        $"IF OBJECT_ID('{delayedQueueAddress}', 'U') IS NOT NULL DROP TABLE {delayedQueueAddress}");
-                }
+                commandTextBuilder.AppendLine($"IF OBJECT_ID('{address}', 'U') IS NOT NULL DROP TABLE {address}");
+                commandTextBuilder.AppendLine(
+                    $"IF OBJECT_ID('{delayedQueueAddress}', 'U') IS NOT NULL DROP TABLE {delayedQueueAddress}");
             }
+        }
 
-            var subscriptionTableName = transport.Testing.SubscriptionTable;
+        var subscriptionTableName = transport.Testing.SubscriptionTable;
 
-            if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableName))
-            {
-                commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableName}");
-            }
+        if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableName))
+        {
+            commandTextBuilder.AppendLine($"IF OBJECT_ID('{subscriptionTableName}', 'U') IS NOT NULL DROP TABLE {subscriptionTableName}");
+        }
 
-            var commandText = commandTextBuilder.ToString();
-            if (!string.IsNullOrEmpty(commandText))
-            {
-                await TryDeleteTables(conn, commandText);
-            }
+        var commandText = commandTextBuilder.ToString();
+        if (!string.IsNullOrEmpty(commandText))
+        {
+            await TryDeleteTables(conn, commandText);
         }
     }
 
@@ -88,11 +86,9 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         try
         {
-            using (var comm = conn.CreateCommand())
-            {
-                comm.CommandText = commandText;
-                await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
-            }
+            await using var comm = conn.CreateCommand();
+            comm.CommandText = commandText;
+            await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
         catch (Exception e)
         {

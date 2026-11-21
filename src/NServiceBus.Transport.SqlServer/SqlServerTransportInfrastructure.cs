@@ -10,19 +10,9 @@ namespace NServiceBus.Transport.SqlServer
     using NServiceBus.Transport.Sql.Shared;
     using Transport;
 
-    class SqlServerTransportInfrastructure : TransportInfrastructure
+    class SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
+        : TransportInfrastructure
     {
-        public SqlServerTransportInfrastructure(SqlServerTransport transport, HostSettings hostSettings, ReceiveSettings[] receiveSettings, string[] sendingAddresses)
-        {
-            this.transport = transport;
-            this.hostSettings = hostSettings;
-            this.receiveSettings = receiveSettings;
-            this.sendingAddresses = sendingAddresses;
-
-            sqlConstants = new SqlServerConstants();
-            exceptionClassifier = new SqlServerExceptionClassifier();
-        }
-
         public async Task Initialize(CancellationToken cancellationToken = default)
         {
             connectionFactory = CreateConnectionFactory();
@@ -31,10 +21,9 @@ namespace NServiceBus.Transport.SqlServer
 
             if (transport.ConnectionFactory != null)
             {
-                using (var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false))
-                {
-                    connectionString = connection.ConnectionString;
-                }
+                var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
+                connectionString = connection.ConnectionString;
             }
 
             var result = ConnectionPoolValidator.Validate(connectionString);
@@ -278,9 +267,8 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                {
-                }
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
@@ -298,14 +286,11 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
-                    {
-                        FakePromotableResourceManager.ForceDtc();
-                        using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                        {
-                            scope.Complete();
-                        }
-                    }
+                    using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);
+                    FakePromotableResourceManager.ForceDtc();
+                    var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                    await using var connectionDisposer = connection.ConfigureAwait(false);
+                    scope.Complete();
                 }
                 catch (NotSupportedException exception)
                 {
@@ -325,15 +310,13 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public void ConfigureSendInfrastructure()
-        {
+        public void ConfigureSendInfrastructure() =>
             Dispatcher = new MessageDispatcher(
                 s => addressTranslator.Parse(s).Address,
                 new MulticastToUnicastConverter(subscriptionStore),
                 tableBasedQueueCache,
                 delayedMessageStore,
                 connectionFactory);
-        }
 
         public override async Task Shutdown(CancellationToken cancellationToken = default)
         {
@@ -353,12 +336,8 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        readonly SqlServerTransport transport;
-        readonly HostSettings hostSettings;
-        readonly ReceiveSettings[] receiveSettings;
-        readonly string[] sendingAddresses;
-        readonly SqlServerConstants sqlConstants;
-        readonly SqlServerExceptionClassifier exceptionClassifier;
+        readonly SqlServerConstants sqlConstants = new();
+        readonly SqlServerExceptionClassifier exceptionClassifier = new();
 
         ConnectionAttributes connectionAttributes;
         QueueAddressTranslator addressTranslator;

@@ -72,11 +72,11 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
             {
                 using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
+                    await using (var connection = new SqlConnection(ConnectionString))
                     {
                         connection.Open();
 
-                        using (var rollbackedTransaction = connection.BeginTransaction())
+                        await using (var rollbackedTransaction = connection.BeginTransaction())
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(rollbackedTransaction);
@@ -87,10 +87,10 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
                             publishOptions.UseCustomSqlTransaction(rollbackedTransaction);
                             await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
 
-                            rollbackedTransaction.Rollback();
+                            await rollbackedTransaction.RollbackAsync();
                         }
 
-                        using (var transaction = connection.BeginTransaction())
+                        await using (var transaction = connection.BeginTransaction())
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(transaction);
@@ -101,7 +101,7 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
                             publishOptions.UseCustomSqlTransaction(transaction);
                             await context.Publish(new FollowUpCommittedEvent(), publishOptions);
 
-                            transaction.Commit();
+                            await transaction.CommitAsync();
                         }
                     }
                     scope.Complete();

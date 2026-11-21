@@ -10,17 +10,9 @@ namespace NServiceBus.Transport.Sql.Shared
     using Transport;
     using static SqlTransportTransactionState;
 
-    class MessageDispatcher : IMessageDispatcher
+    class MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
+        : IMessageDispatcher
     {
-        public MessageDispatcher(Func<string, string> getCanonicalAddressForm, IMulticastToUnicastConverter multicastToUnicastConverter, TableBasedQueueCache tableBasedQueueCache, IDelayedMessageStore delayedMessageTable, DbConnectionFactory connectionFactory)
-        {
-            this.getCanonicalAddressForm = getCanonicalAddressForm;
-            this.multicastToUnicastConverter = multicastToUnicastConverter;
-            this.tableBasedQueueCache = tableBasedQueueCache;
-            this.delayedMessageTable = delayedMessageTable;
-            this.connectionFactory = connectionFactory;
-        }
-
         // We need to check if we can support cancellation in here as well?
         public async Task Dispatch(TransportOperations operations, TransportTransaction transportTransaction, CancellationToken cancellationToken = default)
         {
@@ -59,14 +51,14 @@ namespace NServiceBus.Transport.Sql.Shared
                 return;
             }
 
-            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
-            {
-                await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
-                transaction.Commit();
-                scope.Complete();
-            }
+            using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
+            var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            await using var transactionDisposer = transaction.ConfigureAwait(false);
+            await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+            scope.Complete();
         }
 
         async Task DispatchDefault(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)
@@ -81,11 +73,13 @@ namespace NServiceBus.Transport.Sql.Shared
                 case OutsideHandler:
                 case ReceiveOnly:
                     {
-                        using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
-                        using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                        var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        await using var connectionDisposer = connection.ConfigureAwait(false);
+                        var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                        await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
-                        transaction.Commit();
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                         break;
                     }
 
@@ -93,10 +87,11 @@ namespace NServiceBus.Transport.Sql.Shared
                 // get their own short-lived transaction.
                 case NoTransaction noTransaction:
                     {
-                        using var transaction = noTransaction.Connection.BeginTransaction();
+                        var transaction = await noTransaction.Connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+                        await using var transactionDisposer = transaction.ConfigureAwait(false);
 
                         await Dispatch(operations, noTransaction.Connection, transaction, cancellationToken).ConfigureAwait(false);
-                        transaction.Commit();
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                         break;
                     }
 
@@ -117,7 +112,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 // in it automatically.
                 case AmbientTransaction:
                     {
-                        using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                        await using var connectionDisposer = connection.ConfigureAwait(false);
 
                         await Dispatch(operations, connection, null, cancellationToken).ConfigureAwait(false);
                         break;
@@ -166,11 +162,6 @@ namespace NServiceBus.Transport.Sql.Shared
             return queue.Send(operation.Message, discardIfNotReceivedBefore?.MaxTime ?? TimeSpan.MaxValue, connection, transaction, cancellationToken);
         }
 
-        TableBasedQueueCache tableBasedQueueCache;
-        IDelayedMessageStore delayedMessageTable;
-        DbConnectionFactory connectionFactory;
-        Func<string, string> getCanonicalAddressForm;
-        IMulticastToUnicastConverter multicastToUnicastConverter;
-        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = new UnicastTransportOperation[0];
+        static UnicastTransportOperation[] _emptyUnicastTransportOperationsList = [];
     }
 }

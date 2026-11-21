@@ -54,41 +54,39 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
             return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
         };
 
-        using (var conn = await factory().ConfigureAwait(false))
+        await using var conn = await factory().ConfigureAwait(false);
+        var queueAddresses = transport.Testing.ReceiveAddresses;
+        var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
+        var defaultSchema = transport.DefaultSchema;
+
+        var commandTextBuilder = new StringBuilder();
+
+        //No clean-up for send-only endpoints
+        if (queueAddresses != null)
         {
-            var queueAddresses = transport.Testing.ReceiveAddresses;
-            var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
-            var defaultSchema = transport.DefaultSchema;
-
-            var commandTextBuilder = new StringBuilder();
-
-            //No clean-up for send-only endpoints
-            if (queueAddresses != null)
+            foreach (var address in queueAddresses)
             {
-                foreach (var address in queueAddresses)
-                {
-                    commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {address};");
-                }
+                commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {address};");
             }
+        }
 
-            //Null-check because if an exception is thrown before startup these fields might be empty
-            if (delayedQueueAddress != null)
-            {
-                commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
-            }
+        //Null-check because if an exception is thrown before startup these fields might be empty
+        if (delayedQueueAddress != null)
+        {
+            commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {delayedQueueAddress};");
+        }
 
-            var subscriptionTableName = transport.Testing.SubscriptionTable;
+        var subscriptionTableName = transport.Testing.SubscriptionTable;
 
-            if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableName))
-            {
-                commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {subscriptionTableName};");
-            }
+        if (!doNotCleanNativeSubscriptions && !string.IsNullOrEmpty(subscriptionTableName))
+        {
+            commandTextBuilder.AppendLine($"DROP TABLE IF EXISTS {subscriptionTableName};");
+        }
 
-            var commandText = commandTextBuilder.ToString();
-            if (!string.IsNullOrEmpty(commandText))
-            {
-                await TryDeleteTables(conn, commandText);
-            }
+        var commandText = commandTextBuilder.ToString();
+        if (!string.IsNullOrEmpty(commandText))
+        {
+            await TryDeleteTables(conn, commandText);
         }
     }
 
@@ -96,11 +94,9 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
     {
         try
         {
-            using (var comm = conn.CreateCommand())
-            {
-                comm.CommandText = commandText;
-                await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
-            }
+            await using var comm = conn.CreateCommand();
+            comm.CommandText = commandText;
+            await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
         catch (Exception e)
         {

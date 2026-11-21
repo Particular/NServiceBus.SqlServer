@@ -25,21 +25,19 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         [TestCase(typeof(HandlerContextProvider), DispatchConsistency.Isolated)]
         public async Task Outgoing_operations_are_stored_in_destination_queue(Type contextProviderType, DispatchConsistency dispatchConsistency)
         {
-            using (var contextProvider = CreateContext(contextProviderType, dbConnectionFactory))
-            {
-                var operations = new TransportOperations(
-                    CreateTransportOperation(id: "1", destination: ValidAddress, consistency: dispatchConsistency),
-                    CreateTransportOperation(id: "2", destination: ValidAddress, consistency: dispatchConsistency)
-                    );
+            using var contextProvider = CreateContext(contextProviderType, dbConnectionFactory);
+            var operations = new TransportOperations(
+                CreateTransportOperation(id: "1", destination: ValidAddress, consistency: dispatchConsistency),
+                CreateTransportOperation(id: "2", destination: ValidAddress, consistency: dispatchConsistency)
+                );
 
-                await dispatcher.Dispatch(operations, contextProvider.TransportTransaction);
+            await dispatcher.Dispatch(operations, contextProvider.TransportTransaction);
 
-                contextProvider.Complete();
+            contextProvider.Complete();
 
-                var messagesSent = await purger.Purge(queue);
+            var messagesSent = await purger.Purge(queue);
 
-                Assert.That(messagesSent, Is.EqualTo(2));
-            }
+            Assert.That(messagesSent, Is.EqualTo(2));
         }
 
         [TestCase(typeof(SendOnlyContextProvider), DispatchConsistency.Default)]

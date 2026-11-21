@@ -21,96 +21,90 @@
         [Test]
         public async Task Defaults_to_no_ttbr()
         {
-            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    var transportTransaction = new TransportTransaction();
+                var transportTransaction = new TransportTransaction();
 
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
-                    var context = new ContextBag();
-                    context.Set(transportTransaction);
+                var context = new ContextBag();
+                context.Set(transportTransaction);
 
-                    var operation = new TransportOperation(
-                        new OutgoingMessage("1", [], new byte[0]),
-                        new UnicastAddressTag(ValidAddress)
-                    );
+                var operation = new TransportOperation(
+                    new OutgoingMessage("1", [], new byte[0]),
+                    new UnicastAddressTag(ValidAddress)
+                );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                    transaction.Commit();
-                }
-
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
-                Assert.That(message.Message.Expired, Is.False);
+                await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
+                await transaction.CommitAsync();
             }
+
+            var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+            Assert.That(message.Message.Expired, Is.False);
         }
 
         [Test]
         public async Task Diagnostic_headers_are_ignored()
         {
-            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
-                using (var transaction = connection.BeginTransaction())
+                var transportTransaction = new TransportTransaction();
+
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
+
+                var context = new ContextBag();
+                context.Set(transportTransaction);
+
+                var headers = new Dictionary<string, string>
                 {
-                    var transportTransaction = new TransportTransaction();
+                    [Headers.TimeToBeReceived] = TimeSpan.FromMinutes(-1).ToString()
+                };
+                var operation = new TransportOperation(
+                    new OutgoingMessage("1", headers, new byte[0]),
+                    new UnicastAddressTag(ValidAddress)
+                );
 
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
-
-                    var context = new ContextBag();
-                    context.Set(transportTransaction);
-
-                    var headers = new Dictionary<string, string>
-                    {
-                        [Headers.TimeToBeReceived] = TimeSpan.FromMinutes(-1).ToString()
-                    };
-                    var operation = new TransportOperation(
-                        new OutgoingMessage("1", headers, new byte[0]),
-                        new UnicastAddressTag(ValidAddress)
-                    );
-
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                    transaction.Commit();
-                }
-
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
-                Assert.That(message.Message.Expired, Is.False);
+                await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
+                await transaction.CommitAsync();
             }
+
+            var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+            Assert.That(message.Message.Expired, Is.False);
         }
 
         [Test]
         public async Task Delivery_constraint_is_respected()
         {
-            using (var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult())
+            await using var connection = dbConnectionFactory.OpenNewConnection().GetAwaiter().GetResult();
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    var transportTransaction = new TransportTransaction();
+                var transportTransaction = new TransportTransaction();
 
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
-                    transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlConnectionKey, connection);
+                transportTransaction.Set(SettingsKeys.TransportTransactionSqlTransactionKey, transaction);
 
-                    var context = new ContextBag();
-                    context.Set(transportTransaction);
+                var context = new ContextBag();
+                context.Set(transportTransaction);
 
-                    var operation = new TransportOperation(
-                        new OutgoingMessage("1", [], new byte[0]),
-                        new UnicastAddressTag(ValidAddress),
-                        new DispatchProperties
-                        {
-                            DiscardIfNotReceivedBefore = new DiscardIfNotReceivedBefore(TimeSpan.FromMinutes(-1)) //Discard immediately
-                        }
-                    );
+                var operation = new TransportOperation(
+                    new OutgoingMessage("1", [], new byte[0]),
+                    new UnicastAddressTag(ValidAddress),
+                    new DispatchProperties
+                    {
+                        DiscardIfNotReceivedBefore = new DiscardIfNotReceivedBefore(TimeSpan.FromMinutes(-1)) //Discard immediately
+                    }
+                );
 
-                    await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                    transaction.Commit();
-                }
-
-                var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
-                Assert.That(message.Message.Expired, Is.True);
+                await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
+                await transaction.CommitAsync();
             }
+
+            var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
+            Assert.That(message.Message.Expired, Is.True);
         }
 
         [SetUp]

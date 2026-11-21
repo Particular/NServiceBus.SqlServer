@@ -10,17 +10,18 @@ using System.Transactions;
 using Logging;
 using NServiceBus.Transport.Sql.Shared;
 
-class PostgreSqlTransportInfrastructure : TransportInfrastructure
+class PostgreSqlTransportInfrastructure(
+    PostgreSqlTransport transport,
+    HostSettings hostSettings,
+    ReceiveSettings[] receiveSettings,
+    string[] sendingAddresses)
+    : TransportInfrastructure
 {
     //The limit is 55=63-max(8,8). 63 is the built-in PostgreSQL limit and we also need to reserve space for:
     //  - "_Seq_seq" suffix (8 bytes) used in the auto-created sequence for the main queue table
     //  - ".delayed" suffix (8 bytes) that is used in the delayed messages table
     const int TableQueueNameLimit = 55;
-    readonly PostgreSqlTransport transport;
-    readonly HostSettings hostSettings;
-    readonly ReceiveSettings[] receiveSettings;
-    readonly string[] sendingAddresses;
-    readonly PostgreSqlConstants sqlConstants;
+    readonly PostgreSqlConstants sqlConstants = new();
 
     DueDelayedMessageProcessor dueDelayedMessageProcessor;
     QueueAddressTranslator addressTranslator;
@@ -31,19 +32,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     PostgreSqlDbConnectionFactory connectionFactory;
 
     static ILog Logger = LogManager.GetLogger<PostgreSqlTransportInfrastructure>();
-    readonly PostgreSqlExceptionClassifier exceptionClassifier;
-
-    public PostgreSqlTransportInfrastructure(PostgreSqlTransport transport, HostSettings hostSettings,
-        ReceiveSettings[] receiveSettings, string[] sendingAddresses)
-    {
-        this.transport = transport;
-        this.hostSettings = hostSettings;
-        this.receiveSettings = receiveSettings;
-        this.sendingAddresses = sendingAddresses;
-
-        sqlConstants = new PostgreSqlConstants();
-        exceptionClassifier = new PostgreSqlExceptionClassifier();
-    }
+    readonly PostgreSqlExceptionClassifier exceptionClassifier = new();
 
     public override async Task Shutdown(CancellationToken cancellationToken = default)
     {
@@ -114,15 +103,13 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
     }
 
 
-    void ConfigureSendInfrastructure()
-    {
+    void ConfigureSendInfrastructure() =>
         Dispatcher = new MessageDispatcher(
             s => addressTranslator.Parse(s).Address,
             new MulticastToUnicastConverter(subscriptionStore),
             tableBasedQueueCache,
             delayedMessageStore,
             connectionFactory);
-    }
 
     async Task ConfigureReceiveInfrastructure(CancellationToken cancellationToken)
     {
@@ -214,9 +201,11 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
 
         if (hostSettings.SetupInfrastructure)
         {
-            var queuesToCreate = new List<string>();
-            queuesToCreate.AddRange(sendingAddresses);
-            queuesToCreate.AddRange(receiveAddresses);
+            List<string> queuesToCreate =
+            [
+                .. sendingAddresses,
+                .. receiveAddresses
+            ];
 
             var queueNameExceedsLimit = queuesToCreate.Any(q => Encoding.UTF8.GetBytes(QueueAddress.Parse(q).Table).Length > TableQueueNameLimit);
 
@@ -230,7 +219,7 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
             var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse,
                 createMessageBodyComputedColumn);
 
-            await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress,
+            await queueCreator.CreateQueueIfNecessary([.. queuesToCreate], delayedQueueCanonicalAddress,
                     cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -238,29 +227,25 @@ class PostgreSqlTransportInfrastructure : TransportInfrastructure
         dueDelayedMessageProcessor?.Start(cancellationToken);
 
         transport.Testing.SendingAddresses =
-            sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName).ToArray();
+            [.. sendingAddresses.Select(s => addressTranslator.Parse(s).QualifiedTableName)];
         transport.Testing.ReceiveAddresses =
-            receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName).ToArray();
+            [.. receiveAddresses.Select(r => addressTranslator.Parse(r).QualifiedTableName)];
         transport.Testing.DelayedDeliveryQueue = delayedQueueCanonicalAddress?.QualifiedTableName;
     }
 
-    async Task ValidateDatabaseAccess(CancellationToken cancellationToken)
-    {
-        await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
-    }
+    async Task ValidateDatabaseAccess(CancellationToken cancellationToken) => await TryOpenDatabaseConnection(cancellationToken).ConfigureAwait(false);
 
     async Task TryOpenDatabaseConnection(CancellationToken cancellationToken)
     {
         try
         {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-            {
-                var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
+            var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            await using var connectionDisposer = connection.ConfigureAwait(false);
+            var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
 
-                if (!result.IsValid)
-                {
-                    Logger.Warn(result.Message);
-                }
+            if (!result.IsValid)
+            {
+                Logger.Warn(result.Message);
             }
         }
         catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))

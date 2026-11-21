@@ -19,16 +19,14 @@ namespace NServiceBus.Transport.Sql.Shared
             return row.TryParse();
         }
 
-        public static MessageRow From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan toBeReceived)
-        {
-            return new MessageRow
+        public static MessageRow From(Dictionary<string, string> headers, ReadOnlyMemory<byte> body, TimeSpan toBeReceived) =>
+            new()
             {
                 id = Guid.NewGuid(),
                 timeToBeReceived = toBeReceived == TimeSpan.MaxValue ? null : (int?)toBeReceived.TotalMilliseconds,
                 headers = DictionarySerializer.Serialize(headers),
                 bodyBytes = body.ToArray()
             };
-        }
 
         public void PrepareSendCommand(DbCommand command)
         {
@@ -38,16 +36,14 @@ namespace NServiceBus.Transport.Sql.Shared
             command.AddParameter("Body", DbType.Binary, bodyBytes, -1);
         }
 
-        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
-        {
-            return new MessageRow
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken) =>
+            new()
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
                 bodyBytes = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
             };
-        }
 
         MessageReadResult TryParse()
         {
@@ -69,10 +65,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 return null;
             }
 
-            using (var textReader = dataReader.GetTextReader(headersIndex))
-            {
-                return await textReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-            }
+            using var textReader = dataReader.GetTextReader(headersIndex);
+            return await textReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         }
 
         static async Task<byte[]> GetBody(DbDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
@@ -83,13 +77,13 @@ namespace NServiceBus.Transport.Sql.Shared
             }
 
             // Null values will be returned as an empty (zero bytes) Stream.
-            using (var outStream = new MemoryStream())
-            using (var stream = dataReader.GetStream(bodyIndex))
-            {
-                // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
-                await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
-                return outStream.ToArray();
-            }
+            var outStream = new MemoryStream();
+            await using var outStreamDisposer = outStream.ConfigureAwait(false);
+            var stream = dataReader.GetStream(bodyIndex);
+            await using var streamDisposer = stream.ConfigureAwait(false);
+            // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
+            await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
+            return outStream.ToArray();
         }
 
         Guid id;

@@ -23,13 +23,10 @@ namespace NServiceBus.Transport.SqlServer
         {
             // AddressKey has a GetHashCode implementation and can be used as a dictionary key, Transport.QueueAddress (from Core) does not (at this time)
             var key = AddressKey.Create(queueAddress);
-            return logicalAddressCache.GetOrAdd(key, key => key.ToSqlQueueAddress());
+            return logicalAddressCache.GetOrAdd(key, static key => key.ToSqlQueueAddress());
         }
 
-        public CanonicalQueueAddress Parse(string address)
-        {
-            return physicalAddressCache.GetOrAdd(address, TranslatePhysicalAddress);
-        }
+        public CanonicalQueueAddress Parse(string address) => physicalAddressCache.GetOrAdd(address, static (key, translator) => translator.TranslatePhysicalAddress(key), this);
 
         public CanonicalQueueAddress TranslatePhysicalAddress(string address)
         {
@@ -48,10 +45,7 @@ namespace NServiceBus.Transport.SqlServer
             return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
         }
 
-        static string Override(string configuredValue, string addressValue, string defaultValue)
-        {
-            return configuredValue ?? addressValue ?? defaultValue;
-        }
+        static string Override(string configuredValue, string addressValue, string defaultValue) => configuredValue ?? addressValue ?? defaultValue;
 
         readonly QueueSchemaAndCatalogOptions queueOptions;
         readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();

@@ -48,15 +48,11 @@ public class When_queue_contains_expired_messages : NServiceBusAcceptanceTest
     {
         var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-        using (var connection = new SqlConnection(connectionString))
-        {
-            connection.Open();
-            using (var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection))
-            {
-                var numberOfMessagesInQueue = (int)command.ExecuteScalar();
-                return numberOfMessagesInQueue == 0;
-            }
-        }
+        using var connection = new SqlConnection(connectionString);
+        connection.Open();
+        using var command = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[{endpoint}]", connection);
+        var numberOfMessagesInQueue = (int)command.ExecuteScalar();
+        return numberOfMessagesInQueue == 0;
     }
 
     class Context : ScenarioContext

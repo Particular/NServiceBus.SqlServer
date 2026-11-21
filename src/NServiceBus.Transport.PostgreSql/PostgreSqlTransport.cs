@@ -73,11 +73,11 @@ public class PostgreSqlTransport : TransportDefinition
     /// <summary>
     /// <see cref="TransportDefinition.GetSupportedTransactionModes"/>
     /// </summary>
-    public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() => new[]
-    {
+    public override IReadOnlyCollection<TransportTransactionMode> GetSupportedTransactionModes() =>
+    [
         TransportTransactionMode.None, TransportTransactionMode.ReceiveOnly,
         TransportTransactionMode.SendsAtomicWithReceive
-    };
+    ];
 
 
     /// <summary>

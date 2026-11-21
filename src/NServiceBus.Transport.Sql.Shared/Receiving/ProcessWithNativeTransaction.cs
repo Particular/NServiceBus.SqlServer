@@ -19,44 +19,48 @@ namespace NServiceBus.Transport.Sql.Shared
 
             try
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var transaction = connection.BeginTransaction(isolationLevel))
+                var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                await using (connection.ConfigureAwait(false))
                 {
-                    var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-                    receiveCountdownEventSignaler.Signal();
-
-                    if (receiveResult == MessageReadResult.NoMessage)
+                    var transaction = await connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
+                    await using (transaction.ConfigureAwait(false))
                     {
-                        stopBatchCancellationTokenSource.Cancel();
-                        return;
+                        var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
+                        receiveCountdownEventSignaler.Signal();
+
+                        if (receiveResult == MessageReadResult.NoMessage)
+                        {
+                            await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+                            return;
+                        }
+
+                        if (receiveResult.IsPoison)
+                        {
+                            await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
+                            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                            return;
+                        }
+
+                        message = receiveResult.Message;
+
+                        if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
+                        {
+                            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+                            return;
+                        }
+
+                        var transportTransaction = transactionForReceiveOnly
+                            ? TransportTransactions.ReceiveOnly(connection, transaction)
+                            : TransportTransactions.SendsAtomicWithReceive(connection, transaction);
+
+                        if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
+                        {
+                            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
                     }
-
-                    if (receiveResult.IsPoison)
-                    {
-                        await ErrorQueue.DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken).ConfigureAwait(false);
-                        transaction.Commit();
-                        return;
-                    }
-
-                    message = receiveResult.Message;
-
-                    if (await TryHandleDelayedMessage(receiveResult.Message, connection, transaction, cancellationToken).ConfigureAwait(false))
-                    {
-                        transaction.Commit();
-                        return;
-                    }
-
-                    var transportTransaction = transactionForReceiveOnly
-                        ? TransportTransactions.ReceiveOnly(connection, transaction)
-                        : TransportTransactions.SendsAtomicWithReceive(connection, transaction);
-
-                    if (!await TryProcess(receiveResult.Message, transportTransaction, context, cancellationToken).ConfigureAwait(false))
-                    {
-                        transaction.Rollback();
-                        return;
-                    }
-
-                    transaction.Commit();
                 }
 
                 failureInfoStorage.ClearFailureInfoForMessage(message.TransportId);

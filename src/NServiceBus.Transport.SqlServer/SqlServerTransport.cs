@@ -49,10 +49,8 @@ namespace NServiceBus
         /// For the pub-sub migration tests only
         /// </summary>
         internal SqlServerTransport(string connectionString, bool supportsDelayedDelivery = true, bool supportsPublishSubscribe = true)
-            : base(DefaultTransportTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, true)
-        {
+            : base(DefaultTransportTransactionMode, supportsDelayedDelivery, supportsPublishSubscribe, true) =>
             ConnectionString = connectionString;
-        }
 
         /// <summary>
         /// <see cref="TransportDefinition.Initialize"/>

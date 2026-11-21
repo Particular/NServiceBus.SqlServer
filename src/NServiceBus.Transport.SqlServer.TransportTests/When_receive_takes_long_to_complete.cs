@@ -32,7 +32,7 @@ public class When_receive_takes_long_to_complete
 
         int peekCount;
 
-        using (var connection = await connectionFactory.OpenNewConnection(cancellationToken))
+        await using (var connection = await connectionFactory.OpenNewConnection(cancellationToken))
         {
             var transaction = await connection.BeginTransactionAsync(cancellationToken);
 

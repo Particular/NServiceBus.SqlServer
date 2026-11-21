@@ -5,38 +5,22 @@ namespace NServiceBus.Transport.Sql.Shared
     using System.Threading.Tasks;
     using Logging;
 
-    class MessageReceiver : IMessageReceiver
+    class MessageReceiver(
+        TransportDefinition transport,
+        string receiverId,
+        string receiveAddress,
+        string errorQueueAddress,
+        Action<string, Exception, CancellationToken> criticalErrorAction,
+        Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
+        Func<string, TableBasedQueue> queueFactory,
+        IPurgeQueues queuePurger,
+        IPeekMessagesInQueue queuePeeker,
+        TimeSpan waitTimeCircuitBreaker,
+        ISubscriptionManager subscriptionManager,
+        bool purgeAllMessagesOnStartup,
+        IExceptionClassifier exceptionClassifier)
+        : IMessageReceiver
     {
-        public MessageReceiver(
-            TransportDefinition transport,
-            string receiverId,
-            string receiveAddress,
-            string errorQueueAddress,
-            Action<string, Exception, CancellationToken> criticalErrorAction,
-            Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory,
-            Func<string, TableBasedQueue> queueFactory,
-            IPurgeQueues queuePurger,
-            IPeekMessagesInQueue queuePeeker,
-            TimeSpan waitTimeCircuitBreaker,
-            ISubscriptionManager subscriptionManager,
-            bool purgeAllMessagesOnStartup,
-            IExceptionClassifier exceptionClassifier)
-        {
-            this.transport = transport;
-            this.processStrategyFactory = processStrategyFactory;
-            this.queuePurger = queuePurger;
-            this.queueFactory = queueFactory;
-            this.queuePeeker = queuePeeker;
-            this.waitTimeCircuitBreaker = waitTimeCircuitBreaker;
-            this.errorQueueAddress = errorQueueAddress;
-            this.criticalErrorAction = criticalErrorAction;
-            this.purgeAllMessagesOnStartup = purgeAllMessagesOnStartup;
-            this.exceptionClassifier = exceptionClassifier;
-            Subscriptions = subscriptionManager;
-            Id = receiverId;
-            ReceiveAddress = receiveAddress;
-        }
-
         public virtual async Task Initialize(PushRuntimeSettings limitations, OnMessage onMessage, OnError onError,
             CancellationToken cancellationToken = default)
         {
@@ -266,17 +250,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
         protected TableBasedQueue inputQueue;
         TableBasedQueue errorQueue;
-        readonly object lockObject = new();
-        readonly TransportDefinition transport;
-        readonly string errorQueueAddress;
-        readonly Action<string, Exception, CancellationToken> criticalErrorAction;
-        readonly Func<TransportTransactionMode, ProcessStrategy> processStrategyFactory;
-        readonly IPurgeQueues queuePurger;
-        readonly Func<string, TableBasedQueue> queueFactory;
-        readonly IPeekMessagesInQueue queuePeeker;
-        readonly bool purgeAllMessagesOnStartup;
-        readonly IExceptionClassifier exceptionClassifier;
-        TimeSpan waitTimeCircuitBreaker;
+        readonly Lock lockObject = new();
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
@@ -290,8 +264,8 @@ namespace NServiceBus.Transport.Sql.Shared
         PushRuntimeSettings limitations;
 
 
-        public ISubscriptionManager Subscriptions { get; }
-        public string Id { get; }
-        public string ReceiveAddress { get; }
+        public ISubscriptionManager Subscriptions { get; } = subscriptionManager;
+        public string Id { get; } = receiverId;
+        public string ReceiveAddress { get; } = receiveAddress;
     }
 }

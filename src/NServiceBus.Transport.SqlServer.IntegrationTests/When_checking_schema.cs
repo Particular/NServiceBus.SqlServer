@@ -30,11 +30,9 @@
         [Test]
         public async Task It_returns_type_for_headers_column()
         {
-            using (var connection = await dbConnectionFactory.OpenNewConnection())
-            {
-                var type = await queue.CheckHeadersColumnType(connection);
-                Assert.That(type, Is.EqualTo("nvarchar"));
-            }
+            await using var connection = await dbConnectionFactory.OpenNewConnection();
+            var type = await queue.CheckHeadersColumnType(connection);
+            Assert.That(type, Is.EqualTo("nvarchar"));
         }
 
         SqlServerDbConnectionFactory dbConnectionFactory;
@@ -43,13 +41,11 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
 
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            await using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
-                using (var comm = connection.CreateCommand())
-                {
-                    comm.CommandText = $"IF OBJECT_ID('{QueueTableName}', 'U') IS NOT NULL DROP TABLE {QueueTableName}";
-                    comm.ExecuteNonQuery();
-                }
+                await using var comm = connection.CreateCommand();
+                comm.CommandText = $"IF OBJECT_ID('{QueueTableName}', 'U') IS NOT NULL DROP TABLE {QueueTableName}";
+                comm.ExecuteNonQuery();
             }
             await queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken).ConfigureAwait(false);
         }

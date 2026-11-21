@@ -5,9 +5,6 @@
 
     class NoOpExpiredMessagesPurger : IExpiredMessagesPurger
     {
-        public Task Purge(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
+        public Task Purge(SqlTableBasedQueue queue, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }
