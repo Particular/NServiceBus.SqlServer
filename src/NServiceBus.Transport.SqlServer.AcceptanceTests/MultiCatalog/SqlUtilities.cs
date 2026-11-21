@@ -58,7 +58,7 @@ public static class SqlUtilities
                 weOpenedTheConnection = true;
             }
 
-            using var command = connection.CreateCommand();
+            await using var command = connection.CreateCommand();
 
             return await action(command, cancellationToken);
         }

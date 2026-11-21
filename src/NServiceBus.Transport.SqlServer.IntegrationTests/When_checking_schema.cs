@@ -30,7 +30,7 @@
         [Test]
         public async Task It_returns_type_for_headers_column()
         {
-            using var connection = await dbConnectionFactory.OpenNewConnection();
+            await using var connection = await dbConnectionFactory.OpenNewConnection();
             var type = await queue.CheckHeadersColumnType(connection);
             Assert.That(type, Is.EqualTo("nvarchar"));
         }
@@ -41,9 +41,9 @@
         {
             var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
 
-            using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            await using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
-                using var comm = connection.CreateCommand();
+                await using var comm = connection.CreateCommand();
                 comm.CommandText = $"IF OBJECT_ID('{QueueTableName}', 'U') IS NOT NULL DROP TABLE {QueueTableName}";
                 comm.ExecuteNonQuery();
             }

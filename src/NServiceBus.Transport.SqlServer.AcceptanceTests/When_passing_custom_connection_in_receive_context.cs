@@ -75,7 +75,7 @@ public class When_passing_custom_connection_in_receive_context : NServiceBusAcce
                 //HINT: this scope is never completed
                 using (new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using var connection = new SqlConnection(ConnectionString);
+                    await using var connection = new SqlConnection(ConnectionString);
                     connection.Open();
 
                     var sendOptions = new SendOptions();
@@ -90,7 +90,7 @@ public class When_passing_custom_connection_in_receive_context : NServiceBusAcce
 
                 using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
+                    await using (var connection = new SqlConnection(ConnectionString))
                     {
                         connection.Open();
 

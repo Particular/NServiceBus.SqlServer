@@ -75,8 +75,8 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
 
         var tableBasedQueue = tableBasedQueueCache.Get(endpoint);
 
-        using var connection = await connectionFactory.OpenNewConnection();
-        using var transaction = await connection.BeginTransactionAsync();
+        await using var connection = await connectionFactory.OpenNewConnection();
+        await using var transaction = await connection.BeginTransactionAsync();
         await SendMessage(new Message(), TimeSpan.FromSeconds(5));
         await transaction.CommitAsync();
 

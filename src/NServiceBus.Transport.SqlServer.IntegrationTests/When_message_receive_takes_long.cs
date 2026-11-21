@@ -47,8 +47,8 @@
         static async Task SendMessage(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var tx = connection.BeginTransaction();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var tx = connection.BeginTransaction();
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], new byte[0]);
             await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, cancellationToken);
             tx.Commit();
@@ -58,8 +58,8 @@
         static async Task TryPeekQueueSize(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var tx = connection.BeginTransaction();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var tx = connection.BeginTransaction();
             tableBasedQueue.FormatPeekCommand();
             await tableBasedQueue.TryPeek(connection, tx, PeekTimeoutInSeconds, cancellationToken);
             scope.Complete();
@@ -68,8 +68,8 @@
         static async Task ReceiveWithLongHandling(TableBasedQueue tableBasedQueue, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
             using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var tx = connection.BeginTransaction();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var tx = connection.BeginTransaction();
             await tableBasedQueue.TryReceive(connection, tx, cancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds), cancellationToken);
             tx.Commit();

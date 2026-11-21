@@ -12,7 +12,7 @@ public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptan
     public async Task It_creates_queues_in_the_correct_database()
     {
         var connectionString = WithCustomCatalog(GetDefaultConnectionString(), Context.SenderCatalog);
-        using var connection = new SqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         // Confirm tables do not exist prior to starting the endpoint.
         if (await SqlUtilities.CheckIfTableExists(Context.SenderCatalog, "dbo", Context.SenderEndpointName, connection))
         {

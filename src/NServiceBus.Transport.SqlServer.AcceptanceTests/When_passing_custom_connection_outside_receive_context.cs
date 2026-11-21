@@ -22,7 +22,7 @@ public class When_passing_custom_connection_outside_receive_context : NServiceBu
                 //HINT: this scope is never committed
                 using (new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using var connection = new SqlConnection(ConnectionString);
+                    await using var connection = new SqlConnection(ConnectionString);
                     await connection.OpenAsync().ConfigureAwait(false);
 
                     var sendOptions = new SendOptions();
@@ -55,7 +55,7 @@ public class When_passing_custom_connection_outside_receive_context : NServiceBu
             .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
             {
                 using var completedScope = new System.Transactions.TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-                using (var connection = new SqlConnection(ConnectionString))
+                await using (var connection = new SqlConnection(ConnectionString))
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
 

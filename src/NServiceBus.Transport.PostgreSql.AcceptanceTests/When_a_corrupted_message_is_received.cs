@@ -45,7 +45,7 @@ public class When_a_corrupted_message_is_received : NServiceBusAcceptanceTest
                     {
                         var endpoint = Conventions.EndpointNamingConvention(typeof(Endpoint));
 
-                        using var conn = new NpgsqlConnection(connectionString);
+                        await using var conn = new NpgsqlConnection(connectionString);
                         await conn.OpenAsync();
                         var command = conn.CreateCommand();
                         var guid = Guid.NewGuid();

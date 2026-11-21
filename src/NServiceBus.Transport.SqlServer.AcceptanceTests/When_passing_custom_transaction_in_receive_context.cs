@@ -72,11 +72,11 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
             {
                 using (var scope = new System.Transactions.TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    using (var connection = new SqlConnection(ConnectionString))
+                    await using (var connection = new SqlConnection(ConnectionString))
                     {
                         connection.Open();
 
-                        using (var rollbackedTransaction = connection.BeginTransaction())
+                        await using (var rollbackedTransaction = connection.BeginTransaction())
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(rollbackedTransaction);
@@ -90,7 +90,7 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
                             rollbackedTransaction.Rollback();
                         }
 
-                        using (var transaction = connection.BeginTransaction())
+                        await using (var transaction = connection.BeginTransaction())
                         {
                             var sendOptions = new SendOptions();
                             sendOptions.UseCustomSqlTransaction(transaction);

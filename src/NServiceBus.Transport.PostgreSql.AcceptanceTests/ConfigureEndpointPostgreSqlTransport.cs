@@ -54,7 +54,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
             return await transport.ConnectionFactory(CancellationToken.None).ConfigureAwait(false);
         };
 
-        using var conn = await factory().ConfigureAwait(false);
+        await using var conn = await factory().ConfigureAwait(false);
         var queueAddresses = transport.Testing.ReceiveAddresses;
         var delayedQueueAddress = transport.Testing.DelayedDeliveryQueue;
         var defaultSchema = transport.DefaultSchema;
@@ -94,7 +94,7 @@ public class ConfigureEndpointPostgreSqlTransport : IConfigureEndpointTestExecut
     {
         try
         {
-            using var comm = conn.CreateCommand();
+            await using var comm = conn.CreateCommand();
             comm.CommandText = commandText;
             await comm.ExecuteNonQueryAsync().ConfigureAwait(false);
         }

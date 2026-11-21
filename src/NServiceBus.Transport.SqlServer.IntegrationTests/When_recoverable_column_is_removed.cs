@@ -89,8 +89,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         async Task DropRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} DROP COLUMN Recoverable";
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var cmd = connection.CreateCommand();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var cmd = connection.CreateCommand();
             cmd.CommandText = cmdText;
             cmd.CommandType = CommandType.Text;
 
@@ -100,8 +100,8 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         async Task AddRecoverableColumn(CancellationToken cancellationToken)
         {
             var cmdText = $"ALTER TABLE {QueueName} ADD Recoverable bit NOT NULL";
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var cmd = connection.CreateCommand();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var cmd = connection.CreateCommand();
             cmd.CommandText = cmdText;
             cmd.CommandType = CommandType.Text;
 
@@ -119,8 +119,8 @@ IF EXISTS (
 BEGIN
     DROP TABLE nservicebus.dbo.[{queueName}]
 END";
-            using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
-            using var cmd = connection.CreateCommand();
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            await using var cmd = connection.CreateCommand();
             cmd.CommandText = cmdText;
             cmd.CommandType = CommandType.Text;
 

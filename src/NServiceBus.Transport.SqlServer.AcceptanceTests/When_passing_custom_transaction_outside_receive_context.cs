@@ -18,13 +18,13 @@ public class When_passing_custom_transaction_outside_receive_context : NServiceB
         var context = await Scenario.Define<MyContext>()
             .WithEndpoint<AnEndpoint>(c => c.When(async bus =>
             {
-                using var connection = new SqlConnection(ConnectionString);
+                await using var connection = new SqlConnection(ConnectionString);
                 connection.Open();
 
                 SendOptions sendOptions;
                 PublishOptions publishOptions;
 
-                using (var rolledbackTransaction = connection.BeginTransaction())
+                await using (var rolledbackTransaction = connection.BeginTransaction())
                 {
                     sendOptions = new SendOptions();
                     sendOptions.UseCustomSqlTransaction(rolledbackTransaction);
@@ -37,7 +37,7 @@ public class When_passing_custom_transaction_outside_receive_context : NServiceB
                     rolledbackTransaction.Rollback();
                 }
 
-                using var committedTransaction = connection.BeginTransaction();
+                await using var committedTransaction = connection.BeginTransaction();
                 sendOptions = new SendOptions();
                 sendOptions.UseCustomSqlTransaction(committedTransaction);
                 await bus.Send(new CommandFromCommittedTransaction(), sendOptions);
