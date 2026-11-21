@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
                 await using (connection.ConfigureAwait(false))
                 {
-                    var transaction = connection.BeginTransaction(isolationLevel);
+                    var transaction = await connection.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
                     await using (transaction.ConfigureAwait(false))
                     {
                         var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);

@@ -24,7 +24,7 @@ namespace NServiceBus.Transport.SqlServer
             await using var connectionDisposer = connection.ConfigureAwait(false);
             try
             {
-                var transaction = connection.BeginTransaction();
+                var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName, tableName.QuotedCatalog);
 

@@ -36,7 +36,7 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                var transaction = connection.BeginTransaction();
+                var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
                     canonicalQueueAddress.QuotedCatalogName);
@@ -71,7 +71,7 @@ namespace NServiceBus.Transport.SqlServer
                 var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn,
                     canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
 
-                var transaction = connection.BeginTransaction();
+                var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var command = connection.CreateCommand();
                 await using (command.ConfigureAwait(false))

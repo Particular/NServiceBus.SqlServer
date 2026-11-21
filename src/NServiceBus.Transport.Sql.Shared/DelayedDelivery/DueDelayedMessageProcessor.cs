@@ -88,7 +88,7 @@ namespace NServiceBus.Transport.Sql.Shared
             var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
                        .ConfigureAwait(false);
             await using var connectionDisposer = connection.ConfigureAwait(false);
-            var transaction = connection.BeginTransaction();
+            var transaction = await connection.BeginTransactionAsync(moveDelayedMessagesCancellationToken).ConfigureAwait(false);
             await using var transactionDisposer = transaction.ConfigureAwait(false);
             var nextDueTime = await table
                 .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)

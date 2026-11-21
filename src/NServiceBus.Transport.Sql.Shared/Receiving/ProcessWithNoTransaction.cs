@@ -19,7 +19,7 @@ namespace NServiceBus.Transport.Sql.Shared
             await using var connectionDisposer = connection.ConfigureAwait(false);
             try
             {
-                var transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
                 var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
                 receiveCountdownEventSignaler.Signal();
