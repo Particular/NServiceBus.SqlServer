@@ -28,7 +28,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
                         receiveCountdownEventSignaler.Signal();
 
-                        if (receiveResult == MessageReadResult.NoMessage)
+                        if (receiveResult.IsEmpty)
                         {
                             await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
                             return;

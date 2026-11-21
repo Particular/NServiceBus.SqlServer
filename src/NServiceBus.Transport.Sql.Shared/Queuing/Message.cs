@@ -1,10 +1,11 @@
 ﻿namespace NServiceBus.Transport.Sql.Shared
 {
+    using System;
     using System.Collections.Generic;
 
     class Message
     {
-        public Message(string transportId, string originalHeaders, byte[] body, bool expired)
+        public Message(string transportId, string originalHeaders, ReadOnlyMemory<byte> body, bool expired)
         {
             TransportId = transportId;
             Body = body;
@@ -16,7 +17,7 @@
 
         public bool Expired { get; }
         public string TransportId { get; }
-        public byte[] Body { get; }
+        public ReadOnlyMemory<byte> Body { get; }
         public Dictionary<string, string> Headers { get; private set; }
 
         void InitializeHeaders()
