@@ -87,7 +87,7 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
                             publishOptions.UseCustomSqlTransaction(rollbackedTransaction);
                             await context.Publish(new FollowUpRolledbackEvent(), publishOptions);
 
-                            rollbackedTransaction.Rollback();
+                            await rollbackedTransaction.RollbackAsync();
                         }
 
                         await using (var transaction = connection.BeginTransaction())
@@ -101,7 +101,7 @@ public class When_passing_custom_transaction_in_receive_context : NServiceBusAcc
                             publishOptions.UseCustomSqlTransaction(transaction);
                             await context.Publish(new FollowUpCommittedEvent(), publishOptions);
 
-                            transaction.Commit();
+                            await transaction.CommitAsync();
                         }
                     }
                     scope.Complete();

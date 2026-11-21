@@ -34,7 +34,7 @@ public class When_passing_custom_transaction_outside_receive_context : NServiceB
                     publishOptions.UseCustomSqlTransaction(rolledbackTransaction);
                     await bus.Publish(new EventFromRollbackedTransaction(), publishOptions);
 
-                    rolledbackTransaction.Rollback();
+                    await rolledbackTransaction.RollbackAsync();
                 }
 
                 await using var committedTransaction = connection.BeginTransaction();
@@ -46,7 +46,7 @@ public class When_passing_custom_transaction_outside_receive_context : NServiceB
                 publishOptions.UseCustomSqlTransaction(committedTransaction);
                 await bus.Publish(new EventFromCommittedTransaction(), publishOptions);
 
-                committedTransaction.Commit();
+                await committedTransaction.CommitAsync();
 
             }))
             .Run();

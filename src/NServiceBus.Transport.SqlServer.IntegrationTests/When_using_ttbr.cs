@@ -38,7 +38,7 @@
                 );
 
                 await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                transaction.Commit();
+                await transaction.CommitAsync();
             }
 
             var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
@@ -69,7 +69,7 @@
                 );
 
                 await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                transaction.Commit();
+                await transaction.CommitAsync();
             }
 
             var message = await queue.TryReceive(connection, null).ConfigureAwait(false);
@@ -100,7 +100,7 @@
                 );
 
                 await dispatcher.Dispatch(new TransportOperations(operation), transportTransaction).ConfigureAwait(false);
-                transaction.Commit();
+                await transaction.CommitAsync();
             }
 
             var message = await queue.TryReceive(connection, null).ConfigureAwait(false);

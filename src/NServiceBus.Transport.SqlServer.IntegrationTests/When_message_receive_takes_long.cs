@@ -51,7 +51,7 @@
             await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             var message = new OutgoingMessage(Guid.NewGuid().ToString(), [], new byte[0]);
             await tableBasedQueue.Send(message, TimeSpan.MaxValue, connection, tx, cancellationToken);
-            tx.Commit();
+            await tx.CommitAsync(cancellationToken);
             scope.Complete();
         }
 
@@ -72,7 +72,7 @@
             await using var tx = await connection.BeginTransactionAsync(cancellationToken);
             await tableBasedQueue.TryReceive(connection, tx, cancellationToken);
             await Task.Delay(TimeSpan.FromSeconds(ReceiveDelayInSeconds), cancellationToken);
-            tx.Commit();
+            await tx.CommitAsync(cancellationToken);
             scope.Complete();
         }
 
