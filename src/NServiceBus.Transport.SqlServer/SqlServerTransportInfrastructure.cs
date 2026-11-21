@@ -320,15 +320,13 @@ namespace NServiceBus.Transport.SqlServer
             }
         }
 
-        public void ConfigureSendInfrastructure()
-        {
+        public void ConfigureSendInfrastructure() =>
             Dispatcher = new MessageDispatcher(
                 s => addressTranslator.Parse(s).Address,
                 new MulticastToUnicastConverter(subscriptionStore),
                 tableBasedQueueCache,
                 delayedMessageStore,
                 connectionFactory);
-        }
 
         public override async Task Shutdown(CancellationToken cancellationToken = default)
         {

@@ -12,18 +12,12 @@
         /// <summary>
         /// Enables specifying schema for a given queue.
         /// </summary>
-        public void UseSchemaForQueue(string queueName, string schema)
-        {
-            schemas[queueName] = schema;
-        }
+        public void UseSchemaForQueue(string queueName, string schema) => schemas[queueName] = schema;
 
         /// <summary>
         /// Enables specifying catalog for a given queue.
         /// </summary>
-        public void UseCatalogForQueue(string queueName, string catalog)
-        {
-            catalogs[queueName] = catalog;
-        }
+        public void UseCatalogForQueue(string queueName, string catalog) => catalogs[queueName] = catalog;
 
         internal void TryGet(string queueName, out string schema, out string catalog)
         {

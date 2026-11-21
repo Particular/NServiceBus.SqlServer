@@ -104,10 +104,7 @@
             }
         }
 
-        static string Quote(string name)
-        {
-            return SqlServerNameHelper.Quote(name);
-        }
+        static string Quote(string name) => SqlServerNameHelper.Quote(name);
 
         static string SafeUnquote(string name)
         {

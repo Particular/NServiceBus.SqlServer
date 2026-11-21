@@ -45,10 +45,7 @@ namespace NServiceBus.Transport.SqlServer
             return new CanonicalQueueAddress(transportAddress.Table, schema, catalog);
         }
 
-        static string Override(string configuredValue, string addressValue, string defaultValue)
-        {
-            return configuredValue ?? addressValue ?? defaultValue;
-        }
+        static string Override(string configuredValue, string addressValue, string defaultValue) => configuredValue ?? addressValue ?? defaultValue;
 
         readonly QueueSchemaAndCatalogOptions queueOptions;
         readonly ConcurrentDictionary<AddressKey, QueueAddress> logicalAddressCache = new();

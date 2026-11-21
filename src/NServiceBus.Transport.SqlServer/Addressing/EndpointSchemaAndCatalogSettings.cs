@@ -6,27 +6,16 @@
 
     class EndpointSchemaAndCatalogSettings
     {
-        public void SpecifySchema(string endpointName, string schema)
-        {
-            schemas[endpointName] = schema;
-        }
+        public void SpecifySchema(string endpointName, string schema) => schemas[endpointName] = schema;
 
-        public void SpecifyCatalog(string endpointName, string catalog)
-        {
-            catalogs[endpointName] = catalog;
-        }
+        public void SpecifyCatalog(string endpointName, string catalog) => catalogs[endpointName] = catalog;
 
-        public bool TryGet(string endpointName, out string schema)
-        {
-            return schemas.TryGetValue(endpointName, out schema);
-        }
+        public bool TryGet(string endpointName, out string schema) => schemas.TryGetValue(endpointName, out schema);
 
-        internal List<EndpointInstance> ToEndpointInstances()
-        {
-            return schemas.Keys.Concat(catalogs.Keys).Distinct()
+        internal List<EndpointInstance> ToEndpointInstances() =>
+            schemas.Keys.Concat(catalogs.Keys).Distinct()
                 .Select(endpoint => new EndpointInstance(endpoint, null, GetProperties(endpoint)))
                 .ToList();
-        }
 
         Dictionary<string, string> GetProperties(string endpoint)
         {

@@ -44,24 +44,20 @@
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
             }
         }
-        Task VerifyNonClusteredRowVersionIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
-        {
-            return VerifyIndex(
+        Task VerifyNonClusteredRowVersionIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken) =>
+            VerifyIndex(
                 queue,
                 (q, c, token) => q.CheckNonClusteredRowVersionIndexPresence(c, token),
                 $"Table {queue.Name} does not contain non-clustered index for column 'RowVersion'.{Environment.NewLine}Migrating to this non-clustered index improves performance for send and receive operations.",
                 cancellationToken);
-        }
 
-        Task VerifyExpiredIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken)
-        {
-            return VerifyIndex(
+        Task VerifyExpiredIndex(SqlTableBasedQueue queue, CancellationToken cancellationToken) =>
+            VerifyIndex(
                 queue,
                 (q, c, token) => q.CheckExpiresIndexPresence(c, token),
                 $"Table {queue.Name} does not contain index for column 'Expires'.{Environment.NewLine}Adding this index will speed up the process of purging expired messages from the queue. Please consult the documentation for further information.",
                 cancellationToken
             );
-        }
 
         async Task VerifyHeadersColumnType(SqlTableBasedQueue queue, CancellationToken cancellationToken)
         {
