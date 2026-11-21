@@ -41,33 +41,29 @@ namespace NServiceBus.Transport.Sql.Shared
         public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
             CancellationToken cancellationToken = default)
         {
-            using (var command = connection.CreateCommand())
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = moveDueCommand;
+            command.CommandType = CommandType.Text;
+
+            command.AddParameter("BatchSize", DbType.Int32, batchSize);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                command.Transaction = transaction;
-                command.CommandText = moveDueCommand;
-                command.CommandType = CommandType.Text;
-
-                command.AddParameter("BatchSize", DbType.Int32, batchSize);
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        // No timeouts waiting
-                        return DateTime.MinValue;
-                    }
-
-                    // Normalizing in case of clock drift between executing machine and database instance
-                    var sqlNow = reader.GetDateTime(0);
-                    var sqlNextDue = reader.GetDateTime(1);
-
-                    if (sqlNextDue <= sqlNow)
-                    {
-                        return DateTime.UtcNow;
-                    }
-
-                    return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
-                }
+                // No timeouts waiting
+                return DateTime.MinValue;
             }
+
+            // Normalizing in case of clock drift between executing machine and database instance
+            var sqlNow = reader.GetDateTime(0);
+            var sqlNextDue = reader.GetDateTime(1);
+
+            if (sqlNextDue <= sqlNow)
+            {
+                return DateTime.UtcNow;
+            }
+
+            return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
         }
 
         readonly string storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);

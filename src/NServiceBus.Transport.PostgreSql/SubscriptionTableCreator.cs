@@ -13,35 +13,31 @@ namespace NServiceBus.Transport.PostgreSql
 
         public async Task CreateIfNecessary(CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            try
             {
-                try
+                using var transaction = connection.BeginTransaction();
+                var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName,
+                    tableName.QuotedCatalog);
+
+                using (var command = connection.CreateCommand())
                 {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        var sql = string.Format(sqlConstants.CreateSubscriptionTableText, tableName.QuotedQualifiedName,
-                            tableName.QuotedCatalog);
+                    command.Transaction = transaction;
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
 
-                        using (var command = connection.CreateCommand())
-                        {
-                            command.Transaction = transaction;
-                            command.CommandText = sql;
-                            command.CommandType = CommandType.Text;
-
-                            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                        }
-
-                        transaction.Commit();
-                    }
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
-                catch (PostgresException ex) when (ex.SqlState is PostgresErrorCodes.DuplicateTable or  // 42P07
-                    PostgresErrorCodes.DuplicateObject or  // 42710
-                    PostgresErrorCodes.UniqueViolation)    // 23505
-                {
-                    //This happens if the table creation is executed concurrently by multiple transactions
-                    //In this case we want to discard the exception and continue
-                    Logger.Debug("Subscription Table already exists.", ex);
-                }
+
+                transaction.Commit();
+            }
+            catch (PostgresException ex) when (ex.SqlState is PostgresErrorCodes.DuplicateTable or  // 42P07
+                PostgresErrorCodes.DuplicateObject or  // 42710
+                PostgresErrorCodes.UniqueViolation)    // 23505
+            {
+                //This happens if the table creation is executed concurrently by multiple transactions
+                //In this case we want to discard the exception and continue
+                Logger.Debug("Subscription Table already exists.", ex);
             }
         }
     }

@@ -239,14 +239,12 @@ class PostgreSqlTransportInfrastructure(
     {
         try
         {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-            {
-                var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
+            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            var result = ConnectionPoolValidator.Validate(connection.ConnectionString);
 
-                if (!result.IsValid)
-                {
-                    Logger.Warn(result.Message);
-                }
+            if (!result.IsValid)
+            {
+                Logger.Warn(result.Message);
             }
         }
         catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))

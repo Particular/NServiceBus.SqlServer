@@ -31,10 +31,8 @@ namespace NServiceBus.Transport.SqlServer
 
             if (transport.ConnectionFactory != null)
             {
-                using (var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false))
-                {
-                    connectionString = connection.ConnectionString;
-                }
+                using var connection = await transport.ConnectionFactory(cancellationToken).ConfigureAwait(false);
+                connectionString = connection.ConnectionString;
             }
 
             var result = ConnectionPoolValidator.Validate(connectionString);
@@ -298,13 +296,11 @@ namespace NServiceBus.Transport.SqlServer
 
                 try
                 {
-                    using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled))
+                    using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);
+                    FakePromotableResourceManager.ForceDtc();
+                    using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
                     {
-                        FakePromotableResourceManager.ForceDtc();
-                        using (await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                        {
-                            scope.Complete();
-                        }
+                        scope.Complete();
                     }
                 }
                 catch (NotSupportedException exception)

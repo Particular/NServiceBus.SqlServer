@@ -27,49 +27,41 @@ class SqlTableBasedQueue : TableBasedQueue
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
     {
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = purgeExpiredCommand;
-            command.CommandType = CommandType.Text;
-            command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
+        using var command = connection.CreateCommand();
+        command.CommandText = purgeExpiredCommand;
+        command.CommandType = CommandType.Text;
+        command.AddParameter("@BatchSize", DbType.Int32, purgeBatchSize);
 
-            return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-        }
+        return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<bool> CheckExpiresIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = checkExpiresIndexCommand;
-            command.CommandType = CommandType.Text;
+        using var command = connection.CreateCommand();
+        command.CommandText = checkExpiresIndexCommand;
+        command.CommandType = CommandType.Text;
 
-            var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
-            return rowsCount > 0;
-        }
+        var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkExpiresIndexCommand), cancellationToken).ConfigureAwait(false);
+        return rowsCount > 0;
     }
 
     public async Task<bool> CheckNonClusteredRowVersionIndexPresence(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = checkNonClusteredRowVersionIndexCommand;
-            command.CommandType = CommandType.Text;
+        using var command = connection.CreateCommand();
+        command.CommandText = checkNonClusteredRowVersionIndexCommand;
+        command.CommandType = CommandType.Text;
 
-            var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
-            return rowsCount > 0;
-        }
+        var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkNonClusteredRowVersionIndexCommand), cancellationToken).ConfigureAwait(false);
+        return rowsCount > 0;
     }
 
     public async Task<string> CheckHeadersColumnType(DbConnection connection, CancellationToken cancellationToken = default)
     {
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = checkHeadersColumnTypeCommand;
-            command.CommandType = CommandType.Text;
+        using var command = connection.CreateCommand();
+        command.CommandText = checkHeadersColumnTypeCommand;
+        command.CommandType = CommandType.Text;
 
-            return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
-        }
+        return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
     }
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
@@ -78,16 +70,14 @@ class SqlTableBasedQueue : TableBasedQueue
         {
             var sendCommand = await GetSendCommandText(connection, transaction, cancellationToken).ConfigureAwait(false);
 
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandType = CommandType.Text;
-                command.CommandText = sendCommand;
-                command.Transaction = transaction;
+            using var command = connection.CreateCommand();
+            command.CommandType = CommandType.Text;
+            command.CommandText = sendCommand;
+            command.Transaction = transaction;
 
-                message.PrepareSendCommand(command);
+            message.PrepareSendCommand(command);
 
-                _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
         // 207 = Invalid column name
         // 515 = Cannot insert the value NULL into column; column does not allow nulls
@@ -124,24 +114,22 @@ class SqlTableBasedQueue : TableBasedQueue
                 return sendCommand;
             }
 
-            using (var command = connection.CreateCommand())
+            using var command = connection.CreateCommand();
+            command.CommandText = checkRecoverableColumnCommand;
+            command.CommandType = CommandType.Text;
+            command.Transaction = transaction;
+
+            var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnCommand), cancellationToken).ConfigureAwait(false);
+            if (rowsCount > 0)
             {
-                command.CommandText = checkRecoverableColumnCommand;
-                command.CommandType = CommandType.Text;
-                command.Transaction = transaction;
+                cachedSendCommand = Format(sqlServerConstants.SendTextWithRecoverable, qualifiedTableName);
+                return cachedSendCommand;
+            }
+            else
+            {
 
-                var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkRecoverableColumnCommand), cancellationToken).ConfigureAwait(false);
-                if (rowsCount > 0)
-                {
-                    cachedSendCommand = Format(sqlServerConstants.SendTextWithRecoverable, qualifiedTableName);
-                    return cachedSendCommand;
-                }
-                else
-                {
-
-                    cachedSendCommand = Format(sqlServerConstants.SendTextWithoutRecoverable, qualifiedTableName);
-                    return cachedSendCommand;
-                }
+                cachedSendCommand = Format(sqlServerConstants.SendTextWithoutRecoverable, qualifiedTableName);
+                return cachedSendCommand;
             }
         }
         finally

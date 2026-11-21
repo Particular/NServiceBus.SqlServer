@@ -85,19 +85,15 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task<DateTime> ExecuteOnce(CancellationToken moveDelayedMessagesCancellationToken)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
-                       .ConfigureAwait(false))
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    var nextDueTime = await table
-                        .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
-                        .ConfigureAwait(false);
-                    transaction.Commit();
+            using var connection = await connectionFactory.OpenNewConnection(moveDelayedMessagesCancellationToken)
+                       .ConfigureAwait(false);
+            using var transaction = connection.BeginTransaction();
+            var nextDueTime = await table
+                .MoveDueMessages(batchSize, connection, transaction, moveDelayedMessagesCancellationToken)
+                .ConfigureAwait(false);
+            transaction.Commit();
 
-                    return nextDueTime;
-                }
-            }
+            return nextDueTime;
         }
 
         /// <summary>

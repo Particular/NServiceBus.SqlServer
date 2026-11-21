@@ -19,17 +19,15 @@ namespace NServiceBus.Transport.SqlServer
 
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
+            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            foreach (var address in queueAddresses)
             {
-                foreach (var address in queueAddresses)
-                {
-                    await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
-                }
+                await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+            }
 
-                if (delayedQueueAddress != null)
-                {
-                    await CreateQueue(sqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
-                }
+            if (delayedQueueAddress != null)
+            {
+                await CreateQueue(sqlConstants.CreateDelayedMessageStoreText, delayedQueueAddress, connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -37,22 +35,20 @@ namespace NServiceBus.Transport.SqlServer
         {
             try
             {
-                using (var transaction = connection.BeginTransaction())
+                using var transaction = connection.BeginTransaction();
+                var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
+                    canonicalQueueAddress.QuotedCatalogName);
+                using (var command = connection.CreateCommand())
                 {
-                    var sql = string.Format(creationScript, canonicalQueueAddress.QualifiedTableName,
-                        canonicalQueueAddress.QuotedCatalogName);
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = sql;
-                        command.CommandType = CommandType.Text;
+                    command.Transaction = transaction;
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
 
-                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
-                    }
-
-                    transaction.Commit();
                 }
+
+                transaction.Commit();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -72,19 +68,17 @@ namespace NServiceBus.Transport.SqlServer
                 var bodyStringSql = string.Format(sqlConstants.AddMessageBodyStringColumn,
                     canonicalQueueAddress.QualifiedTableName, canonicalQueueAddress.QuotedCatalogName);
 
-                using (var transaction = connection.BeginTransaction())
+                using var transaction = connection.BeginTransaction();
+                using (var command = connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = bodyStringSql;
-                        command.CommandType = CommandType.Text;
+                    command.Transaction = transaction;
+                    command.CommandText = bodyStringSql;
+                    command.CommandType = CommandType.Text;
 
-                        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                    }
-
-                    transaction.Commit();
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
+
+                transaction.Commit();
             }
         }
 

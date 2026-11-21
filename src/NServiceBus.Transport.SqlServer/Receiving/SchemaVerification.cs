@@ -30,14 +30,12 @@
         {
             try
             {
-                using (var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false))
-                {
-                    var indexExists = await check(queue, connection, cancellationToken).ConfigureAwait(false);
+                using var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                var indexExists = await check(queue, connection, cancellationToken).ConfigureAwait(false);
 
-                    if (!indexExists)
-                    {
-                        Logger.Warn(noIndexMessage);
-                    }
+                if (!indexExists)
+                {
+                    Logger.Warn(noIndexMessage);
                 }
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
@@ -68,13 +66,11 @@
         {
             try
             {
-                using (var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false))
+                using var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                var columnType = await queue.CheckHeadersColumnType(connection, cancellationToken).ConfigureAwait(false);
+                if (string.Equals(columnType, "varchar", StringComparison.OrdinalIgnoreCase))
                 {
-                    var columnType = await queue.CheckHeadersColumnType(connection, cancellationToken).ConfigureAwait(false);
-                    if (string.Equals(columnType, "varchar", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Logger.Warn($"Table {queue.Name} stores headers in a non Unicode-compatible column (varchar).{Environment.NewLine}This may lead to data loss when sending non-ASCII characters in headers. SQL Server transport 3.1 and newer can take advantage of the nvarchar column type for headers. Please change the column type in the database.");
-                    }
+                    Logger.Warn($"Table {queue.Name} stores headers in a non Unicode-compatible column (varchar).{Environment.NewLine}This may lead to data loss when sending non-ASCII characters in headers. SQL Server transport 3.1 and newer can take advantage of the nvarchar column type for headers. Please change the column type in the database.");
                 }
             }
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))

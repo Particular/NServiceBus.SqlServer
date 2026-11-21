@@ -51,14 +51,12 @@ namespace NServiceBus.Transport.Sql.Shared
                 return;
             }
 
-            using (var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-            using (var transaction = connection.BeginTransaction())
-            {
-                await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
-                transaction.Commit();
-                scope.Complete();
-            }
+            using var scope = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+            using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+            using var transaction = connection.BeginTransaction();
+            await Dispatch(operations, connection, transaction, cancellationToken).ConfigureAwait(false);
+            transaction.Commit();
+            scope.Complete();
         }
 
         async Task DispatchDefault(IEnumerable<UnicastTransportOperation> operations, TransportTransaction transportTransaction, CancellationToken cancellationToken)

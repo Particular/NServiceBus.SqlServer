@@ -65,10 +65,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 return null;
             }
 
-            using (var textReader = dataReader.GetTextReader(headersIndex))
-            {
-                return await textReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-            }
+            using var textReader = dataReader.GetTextReader(headersIndex);
+            return await textReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         }
 
         static async Task<byte[]> GetBody(DbDataReader dataReader, int bodyIndex, bool isStreamSupported, CancellationToken cancellationToken)
@@ -79,13 +77,11 @@ namespace NServiceBus.Transport.Sql.Shared
             }
 
             // Null values will be returned as an empty (zero bytes) Stream.
-            using (var outStream = new MemoryStream())
-            using (var stream = dataReader.GetStream(bodyIndex))
-            {
-                // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
-                await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
-                return outStream.ToArray();
-            }
+            using var outStream = new MemoryStream();
+            using var stream = dataReader.GetStream(bodyIndex);
+            // 81920 is the default buffer size. Overload accepting (Stream, CancellationToken) not available in .NET Framework.
+            await stream.CopyToAsync(outStream, 81920, cancellationToken).ConfigureAwait(false);
+            return outStream.ToArray();
         }
 
         Guid id;

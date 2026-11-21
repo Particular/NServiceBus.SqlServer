@@ -16,17 +16,15 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = subscribeCommand;
+                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                using var command = connection.CreateCommand();
+                command.CommandText = subscribeCommand;
 
-                    command.AddParameter("Endpoint", DbType.String, endpointName);
-                    command.AddParameter("QueueAddress", DbType.String, queueAddress);
-                    command.AddParameter("Topic", DbType.String, topic);
+                command.AddParameter("Endpoint", DbType.String, endpointName);
+                command.AddParameter("QueueAddress", DbType.String, queueAddress);
+                command.AddParameter("Topic", DbType.String, topic);
 
-                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                }
+                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -34,15 +32,13 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = unsubscribeCommand;
-                    command.AddParameter("Endpoint", DbType.String, endpointName);
-                    command.AddParameter("Topic", DbType.String, topic);
+                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                using var command = connection.CreateCommand();
+                command.CommandText = unsubscribeCommand;
+                command.AddParameter("Endpoint", DbType.String, endpointName);
+                command.AddParameter("Topic", DbType.String, topic);
 
-                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                }
+                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -55,25 +51,23 @@ namespace NServiceBus.Transport.Sql.Shared
 
             using (new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
             {
-                using (var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
-                using (var command = connection.CreateCommand())
+                using var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
+                using var command = connection.CreateCommand();
+                command.CommandText = getSubscribersCommand;
+                for (var i = 0; i < topics.Length; i++)
                 {
-                    command.CommandText = getSubscribersCommand;
-                    for (var i = 0; i < topics.Length; i++)
-                    {
-                        command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
-                    }
-
-                    using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                        {
-                            results.Add(reader.GetString(0));
-                        }
-                    }
-
-                    return results;
+                    command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
                 }
+
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        results.Add(reader.GetString(0));
+                    }
+                }
+
+                return results;
             }
         }
     }
