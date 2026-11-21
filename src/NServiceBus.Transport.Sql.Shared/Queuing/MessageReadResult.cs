@@ -1,6 +1,6 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
-    struct MessageReadResult
+    readonly struct MessageReadResult
     {
         MessageReadResult(Message message, MessageRow poisonMessage)
         {
@@ -8,11 +8,11 @@ namespace NServiceBus.Transport.Sql.Shared
             PoisonMessage = poisonMessage;
         }
 
-        public static MessageReadResult NoMessage = new MessageReadResult(null, null);
+        public static MessageReadResult NoMessage => default;
 
-        public bool IsPoison => PoisonMessage != null;
+        public bool IsEmpty => Message is null && PoisonMessage is null;
 
-        public bool Successful => Message != null;
+        public bool IsPoison => PoisonMessage is not null;
 
         public Message Message { get; }
 
@@ -21,15 +21,5 @@ namespace NServiceBus.Transport.Sql.Shared
         public static MessageReadResult Poison(MessageRow messageRow) => new(null, messageRow);
 
         public static MessageReadResult Success(Message message) => new(message, null);
-
-        bool Equals(MessageReadResult other) => Equals(Message, other.Message) && Equals(PoisonMessage, other.PoisonMessage);
-
-        public override bool Equals(object obj) => obj is MessageReadResult other && Equals(other);
-
-        public override int GetHashCode() => Message.GetHashCode() ^ PoisonMessage.GetHashCode();
-
-        public static bool operator ==(MessageReadResult a, MessageReadResult b) => a.Equals(b);
-
-        public static bool operator !=(MessageReadResult a, MessageReadResult b) => !(a == b);
     }
 }
