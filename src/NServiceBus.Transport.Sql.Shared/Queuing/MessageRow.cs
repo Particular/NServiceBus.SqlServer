@@ -83,9 +83,11 @@ namespace NServiceBus.Transport.Sql.Shared
             return await ReadToEnd(stream, cancellationToken).ConfigureAwait(false);
         }
 
-        internal static async Task<byte[]> ReadToEnd(Stream stream, CancellationToken cancellationToken = default)
+        internal static Task<byte[]> ReadToEnd(Stream stream, CancellationToken cancellationToken = default) =>
+            ReadToEnd(stream, ArrayPool<byte>.Shared, cancellationToken);
+
+        internal static async Task<byte[]> ReadToEnd(Stream stream, ArrayPool<byte> pool, CancellationToken cancellationToken = default)
         {
-            var pool = ArrayPool<byte>.Shared;
             var segment = pool.Rent(SegmentSize);
             var segmentLength = 0;
             long length = 0;

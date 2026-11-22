@@ -2,6 +2,7 @@ namespace NServiceBus.Transport.SqlServer.UnitTests.Receiving;
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,20 @@ public class MessageRowTests
     }
 
     [Test]
+    public async Task Pools_only_the_first_16_segments_when_reading_a_large_body()
+    {
+        var body = new byte[1_048_593];
+        await using var stream = new MemoryStream(body, writable: false);
+        var pool = new ObservableArrayPool();
+
+        var result = await MessageRow.ReadToEnd(stream, pool);
+
+        Assert.That(result, Is.EqualTo(body).AsCollection);
+        Assert.That(pool.Rented.Count, Is.EqualTo(16));
+        Assert.That(pool.Returned, Is.EqualTo(pool.Rented));
+    }
+
+    [Test]
     public void Clears_what_a_failed_read_wrote_before_returning_the_buffer()
     {
         Assert.ThrowsAsync<IOException>(() => MessageRow.ReadToEnd(new StreamThatFailsAfterWriting()));
@@ -54,6 +69,21 @@ public class MessageRowTests
             buffer.Span.Fill(0xFF);
             throw new IOException("Connection lost");
         }
+    }
+
+    sealed class ObservableArrayPool : ArrayPool<byte>
+    {
+        public List<byte[]> Rented { get; } = [];
+        public List<byte[]> Returned { get; } = [];
+
+        public override byte[] Rent(int minimumLength)
+        {
+            var array = new byte[minimumLength];
+            Rented.Add(array);
+            return array;
+        }
+
+        public override void Return(byte[] array, bool clearArray = false) => Returned.Add(array);
     }
 
     sealed class ChunkedStream(byte[] data, int maxBytesPerRead) : MemoryStream(data, writable: false)
