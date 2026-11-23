@@ -11,7 +11,7 @@ A change adds or edits the text of a statement that a transport sends to the dat
 1. Set `Size` explicitly on every string and binary parameter. Without it, SqlClient binds `nvarchar(n)` or `varbinary(n)` from each value, and every distinct length gets its own cached plan.
 2. Size a parameter for a `max` column with `-1`.
 3. Size a parameter that is compared with a bounded column with a fixed size, `4000` for `nvarchar`. Do not use `-1` there: SQL Server adds a `Filter` operator, stops pushing the predicate into the scan, and uses four to five times the CPU.
-4. Never size a parameter below the longest value it can carry. SqlClient and Npgsql truncate the value to `Size`. A fixed size above the column length is safe in a comparison, because a value longer than the column cannot equal a stored value.
+4. Never size a parameter below the longest value it can carry unless truncation demonstrably preserves the operation's semantics. SqlClient and Npgsql truncate the value to `Size`. For comparisons, verify both providers' matching behavior, including SQL Server's trailing-space padding; a size above the column length alone does not prove safety.
 5. Expect one plan per item count for an `IN` list. Sizing does not change that.
 6. Keep the parameter code shared between the two transports. `Size` does not change plans on PostgreSQL, so a provider-specific branch adds code without a benefit.
 7. Verify a sizing change on SQL Server by comparing the number of cached plans, the plan shape, and the CPU per execution. The estimated cost and the logical reads are identical for the sizes in rule 3, so they do not show the difference.
