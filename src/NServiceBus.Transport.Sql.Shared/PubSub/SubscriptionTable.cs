@@ -9,6 +9,17 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class SubscriptionTable(ISqlConstants sqlConstants, string qualifiedTableName, DbConnectionFactory connectionFactory)
     {
+        internal static void AddTopicParameters(IDbCommand command, string[] topics)
+        {
+            for (var i = 0; i < topics.Length; i++)
+            {
+                command.AddParameter($"Topic_{i}", DbType.String, topics[i], TopicParameterSize);
+            }
+        }
+
+        // The largest fixed nvarchar size. Longer values are truncated, which cannot match a stored topic (the column holds 200 characters).
+        const int TopicParameterSize = 4000;
+
         string subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
         string unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
 
@@ -60,10 +71,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 var command = connection.CreateCommand();
                 await using var commandDisposer = command.ConfigureAwait(false);
                 command.CommandText = getSubscribersCommand;
-                for (var i = 0; i < topics.Length; i++)
-                {
-                    command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
-                }
+                AddTopicParameters(command, topics);
 
                 var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
                 await using (reader.ConfigureAwait(false))
