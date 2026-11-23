@@ -127,8 +127,9 @@ FROM {0} WITH (READPAST)
 ORDER BY Due";
 
         // Lets one instance at a time move, and commits on the server so a stalled client cannot keep the lock.
-        // XACT_ABORT rolls back when the client cancels; otherwise the pooled connection would keep the lock.
+        // XACT_ABORT rolls back on cancel or error, and IMPLICIT_TRANSACTIONS OFF lets COMMIT end the transaction; otherwise the pool keeps the lock.
         public string MoveDueDelayedMessageWithLockText { get; set; } = @"
+SET IMPLICIT_TRANSACTIONS OFF;
 SET XACT_ABORT ON;
 DECLARE @moverLock int;
 
