@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using Logging;
-using NServiceBus.Transport.Sql.Shared;
+using Sql.Shared;
 
 class PostgreSqlTransportInfrastructure(
     PostgreSqlTransport transport,
@@ -131,6 +131,9 @@ class PostgreSqlTransportInfrastructure(
 
         diagnostics.Add("CircuitBreaker",
             new { TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker });
+
+        diagnostics.Add("FailureInfoCache",
+            new { transport.FailureInfoCache.MaxEntries, transport.FailureInfoCache.ExpirationPeriod });
 
         var queuePeekerOptions = transport.QueuePeeker;
 
@@ -258,7 +261,7 @@ class PostgreSqlTransportInfrastructure(
 
     ProcessStrategy SelectProcessStrategy(TransportTransactionMode transactionMode, TransactionOptions options, DbConnectionFactory connectionFactory)
     {
-        var failureInfoStorage = new FailureInfoStorage(10000);
+        var failureInfoStorage = new FailureInfoStorage(transport.FailureInfoCache.MaxEntries, transport.FailureInfoCache.ExpirationPeriod);
 
         if (transactionMode == TransportTransactionMode.SendsAtomicWithReceive)
         {

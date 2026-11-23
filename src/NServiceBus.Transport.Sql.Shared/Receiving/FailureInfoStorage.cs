@@ -2,10 +2,12 @@
 {
     using System;
     using System.Runtime.ExceptionServices;
+    using System.Threading;
+    using BitFaster.Caching;
     using BitFaster.Caching.Lru;
     using Extensibility;
 
-    class FailureInfoStorage(int maxElements)
+    class FailureInfoStorage(int maxElements, TimeSpan? expireAfter = null)
     {
         public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
@@ -29,7 +31,40 @@
             }
         }
 
-        readonly FastConcurrentLru<string, ProcessingFailureInfo> failureInfoPerMessage = new(maxElements);
+        public void StartTrimmingExpiredEntries()
+        {
+            if (expireAfter is not { } expiry)
+            {
+                return;
+            }
+
+            var interval = TimeSpan.FromTicks(Math.Clamp(expiry.Ticks, MinimumTrimInterval.Ticks, MaximumTrimInterval.Ticks));
+            trimTimer?.Dispose();
+            trimTimer = new Timer(static state => ((FailureInfoStorage)state).TrimExpiredEntries(), this, interval, interval);
+        }
+
+        public void StopTrimmingExpiredEntries()
+        {
+            trimTimer?.Dispose();
+            trimTimer = null;
+        }
+
+        // Expired entries stay reachable until trimmed, so without this a burst of failures keeps its exceptions alive.
+        void TrimExpiredEntries()
+        {
+            if (failureInfoPerMessage.Policy.ExpireAfterWrite is { HasValue: true } policy)
+            {
+                policy.Value.TrimExpired();
+            }
+        }
+
+        Timer trimTimer;
+        static readonly TimeSpan MinimumTrimInterval = TimeSpan.FromSeconds(1);
+        static readonly TimeSpan MaximumTrimInterval = TimeSpan.FromMinutes(1);
+
+        readonly ICache<string, ProcessingFailureInfo> failureInfoPerMessage = expireAfter is { } expiry
+                ? new ConcurrentLruBuilder<string, ProcessingFailureInfo>().WithCapacity(maxElements).WithExpireAfterWrite(expiry).Build()
+                : new FastConcurrentLru<string, ProcessingFailureInfo>(maxElements);
 
         public class ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
         {

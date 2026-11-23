@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NServiceBus.Extensibility;
 using NServiceBus.Transport.Sql.Shared;
@@ -181,8 +182,94 @@ public class FailureInfoStorageTests
         }
     }
 
-    static FailureInfoStorage GetFailureInfoStorage()
+    [Test]
+    public void When_expiry_is_configured_should_remove_failure_info_after_the_expiry()
     {
-        return new FailureInfoStorage(10);
+        var messageId = Guid.NewGuid().ToString("D");
+        var storage = new FailureInfoStorage(10, TimeSpan.FromMilliseconds(50));
+
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+
+        Assert.That(() => storage.TryGetFailureInfoForMessage(messageId, out _), Is.False.After(5000, 10));
     }
+
+    [Test]
+    public void When_expiry_is_configured_should_keep_failure_info_before_the_expiry()
+    {
+        var messageId = Guid.NewGuid().ToString("D");
+        var storage = new FailureInfoStorage(10, TimeSpan.FromHours(1));
+
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+
+        Assert.That(storage.TryGetFailureInfoForMessage(messageId, out var failureInfo), Is.True);
+        Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void When_expiry_is_configured_should_still_limit_the_number_of_entries()
+    {
+        const int MaxElements = 50;
+        var storage = new FailureInfoStorage(MaxElements, TimeSpan.FromHours(1));
+        var messageIds = Enumerable.Range(0, MaxElements * 10).Select(_ => Guid.NewGuid().ToString("D")).ToArray();
+
+        foreach (var messageId in messageIds)
+        {
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+        }
+
+        var stored = messageIds.Count(messageId => storage.TryGetFailureInfoForMessage(messageId, out _));
+        Assert.That(stored, Is.LessThanOrEqualTo(MaxElements));
+    }
+
+    [Test]
+    public void When_trimming_is_started_should_release_expired_failure_info_without_cache_access()
+    {
+        var storage = new FailureInfoStorage(10, TimeSpan.FromMilliseconds(50));
+        var recordedException = RecordFailure(storage);
+
+        storage.StartTrimmingExpiredEntries();
+
+        try
+        {
+            Assert.That(() =>
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                return recordedException.IsAlive;
+            }, Is.False.After(10000, 200));
+        }
+        finally
+        {
+            storage.StopTrimmingExpiredEntries();
+        }
+    }
+
+    [Test]
+    public void Starting_and_stopping_trimming_should_be_safe_without_expiry_and_when_repeated()
+    {
+        var storage = new FailureInfoStorage(10);
+        var expiringStorage = new FailureInfoStorage(10, TimeSpan.FromHours(1));
+
+        Assert.DoesNotThrow(() =>
+        {
+            storage.StartTrimmingExpiredEntries();
+            storage.StopTrimmingExpiredEntries();
+            expiringStorage.StopTrimmingExpiredEntries();
+            expiringStorage.StartTrimmingExpiredEntries();
+            expiringStorage.StartTrimmingExpiredEntries();
+            expiringStorage.StopTrimmingExpiredEntries();
+            expiringStorage.StopTrimmingExpiredEntries();
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static WeakReference RecordFailure(FailureInfoStorage storage)
+    {
+        var exception = new Exception();
+        storage.RecordFailureInfoForMessage(Guid.NewGuid().ToString("D"), exception, default);
+        return new WeakReference(exception);
+    }
+
+    static FailureInfoStorage GetFailureInfoStorage() => new(10);
 }
