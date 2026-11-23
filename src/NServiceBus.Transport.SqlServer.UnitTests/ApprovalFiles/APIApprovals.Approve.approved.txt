@@ -14,11 +14,6 @@ namespace NServiceBus
         public int? PurgeBatchSize { get; set; }
         public bool PurgeOnStartup { get; set; }
     }
-    public class FailureInfoCacheOptions
-    {
-        public System.TimeSpan? ExpirationPeriod { get; set; }
-        public int MaxEntries { get; set; }
-    }
     public static class MessageDrivenPubSubCompatibilityModeConfiguration
     {
         [System.Obsolete("Hybrid pub/sub is deprecated and endpoints needs to migrate to native pub/sub. Wi" +
@@ -59,7 +54,7 @@ namespace NServiceBus
         public string DefaultSchema { get; set; }
         public NServiceBus.Transport.SqlServer.DelayedDeliveryOptions DelayedDelivery { get; }
         public NServiceBus.ExpiredMessagesPurgerOptions ExpiredMessagesPurger { get; }
-        public NServiceBus.FailureInfoCacheOptions FailureInfoCache { get; }
+        public NServiceBus.Transport.SqlServer.FailureInfoCacheOptions FailureInfoCache { get; }
         public NServiceBus.QueuePeekerOptions QueuePeeker { get; set; }
         public NServiceBus.Transport.SqlServer.QueueSchemaAndCatalogOptions SchemaAndCatalog { get; }
         public NServiceBus.Transport.SqlServer.SubscriptionOptions Subscriptions { get; }
@@ -106,6 +101,11 @@ namespace NServiceBus.Transport.SqlServer
     {
         public void BatchSize(int batchSize) { }
         public void TableSuffix(string suffix) { }
+    }
+    public class FailureInfoCacheOptions
+    {
+        public System.TimeSpan? ExpirationPeriod { get; set; }
+        public int MaxEntries { get; set; }
     }
     public class QueueSchemaAndCatalogOptions
     {

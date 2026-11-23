@@ -7,11 +7,6 @@ namespace NServiceBus
     {
         public static void UseSchemaForEndpoint(this NServiceBus.RoutingSettings settings, string endpointName, string schema) { }
     }
-    public class FailureInfoCacheOptions
-    {
-        public System.TimeSpan? ExpirationPeriod { get; set; }
-        public int MaxEntries { get; set; }
-    }
     public class PostgreSqlTransport : NServiceBus.Transport.TransportDefinition
     {
         public PostgreSqlTransport(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Npgsql.NpgsqlConnection>> connectionFactory) { }
@@ -21,7 +16,7 @@ namespace NServiceBus
         public bool CreateMessageBodyComputedColumn { get; set; }
         public string DefaultSchema { get; set; }
         public NServiceBus.Transport.PostgreSql.DelayedDeliveryOptions DelayedDelivery { get; }
-        public NServiceBus.FailureInfoCacheOptions FailureInfoCache { get; }
+        public NServiceBus.Transport.PostgreSql.FailureInfoCacheOptions FailureInfoCache { get; }
         public NServiceBus.QueuePeekerOptions QueuePeeker { get; }
         public NServiceBus.Transport.PostgreSql.QueueSchemaOptions Schema { get; }
         public NServiceBus.Transport.PostgreSql.SubscriptionOptions Subscriptions { get; }
@@ -71,6 +66,11 @@ namespace NServiceBus.Transport.PostgreSql
     {
         public void BatchSize(int batchSize) { }
         public void TableSuffix(string suffix) { }
+    }
+    public class FailureInfoCacheOptions
+    {
+        public System.TimeSpan? ExpirationPeriod { get; set; }
+        public int MaxEntries { get; set; }
     }
     public class QueueSchemaOptions
     {
