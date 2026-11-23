@@ -35,6 +35,10 @@ namespace NServiceBus.Transport.Sql.Shared
             this.criticalError = criticalError;
         }
 
+        public void StartTrimmingExpiredFailureInfo() => failureInfoStorage.StartTrimmingExpiredEntries();
+
+        public void StopTrimmingExpiredFailureInfo() => failureInfoStorage.StopTrimmingExpiredEntries();
+
         public abstract Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
             ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default);
 

@@ -47,7 +47,8 @@ namespace NServiceBus
         /// Set a value to release memory after a burst of failures. When the endpoint runs multiple instances, a retry
         /// can be received by another instance. The entry of the instance that recorded the failure then stays in its cache
         /// until it is evicted, as it does for messages that were removed from the queue. The time counts from the most
-        /// recent failure of the message.
+        /// recent failure of the message. While the receiver runs, expired entries are removed in the background at an
+        /// interval equal to the expiration period, limited to between 1 second and 1 minute.
         /// Use a value that is well above the longest time between two attempts of the same message, including the
         /// time the endpoint can be paused by the circuit breaker (see <c>TimeToWaitBeforeTriggeringCircuitBreaker</c>).
         /// An expired entry resets the number of attempts the next time the message is received.
