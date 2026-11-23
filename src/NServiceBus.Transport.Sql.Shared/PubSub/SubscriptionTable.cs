@@ -1,5 +1,6 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
+    using System;
     using System.Collections.Generic;
     using System.Data;
     using System.Linq;
@@ -9,6 +10,17 @@ namespace NServiceBus.Transport.Sql.Shared
 
     class SubscriptionTable(ISqlConstants sqlConstants, string qualifiedTableName, DbConnectionFactory connectionFactory)
     {
+        internal static void AddTopicParameters(IDbCommand command, string[] topics)
+        {
+            for (var i = 0; i < topics.Length; i++)
+            {
+                // Never below the value length because providers truncate to Size. FullName can be null for open generic types.
+                command.AddParameter($"Topic_{i}", DbType.String, topics[i], Math.Max(TopicColumnLength, topics[i]?.Length ?? 0));
+            }
+        }
+
+        const int TopicColumnLength = 200;
+
         string subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
         string unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
 
@@ -60,10 +72,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 var command = connection.CreateCommand();
                 await using var commandDisposer = command.ConfigureAwait(false);
                 command.CommandText = getSubscribersCommand;
-                for (var i = 0; i < topics.Length; i++)
-                {
-                    command.AddParameter($"Topic_{i}", DbType.String, topics[i]);
-                }
+                AddTopicParameters(command, topics);
 
                 var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
                 await using (reader.ConfigureAwait(false))
