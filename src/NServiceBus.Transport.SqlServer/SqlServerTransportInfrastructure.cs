@@ -169,7 +169,7 @@ namespace NServiceBus.Transport.SqlServer
                 if (AppContextSwitches.UseIndependentDelayedMessageMovers)
                 {
                     Logger.Warn($"The '{AppContextSwitches.UseIndependentDelayedMessageMoversSwitchName}' switch is set. Every endpoint instance moves due delayed messages independently. This fallback will be removed in the next major version. If you depend on it, report why at https://github.com/Particular/NServiceBus.SqlServer/issues/1831.");
-                    moveDueCommand = new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+                    moveDueCommand = new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTableName, inputQueueTable);
                 }
                 else
                 {
@@ -185,7 +185,7 @@ namespace NServiceBus.Transport.SqlServer
                     MoverLockResource = moveDueWithLockCommand?.LockResource,
                 });
 
-                var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable, moveDueCommand);
+                var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTableName, moveDueCommand);
 
                 //Allows dispatcher to store messages in the delayed store
                 delayedMessageStore = delayedMessageTable;
