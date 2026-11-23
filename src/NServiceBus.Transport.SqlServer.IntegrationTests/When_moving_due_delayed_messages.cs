@@ -244,20 +244,30 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         public async Task Failed_locked_move_leaves_no_transaction_or_lock_on_the_connection()
         {
             await StoreDueMessages(1, CancellationToken);
-            var missingInputTable = new CanonicalQueueAddress(InputQueue + ".Missing", "dbo", "nservicebus");
-            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, missingInputTable.QualifiedTableName);
+            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, "#FailingInput");
             var table = new DelayedMessageTable(sqlConstants, delayedTable.QualifiedTableName, command);
 
             try
             {
                 using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(CancellationToken);
+                using (var createCommand = connection.CreateCommand())
+                {
+                    createCommand.CommandText = $@"
+SELECT TOP (0) Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body
+INTO #FailingInput
+FROM {inputTable.QualifiedTableName};
+ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
+                    await createCommand.ExecuteNonQueryAsync(CancellationToken);
+                }
 
-                Assert.ThrowsAsync<SqlException>(() => table.MoveDueMessages(10, connection, null, CancellationToken));
+                var exception = Assert.ThrowsAsync<SqlException>(() => table.MoveDueMessages(10, connection, null, CancellationToken));
 
                 using (Assert.EnterMultipleScope())
                 {
+                    Assert.That(exception.Number, Is.EqualTo(515));
                     Assert.That(await ExecuteScalarInt(connection, "SELECT @@TRANCOUNT", CancellationToken), Is.Zero);
                     Assert.That(await TryLockOnUnpooledConnection(command.LockResource, CancellationToken), Is.GreaterThanOrEqualTo(0));
+                    Assert.That(await Count(delayedTable, CancellationToken), Is.EqualTo(1));
                 }
             }
             finally
