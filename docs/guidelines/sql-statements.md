@@ -21,7 +21,7 @@ A change adds or edits the text of a statement that a transport sends to the dat
 
 9. Start a statement that opens its own transaction with `SET IMPLICIT_TRANSACTIONS OFF`. A connection can run with the setting on. `BEGIN TRANSACTION` then nests inside the implicit transaction, `COMMIT` leaves `@@TRANCOUNT` at 1, and a lock owned by the transaction stays held on the pooled connection. Parameterized statements and plain batches behave the same.
 10. Add `SET XACT_ABORT ON` to a statement that holds a lock for the duration of its transaction, so a cancellation or an error rolls the transaction back instead of leaving it open on the pooled connection.
-11. Test such a statement on a connection with `IMPLICIT_TRANSACTIONS ON`. Assert that `@@TRANCOUNT` is zero and that no application lock is held afterwards.
+11. Test statements that open and complete their own transaction on a connection with `IMPLICIT_TRANSACTIONS ON`. Assert that `@@TRANCOUNT` is zero and that no application lock is held afterwards. For statements participating in a caller-owned transaction, verify that they preserve transaction ownership and that no transaction or application lock remains after the caller commits or rolls back.
 
 ## Evidence
 
