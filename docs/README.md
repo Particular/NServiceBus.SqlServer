@@ -27,7 +27,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 
 ## Guidelines
 
-- [Public transport options namespaces](guidelines/transport-options.md) — use the transport-specific namespace when adding a public options type.
+- [Public transport options](guidelines/transport-options.md) — when adding public options types or settings, use transport-owned options with documented defaults and validation.
 
 ## Decisions and rationale
 
