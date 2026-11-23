@@ -128,6 +128,11 @@ public class PostgreSqlTransport : TransportDefinition
     public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
+    /// Failure info cache settings.
+    /// </summary>
+    public FailureInfoCacheOptions FailureInfoCache { get; } = new FailureInfoCacheOptions();
+
+    /// <summary>
     /// Disable native delayed delivery infrastructure
     /// </summary>
     internal bool DisableDelayedDelivery { get; set; } = false;

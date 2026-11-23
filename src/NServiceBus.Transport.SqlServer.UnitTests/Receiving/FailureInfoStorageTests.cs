@@ -181,8 +181,45 @@ public class FailureInfoStorageTests
         }
     }
 
-    static FailureInfoStorage GetFailureInfoStorage()
+    [Test]
+    public void When_expiry_is_configured_should_remove_failure_info_after_the_expiry()
     {
-        return new FailureInfoStorage(10);
+        var messageId = Guid.NewGuid().ToString("D");
+        var storage = new FailureInfoStorage(10, TimeSpan.FromMilliseconds(50));
+
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+
+        Assert.That(() => storage.TryGetFailureInfoForMessage(messageId, out _), Is.False.After(5000, 10));
     }
+
+    [Test]
+    public void When_expiry_is_configured_should_keep_failure_info_before_the_expiry()
+    {
+        var messageId = Guid.NewGuid().ToString("D");
+        var storage = new FailureInfoStorage(10, TimeSpan.FromHours(1));
+
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+        storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+
+        Assert.That(storage.TryGetFailureInfoForMessage(messageId, out var failureInfo), Is.True);
+        Assert.That(failureInfo.NumberOfProcessingAttempts, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void When_expiry_is_configured_should_still_limit_the_number_of_entries()
+    {
+        const int MaxElements = 50;
+        var storage = new FailureInfoStorage(MaxElements, TimeSpan.FromHours(1));
+        var messageIds = Enumerable.Range(0, MaxElements * 10).Select(_ => Guid.NewGuid().ToString("D")).ToArray();
+
+        foreach (var messageId in messageIds)
+        {
+            storage.RecordFailureInfoForMessage(messageId, new Exception(), default);
+        }
+
+        var stored = messageIds.Count(messageId => storage.TryGetFailureInfoForMessage(messageId, out _));
+        Assert.That(stored, Is.LessThanOrEqualTo(MaxElements));
+    }
+
+    static FailureInfoStorage GetFailureInfoStorage() => new(10);
 }

@@ -132,6 +132,11 @@ namespace NServiceBus
         public TimeSpan TimeToWaitBeforeTriggeringCircuitBreaker { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
+        /// Failure info cache settings.
+        /// </summary>
+        public FailureInfoCacheOptions FailureInfoCache { get; } = new FailureInfoCacheOptions();
+
+        /// <summary>
         /// Queue peeker settings.
         /// </summary>
         public QueuePeekerOptions QueuePeeker { get; set; } = new QueuePeekerOptions();

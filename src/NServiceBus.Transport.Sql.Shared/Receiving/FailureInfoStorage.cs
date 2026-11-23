@@ -2,10 +2,11 @@
 {
     using System;
     using System.Runtime.ExceptionServices;
+    using BitFaster.Caching;
     using BitFaster.Caching.Lru;
     using Extensibility;
 
-    class FailureInfoStorage(int maxElements)
+    class FailureInfoStorage(int maxElements, TimeSpan? expireAfter = null)
     {
         public void RecordFailureInfoForMessage(string messageId, Exception exception, ContextBag context)
         {
@@ -29,7 +30,9 @@
             }
         }
 
-        readonly FastConcurrentLru<string, ProcessingFailureInfo> failureInfoPerMessage = new(maxElements);
+        readonly ICache<string, ProcessingFailureInfo> failureInfoPerMessage = expireAfter is { } expiry
+                ? new ConcurrentLruBuilder<string, ProcessingFailureInfo>().WithCapacity(maxElements).WithExpireAfterWrite(expiry).Build()
+                : new FastConcurrentLru<string, ProcessingFailureInfo>(maxElements);
 
         public class ProcessingFailureInfo(int numberOfProcessingAttempts, ExceptionDispatchInfo exceptionDispatchInfo, ContextBag context)
         {
