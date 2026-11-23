@@ -177,11 +177,13 @@ class PostgreSqlTransportInfrastructure(
                 moveDueCommand = moveDueWithLockCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable);
             }
 
+            var batchSize = delayedDelivery.GetBatchSize(AppContextSwitches.UseIndependentDelayedMessageMovers);
+
             diagnostics.Add("DelayedDelivery", new
             {
                 Native = true,
                 Suffix = delayedDelivery.TableSuffix,
-                delayedDelivery.BatchSize,
+                BatchSize = batchSize,
                 SingleMover = moveDueWithLockCommand != null,
                 MoverLockKey = moveDueWithLockCommand?.LockKey,
             });
@@ -191,7 +193,7 @@ class PostgreSqlTransportInfrastructure(
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
             dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier,
-                delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                batchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
         }
 
         Receivers = receiveSettings.Select(receiveSetting =>

@@ -28,13 +28,21 @@
         /// </summary>
         public int BatchSize
         {
-            get;
+            get => batchSize ?? DefaultBatchSize;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
 
-                field = value;
+                batchSize = value;
             }
-        } = 100;
+        }
+
+        // The independent movers fallback keeps the batch size it had before the single mover lock
+        internal int GetBatchSize(bool useIndependentMovers) => batchSize ?? (useIndependentMovers ? IndependentMoversDefaultBatchSize : DefaultBatchSize);
+
+        int? batchSize;
+
+        const int DefaultBatchSize = 200;
+        const int IndependentMoversDefaultBatchSize = 100;
     }
 }
