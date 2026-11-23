@@ -162,7 +162,7 @@ namespace NServiceBus.Transport.SqlServer
                 var mainReceiverInputQueueAddress = ToTransportAddress(receiveSettings[0].ReceiveAddress);
 
                 var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
-                var delayedQueueTable = delayedQueueCanonicalAddress.QualifiedTableName;
+                var delayedQueueTableName = delayedQueueCanonicalAddress.QualifiedTableName;
 
                 MoveDueDelayedMessagesWithLockCommand moveDueWithLockCommand = null;
                 IMoveDueDelayedMessagesCommand moveDueCommand;
