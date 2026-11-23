@@ -27,7 +27,7 @@ public class ParameterSizeTests
     }
 
     [Test]
-    public void Topic_parameters_should_have_the_column_length_regardless_of_topic_length()
+    public void Topic_parameters_should_have_a_fixed_size_regardless_of_topic_length()
     {
         var command = new SqlCommand();
 
@@ -35,8 +35,8 @@ public class ParameterSizeTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(command.Parameters["Topic_0"].Size, Is.EqualTo(200));
-            Assert.That(command.Parameters["Topic_1"].Size, Is.EqualTo(200));
+            Assert.That(command.Parameters["Topic_0"].Size, Is.EqualTo(4000));
+            Assert.That(command.Parameters["Topic_1"].Size, Is.EqualTo(4000));
         }
     }
 
@@ -50,18 +50,7 @@ public class ParameterSizeTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(command.Parameters["Topic_0"].Value, Is.EqualTo(DBNull.Value));
-            Assert.That(command.Parameters["Topic_0"].Size, Is.EqualTo(200));
+            Assert.That(command.Parameters["Topic_0"].Size, Is.EqualTo(4000));
         }
-    }
-
-    [Test]
-    public void Topic_parameters_should_not_truncate_topics_longer_than_the_column()
-    {
-        var command = new SqlCommand();
-        var longTopic = new string('x', 250);
-
-        SubscriptionTable.AddTopicParameters(command, [longTopic]);
-
-        Assert.That(command.Parameters["Topic_0"].Size, Is.EqualTo(longTopic.Length));
     }
 }

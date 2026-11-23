@@ -1,6 +1,5 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
-    using System;
     using System.Collections.Generic;
     using System.Data;
     using System.Linq;
@@ -14,12 +13,12 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             for (var i = 0; i < topics.Length; i++)
             {
-                // Never below the value length because providers truncate to Size. FullName can be null for open generic types.
-                command.AddParameter($"Topic_{i}", DbType.String, topics[i], Math.Max(TopicColumnLength, topics[i]?.Length ?? 0));
+                command.AddParameter($"Topic_{i}", DbType.String, topics[i], TopicParameterSize);
             }
         }
 
-        const int TopicColumnLength = 200;
+        // The largest fixed nvarchar size. Longer values are truncated, which cannot match a stored topic (the column holds 200 characters).
+        const int TopicParameterSize = 4000;
 
         string subscribeCommand = string.Format(sqlConstants.SubscribeText, qualifiedTableName);
         string unsubscribeCommand = string.Format(sqlConstants.UnsubscribeText, qualifiedTableName);
