@@ -240,6 +240,73 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             }
         }
 
+        [Test]
+        public async Task Failed_locked_move_leaves_no_transaction_or_lock_on_the_connection()
+        {
+            await StoreDueMessages(1, CancellationToken);
+            var command = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedTable, "#FailingInput");
+            var table = new DelayedMessageTable(sqlConstants, delayedTable.QualifiedTableName, command);
+
+            try
+            {
+                using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(CancellationToken);
+                using (var createCommand = connection.CreateCommand())
+                {
+                    createCommand.CommandText = $@"
+SELECT TOP (0) Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body
+INTO #FailingInput
+FROM {inputTable.QualifiedTableName};
+ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
+                    await createCommand.ExecuteNonQueryAsync(CancellationToken);
+                }
+
+                var exception = Assert.ThrowsAsync<SqlException>(() => table.MoveDueMessages(10, connection, null, CancellationToken));
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(exception.Number, Is.EqualTo(515));
+                    Assert.That(await ExecuteScalarInt(connection, "SELECT @@TRANCOUNT", CancellationToken), Is.Zero);
+                    Assert.That(await TryLockOnUnpooledConnection(command.LockResource, CancellationToken), Is.GreaterThanOrEqualTo(0));
+                    Assert.That(await Count(delayedTable, CancellationToken), Is.EqualTo(1));
+                }
+            }
+            finally
+            {
+                // A leaked lock would stay open on the pooled connection and affect later tests
+                SqlConnection.ClearAllPools();
+            }
+        }
+
+        [Test]
+        public async Task Locked_move_commits_on_a_session_with_implicit_transactions()
+        {
+            await StoreDueMessages(2, CancellationToken);
+            var table = CreateLockedTable();
+
+            try
+            {
+                using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(CancellationToken);
+                using (var setCommand = connection.CreateCommand())
+                {
+                    setCommand.CommandText = "SET IMPLICIT_TRANSACTIONS ON";
+                    await setCommand.ExecuteNonQueryAsync(CancellationToken);
+                }
+
+                await table.MoveDueMessages(10, connection, null, CancellationToken);
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(await ExecuteScalarInt(connection, "SELECT @@TRANCOUNT", CancellationToken), Is.Zero);
+                    Assert.That(await Count(inputTable, CancellationToken), Is.EqualTo(2));
+                }
+            }
+            finally
+            {
+                // A leaked lock would stay open on the pooled connection and affect later tests
+                SqlConnection.ClearAllPools();
+            }
+        }
+
         DelayedMessageTable CreateUnlockedTable() =>
             new(sqlConstants, delayedTable.QualifiedTableName,
                 new MoveDueDelayedMessagesCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName));
