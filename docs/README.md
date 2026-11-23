@@ -25,6 +25,10 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 - [NServiceBus: message receivers](https://github.com/Particular/NServiceBus/blob/master/docs/message-receivers.md) — what the transport must honor when receiving messages, including concurrency and shutdown
 - [NServiceBus: for downstream components](https://github.com/Particular/NServiceBus/blob/master/docs/README.md#for-downstream-components) — contracts Core documents for downstream components
 
+## Guidelines
+
+- [Public transport options](guidelines/transport-options.md) — when adding public options types or settings, use transport-owned options with documented defaults and validation.
+
 ## Decisions and rationale
 
 - [Architecture and design decisions](decisions/)
