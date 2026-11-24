@@ -230,6 +230,20 @@ public class ReceiveCursorTests
     }
 
     [Test]
+    public void WhenSweepingFromTheHead_AndAReceiveFromTheEarlierSweepFindsAStrandedRow_ThenTheHeadSweepContinues()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(7);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.SweepFromHead(); // the sweep interval passed while the earlier receive's query ran
+        cursor.Received(staleSeek, 8); // still behind the high-water anchor
+
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
+    }
+
+    [Test]
     public void WhenTheAnchorIsAtTheHead_AndSweepingFromTheHead_ThenNoSweepStarts()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
