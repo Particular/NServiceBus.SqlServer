@@ -69,5 +69,55 @@ public class MoveDueDelayedMessagesWithLockCommandTests
         }
     }
 
+    [Test]
+    public void Keeps_a_lock_resource_of_exactly_255_characters_unchanged()
+    {
+        // [c].[dbo].[table]_mover adds 18 characters to the catalog and table names
+        var table = new string('t', 128);
+        var catalog = new string('c', 255 - 18 - table.Length);
+        var command = new MoveDueDelayedMessagesWithLockCommand(new SqlServerConstants(), new CanonicalQueueAddress(table, "dbo", catalog), "[input]");
+
+        Assert.That(command.LockResource, Is.EqualTo($"[{catalog}].[dbo].[{table}]_mover".ToUpperInvariant()));
+    }
+
+    [Test]
+    public void Hashes_a_lock_resource_longer_than_255_characters_to_255_characters()
+    {
+        var command = LongIdentifierCommand("first.Delayed");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(command.LockResource, Has.Length.EqualTo(255));
+            Assert.That(command.LockResource, Does.StartWith($"[{LongCatalog}].[{LongSchema}]".ToUpperInvariant()[..223]));
+        }
+    }
+
+    [Test]
+    public void Long_identifiers_that_differ_after_255_characters_get_different_lock_resources() =>
+        Assert.That(AsSeenBySpGetAppLock(LongIdentifierCommand("first.Delayed")), Is.Not.EqualTo(AsSeenBySpGetAppLock(LongIdentifierCommand("second.Delayed"))));
+
+    static string AsSeenBySpGetAppLock(MoveDueDelayedMessagesWithLockCommand command) =>
+        command.LockResource.Length > 255 ? command.LockResource[..255] : command.LockResource;
+
+    [Test]
+    public void Long_identifiers_that_differ_only_in_case_get_the_same_lock_resource()
+    {
+        var lower = new MoveDueDelayedMessagesWithLockCommand(new SqlServerConstants(), new CanonicalQueueAddress("first.delayed", LongSchema, LongCatalog), "[input]");
+        var upper = new MoveDueDelayedMessagesWithLockCommand(new SqlServerConstants(), new CanonicalQueueAddress("FIRST.DELAYED", LongSchema.ToUpperInvariant(), LongCatalog.ToUpperInvariant()), "[input]");
+
+        Assert.That(upper.LockResource, Is.EqualTo(lower.LockResource));
+    }
+
+    // Every instance must derive the same resource, so the hash and format cannot change between versions
+    [Test]
+    public void Long_lock_resource_is_stable() =>
+        Assert.That(LongIdentifierCommand("first.Delayed").LockResource[223..], Is.EqualTo("C2839D173974E80B31DC3318110BC1D9"));
+
+    static MoveDueDelayedMessagesWithLockCommand LongIdentifierCommand(string table) =>
+        new(new SqlServerConstants(), new CanonicalQueueAddress(table, LongSchema, LongCatalog), "[input]");
+
+    static readonly string LongCatalog = new('c', 128);
+    static readonly string LongSchema = new('s', 128);
+
     static readonly CanonicalQueueAddress delayedQueue = new("delayed", "dbo", "delayedcatalog");
 }

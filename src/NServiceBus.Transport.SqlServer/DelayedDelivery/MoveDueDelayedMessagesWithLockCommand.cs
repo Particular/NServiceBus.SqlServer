@@ -1,7 +1,10 @@
 namespace NServiceBus.Transport.SqlServer
 {
+    using System;
     using System.Data;
     using System.Data.Common;
+    using System.IO.Hashing;
+    using System.Text;
     using NServiceBus.Transport.Sql.Shared;
 
     class MoveDueDelayedMessagesWithLockCommand(SqlServerConstants sqlConstants, CanonicalQueueAddress delayedQueue, string inputQueueTable) : IMoveDueDelayedMessagesCommand
@@ -17,10 +20,23 @@ namespace NServiceBus.Transport.SqlServer
             command.AddParameter("MoverLockCatalog", DbType.String, delayedQueue.Catalog, 128);
         }
 
-        // sp_getapplock compares resource names case-sensitively
-        public string LockResource { get; } = $"{delayedQueue.QualifiedTableName}_mover".ToUpperInvariant();
+        public string LockResource { get; } = CreateLockResource(delayedQueue);
 
-        // sp_getapplock truncates longer resource names to this length
+        // sp_getapplock compares resource names case-sensitively and truncates them to 255 characters,
+        // so a longer name keeps a prefix and ends in a hash of the whole name instead of losing its tail.
+        static string CreateLockResource(CanonicalQueueAddress delayedQueue)
+        {
+            var resource = $"{delayedQueue.QualifiedTableName}_mover".ToUpperInvariant();
+            if (resource.Length <= MaxLockResourceLength)
+            {
+                return resource;
+            }
+
+            // Hex digits never end in "_MOVER", so a hashed resource cannot equal one that fits
+            var hash = Convert.ToHexString(XxHash128.Hash(Encoding.UTF8.GetBytes(resource)));
+            return string.Concat(resource.AsSpan(0, MaxLockResourceLength - hash.Length), hash);
+        }
+
         const int MaxLockResourceLength = 255;
 
         // The lock runs in the delayed table's catalog because sp_getapplock scopes it to the session's database.

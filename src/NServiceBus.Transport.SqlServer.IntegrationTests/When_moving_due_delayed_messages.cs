@@ -307,6 +307,55 @@ ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
             }
         }
 
+        [Test]
+        public async Task Delayed_tables_with_long_identifiers_take_separate_mover_locks()
+        {
+            var catalog = new string('c', 128);
+            var schema = new string('s', 128);
+            await EnsureCatalogAndSchema(catalog, schema, CancellationToken);
+
+            var addressTranslator = new QueueAddressTranslator(catalog, schema, null, null);
+            var input = addressTranslator.Parse("LongIdentifiersInput");
+            var first = new CanonicalQueueAddress("LongIdentifiersFirst.Delayed", schema, catalog);
+            var second = new CanonicalQueueAddress("LongIdentifiersSecond.Delayed", schema, catalog);
+            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            await queueCreator.CreateQueueIfNecessary(["LongIdentifiersInput"], first, CancellationToken);
+            await queueCreator.CreateQueueIfNecessary(["LongIdentifiersInput"], second, CancellationToken);
+            await Purge(input, CancellationToken);
+            await Purge(second, CancellationToken);
+
+            var firstCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, first, input.QualifiedTableName);
+            var secondCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, second, input.QualifiedTableName);
+            var secondTable = new DelayedMessageTable(sqlConstants, second.QualifiedTableName, secondCommand);
+            await StoreDueMessages(second, 1, CancellationToken);
+
+            TestContext.Out.WriteLine($"first  ({firstCommand.LockResource.Length}): {firstCommand.LockResource}");
+            TestContext.Out.WriteLine($"second ({secondCommand.LockResource.Length}): {secondCommand.LockResource}");
+
+            using var holder = await OpenUnpooledConnection(CancellationToken);
+            using var holderTransaction = holder.BeginTransaction();
+            try
+            {
+                Assert.That(await TryGetAppLock(holder, holderTransaction, first.QuotedCatalogName, firstCommand.LockResource, CancellationToken), Is.GreaterThanOrEqualTo(0));
+                foreach (var row in await ApplicationLocks(catalog, CancellationToken))
+                {
+                    TestContext.Out.WriteLine($"held: {row}");
+                }
+
+                var result = await MoveWithoutTransaction(secondTable, 10, CancellationToken);
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(result, Is.Not.EqualTo(new MoveDueResult.LockNotAcquired()), "A lock held for one delayed table must not block another");
+                    Assert.That(await Count(input, CancellationToken), Is.EqualTo(1));
+                }
+            }
+            finally
+            {
+                holderTransaction.Rollback();
+            }
+        }
+
         DelayedMessageTable CreateUnlockedTable() =>
             new(sqlConstants, delayedTable.QualifiedTableName,
                 new MoveDueDelayedMessagesCommand(sqlConstants, delayedTable.QualifiedTableName, inputTable.QualifiedTableName));
@@ -345,11 +394,14 @@ ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
             return result;
         }
 
-        async Task<int> TryGetAppLock(SqlConnection connection, SqlTransaction transaction, string lockResource, CancellationToken cancellationToken)
+        Task<int> TryGetAppLock(SqlConnection connection, SqlTransaction transaction, string lockResource, CancellationToken cancellationToken) =>
+            TryGetAppLock(connection, transaction, delayedTable.QuotedCatalogName, lockResource, cancellationToken);
+
+        static async Task<int> TryGetAppLock(SqlConnection connection, SqlTransaction transaction, string quotedCatalog, string lockResource, CancellationToken cancellationToken)
         {
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = $"DECLARE @result int; EXEC @result = {delayedTable.QuotedCatalogName}.sys.sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0; SELECT @result;";
+            command.CommandText = $"DECLARE @result int; EXEC @result = {quotedCatalog}.sys.sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0; SELECT @result;";
             command.Parameters.AddWithValue("r", lockResource);
             return (int)await command.ExecuteScalarAsync(cancellationToken);
         }
@@ -367,13 +419,15 @@ ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
             return new OpenTx(connection, connection.BeginTransaction());
         }
 
-        async Task StoreDueMessages(int count, CancellationToken cancellationToken)
+        Task StoreDueMessages(int count, CancellationToken cancellationToken) => StoreDueMessages(delayedTable, count, cancellationToken);
+
+        async Task StoreDueMessages(CanonicalQueueAddress table, int count, CancellationToken cancellationToken)
         {
             using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(cancellationToken);
             for (var i = 0; i < count; i++)
             {
                 using var command = connection.CreateCommand();
-                command.CommandText = $"INSERT INTO {delayedTable.QualifiedTableName} (Headers, Body, Due) VALUES (N'{{}}', 0x00, DATEADD(s, -10, GETUTCDATE()))";
+                command.CommandText = $"INSERT INTO {table.QualifiedTableName} (Headers, Body, Due) VALUES (N'{{}}', 0x00, DATEADD(s, -10, GETUTCDATE()))";
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -384,6 +438,42 @@ ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
             using var command = connection.CreateCommand();
             command.CommandText = $"SELECT COUNT(*) FROM {table.QualifiedTableName} WITH (READPAST)";
             return (int)await command.ExecuteScalarAsync(cancellationToken);
+        }
+
+        async Task EnsureCatalogAndSchema(string catalog, string schema, CancellationToken cancellationToken)
+        {
+            using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+-- Names above 123 characters need explicit logical file names
+DECLARE @path nvarchar(max) = CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS nvarchar(max));
+DECLARE @createDatabase nvarchar(max) = N'CREATE DATABASE ' + QUOTENAME(@catalog)
+    + N' ON (NAME = long_catalog_data, FILENAME = ' + QUOTENAME(@path + N'long_catalog.mdf', '''') + N')'
+    + N' LOG ON (NAME = long_catalog_log, FILENAME = ' + QUOTENAME(@path + N'long_catalog.ldf', '''') + N')';
+IF DB_ID(@catalog) IS NULL EXEC (@createDatabase);
+DECLARE @executeInCatalog nvarchar(max) = QUOTENAME(@catalog) + N'.sys.sp_executesql';
+DECLARE @createSchema nvarchar(max) = N'IF SCHEMA_ID(' + QUOTENAME(@schema, '''') + N') IS NULL EXEC (N''CREATE SCHEMA ' + REPLACE(QUOTENAME(@schema), '''', '''''') + N''')';
+EXEC @executeInCatalog @createSchema;";
+            command.Parameters.AddWithValue("catalog", catalog);
+            command.Parameters.AddWithValue("schema", schema);
+            command.CommandTimeout = 120;
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        async Task<string[]> ApplicationLocks(string catalog, CancellationToken cancellationToken)
+        {
+            using var connection = await OpenUnpooledConnection(cancellationToken);
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT CONCAT(request_session_id, ' ', request_mode, ' ', request_status, ' ', resource_description) FROM sys.dm_tran_locks WHERE resource_type = 'APPLICATION' AND resource_database_id = DB_ID(@catalog)";
+            command.Parameters.AddWithValue("catalog", catalog);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            var rows = new System.Collections.Generic.List<string>();
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rows.Add(reader.GetString(0));
+            }
+
+            return [.. rows];
         }
 
         async Task Purge(CanonicalQueueAddress table, CancellationToken cancellationToken)
