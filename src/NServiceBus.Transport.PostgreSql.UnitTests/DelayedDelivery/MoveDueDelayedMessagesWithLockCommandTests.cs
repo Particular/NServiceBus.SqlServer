@@ -24,6 +24,11 @@ public class MoveDueDelayedMessagesWithLockCommandTests
         }
     }
 
+    // Pins the whole derivation, because a change in how the address is quoted would change every key
+    [Test]
+    public void Derives_a_stable_lock_key_from_the_canonical_address() =>
+        Assert.That(new MoveDueDelayedMessagesWithLockCommand(new PostgreSqlConstants(), new CanonicalQueueAddress("delayed", "public").QualifiedTableName, "\"public\".\"input\"").LockKey, Is.EqualTo(3093868108017798208L));
+
     [Test]
     public void Owns_the_transaction() =>
         Assert.That(new MoveDueDelayedMessagesWithLockCommand(new PostgreSqlConstants(), "\"public\".\"delayed\"", "\"public\".\"input\"").OwnsTransaction, Is.True);
