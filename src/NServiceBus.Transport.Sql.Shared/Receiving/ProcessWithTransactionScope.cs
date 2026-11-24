@@ -25,7 +25,7 @@
                         var receiveResult = await InputQueue.TryReceive(connection, null, cancellationToken).ConfigureAwait(false);
                         receiveCountdownEventSignaler.Signal();
 
-                        if (receiveResult == MessageReadResult.NoMessage)
+                        if (receiveResult.IsEmpty)
                         {
                             await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
                             return;
