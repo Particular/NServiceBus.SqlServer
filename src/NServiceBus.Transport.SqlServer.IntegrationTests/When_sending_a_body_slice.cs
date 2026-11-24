@@ -41,7 +41,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
         public async Task Should_store_only_the_slice_for_delayed_delivery(int bodyLength)
         {
             var queue = new SqlTableBasedQueue(sqlConstants, queueAddress, queueAddress.Address, true);
-            var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueAddress.QualifiedTableName, queueAddress.QualifiedTableName);
+            var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueAddress.QualifiedTableName, new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueAddress.QualifiedTableName, queueAddress.QualifiedTableName));
             var buffer = new byte[bodyLength + 64];
             Random.Shared.NextBytes(buffer);
             var body = buffer.AsMemory(13, bodyLength);
