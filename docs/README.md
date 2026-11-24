@@ -41,5 +41,6 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 ### Decisions recorded in pull requests
 
 - Record the transaction mode when the transport creates the transaction, rather than inferring it during dispatch — [#1756](https://github.com/Particular/NServiceBus.SqlServer/pull/1756)
+- Elect one mover per delayed-message table to reduce database contention on scaled-out endpoints — [#1830](https://github.com/Particular/NServiceBus.SqlServer/pull/1830)
 
 Keep this index current when a canonical source is added, replaced, or retired; link, do not copy.

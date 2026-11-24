@@ -13,8 +13,12 @@ namespace NServiceBus.Transport.Sql.Shared
             DbTransaction transaction, CancellationToken cancellationToken = default);
     }
 
-    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, string inputQueueTable) : IDelayedMessageStore
+    class DelayedMessageTable(ISqlConstants sqlConstants, string delayedQueueTable, IMoveDueDelayedMessagesCommand moveDueCommand) : IDelayedMessageStore
     {
+        const int LockAcquiredColumn = 2;
+
+        public bool MoveOwnsTransaction => moveDueCommand.OwnsTransaction;
+
         public event EventHandler<DateTime> OnStoreDelayedMessage;
 
         /// <summary>
@@ -38,23 +42,27 @@ namespace NServiceBus.Transport.Sql.Shared
             OnStoreDelayedMessage?.Invoke(null, DateTime.UtcNow.Add(dueAfter));
         }
 
-        /// <returns>The time of the next timeout due</returns>
-        public async Task<DateTime> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
+        public async Task<MoveDueResult> MoveDueMessages(int batchSize, DbConnection connection, DbTransaction transaction,
             CancellationToken cancellationToken = default)
         {
             var command = connection.CreateCommand();
             await using var commandDisposer = command.ConfigureAwait(false);
             command.Transaction = transaction;
-            command.CommandText = moveDueCommand;
             command.CommandType = CommandType.Text;
+            moveDueCommand.Populate(command, batchSize);
 
-            command.AddParameter("BatchSize", DbType.Int32, batchSize);
             var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             await using var readerDisposer = reader.ConfigureAwait(false);
             if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 // No timeouts waiting
-                return DateTime.MinValue;
+                return new MoveDueResult.Moved(DateTime.MinValue);
+            }
+
+            if (!await reader.IsDBNullAsync(LockAcquiredColumn, cancellationToken).ConfigureAwait(false)
+                && !reader.GetBoolean(LockAcquiredColumn))
+            {
+                return new MoveDueResult.LockNotAcquired();
             }
 
             // Normalizing in case of clock drift between executing machine and database instance
@@ -63,13 +71,12 @@ namespace NServiceBus.Transport.Sql.Shared
 
             if (sqlNextDue <= sqlNow)
             {
-                return DateTime.UtcNow;
+                return new MoveDueResult.Moved(DateTime.UtcNow);
             }
 
-            return DateTime.UtcNow.Add(sqlNextDue - sqlNow);
+            return new MoveDueResult.Moved(DateTime.UtcNow.Add(sqlNextDue - sqlNow));
         }
 
         readonly string storeCommand = string.Format(sqlConstants.StoreDelayedMessageText, delayedQueueTable);
-        readonly string moveDueCommand = string.Format(sqlConstants.MoveDueDelayedMessageText, delayedQueueTable, inputQueueTable);
     }
 }

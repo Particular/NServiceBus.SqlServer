@@ -122,9 +122,55 @@ OUTPUT
     deleted.Body
 INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
 
-SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue
+SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, CAST(NULL AS bit) as LockAcquired
 FROM {0} WITH (READPAST)
 ORDER BY Due";
+
+        // Lets one instance at a time move, and commits on the server so a stalled client cannot keep the lock.
+        // XACT_ABORT rolls back on cancel or error, and IMPLICIT_TRANSACTIONS OFF lets COMMIT end the transaction; otherwise the pool keeps the lock.
+        public string MoveDueDelayedMessageWithLockText { get; set; } = @"
+SET IMPLICIT_TRANSACTIONS OFF;
+SET XACT_ABORT ON;
+DECLARE @moverLock int;
+
+BEGIN TRANSACTION;
+IF DB_ID() = DB_ID(@MoverLockCatalog)
+    EXEC @moverLock = sp_getapplock @Resource = @MoverLockResource, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+ELSE
+    EXEC @moverLock = {2}.sys.sp_getapplock @Resource = @MoverLockResource, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 0;
+
+IF @moverLock < -1
+BEGIN
+    ROLLBACK TRANSACTION;
+    THROW 50000, 'sp_getapplock failed for delayed mover', 1;
+END
+
+IF @moverLock >= 0
+BEGIN
+    ;WITH message AS (
+        SELECT TOP(@BatchSize) *
+        FROM {0} WITH (UPDLOCK, READPAST, ROWLOCK)
+        WHERE Due < GETUTCDATE())
+    DELETE FROM message
+    OUTPUT
+        NEWID(),
+        NULL,
+        NULL,
+        1,
+        NULL,
+        deleted.Headers,
+        deleted.Body
+    INTO {1} (Id, CorrelationId, ReplyToAddress, Recoverable, Expires, Headers, Body);
+END
+
+COMMIT TRANSACTION;
+
+IF @moverLock >= 0
+    SELECT TOP 1 GETUTCDATE() as UtcNow, Due as NextDue, CAST(1 AS bit) as LockAcquired
+    FROM {0} WITH (READPAST)
+    ORDER BY Due
+ELSE
+    SELECT GETUTCDATE() as UtcNow, NULL as NextDue, CAST(0 AS bit) as LockAcquired";
 
         public string PeekText { get; set; } = @"
 SELECT isnull(cast(max([RowVersion]) - min([RowVersion]) + 1 AS int), 0) Id FROM {0} WITH (READPAST, READCOMMITTEDLOCK)";

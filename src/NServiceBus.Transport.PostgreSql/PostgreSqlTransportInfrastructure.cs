@@ -154,13 +154,6 @@ class PostgreSqlTransportInfrastructure(
         {
             var delayedDelivery = transport.DelayedDelivery;
 
-            diagnostics.Add("DelayedDelivery", new
-            {
-                Native = true,
-                Suffix = delayedDelivery.TableSuffix,
-                delayedDelivery.BatchSize
-            });
-
             var queueAddress = new Transport.QueueAddress(hostSettings.Name, null, new Dictionary<string, string>(),
                 delayedDelivery.TableSuffix);
 
@@ -173,13 +166,37 @@ class PostgreSqlTransportInfrastructure(
             var mainReceiverInputQueueAddress = ToTransportAddress(receiveSettings[0].ReceiveAddress);
 
             var inputQueueTable = addressTranslator.Parse(mainReceiverInputQueueAddress).QualifiedTableName;
-            var delayedMessageTable = new DelayedMessageTable(sqlConstants,
-                delayedQueueCanonicalAddress.QualifiedTableName, inputQueueTable);
+            var delayedQueueTable = delayedQueueCanonicalAddress.QualifiedTableName;
+
+            MoveDueDelayedMessagesWithLockCommand moveDueWithLockCommand = null;
+            IMoveDueDelayedMessagesCommand moveDueCommand;
+            if (AppContextSwitches.UseIndependentDelayedMessageMovers)
+            {
+                Logger.Warn($"The '{AppContextSwitches.UseIndependentDelayedMessageMoversSwitchName}' switch is set. Every endpoint instance moves due delayed messages independently. This fallback will be removed in the next major version. If you depend on it, report why at https://github.com/Particular/NServiceBus.SqlServer/issues/1831.");
+                moveDueCommand = new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+            }
+            else
+            {
+                moveDueCommand = moveDueWithLockCommand = new MoveDueDelayedMessagesWithLockCommand(sqlConstants, delayedQueueTable, inputQueueTable);
+            }
+
+            var batchSize = delayedDelivery.GetBatchSize(AppContextSwitches.UseIndependentDelayedMessageMovers);
+
+            diagnostics.Add("DelayedDelivery", new
+            {
+                Native = true,
+                Suffix = delayedDelivery.TableSuffix,
+                BatchSize = batchSize,
+                SingleMover = moveDueWithLockCommand != null,
+                MoverLockKey = moveDueWithLockCommand?.LockKey,
+            });
+
+            var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueTable, moveDueCommand);
 
             //Allows dispatcher to store messages in the delayed store
             delayedMessageStore = delayedMessageTable;
             dueDelayedMessageProcessor = new DueDelayedMessageProcessor(delayedMessageTable, connectionFactory, exceptionClassifier,
-                delayedDelivery.BatchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
+                batchSize, transport.TimeToWaitBeforeTriggeringCircuitBreaker, hostSettings);
         }
 
         Receivers = receiveSettings.Select(receiveSetting =>
