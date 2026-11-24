@@ -39,7 +39,8 @@ public class When_sending_a_body_slice
     [TestCase(200_000)]
     public async Task Should_store_only_the_slice_for_delayed_delivery(int bodyLength)
     {
-        var delayedMessageTable = new DelayedMessageTable(new PostgreSqlConstants(), delayedQueueAddress.QualifiedTableName, queueAddress.QualifiedTableName);
+        var sqlConstants = new PostgreSqlConstants();
+        var delayedMessageTable = new DelayedMessageTable(sqlConstants, delayedQueueAddress.QualifiedTableName, new MoveDueDelayedMessagesCommand(sqlConstants, delayedQueueAddress.QualifiedTableName, queueAddress.QualifiedTableName));
         var buffer = new byte[bodyLength + 64];
         Random.Shared.NextBytes(buffer);
         var body = buffer.AsMemory(13, bodyLength);
