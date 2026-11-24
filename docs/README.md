@@ -19,11 +19,20 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 
 - [SQL Server transport transaction modes](https://docs.particular.net/transports/sql/transactions) — which operations share the receive transaction in each mode
 
+## Guidelines
+
+- [SQL statements and parameters](guidelines/sql-statements.md) — applies to a change that adds or edits statement text or its bound parameters; size every string and binary parameter, and turn implicit transactions off in statements that open their own
+- [Guideline structure](guidelines/README.md) — how guidelines are written and indexed
+
 ## Upstream contracts
 
 - [NServiceBus: message dispatchers](https://github.com/Particular/NServiceBus/blob/master/docs/message-dispatchers.md) — what the transport must honor when dispatching messages, including batching and dispatch consistency
 - [NServiceBus: message receivers](https://github.com/Particular/NServiceBus/blob/master/docs/message-receivers.md) — what the transport must honor when receiving messages, including concurrency and shutdown
 - [NServiceBus: for downstream components](https://github.com/Particular/NServiceBus/blob/master/docs/README.md#for-downstream-components) — contracts Core documents for downstream components
+
+## Guidelines
+
+- [Public transport options](guidelines/transport-options.md) — when adding public options types or settings, use transport-owned options with documented defaults and validation.
 
 ## Decisions and rationale
 

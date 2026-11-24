@@ -106,6 +106,12 @@ namespace NServiceBus.Transport.SqlServer
                 TimeToWaitBeforeTriggering = transport.TimeToWaitBeforeTriggeringCircuitBreaker
             });
 
+            diagnostics.Add("FailureInfoCache", new
+            {
+                transport.FailureInfoCache.MaxEntries,
+                transport.FailureInfoCache.ExpirationPeriod
+            });
+
             var queuePeekerOptions = transport.QueuePeeker;
 
             var createMessageBodyComputedColumn = transport.CreateMessageBodyComputedColumn;
@@ -236,7 +242,7 @@ namespace NServiceBus.Transport.SqlServer
 
         ProcessStrategy SelectProcessStrategy(TransportTransactionMode minimumConsistencyGuarantee, TransactionOptions options, DbConnectionFactory connectionFactory)
         {
-            var failureInfoStorage = new FailureInfoStorage(10000);
+            var failureInfoStorage = new FailureInfoStorage(transport.FailureInfoCache.MaxEntries, transport.FailureInfoCache.ExpirationPeriod);
 
             if (minimumConsistencyGuarantee == TransportTransactionMode.TransactionScope)
             {

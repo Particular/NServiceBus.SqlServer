@@ -68,6 +68,7 @@ namespace NServiceBus.Transport.Sql.Shared
             messageReceivingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message receiving", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to peek " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
             messageProcessingCircuitBreaker = new RepeatedFailuresOverTimeCircuitBreaker("message processing", waitTimeCircuitBreaker, ex => criticalErrorAction("Failed to receive from " + ReceiveAddress, ex, messageProcessingCancellationTokenSource.Token));
 
+            processStrategy.StartTrimmingExpiredFailureInfo();
             // Task.Run() so the call returns immediately instead of waiting for the first await or return down the call stack
             messageReceivingTask =
                 Task.Run(() => ReceiveMessagesAndSwallowExceptions(messageReceivingCancellationTokenSource.Token),
@@ -132,6 +133,7 @@ namespace NServiceBus.Transport.Sql.Shared
                 }
             }
 
+            processStrategy.StopTrimmingExpiredFailureInfo();
             messageReceivingCircuitBreaker.Dispose();
             messageProcessingCircuitBreaker.Dispose();
             concurrencyLimiter.Dispose();
