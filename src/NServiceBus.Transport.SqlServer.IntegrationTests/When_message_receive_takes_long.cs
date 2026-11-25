@@ -80,7 +80,7 @@
 
         Task CreateQueueIfNotExists(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse, false);
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, dbConnectionFactory, addressTranslator.Parse, false);
 
             return queueCreator.CreateQueueIfNecessary(new[] { QueueTableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken);
         }

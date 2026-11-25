@@ -318,7 +318,7 @@ ALTER TABLE #FailingInput ALTER COLUMN CorrelationId varchar(255) NOT NULL;";
             var input = addressTranslator.Parse("LongIdentifiersInput");
             var first = new CanonicalQueueAddress("LongIdentifiersFirst.Delayed", schema, catalog);
             var second = new CanonicalQueueAddress("LongIdentifiersSecond.Delayed", schema, catalog);
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, dbConnectionFactory, addressTranslator.Parse);
             await queueCreator.CreateQueueIfNecessary(["LongIdentifiersInput"], first, CancellationToken);
             await queueCreator.CreateQueueIfNecessary(["LongIdentifiersInput"], second, CancellationToken);
             await Purge(input, CancellationToken);
@@ -494,7 +494,7 @@ EXEC @executeInCatalog @createSchema;";
             inputTable = addressTranslator.Parse(InputQueue);
             delayedTable = new CanonicalQueueAddress(InputQueue + ".Delayed", "dbo", "nservicebus");
 
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, dbConnectionFactory, addressTranslator.Parse);
             await queueCreator.CreateQueueIfNecessary([InputQueue], delayedTable, CancellationToken);
 
             await Purge(inputTable, CancellationToken);

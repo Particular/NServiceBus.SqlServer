@@ -7,7 +7,7 @@ namespace NServiceBus.Transport.SqlServer
     using System.Threading.Tasks;
     using NServiceBus.Transport.Sql.Shared;
 
-    class QueueCreator(ISqlConstants sqlConstants, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
+    class QueueCreator(ISqlConstants sqlConstants, string createQueueScript, DbConnectionFactory connectionFactory, Func<string, CanonicalQueueAddress> addressTranslator, bool createMessageBodyColumn = false)
     {
         public async Task CreateQueueIfNecessary(string[] queueAddresses, CanonicalQueueAddress delayedQueueAddress, CancellationToken cancellationToken = default)
         {
@@ -15,7 +15,7 @@ namespace NServiceBus.Transport.SqlServer
             await using var connectionDisposer = connection.ConfigureAwait(false);
             foreach (var address in queueAddresses)
             {
-                await CreateQueue(sqlConstants.CreateQueueText, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
+                await CreateQueue(createQueueScript, addressTranslator(address), connection, createMessageBodyColumn, cancellationToken).ConfigureAwait(false);
             }
 
             if (delayedQueueAddress != null)

@@ -39,7 +39,7 @@
 
         async Task ResetQueue(QueueAddressTranslator addressTranslator, SqlServerDbConnectionFactory dbConnectionFactory, CancellationToken cancellationToken = default)
         {
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, dbConnectionFactory, addressTranslator.Parse);
 
             await using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
