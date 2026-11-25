@@ -1,6 +1,7 @@
 namespace NServiceBus.Transport.SqlServer.IntegrationTests
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
@@ -61,6 +62,43 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             {
                 Assert.That(await Count(delayedTable, CancellationToken), Is.Zero);
                 Assert.That(await Count(inputTable, CancellationToken), Is.EqualTo(3));
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task Moves_due_messages_into_a_bucketed_queue(bool withLock)
+        {
+            await UseBucketedInputQueue(CancellationToken);
+            // More than 64 rows, so ordering by bucket differs from ordering by row version
+            await StoreDueMessages(100, CancellationToken);
+
+            if (withLock)
+            {
+                await MoveWithoutTransaction(CreateLockedTable(), 100, CancellationToken);
+            }
+            else
+            {
+                await MoveInTransaction(CreateUnlockedTable(), 100, CancellationToken);
+            }
+
+            using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(CancellationToken);
+            var rowsInTheirBucket = await ExecuteScalarInt(connection, $"SELECT COUNT(*) FROM {inputTable.QualifiedTableName} WHERE RowVersion IS NOT NULL AND Bucket = RowVersion % 64", CancellationToken);
+            var idsInRowVersionOrder = await IdsInRowVersionOrder(connection, inputTable, CancellationToken);
+
+            var queue = new SqlTableBasedQueue(sqlConstants, inputTable, inputTable.Address, true);
+            var receivedIds = new List<string>();
+            MessageReadResult result;
+            while (!(result = await queue.TryReceive(connection, null, CancellationToken)).IsEmpty)
+            {
+                receivedIds.Add(result.Message.TransportId);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await Count(delayedTable, CancellationToken), Is.Zero);
+                Assert.That(rowsInTheirBucket, Is.EqualTo(100));
+                Assert.That(receivedIds, Is.EqualTo(idsInRowVersionOrder).AsCollection);
             }
         }
 
@@ -476,6 +514,36 @@ EXEC @executeInCatalog @createSchema;";
             return [.. rows];
         }
 
+        async Task UseBucketedInputQueue(CancellationToken cancellationToken)
+        {
+            var addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            inputTable = addressTranslator.Parse(BucketedInputQueue);
+
+            using (var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(cancellationToken))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = $"DROP TABLE IF EXISTS {inputTable.QualifiedTableName}";
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateBucketedQueueText, dbConnectionFactory, addressTranslator.Parse);
+            await queueCreator.CreateQueueIfNecessary([BucketedInputQueue], null, cancellationToken);
+        }
+
+        static async Task<List<string>> IdsInRowVersionOrder(SqlConnection connection, CanonicalQueueAddress table, CancellationToken cancellationToken)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT Id FROM {table.QualifiedTableName} ORDER BY RowVersion";
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            var ids = new List<string>();
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                ids.Add(reader.GetGuid(0).ToString());
+            }
+
+            return ids;
+        }
+
         async Task Purge(CanonicalQueueAddress table, CancellationToken cancellationToken)
         {
             using var connection = (SqlConnection)await dbConnectionFactory.OpenNewConnection(cancellationToken);
@@ -513,6 +581,7 @@ EXEC @executeInCatalog @createSchema;";
         }
 
         const string InputQueue = "MoveDueDelayedMessagesTests";
+        const string BucketedInputQueue = "MoveDueDelayedMessagesBucketedTests";
 
         readonly SqlServerConstants sqlConstants = new();
         string connectionString;
