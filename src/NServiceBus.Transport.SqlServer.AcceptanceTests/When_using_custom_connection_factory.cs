@@ -36,7 +36,7 @@ public class When_using_custom_connection_factory : NServiceBusAcceptanceTest
                 await connection.OpenAsync(cancellationToken);
 
                 return connection;
-            });
+            }).ApplyQueueTableLayoutTestSwitch();
 
             EndpointSetup(new CustomizedServer(transport), (c, sd) =>
             {

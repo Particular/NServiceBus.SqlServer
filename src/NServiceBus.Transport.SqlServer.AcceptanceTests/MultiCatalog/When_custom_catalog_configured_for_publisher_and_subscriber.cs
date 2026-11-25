@@ -35,7 +35,7 @@ public class When_custom_catalog_configured_for_publisher_and_subscriber : Multi
     {
         public Publisher()
         {
-            var transport = new SqlServerTransport(PublisherConnectionString);
+            var transport = new SqlServerTransport(PublisherConnectionString).ApplyQueueTableLayoutTestSwitch();
             transport.Subscriptions.DisableCaching = true;
             transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
@@ -47,7 +47,7 @@ public class When_custom_catalog_configured_for_publisher_and_subscriber : Multi
     {
         public Subscriber()
         {
-            var transport = new SqlServerTransport(SubscriberConnectionString);
+            var transport = new SqlServerTransport(SubscriberConnectionString).ApplyQueueTableLayoutTestSwitch();
             transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>

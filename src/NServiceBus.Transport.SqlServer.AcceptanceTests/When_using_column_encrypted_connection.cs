@@ -44,7 +44,7 @@ public class When_using_column_encrypted_connection : NServiceBusAcceptanceTest
                 await connection.OpenAsync(cancellationToken);
 
                 return connection;
-            });
+            }).ApplyQueueTableLayoutTestSwitch();
 
             EndpointSetup(new CustomizedServer(transport), (c, sd) =>
             {

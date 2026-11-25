@@ -37,7 +37,7 @@ public class When_configured_error_queue_includes_catalog : MultiCatalogAcceptan
     {
         public Sender()
         {
-            var transport = new SqlServerTransport(SenderConnectionString);
+            var transport = new SqlServerTransport(SenderConnectionString).ApplyQueueTableLayoutTestSwitch();
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>
             {

@@ -13,7 +13,7 @@ public class ConfigureSqlServerTransportInfrastructure : IConfigureTransportInfr
         Environment.GetEnvironmentVariable("SqlServerTransportConnectionString")
         ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-    public TransportDefinition CreateTransportDefinition() => new SqlServerTransport(ConnectionString);
+    public TransportDefinition CreateTransportDefinition() => new SqlServerTransport(ConnectionString).ApplyQueueTableLayoutTestSwitch();
 
     public async Task<TransportInfrastructure> Configure(TransportDefinition transportDefinition, HostSettings hostSettings, QueueAddress queueAddress, string errorQueueName, CancellationToken cancellationToken = default)
     {
