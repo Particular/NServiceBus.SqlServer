@@ -49,6 +49,7 @@ namespace NServiceBus
         public SqlServerTransport(string connectionString) { }
         public System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Microsoft.Data.SqlClient.SqlConnection>> ConnectionFactory { get; }
         public string ConnectionString { get; }
+        public bool CreateBucketedQueueTables { get; set; }
         public bool CreateMessageBodyComputedColumn { get; set; }
         public string DefaultCatalog { get; set; }
         public string DefaultSchema { get; set; }

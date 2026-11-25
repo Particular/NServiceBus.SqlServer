@@ -90,10 +90,39 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             }
         }
 
+        [Test]
+        public async Task Starting_with_bucketed_queue_tables_enabled_leaves_an_existing_heap_unchanged()
+        {
+            await CreateQueue(heapQueue, sqlConstants.CreateQueueText);
+            var catalogRowsBeforeStartup = await CatalogRows(heapQueue);
+
+            var transport = new SqlServerTransport(connectionString)
+            {
+                CreateBucketedQueueTables = true,
+                TransportTransactionMode = TransportTransactionMode.ReceiveOnly
+            };
+            var hostSettings = new HostSettings("CreatingQueueTables", string.Empty, new StartupDiagnosticEntries(), (_, _, _) => { }, true);
+            var receiveSettings = new ReceiveSettings("receiver", new Transport.QueueAddress(heapQueue.Table), false, false, "error");
+
+            var infrastructure = await transport.Initialize(hostSettings, [receiveSettings], [bucketedQueue.Address]);
+            var receiver = infrastructure.Receivers.Single().Value;
+            await receiver.Initialize(new PushRuntimeSettings(1), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled));
+            await receiver.StartReceive();
+            await receiver.StopReceive();
+            await infrastructure.Shutdown();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await CatalogRows(heapQueue), Is.EqualTo(catalogRowsBeforeStartup).AsCollection);
+                // shows that startup created the missing queue with the setting on
+                Assert.That(await IndexColumns(bucketedQueue), Is.EqualTo(BucketedIndexColumns).AsCollection);
+            }
+        }
+
         [SetUp]
         public async Task SetUp()
         {
-            var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
+            connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
             dbConnectionFactory = new SqlServerDbConnectionFactory(connectionString);
 
             addressTranslator = new QueueAddressTranslator("nservicebus", "dbo", null, null);
@@ -118,6 +147,12 @@ SELECT CONCAT(name, ' type=', TYPE_NAME(user_type_id), ' length=', max_length, '
 FROM sys.columns
 WHERE object_id = OBJECT_ID(@table)
 ORDER BY column_id", cancellationToken);
+
+        // every column of the table's sys.indexes and sys.columns rows
+        Task<List<string>> CatalogRows(CanonicalQueueAddress queue, CancellationToken cancellationToken = default) => Query(queue, @"
+SELECT CONCAT('sys.indexes ', (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(@table) ORDER BY index_id FOR JSON PATH, INCLUDE_NULL_VALUES))
+UNION ALL
+SELECT CONCAT('sys.columns ', (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(@table) ORDER BY column_id FOR JSON PATH, INCLUDE_NULL_VALUES))", cancellationToken);
 
         Task<List<string>> IndexColumns(CanonicalQueueAddress queue, CancellationToken cancellationToken = default) => Query(queue, @"
 SELECT CONCAT(i.name, ' ', i.type_desc COLLATE DATABASE_DEFAULT, ' unique=', i.is_unique, ' key=', ic.key_ordinal, ' descending=', ic.is_descending_key, ' included=', ic.is_included_column, ' column=', c.name, ' filter=', i.filter_definition)
@@ -155,6 +190,7 @@ ORDER BY i.name, ic.key_ordinal, c.name", cancellationToken);
         ];
 
         readonly SqlServerConstants sqlConstants = new();
+        string connectionString;
         SqlServerDbConnectionFactory dbConnectionFactory;
         QueueAddressTranslator addressTranslator;
         CanonicalQueueAddress heapQueue;

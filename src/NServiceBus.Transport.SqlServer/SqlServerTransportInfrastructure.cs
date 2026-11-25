@@ -52,6 +52,7 @@ namespace NServiceBus.Transport.SqlServer
             ConfigureSendInfrastructure();
 
             diagnostics.Add("Dialect", "SQL Server");
+            diagnostics.Add("QueueTables", new { transport.CreateBucketedQueueTables });
 
             hostSettings.StartupDiagnostic.Add("NServiceBus.Transport.SqlServer", diagnostics);
         }
@@ -223,7 +224,8 @@ namespace NServiceBus.Transport.SqlServer
                 queuesToCreate.AddRange(sendingAddresses);
                 queuesToCreate.AddRange(receiveAddresses);
 
-                var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, connectionFactory, addressTranslator.Parse, createMessageBodyComputedColumn);
+                var createQueueScript = transport.CreateBucketedQueueTables ? sqlConstants.CreateBucketedQueueText : sqlConstants.CreateQueueText;
+                var queueCreator = new QueueCreator(sqlConstants, createQueueScript, connectionFactory, addressTranslator.Parse, createMessageBodyComputedColumn);
 
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);
