@@ -17,9 +17,9 @@ public class ReceiveCursorTests
     public void WhenTheAnchorAdvances_AndALowerRowIsCommittedLater_ThenTheAnchorDoesNotMoveBack()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
-        cursor.ReceivedFromHighWater(5); // out-of-order completion of a concurrent receive must not move the anchor back
+        cursor.ReceivedRow(5); // out-of-order completion of a concurrent receive must not move the anchor back
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(10));
     }
@@ -30,17 +30,17 @@ public class ReceiveCursorTests
         var cursor = new ReceiveCursor(anchoringEnabled: false);
 
         cursor.ApplyPeekResult(100);
-        cursor.ReceivedFromHighWater(200);
+        cursor.ReceivedRow(200);
         cursor.RescanFrom(150);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(0)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(0)));
     }
 
     [Test]
     public void WhenTheAnchorHasAdvanced_AndAnEarlierRowIsRolledBack_ThenTheAnchorIsSetSoItWouldRefetchThatRow()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.RescanFrom(7);
 
@@ -51,7 +51,7 @@ public class ReceiveCursorTests
     public void WhenARowPastTheAnchorIsRolledBack_ThenTheAnchorDoesNotMoveForward()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(5);
+        cursor.ReceivedRow(5);
 
         cursor.RescanFrom(10); // the rolled back row is already past the anchor
 
@@ -72,10 +72,10 @@ public class ReceiveCursorTests
     public void WhenAPeekFindsARowBehindTheAnchor_AndALaterRowIsCommitted_ThenTheSweepIsNotSkipped()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.ApplyPeekResult(4);
-        cursor.ReceivedFromHighWater(20); // a concurrent receive commits a later row
+        cursor.ReceivedRow(20); // a concurrent receive commits a later row
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
     }
@@ -84,10 +84,10 @@ public class ReceiveCursorTests
     public void WhenARowIsRolledBack_AndALaterRowIsCommitted_ThenTheSweepIsNotSkipped()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.RescanFrom(7);
-        cursor.ReceivedFromHighWater(20);
+        cursor.ReceivedRow(20);
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(6));
     }
@@ -96,7 +96,7 @@ public class ReceiveCursorTests
     public void WhenASweepIsRunning_AndAnEarlierRowIsRolledBack_ThenTheSweepIsLowered()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.RescanFrom(7);
 
         cursor.RescanFrom(4);
@@ -108,42 +108,42 @@ public class ReceiveCursorTests
     public void WhenAReceiveFromTheAnchorFindsARow_ThenTheAnchorMovesPastIt()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.Received(cursor.GetAnchor(), 15);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(15)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(15)));
     }
 
     [Test]
     public void WhenAReceiveFromTheAnchorFindsNothing_ThenTheAnchorIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.Received(cursor.GetAnchor(), null);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(10)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(10)));
     }
 
     [Test]
-    public void WhenASweepIsRunning_AndAReceiveFindsAStrandedRow_ThenTheHighWaterAnchorIsUnchanged()
+    public void WhenASweepIsRunning_AndAReceiveFindsAStrandedRow_ThenTheHighestReceivedRowVersionIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.ApplyPeekResult(4);
 
         cursor.Received(cursor.GetAnchor(), 5);
         cursor.Received(cursor.GetAnchor(), null);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(10)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(10)));
     }
 
     [Test]
     public void WhenASweepIsRunning_AndAReceiveFindsAStrandedRow_ThenTheSweepMovesPastIt()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.ApplyPeekResult(4);
 
         cursor.Received(cursor.GetAnchor(), 5);
@@ -155,20 +155,20 @@ public class ReceiveCursorTests
     public void WhenASweepIsRunning_AndAReceiveFindsARowPastTheAnchor_ThenTheSweepEnds_AndTheAnchorMovesPastIt()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.ApplyPeekResult(4);
-        cursor.ReceivedFromHighWater(20);
+        cursor.ReceivedRow(20);
 
         cursor.Received(cursor.GetAnchor(), 21);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(21)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(21)));
     }
 
     [Test]
     public void WhenASweepIsRunning_AndAReceiveFindsNothing_ThenTheSweepEnds()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.RescanFrom(7);
 
         cursor.Received(cursor.GetAnchor(), null);
@@ -180,7 +180,7 @@ public class ReceiveCursorTests
     public void WhenASweepIsLowered_AndAReceiveFromTheEarlierSweepCompletes_ThenTheLoweredSweepContinues()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.RescanFrom(7);
         var staleSeek = cursor.GetAnchor();
 
@@ -194,12 +194,12 @@ public class ReceiveCursorTests
     public void WhenASweepIsLowered_AndAReceiveFromTheEarlierSweepFindsAStrandedRow_ThenTheLoweredSweepContinues()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.RescanFrom(7);
         var staleSeek = cursor.GetAnchor();
 
         cursor.RescanFrom(3); // rolled back while the earlier receive's query ran
-        cursor.Received(staleSeek, 8); // still behind the high-water anchor
+        cursor.Received(staleSeek, 8); // still below 10, the highest received row version
 
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(2));
     }
@@ -208,7 +208,7 @@ public class ReceiveCursorTests
     public void WhenASweepStarts_AndAReceiveFromTheAnchorCompletes_ThenTheSweepIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         var anchoredSeek = cursor.GetAnchor();
 
         cursor.RescanFrom(7);
@@ -221,10 +221,10 @@ public class ReceiveCursorTests
     public void WhenSweepingFromTheHead_AndALaterRowIsCommitted_ThenTheSweepSeeksFromTheStartOfTheQueue()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
 
         cursor.SweepFromHead();
-        cursor.ReceivedFromHighWater(20);
+        cursor.ReceivedRow(20);
 
         Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
     }
@@ -233,12 +233,12 @@ public class ReceiveCursorTests
     public void WhenSweepingFromTheHead_AndAReceiveFromTheEarlierSweepFindsAStrandedRow_ThenTheHeadSweepContinues()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        cursor.ReceivedFromHighWater(10);
+        cursor.ReceivedRow(10);
         cursor.RescanFrom(7);
         var staleSeek = cursor.GetAnchor();
 
         cursor.SweepFromHead(); // the sweep interval passed while the earlier receive's query ran
-        cursor.Received(staleSeek, 8); // still behind the high-water anchor
+        cursor.Received(staleSeek, 8); // still below 10, the highest received row version
 
         Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
     }
@@ -250,6 +250,6 @@ public class ReceiveCursorTests
 
         cursor.SweepFromHead();
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighWater(0)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.HighestReceived(0)));
     }
 }
