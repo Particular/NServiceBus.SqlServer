@@ -15,9 +15,7 @@ public class ReceiveAttemptTests
         var noMessagesQueue = new FakeQueue(MessageReadResult.NoMessage);
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
-        var batchActivity = new BatchActivity();
-        _ = batchActivity.BeginNextBatch();
-        var attempt = new ReceiveAttempt(noMessagesQueue, new ReceiveCursor(anchoringEnabled: true), batchActivity, latch.GetSignaler(), stopBatch);
+        var attempt = new ReceiveAttempt(noMessagesQueue, new ReceiveCursor(anchoringEnabled: true), latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken);
 
@@ -25,7 +23,6 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.True, "empty receive stops the batch");
-            Assert.That(batchActivity.BeginNextBatch(), Is.EqualTo(LastBatchResult.LastBatchWasEmpty), "nothing received");
         });
     }
 
@@ -35,10 +32,8 @@ public class ReceiveAttemptTests
         var latch = new ReceiveCountdownEvent(1);
         var stopBatch = new CancellationTokenSource();
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        var batchActivity = new BatchActivity();
-        _ = batchActivity.BeginNextBatch();
         var message = MessageReadResult.Success(new Message("1", string.Empty, Array.Empty<byte>(), false), 1);
-        var attempt = new ReceiveAttempt(new FakeQueue(message), cursor, batchActivity, latch.GetSignaler(), stopBatch);
+        var attempt = new ReceiveAttempt(new FakeQueue(message), cursor, latch.GetSignaler(), stopBatch);
 
         _ = await attempt.Receive(null, null, CancellationToken);
 
@@ -46,7 +41,6 @@ public class ReceiveAttemptTests
         {
             Assert.That(latch.WaitAsync(CancellationToken).IsCompleted, Is.True, "latch signalled");
             Assert.That(stopBatch.IsCancellationRequested, Is.False, "batch continues");
-            Assert.That(batchActivity.BeginNextBatch(), Is.EqualTo(LastBatchResult.PreviousBatchHadResultsOrNoPreviousBatch), "message received");
         });
     }
 
@@ -54,7 +48,7 @@ public class ReceiveAttemptTests
     public async Task WhenAReceiveHasAlreadyBeenAttempted_AndReceiveIsCalledAgain_ThenThrows()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
-        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
+        var attempt = new ReceiveAttempt(new FakeQueue(MessageReadResult.NoMessage), cursor, new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
         _ = await attempt.Receive(null, null, CancellationToken);
 
@@ -102,7 +96,7 @@ public class ReceiveAttemptTests
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
         cursor.ReceivedFromHighWater(10);
-        var attempt = new ReceiveAttempt(new ThrowingQueue(), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
+        var attempt = new ReceiveAttempt(new ThrowingQueue(), cursor, new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
         Assert.ThrowsAsync<InvalidOperationException>(() => attempt.Receive(null, null, CancellationToken));
         attempt.Settle(ProcessOutcome.RolledBack);
@@ -111,7 +105,7 @@ public class ReceiveAttemptTests
     }
 
     static ReceiveAttempt CreateAttempt(ReceiveCursor cursor, MessageReadResult result) =>
-        new(new FakeQueue(result), cursor, new BatchActivity(), new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
+        new(new FakeQueue(result), cursor, new ReceiveCountdownEvent(1).GetSignaler(), new CancellationTokenSource());
 
     static Message CreateMessage() => new("1", string.Empty, Array.Empty<byte>(), false);
 

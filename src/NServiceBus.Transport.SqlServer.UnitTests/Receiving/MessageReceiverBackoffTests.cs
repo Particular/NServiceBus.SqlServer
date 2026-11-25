@@ -12,7 +12,24 @@ using NUnit.Framework;
 public class MessageReceiverBackoffTests
 {
     [Test]
-    public async Task WhenPeekReportsMessagesButReceivesComeUpEmpty_ThenWaitAPeekDelayBeforePeekingAgain()
+    public async Task WhenPeekFindsNoMessages_ThenWaitAPeekDelayBeforePeekingAgain()
+    {
+        var peekerReportingEmptyQueue = new CountingPeeker(
+            peekingReportesMessageCountOf: 0,
+            signalAfterPeeks: 10);
+        var queue = new FakeQueue(() => MessageReadResult.NoMessage);
+        var receiver = CreateReceiver(peekerReportingEmptyQueue, queue);
+
+        await receiver.Initialize(new PushRuntimeSettings(8), (_, _) => Task.CompletedTask, (_, _) => Task.FromResult(ErrorHandleResult.Handled));
+        await receiver.StartReceive();
+        await peekerReportingEmptyQueue.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5));
+        await receiver.StopReceive();
+
+        Assert.That(peekerReportingEmptyQueue.PeekDelayCount, Is.EqualTo(peekerReportingEmptyQueue.PeekCount));
+    }
+
+    [Test]
+    public async Task WhenPeekReportsMessagesButReceivesComeUpEmpty_ThenPeekAgainWithoutWaitingAPeekDelay()
     {
         var peekerReportingBacklog = new CountingPeeker(
             peekingReportesMessageCountOf: 10,
@@ -25,7 +42,7 @@ public class MessageReceiverBackoffTests
         await peekerReportingBacklog.PeeksSignaled.WaitAsync(TimeSpan.FromSeconds(5));
         await receiver.StopReceive();
 
-        Assert.That(peekerReportingBacklog.PeekDelayCount, Is.GreaterThanOrEqualTo(10 - 1 /* account for race between signal and peek */));
+        Assert.That(peekerReportingBacklog.PeekDelayCount, Is.EqualTo(0));
     }
 
     [Test]
