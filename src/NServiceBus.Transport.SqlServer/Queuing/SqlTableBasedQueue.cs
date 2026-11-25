@@ -23,6 +23,7 @@ class SqlTableBasedQueue : TableBasedQueue
         checkNonClusteredRowVersionIndexCommand = Format(sqlConstants.CheckIfNonClusteredRowVersionIndexIsPresent, qualifiedTableName);
         checkHeadersColumnTypeCommand = Format(sqlConstants.CheckHeadersColumnType, qualifiedTableName);
         checkRecoverableColumnCommand = Format(sqlConstants.CheckIfTableHasRecoverableText, queueAddress.Catalog, qualifiedTableName);
+        checkTableIsHeapCommand = Format(sqlConstants.CheckIfTableIsHeap, queueAddress.QuotedCatalogName, qualifiedTableName);
     }
 
     public async Task<int> PurgeBatchOfExpiredMessages(DbConnection connection, int purgeBatchSize, CancellationToken cancellationToken = default)
@@ -66,6 +67,17 @@ class SqlTableBasedQueue : TableBasedQueue
         command.CommandType = CommandType.Text;
 
         return await command.ExecuteScalarAsync<string>(nameof(checkHeadersColumnTypeCommand), cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<bool> CheckIfTableIsHeap(DbConnection connection, CancellationToken cancellationToken = default)
+    {
+        var command = connection.CreateCommand();
+        await using var commandDisposer = command.ConfigureAwait(false);
+        command.CommandText = checkTableIsHeapCommand;
+        command.CommandType = CommandType.Text;
+
+        var rowsCount = await command.ExecuteScalarAsync<int>(nameof(checkTableIsHeapCommand), cancellationToken).ConfigureAwait(false);
+        return rowsCount > 0;
     }
 
     protected override async Task SendRawMessage(MessageRow message, DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
@@ -150,6 +162,7 @@ class SqlTableBasedQueue : TableBasedQueue
     readonly string checkNonClusteredRowVersionIndexCommand;
     readonly string checkHeadersColumnTypeCommand;
     readonly string checkRecoverableColumnCommand;
+    readonly string checkTableIsHeapCommand;
     readonly SemaphoreSlim sendCommandLock = new SemaphoreSlim(1, 1);
     readonly SqlServerConstants sqlServerConstants;
 }

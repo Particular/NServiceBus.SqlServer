@@ -50,7 +50,35 @@
             Assert.That(count, Is.EqualTo(1));
         }
 
+        [TestCase("nservicebus")]
+        [TestCase("nservicebus1")]
+        public async Task It_reports_a_heap_as_a_heap(string catalog)
+        {
+            var isHeap = await CheckIfNewTableIsHeap(catalog, sqlConstants.CreateQueueText);
+            Assert.That(isHeap, Is.True);
+        }
+
+        [TestCase("nservicebus")]
+        [TestCase("nservicebus1")]
+        public async Task It_does_not_report_a_bucketed_table_as_a_heap(string catalog)
+        {
+            var isHeap = await CheckIfNewTableIsHeap(catalog, sqlConstants.CreateBucketedQueueText);
+            Assert.That(isHeap, Is.False);
+        }
+
         SqlServerDbConnectionFactory dbConnectionFactory;
+
+        async Task<bool> CheckIfNewTableIsHeap(string catalog, string creationScript, CancellationToken cancellationToken = default)
+        {
+            // the connection stays in the nservicebus catalog, whatever catalog the table is in
+            var addressParser = new QueueAddressTranslator("nservicebus", "dbo", null, null);
+            var address = $"CheckingHeap@[dbo]@[{catalog}]";
+            await ResetQueue(addressParser, dbConnectionFactory, address, creationScript, cancellationToken);
+
+            var tableQueue = new SqlTableBasedQueue(sqlConstants, addressParser.Parse(address), address, false);
+            await using var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken);
+            return await tableQueue.CheckIfTableIsHeap(connection, cancellationToken);
+        }
 
         async Task<int> RunCheckOnBucketedTable(string checkText, CancellationToken cancellationToken = default)
         {
@@ -70,7 +98,8 @@
             await using (var connection = await dbConnectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false))
             {
                 await using var comm = connection.CreateCommand();
-                comm.CommandText = $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE {tableName}";
+                var qualifiedTableName = addressTranslator.Parse(tableName).QualifiedTableName;
+                comm.CommandText = $"IF OBJECT_ID('{qualifiedTableName}', 'U') IS NOT NULL DROP TABLE {qualifiedTableName}";
                 comm.ExecuteNonQuery();
             }
             await queueCreator.CreateQueueIfNecessary(new[] { tableName }, new CanonicalQueueAddress("Delayed", "dbo", "nservicebus"), cancellationToken).ConfigureAwait(false);

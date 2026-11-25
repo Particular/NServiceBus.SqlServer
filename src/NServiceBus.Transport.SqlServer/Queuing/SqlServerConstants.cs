@@ -56,6 +56,12 @@ FROM [{0}].sys.columns c
 WHERE c.object_id = OBJECT_ID(N'{1}')
     AND c.name = 'Recoverable'";
 
+        public string CheckIfTableIsHeap { get; set; } = @"
+SELECT COUNT(*)
+FROM {0}.sys.indexes i
+WHERE i.object_id = OBJECT_ID(N'{1}')
+    AND i.index_id = 0";
+
         public string StoreDelayedMessageText { get; set; } =
 @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
