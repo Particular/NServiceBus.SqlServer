@@ -1,0 +1,77 @@
+name: Queue layout validation
+# Compares the heap and bucketed queue table layouts. A failed criterion raises a warning; a job fails only when a measurement cannot finish.
+# Remove this workflow, its scripts, and the branch entry in ci.yml before the branch merges.
+on:
+  push:
+    branches:
+      - table-format-buckets
+concurrency:
+  group: queue-layout-validation-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  DOTNET_NOLOGO: true
+  SQL_SERVER_VERSION: "2025"
+  RECLAIM_REPETITIONS: 3
+  INSERT_SECONDS: 180
+  INSERT_REPETITIONS: 3
+  # Minutes for each layout. Both layouts run in one job, which stops after 350 minutes.
+  SOAK_MINUTES: 60
+defaults:
+  run:
+    shell: bash
+jobs:
+  measure:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      matrix:
+        include:
+          - { id: plans-rcsi-off, name: "Plans and page reads, RCSI off", kind: plans, args: "OFF" }
+          - { id: plans-rcsi-on, name: "Plans and page reads, RCSI on", kind: plans, args: "ON" }
+          - { id: reclaim, name: "Page reclaim", kind: reclaim, args: "" }
+          - { id: insert-rcsi-off, name: "Insert throughput, RCSI off", kind: insert, args: "OFF" }
+          - { id: insert-rcsi-on, name: "Insert throughput, RCSI on", kind: insert, args: "ON" }
+          # The layout order differs, so that running second does not always favor the same layout.
+          - { id: soak-rcsi-off, name: "Soak, RCSI off", kind: soak, args: "OFF heap bucketed" }
+          - { id: soak-rcsi-on, name: "Soak, RCSI on", kind: soak, args: "ON bucketed heap" }
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Setup WSL
+        uses: Particular/setup-wsl-action@v1.3.0
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Install SQL Server
+        uses: Particular/install-sql-server-action@v3.0.0
+        with:
+          connection-string-env-var: BENCH_CS
+          sqlserver-version: ${{ env.SQL_SERVER_VERSION }}
+      - name: Describe the environment
+        run: |
+          server=$(sqlcmd -h -1 -W -Q "SET NOCOUNT ON; SELECT CONCAT(CONVERT(varchar(30), SERVERPROPERTY('ProductVersion')), ', ', CONVERT(varchar(60), SERVERPROPERTY('Edition')))")
+          {
+            echo "SQL Server $server, in a container on a GitHub-hosted runner with $(nproc) vCPUs and $(free -g | awk '/^Mem:/ { print $2 }') GiB of memory."
+            echo "Commit $GITHUB_SHA."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Measure
+        run: bash .github/workflows/scripts/queue-layout/run.sh ${{ matrix.kind }} ${{ matrix.args }}
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/queue-layout
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: python3 .github/workflows/scripts/queue-layout/report.py ${{ matrix.kind }} "$OUTPUT_DIR"
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/queue-layout
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: queue-layout-${{ matrix.id }}
+          path: ${{ runner.temp }}/queue-layout/
+          retention-days: 30
