@@ -31,9 +31,9 @@ java -Xmx16g -cp tla2tools.jar tlc2.TLC -workers auto -config ReceiveAnchored_Re
 
 ## Configurations
 
-All configurations use three messages (`N = 3`). `NoBackstop` configurations peek from the cursor and never sweep from the head, so they test the cursor alone. `Branch` and `Recommended` use the peek and the head sweep as implemented, with two instances, out-of-order commits, a rollback, a receive fault, and a crash. `Recommended` uses `RescanEpoch` with `RescanOnReceiveFault`.
+Configurations use three messages (`N = 3`) unless their name gives another count. `NoBackstop` and `RescanEpoch_N*` configurations peek from the cursor and never sweep from the head, so they test the cursor alone. `Branch` and `Recommended` use the peek and the head sweep as implemented, with two instances, out-of-order commits, a rollback, a receive fault, and a crash. `Recommended` uses `RescanEpoch` with `RescanOnReceiveFault`.
 
-TLC confirmed every outcome below. An explicit-state explorer that mirrors the specs gives the same outcomes and the same distinct state counts. `ReceiveAnchored_Branch` and `ReceiveAnchored_Recommended` have about 20 million distinct states each and need a 64-bit JVM with a heap of several GB. Each took between 30 and 70 minutes on 32 workers.
+TLC confirmed every outcome below. For the three-message configurations, an explicit-state explorer that mirrors the specs gives the same outcomes and the same distinct state counts. `ReceiveAnchored_Branch` and `ReceiveAnchored_Recommended` have about 20 million distinct states each, and `ReceiveAnchored_RescanEpoch_N4_TwoInstances` has about 57 million. They need a 64-bit JVM with a heap of several GB, and each took between 30 and 70 minutes on 32 workers. The other configurations finish in seconds.
 
 | Configuration | Expected outcome |
 |---|---|
@@ -42,6 +42,9 @@ TLC confirmed every outcome below. An explicit-state explorer that mirrors the s
 | `ReceiveAnchored_Rescan_NoBackstop` | Fails: a sweep receive that skipped the locked row ends the sweep after the rollback asked for the same sweep anchor |
 | `ReceiveAnchored_RescanGuarded_NoBackstop` | Fails: a rollback lowers the sweep back to the value a stale receive read, and the stale receive ends the sweep |
 | `ReceiveAnchored_RescanEpoch_NoBackstop` | Holds, with rollbacks and receive faults |
+| `ReceiveAnchored_RescanEpoch_N4` | Holds, with one instance, three receive slots, rollbacks, and a receive fault |
+| `ReceiveAnchored_RescanEpoch_N4_TwoInstances` | Holds, with two instances, rollbacks, a receive fault, and a crash with restart |
+| `ReceiveAnchored_RescanEpoch_N5` | `NoStrandedRow` holds, with one instance and three receive slots; `AllDelivered` is not checked |
 | `ReceiveAnchored_OutOfOrder_NoBackstop` | Fails: the anchor passes a row whose insert commits later |
 | `ReceiveAnchored_ScaleIn_NoBackstop` | Fails: another instance's anchor passes a row that a stopped instance releases |
 | `ReceiveAnchored_Branch` | Holds, through the head sweep and the idle peek |
