@@ -34,3 +34,13 @@ if (!bucketed.Contains(bucket))
 }
 
 File.WriteAllText(Path.Combine(directory, "create-persisted.sql"), bucketed.Replace(bucket, bucket + " PERSISTED"));
+
+// the table that #613 replaced, which clustered Index_RowVersion, with the current columns and Index_Expires; for comparison only
+const string rowVersionIndex = "CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}";
+var heap = Statement("CreateQueueText");
+if (!heap.Contains(rowVersionIndex))
+{
+    throw new Exception("The Index_RowVersion definition changed. Update this script.");
+}
+
+File.WriteAllText(Path.Combine(directory, "create-rowversion.sql"), heap.Replace(rowVersionIndex, "CREATE CLUSTERED INDEX Index_RowVersion ON {0}"));

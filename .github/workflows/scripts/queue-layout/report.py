@@ -164,16 +164,21 @@ def insert(directory):
     say(f"{span([r['seconds'] for r in runs])} seconds per run. The trend is the rate in the last third of a run divided by the rate in the first third. "
         "Throughput passes when the bucketed median is at least the lowest heap run. "
         "Trend passes when the bucketed median falls no further than the heap falls in its worst run.")
+    extra = [k for k in ("rowversion",) if any(r["layout"] == k for r in runs)]
+    if extra:
+        say()
+        say("`rowversion` is the table clustered on `RowVersion` that #613 replaced. It has no criteria; its columns are for comparison.")
     rows = []
+    notes = []
     for concurrency in unique(r["concurrency"] for r in runs):
-        by = {layout: [r for r in runs if r["concurrency"] == concurrency and r["layout"] == layout] for layout in ("heap", "bucketed")}
-        if not all(by.values()):
+        by = {layout: [r for r in runs if r["concurrency"] == concurrency and r["layout"] == layout] for layout in ("heap", "bucketed", *extra)}
+        if not by["heap"] or not by["bucketed"]:
             warn(f"Not measured: RCSI {rcsi}, {concurrency} sessions")
             continue
-        rate = {k: [r["insertedPerSecond"] for r in v] for k, v in by.items()}
-        trend = {k: [r["lastThirdOverFirstThird"] for r in v] for k, v in by.items()}
+        rate = {k: [r["insertedPerSecond"] for r in v] for k, v in by.items() if v}
+        trend = {k: [r["lastThirdOverFirstThird"] for r in v] for k, v in by.items() if v}
         spread = max(r["bucketSpread"] for r in by["bucketed"])
-        errors = sum(len(r["errors"]) for v in by.values() for r in v)
+        errors = sum(len(r["errors"]) for k in ("heap", "bucketed") for r in by[k])
         where = f"RCSI {rcsi}, {concurrency} sessions"
         rows.append([
             concurrency,
@@ -184,9 +189,16 @@ def insert(directory):
             verdict(statistics.median(rate["bucketed"]) >= min(rate["heap"]), f"{where}: bucketed insert throughput"),
             verdict(statistics.median(trend["bucketed"]) >= min(1, *trend["heap"]), f"{where}: bucketed insert trend"),
             f"{spread} {verdict(spread <= 1, f'{where}: bucket sizes differ by {spread}')}",
-            f"{errors} {verdict(errors == 0, f'{where}: {errors} session errors')}"])
-    table(["Sessions", "Runs", "Heap inserts/s", "Bucketed inserts/s", "Ratio", "Heap trend", "Bucketed trend",
-           "Throughput", "Trend", "Bucket spread", "Errors"], rows)
+            f"{errors} {verdict(errors == 0, f'{where}: {errors} session errors')}",
+            *(f"{statistics.median(rate[k]):,.0f} ({span(rate[k])})" if k in rate else "-" for k in extra),
+            *(f"{statistics.median(rate[k]) / statistics.median(rate['heap']):.3f}" if k in rate else "-" for k in extra),
+            *(f"{statistics.median(trend[k]):.2f} ({span(trend[k], 2)})" if k in trend else "-" for k in extra)])
+        notes += [f"{k}, {concurrency} sessions: {n} session errors" for k in extra if (n := sum(len(r["errors"]) for r in by[k]))]
+    table(["Sessions", "Runs", "Heap inserts/s", "Bucketed inserts/s", "Bucketed/heap", "Heap trend", "Bucketed trend",
+           "Throughput", "Trend", "Bucket spread", "Errors"]
+          + [f"{k} inserts/s" for k in extra] + [f"{k}/heap" for k in extra] + [f"{k} trend" for k in extra], rows)
+    for note in notes:
+        say(f"- {note}")
 
 
 def soak(directory):
@@ -195,21 +207,24 @@ def soak(directory):
     layouts = unique(x["layout"] for x in lines)
     minutes = {k: [x for x in lines if x["layout"] == k and "minute" in x] for k in layouts}
     summaries = {x["layout"]: x for x in lines if x.get("summary")}
+    data_index = {"heap": "heap", "bucketed": "Index_Bucket_RowVersion", "rowversion": "Index_RowVersion"}
     results = {}
     for layout, samples in minutes.items():
         steady = [x["receivedPerMinute"] for x in samples[1:] or samples]
-        total, previous = 0.0, 0.0
+        total, inserted, previous = 0.0, 0.0, 0.0
         for x in samples:
             total += x["receivedPerMinute"] * (x["elapsedSeconds"] - previous) / 60
+            inserted += x["insertedPerMinute"] * (x["elapsedSeconds"] - previous) / 60
             previous = x["elapsedSeconds"]
         early = [x["receivedPerMinute"] for x in samples[1:6] or samples]
         late = [x["receivedPerMinute"] for x in samples[-5:]]
         end = samples[-1]
-        data_pages = end["pages"].get("heap", end["pages"].get("Index_Bucket_RowVersion", 0))
+        data_pages = end["pages"].get(data_index.get(layout), 0)
         summary = summaries.get(layout)
         results[layout] = {
             "minutes": len(samples),
             "total": total,
+            "inserted": inserted,
             "low": min(steady),
             "high": max(steady),
             "below": min(steady) / statistics.mean(steady) - 1,
@@ -229,6 +244,7 @@ def soak(directory):
     measures = [
         ("Minutes sampled", lambda r: r["minutes"]),
         ("Rows received", lambda r: f"{r['total']:,.0f}"),
+        ("Rows inserted", lambda r: f"{r['inserted']:,.0f}"),
         ("Received per minute from minute 2", lambda r: f"{r['low']:,.0f} to {r['high']:,.0f}"),
         ("Distance from the mean", lambda r: f"{r['below']:+.1%} to {r['above']:+.1%}"),
         ("Last 5 minutes divided by minutes 2 to 6", lambda r: f"{r['trend']:.2f}"),
@@ -253,7 +269,12 @@ def soak(directory):
             say(f"- {layout}: `{plan}`")
     say()
 
-    bucketed, heap = results.get("bucketed"), results.get("heap")
+    bucketed, heap, rowversion = results.get("bucketed"), results.get("heap"), results.get("rowversion")
+    if heap and rowversion:
+        say(f"`rowversion` is the table clustered on `RowVersion` that #613 replaced. It has no criteria. It received "
+            f"{rowversion['total'] / heap['total']:.3f} and inserted {rowversion['inserted'] / heap['inserted']:.3f} of the heap's rows.")
+        say()
+
     if not bucketed or not heap:
         warn(f"Not measured: soak, RCSI {rcsi}, both layouts")
         return

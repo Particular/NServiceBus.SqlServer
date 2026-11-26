@@ -1,5 +1,6 @@
 name: Queue layout validation
-# Compares the heap and bucketed queue table layouts. A failed criterion raises a warning; a job fails only when a measurement cannot finish.
+# Compares the heap and bucketed queue table layouts. The insert and soak jobs also measure the table clustered on RowVersion that #613 replaced.
+# A failed criterion raises a warning; a job fails only when a measurement cannot finish.
 # Remove this workflow, its scripts, and the branch entry in ci.yml before the branch merges.
 on:
   push:
@@ -14,7 +15,7 @@ env:
   RECLAIM_REPETITIONS: 3
   INSERT_SECONDS: 180
   INSERT_REPETITIONS: 3
-  # Minutes for each layout. Both layouts run in one job, which stops after 350 minutes.
+  # Minutes for each layout. All three layouts run in one job, which stops after 350 minutes.
   SOAK_MINUTES: 60
 defaults:
   run:
@@ -32,9 +33,9 @@ jobs:
           - { id: reclaim, name: "Page reclaim", kind: reclaim, args: "" }
           - { id: insert-rcsi-off, name: "Insert throughput, RCSI off", kind: insert, args: "OFF" }
           - { id: insert-rcsi-on, name: "Insert throughput, RCSI on", kind: insert, args: "ON" }
-          # The layout order differs, so that running second does not always favor the same layout.
-          - { id: soak-rcsi-off, name: "Soak, RCSI off", kind: soak, args: "OFF heap bucketed" }
-          - { id: soak-rcsi-on, name: "Soak, RCSI on", kind: soak, args: "ON bucketed heap" }
+          # The order reverses between the two jobs, so that running later does not always favor the same layout.
+          - { id: soak-rcsi-off, name: "Soak, RCSI off", kind: soak, args: "OFF heap bucketed rowversion" }
+          - { id: soak-rcsi-on, name: "Soak, RCSI on", kind: soak, args: "ON rowversion bucketed heap" }
       fail-fast: false
     steps:
       - name: Checkout

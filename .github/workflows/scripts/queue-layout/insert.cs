@@ -15,7 +15,7 @@ var rcsi = args[2];
 var seconds = int.Parse(args[3]);
 var reps = int.Parse(args[4]);
 var concurrencies = args[5].Split(',').Select(int.Parse).ToArray();
-var layouts = new[] { "heap", "bucketed" };
+var layouts = new[] { "heap", "bucketed", "rowversion" };
 var master = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("BENCH_CS")) { InitialCatalog = "master", MaxPoolSize = 100 }.ConnectionString;
 var database = new SqlConnectionStringBuilder(master) { InitialCatalog = "b3" }.ConnectionString;
 
@@ -33,8 +33,8 @@ for (var rep = 1; rep <= reps; rep++)
 {
     foreach (var concurrency in concurrencies)
     {
-        // alternate which layout goes first so that drift does not favor one
-        foreach (var layout in rep % 2 == 1 ? layouts : layouts.Reverse())
+        // rotate which layout goes first so that drift does not favor one
+        foreach (var layout in layouts.Skip((rep - 1) % layouts.Length).Concat(layouts.Take((rep - 1) % layouts.Length)))
         {
             var create = File.ReadAllText(Path.Combine(sqlDir, $"create-{layout}.sql")).Replace("{0}", "[b3].[dbo].[q]").Replace("{1}", "[b3]");
             await Execute(database, "DROP TABLE IF EXISTS dbo.q");
