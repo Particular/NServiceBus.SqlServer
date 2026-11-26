@@ -44,8 +44,8 @@ namespace NServiceBus
         /// <remarks>
         /// Receives and peeks seek past the contended head of the queue, reducing database load with many competing receivers.
         /// A row may be left behind if message handling has errors, because of commit delays, or other instances of the endpoint
-        /// commit out of order. Values below 1 second are clamped to 1 second. For best performance it should be higher than the
-        /// peek delay, we recommend 5-10x the peek delay, but no more than a few seconds.
+        /// commit out of order. Values below 1 second are clamped to 1 second. For best performance it should be higher than
+        /// <see cref="Delay"/>, we recommend 5-10x <see cref="Delay"/>, but no more than a few seconds.
         /// </remarks>
         public TimeSpan HeadSweepInterval
         {
