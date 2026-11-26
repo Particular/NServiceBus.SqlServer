@@ -1,5 +1,6 @@
 namespace NServiceBus.Transport.Sql.Shared
 {
+    using System;
     using System.Threading;
 
     /// <summary>
@@ -40,9 +41,9 @@ namespace NServiceBus.Transport.Sql.Shared
     {
         public ReceiveAnchor GetAnchor()
         {
-            var sweep = Interlocked.Read(ref sweepAnchor);
-            return sweep != NoSweep
-                ? ReceiveAnchor.Sweep(sweep)
+            var sweep = Volatile.Read(ref currentSweep);
+            return sweep is not null
+                ? ReceiveAnchor.Sweep(sweep.SeekAfter, sweep.Generation)
                 : ReceiveAnchor.HighWater(Interlocked.Read(ref highWaterAnchor));
         }
 
@@ -109,6 +110,8 @@ namespace NServiceBus.Transport.Sql.Shared
         /// so no other receive can take it, and a rollback calls <see cref="RescanFrom"/>.
         /// A received row past the high-water anchor advances it. A sweep receive that found a row left behind
         /// the high-water anchor carries on from it; otherwise the sweep is over.
+        /// A sweep receive changes the sweep only if no sweep was started or lowered since it read its anchor,
+        /// because it may have skipped a row that has since rolled back.
         /// </summary>
         public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
@@ -116,12 +119,11 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highWaterAnchor))
                 {
-                    MoveSweepPast(receivedRowVersion.Value);
+                    MoveSweepPast(usedAnchor, receivedRowVersion.Value);
                     return;
                 }
 
-                // don't end a sweep that a rollback has moved further back since this receive started
-                _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.SeekAfter);
+                EndSweep(usedAnchor);
             }
 
             if (receivedRowVersion is { } rowVersion)
@@ -131,47 +133,66 @@ namespace NServiceBus.Transport.Sql.Shared
 
         }
 
+        // Starts a new generation even when the sweep anchor does not move: a receive in flight may have
+        // skipped the row that caused this call, so it must not move or end the sweep.
         void StartOrLowerSweep(long seekAfter)
         {
-            var current = Interlocked.Read(ref sweepAnchor);
-            while (seekAfter < current)
+            while (true)
             {
-                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, seekAfter, current);
-                if (witnessed == current)
+                var current = Volatile.Read(ref currentSweep);
+                var lowered = new SweepState(current is null ? seekAfter : Math.Min(current.SeekAfter, seekAfter), Interlocked.Increment(ref lastSweepGeneration));
+                if (ReferenceEquals(Interlocked.CompareExchange(ref currentSweep, lowered, current), current))
                 {
-                    break;
+                    return;
                 }
-
-                current = witnessed;
             }
         }
 
-        void MoveSweepPast(long rowVersion)
+        void MoveSweepPast(ReceiveAnchor usedAnchor, long rowVersion)
         {
-            var current = Interlocked.Read(ref sweepAnchor);
-            while (current != NoSweep && rowVersion > current)
+            while (true)
             {
-                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, rowVersion, current);
-                if (witnessed == current)
+                var current = Volatile.Read(ref currentSweep);
+                if (current is null || current.Generation != usedAnchor.SweepGeneration || rowVersion <= current.SeekAfter)
                 {
-                    break;
+                    return;
                 }
 
-                current = witnessed;
+                if (ReferenceEquals(Interlocked.CompareExchange(ref currentSweep, current with { SeekAfter = rowVersion }, current), current))
+                {
+                    return;
+                }
             }
         }
 
+        void EndSweep(ReceiveAnchor usedAnchor)
+        {
+            while (true)
+            {
+                var current = Volatile.Read(ref currentSweep);
+                if (current is null || current.Generation != usedAnchor.SweepGeneration || current.SeekAfter != usedAnchor.SeekAfter)
+                {
+                    return;
+                }
 
-        const long NoSweep = long.MaxValue;
+                if (ReferenceEquals(Interlocked.CompareExchange(ref currentSweep, null, current), current))
+                {
+                    return;
+                }
+            }
+        }
+
+        sealed record SweepState(long SeekAfter, long Generation);
 
         long highWaterAnchor;
-        long sweepAnchor = NoSweep;
+        SweepState currentSweep;
+        long lastSweepGeneration;
     }
 
     enum AnchorKind { HighWater, Sweep }
-    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind)
+    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind, long SweepGeneration)
     {
-        public static ReceiveAnchor HighWater(long seekAfter) => new(seekAfter, AnchorKind.HighWater);
-        public static ReceiveAnchor Sweep(long seekAfter) => new(seekAfter, AnchorKind.Sweep);
+        public static ReceiveAnchor HighWater(long seekAfter) => new(seekAfter, AnchorKind.HighWater, 0);
+        public static ReceiveAnchor Sweep(long seekAfter, long sweepGeneration) => new(seekAfter, AnchorKind.Sweep, sweepGeneration);
     }
 }

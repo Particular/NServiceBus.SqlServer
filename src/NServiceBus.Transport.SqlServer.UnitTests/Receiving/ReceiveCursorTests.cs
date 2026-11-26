@@ -226,7 +226,7 @@ public class ReceiveCursorTests
         cursor.SweepFromHead();
         cursor.ReceivedFromHighWater(20);
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0, cursor.GetAnchor().SweepGeneration)));
     }
 
     [Test]
@@ -240,7 +240,50 @@ public class ReceiveCursorTests
         cursor.SweepFromHead(); // the sweep interval passed while the earlier receive's query ran
         cursor.Received(staleSeek, 8); // still behind the high-water anchor
 
-        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0, cursor.GetAnchor().SweepGeneration)));
+    }
+
+    [Test]
+    public void WhenARowRollsBackToTheSweepAnchor_AndAReceiveThatSkippedItFindsAStrandedRow_ThenTheSweepStays()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(4);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.RescanFrom(4); // the row the earlier receive skipped while it was locked rolled back
+        cursor.Received(staleSeek, 8); // still behind the high-water anchor
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void WhenARowRollsBackToTheSweepAnchor_AndAReceiveThatSkippedItFindsNothing_ThenTheSweepStays()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(4);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.RescanFrom(4); // the row the earlier receive skipped while it was locked rolled back
+        cursor.Received(staleSeek, null);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void WhenASweepMovesOnAndARollbackLowersItBack_AndAReceiveFromTheEarlierSweepCompletes_ThenTheSweepStays()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(4);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.Received(cursor.GetAnchor(), 4); // another receive takes the row, so the sweep moves past it
+        cursor.RescanFrom(4); // that row rolls back, so the sweep anchor is back at the value the earlier receive read
+        cursor.Received(staleSeek, 11);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
     }
 
     [Test]
