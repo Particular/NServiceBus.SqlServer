@@ -42,6 +42,7 @@ jobs:
         id: build
         run: dotnet build src --configuration Release
         background: true
+      # On Windows, steps that start together can fail to write event.json (https://github.com/actions/runner/issues/4641), so each group runs one step there
       - parallel:
         - name: Install SQL Server
           uses: Particular/install-sql-server-action@v3.0.0
@@ -50,12 +51,21 @@ jobs:
             catalog: nservicebus
             enable-distributed-transactions: true
         - name: Setup PostgreSQL
+          if: runner.os != 'Windows'
           uses: Particular/setup-postgres-action@v3.0.0
           with:
             connection-string-name: PostgreSqlTransportConnectionString
             init-script: './.github/workflows/scripts/init-postgres.sql'
             registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
             registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Setup PostgreSQL
+        if: runner.os == 'Windows'
+        uses: Particular/setup-postgres-action@v3.0.0
+        with:
+          connection-string-name: PostgreSqlTransportConnectionString
+          init-script: './.github/workflows/scripts/init-postgres.sql'
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Wait for build
         wait: build
       - name: Upload packages
@@ -76,12 +86,21 @@ jobs:
           sqlcmd -Q "CREATE SCHEMA receiver AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA sender AUTHORIZATION db_owner" -d "nservicebus"
           sqlcmd -Q "CREATE SCHEMA db@ AUTHORIZATION db_owner" -d "nservicebus"
+      # Each group runs one step on Windows, for the reason given at the first group
       - parallel:
         - name: Run SQL Server tests
+          id: sqlserver-tests
           uses: Particular/run-tests-action@v1.9.0
           env:
             SqlServerTransport_TESTS_TRACK: SqlServer
         - name: Run PostgreSQL tests
+          if: runner.os != 'Windows'
           uses: Particular/run-tests-action@v1.9.0
           env:
             SqlServerTransport_TESTS_TRACK: PostgreSql
+      - name: Run PostgreSQL tests
+        # also runs when only the SQL Server tests failed, as both tracks do in the parallel group
+        if: runner.os == 'Windows' && (success() || steps.sqlserver-tests.outcome == 'failure')
+        uses: Particular/run-tests-action@v1.9.0
+        env:
+          SqlServerTransport_TESTS_TRACK: PostgreSql
