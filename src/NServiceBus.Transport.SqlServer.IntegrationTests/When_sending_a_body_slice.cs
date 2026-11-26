@@ -76,7 +76,7 @@ namespace NServiceBus.Transport.SqlServer.IntegrationTests
             queueAddress = addressTranslator.Parse(QueueName);
             delayedQueueAddress = new CanonicalQueueAddress(QueueName + ".Delayed", "dbo", "nservicebus");
 
-            var queueCreator = new QueueCreator(sqlConstants, dbConnectionFactory, addressTranslator.Parse);
+            var queueCreator = new QueueCreator(sqlConstants, sqlConstants.CreateQueueText, dbConnectionFactory, addressTranslator.Parse);
             await queueCreator.CreateQueueIfNecessary([QueueName], delayedQueueAddress, CancellationToken.None);
 
             await new QueuePurger(dbConnectionFactory).Purge(new SqlTableBasedQueue(sqlConstants, queueAddress, queueAddress.Address, true));

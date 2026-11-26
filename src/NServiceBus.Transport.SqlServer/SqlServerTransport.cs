@@ -6,6 +6,7 @@ namespace NServiceBus
     using System.Threading.Tasks;
     using Microsoft.Data.SqlClient;
     using NServiceBus.Transport.Sql.Shared;
+    using Particular.Obsoletes;
     using Transport;
     using Transport.SqlServer;
 
@@ -145,6 +146,14 @@ namespace NServiceBus
         /// Instructs the transport to create a computed column for inspecting message body contents.
         /// </summary>
         public bool CreateMessageBodyComputedColumn { get; set; } = false;
+
+        /// <summary>
+        /// Instructs the transport to create queue tables clustered on a computed bucket column, which lets SQL Server release the pages of a drained queue.
+        /// The default is <c>false</c>, which creates queue tables as heaps.
+        /// The setting applies only to queue tables that the transport creates while installers run. The transport never alters, migrates, or recreates an existing queue table.
+        /// </summary>
+        [PreObsolete("next major")]
+        public bool CreateBucketedQueueTables { get; set; } = false;
 
         /// <summary>
         /// Expired messages purger settings.

@@ -56,6 +56,12 @@ FROM [{0}].sys.columns c
 WHERE c.object_id = OBJECT_ID(N'{1}')
     AND c.name = 'Recoverable'";
 
+        public string CheckIfTableIsHeap { get; set; } = @"
+SELECT COUNT(*)
+FROM {0}.sys.indexes i
+WHERE i.object_id = OBJECT_ID(N'{1}')
+    AND i.index_id = 0";
+
         public string StoreDelayedMessageText { get; set; } =
 @"
 DECLARE @NOCOUNT VARCHAR(3) = 'OFF';
@@ -240,6 +246,70 @@ BEGIN TRY
         Body varbinary(max),
         RowVersion bigint IDENTITY(1,1) NOT NULL
     );
+
+    CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
+    (
+        [RowVersion] ASC
+    )
+
+    CREATE NONCLUSTERED INDEX Index_Expires ON {0}
+    (
+        Expires
+    )
+    INCLUDE
+    (
+        Id,
+        RowVersion
+    )
+    WHERE
+        Expires IS NOT NULL
+END TRY
+BEGIN CATCH
+    EXEC sp_releaseapplock @Resource = '{0}_lock';
+    THROW;
+END CATCH;
+
+EXEC sp_releaseapplock @Resource = '{0}_lock'";
+
+        // The clustered index comes first, so SQL Server does not rebuild the nonclustered indexes when it appears.
+        public string CreateBucketedQueueText { get; set; } = @"
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+RETURN
+
+EXEC sp_getapplock @Resource = '{0}_lock', @LockMode = 'Exclusive'
+
+IF EXISTS (
+    SELECT *
+    FROM {1}.sys.objects
+    WHERE object_id = OBJECT_ID(N'{0}')
+        AND type in (N'U'))
+BEGIN
+    EXEC sp_releaseapplock @Resource = '{0}_lock'
+    RETURN
+END
+
+BEGIN TRY
+    CREATE TABLE {0} (
+        Id uniqueidentifier NOT NULL,
+        CorrelationId varchar(255),
+        ReplyToAddress varchar(255),
+        Recoverable bit NOT NULL,
+        Expires datetime,
+        Headers nvarchar(max) NOT NULL,
+        Body varbinary(max),
+        RowVersion bigint IDENTITY(1,1) NOT NULL,
+        Bucket AS ISNULL(CONVERT(smallint, RowVersion % 64), 0)
+    );
+
+    CREATE UNIQUE CLUSTERED INDEX Index_Bucket_RowVersion ON {0}
+    (
+        Bucket,
+        [RowVersion]
+    )
 
     CREATE NONCLUSTERED INDEX Index_RowVersion ON {0}
     (

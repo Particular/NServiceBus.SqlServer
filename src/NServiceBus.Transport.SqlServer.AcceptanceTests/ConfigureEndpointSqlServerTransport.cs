@@ -17,7 +17,7 @@ public class ConfigureEndpointSqlServerTransport : IConfigureEndpointTestExecuti
     {
         var connectionString = Environment.GetEnvironmentVariable("SqlServerTransportConnectionString") ?? @"Data Source=.\SQLEXPRESS;Initial Catalog=nservicebus;Integrated Security=True;TrustServerCertificate=true";
 
-        transport = new SqlServerTransport(connectionString);
+        transport = new SqlServerTransport(connectionString).ApplyQueueTableLayoutTestSwitch();
         transport.Subscriptions.DisableCaching = true;
         transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault();
 

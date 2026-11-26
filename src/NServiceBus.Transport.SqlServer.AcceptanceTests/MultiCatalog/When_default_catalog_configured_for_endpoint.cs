@@ -66,7 +66,7 @@ public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptan
                     var transport = new SqlServerTransport(WithCustomCatalog(GetDefaultConnectionString(), Context.ConnectionStringCatalog))
                     {
                         DefaultCatalog = Context.SenderCatalog
-                    };
+                    }.ApplyQueueTableLayoutTestSwitch();
 
                     transport.SchemaAndCatalog.UseCatalogForQueue(Context.ReceiverEndpointName, Context.ReceiverCatalog);
 
@@ -94,7 +94,7 @@ public class When_default_catalog_configured_for_endpoint : MultiCatalogAcceptan
                     var transport = new SqlServerTransport(WithCustomCatalog(GetDefaultConnectionString(), Context.ConnectionStringCatalog))
                     {
                         DefaultCatalog = Context.ReceiverCatalog
-                    };
+                    }.ApplyQueueTableLayoutTestSwitch();
                     transport.SchemaAndCatalog.UseCatalogForQueue(Context.SenderEndpointName, Context.SenderCatalog);
                     _ = b.UseTransport(transport);
                 })

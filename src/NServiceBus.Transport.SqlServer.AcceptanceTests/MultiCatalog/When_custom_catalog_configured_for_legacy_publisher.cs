@@ -55,7 +55,7 @@ public class When_custom_catalog_configured_for_legacy_publisher : MultiCatalogA
     {
         public Subscriber()
         {
-            var transport = new SqlServerTransport(SubscriberConnectionString);
+            var transport = new SqlServerTransport(SubscriberConnectionString).ApplyQueueTableLayoutTestSwitch();
             transport.Subscriptions.SubscriptionTableName = SubscriptionTableNameCreator.CreateDefault("nservicebus");
 
             EndpointSetup(new CustomizedServer(transport), (c, rd) =>

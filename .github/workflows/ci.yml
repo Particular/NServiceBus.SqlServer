@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - release-*
+      - table-format-buckets
   pull_request:
   workflow_dispatch:
 env:
@@ -22,6 +23,9 @@ jobs:
             name: Windows
           - os: ubuntu-latest
             name: Linux
+          - os: ubuntu-latest
+            name: Linux (bucketed queue tables)
+            bucketed-queue-tables: true
       fail-fast: false
     steps:
       - name: Check for secrets
@@ -50,6 +54,7 @@ jobs:
             catalog: nservicebus
             enable-distributed-transactions: true
         - name: Setup PostgreSQL
+          if: ${{ !matrix.bucketed-queue-tables }}
           uses: Particular/setup-postgres-action@v3.0.0
           with:
             connection-string-name: PostgreSqlTransportConnectionString
@@ -81,7 +86,9 @@ jobs:
           uses: Particular/run-tests-action@v1.9.0
           env:
             SqlServerTransport_TESTS_TRACK: SqlServer
+            SqlServerTransport_CreateBucketedQueueTables: ${{ matrix.bucketed-queue-tables }}
         - name: Run PostgreSQL tests
+          if: ${{ !matrix.bucketed-queue-tables }}
           uses: Particular/run-tests-action@v1.9.0
           env:
             SqlServerTransport_TESTS_TRACK: PostgreSql

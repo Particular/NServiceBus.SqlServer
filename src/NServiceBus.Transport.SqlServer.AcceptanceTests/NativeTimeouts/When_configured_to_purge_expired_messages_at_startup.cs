@@ -59,7 +59,7 @@ class When_configured_to_purge_expired_messages_at_startup : NServiceBusAcceptan
         }
 
         var addressTranslator = new QueueAddressTranslator((string)catalogSetting, "dbo", null, null);
-        var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse);
+        var queueCreator = new QueueCreator(sqlConstants, QueueTableLayoutTestSwitch.CreateQueueScript(sqlConstants), connectionFactory, addressTranslator.Parse);
 
         var endpoint = Conventions.EndpointNamingConvention(typeof(TestEndpoint));
         await queueCreator.CreateQueueIfNecessary([endpoint], null);

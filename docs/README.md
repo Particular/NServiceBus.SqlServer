@@ -21,7 +21,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 
 ## Guidelines
 
-- [SQL statements and parameters](guidelines/sql-statements.md) — applies to a change that adds or edits statement text or its bound parameters; size every string and binary parameter, and turn implicit transactions off in statements that open their own
+- [SQL statements and parameters](guidelines/sql-statements.md) — applies to a change that adds or edits statement text or its bound parameters; size every string and binary parameter, turn implicit transactions off in statements that open their own, and keep queue statements independent of the table layout
 - [Guideline structure](guidelines/README.md) — how guidelines are written and indexed
 
 ## Upstream contracts
@@ -37,6 +37,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 ## Decisions and rationale
 
 - [Architecture and design decisions](decisions/)
+- [Bucketed queue table layout](decisions/2026-11-25-bucketed-queue-table-layout.md) — why the SQL Server transport offers a queue table clustered on a computed bucket, and why no queue statement may depend on the layout
 
 ### Decisions recorded in pull requests
 

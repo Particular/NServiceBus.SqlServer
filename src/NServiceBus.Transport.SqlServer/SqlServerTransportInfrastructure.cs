@@ -52,6 +52,7 @@ namespace NServiceBus.Transport.SqlServer
             ConfigureSendInfrastructure();
 
             diagnostics.Add("Dialect", "SQL Server");
+            diagnostics.Add("QueueTables", new { transport.CreateBucketedQueueTables });
 
             hostSettings.StartupDiagnostic.Add("NServiceBus.Transport.SqlServer", diagnostics);
         }
@@ -147,7 +148,7 @@ namespace NServiceBus.Transport.SqlServer
                 validateExpiredIndex = true;
             }
 
-            var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex);
+            var schemaVerification = new SchemaInspector((queue, token) => connectionFactory.OpenNewConnection(token), validateExpiredIndex, transport.CreateBucketedQueueTables);
 
             var queueFactory = transport.Testing.QueueFactoryOverride ?? (queueName => new SqlTableBasedQueue(sqlConstants, addressTranslator.Parse(queueName), queueName, !connectionAttributes.IsEncrypted));
 
@@ -223,7 +224,8 @@ namespace NServiceBus.Transport.SqlServer
                 queuesToCreate.AddRange(sendingAddresses);
                 queuesToCreate.AddRange(receiveAddresses);
 
-                var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, createMessageBodyComputedColumn);
+                var createQueueScript = transport.CreateBucketedQueueTables ? sqlConstants.CreateBucketedQueueText : sqlConstants.CreateQueueText;
+                var queueCreator = new QueueCreator(sqlConstants, createQueueScript, connectionFactory, addressTranslator.Parse, createMessageBodyComputedColumn);
 
                 await queueCreator.CreateQueueIfNecessary(queuesToCreate.ToArray(), delayedQueueCanonicalAddress, cancellationToken)
                     .ConfigureAwait(false);

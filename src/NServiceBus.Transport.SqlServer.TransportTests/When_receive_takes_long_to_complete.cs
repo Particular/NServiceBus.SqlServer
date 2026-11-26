@@ -55,7 +55,7 @@ public class When_receive_takes_long_to_complete
         var queue = new SqlTableBasedQueue(sqlConstants, new CanonicalQueueAddress(queueName, "dbo", catalogName), queueName, false);
 
         var addressTranslator = new QueueAddressTranslator(catalogName, "dbo", null, null);
-        var queueCreator = new QueueCreator(sqlConstants, connectionFactory, addressTranslator.Parse, false);
+        var queueCreator = new QueueCreator(sqlConstants, QueueTableLayoutTestSwitch.CreateQueueScript(sqlConstants), connectionFactory, addressTranslator.Parse, false);
 
         await queueCreator.CreateQueueIfNecessary(new[] { queueName }, null, cancellationToken);
 

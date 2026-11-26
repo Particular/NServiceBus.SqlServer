@@ -7,7 +7,7 @@
     using Logging;
     using NServiceBus.Transport.Sql.Shared;
 
-    class SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex)
+    class SchemaInspector(Func<TableBasedQueue, CancellationToken, Task<DbConnection>> openConnection, bool validateExpiredIndex, bool reportHeapLayout)
     {
         public async Task PerformInspection(SqlTableBasedQueue queue, CancellationToken cancellationToken = default)
         {
@@ -18,6 +18,11 @@
 
             await VerifyNonClusteredRowVersionIndex(queue, cancellationToken).ConfigureAwait(false);
             await VerifyHeadersColumnType(queue, cancellationToken).ConfigureAwait(false);
+
+            if (reportHeapLayout)
+            {
+                await ReportHeapLayout(queue, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         async Task VerifyIndex(SqlTableBasedQueue queue, Func<SqlTableBasedQueue, DbConnection, CancellationToken, Task<bool>> check, string noIndexMessage, CancellationToken cancellationToken)
@@ -68,6 +73,23 @@
             catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
             {
                 Logger.WarnFormat("Checking indexes on table {0} failed. Exception: {1}", queue, ex);
+            }
+        }
+
+        async Task ReportHeapLayout(SqlTableBasedQueue queue, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var connection = await openConnection(queue, cancellationToken).ConfigureAwait(false);
+                await using var connectionDisposer = connection.ConfigureAwait(false);
+                if (await queue.CheckIfTableIsHeap(connection, cancellationToken).ConfigureAwait(false))
+                {
+                    Logger.Info($"Table {queue.Name} uses the heap layout and keeps it. {nameof(SqlServerTransport.CreateBucketedQueueTables)} applies only to queue tables the transport creates.");
+                }
+            }
+            catch (Exception ex) when (!ex.IsCausedBy(cancellationToken))
+            {
+                Logger.WarnFormat("Checking the layout of table {0} failed. Exception: {1}", queue, ex);
             }
         }
 
