@@ -120,8 +120,13 @@ namespace NServiceBus.Transport.SqlServer
                 guarantee => SelectProcessStrategy(guarantee, transactionOptions, connectionFactory);
 
             var queuePurger = new QueuePurger(connectionFactory);
-            var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay,
-                queuePeekerOptions.EnableReceiveAnchoring && queuePeekerOptions.EnablePeekAnchoring);
+            var anchoringEnabled = !AppContextSwitches.DisableReceiveAnchoring;
+            if (!anchoringEnabled)
+            {
+                Logger.Warn($"The '{AppContextSwitches.DisableReceiveAnchoringSwitchName}' switch is set. Receives and peeks read from the head of the queue. This fallback will be removed in the next major version. If you depend on it, report why at https://github.com/Particular/NServiceBus.SqlServer/issues/1856.");
+            }
+
+            var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay, anchoringEnabled);
 
             IExpiredMessagesPurger expiredMessagesPurger;
             bool validateExpiredIndex;
@@ -210,7 +215,7 @@ namespace NServiceBus.Transport.SqlServer
 
                 return new SqlServerMessageReceiver(transport, receiveSetting.Id, receiveAddress, receiveSetting.ErrorQueue, hostSettings.CriticalErrorAction, processStrategyFactory, queueFactory, queuePurger,
                     expiredMessagesPurger,
-                    queuePeeker, transport.QueuePeeker.EnableReceiveAnchoring, transport.QueuePeeker.HeadSweepInterval, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier, TimeProvider.System);
+                    queuePeeker, anchoringEnabled, queuePeekerOptions.HeadSweepInterval, schemaVerification, transport.TimeToWaitBeforeTriggeringCircuitBreaker, subscriptionManager, receiveSetting.PurgeOnStartup, exceptionClassifier, TimeProvider.System);
 
             }).ToDictionary<MessageReceiver, string, IMessageReceiver>(receiver => receiver.Id, receiver => receiver);
 
