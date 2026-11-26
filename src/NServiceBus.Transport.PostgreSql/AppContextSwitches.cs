@@ -15,4 +15,14 @@ static class AppContextSwitches
         Note = "The independent movers fallback and this switch will be removed in the next major version.")]
     public static bool UseIndependentDelayedMessageMovers =>
         AppContext.TryGetSwitch(UseIndependentDelayedMessageMoversSwitchName, out var isEnabled) && isEnabled;
+
+    [PreObsolete("https://github.com/Particular/NServiceBus.SqlServer/issues/1856",
+        Note = "The receive anchoring opt-out and this switch will be removed in the next major version.")]
+    public const string DisableReceiveAnchoringSwitchName = "NServiceBus.Transport.PostgreSql.Receiving.DisableAnchoring";
+
+    [FeatureSwitchDefinition(DisableReceiveAnchoringSwitchName)]
+    [PreObsolete("https://github.com/Particular/NServiceBus.SqlServer/issues/1856",
+        Note = "The receive anchoring opt-out and this switch will be removed in the next major version.")]
+    public static bool DisableReceiveAnchoring =>
+        AppContext.TryGetSwitch(DisableReceiveAnchoringSwitchName, out var isEnabled) && isEnabled;
 }

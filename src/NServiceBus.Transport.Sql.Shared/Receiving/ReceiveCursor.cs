@@ -13,8 +13,8 @@ namespace NServiceBus.Transport.Sql.Shared
     /// increases database load.
     /// <para>
     /// The anchor remembers how far into the queue we have received, so receive queries can seek
-    /// past the contended head, reducing database load. Anchoring is only enabled when
-    /// <see cref="QueuePeekerOptions.EnableReceiveAnchoring"/> is set.
+    /// past the contended head, reducing database load. Anchoring is on unless the
+    /// <c>Receiving.DisableAnchoring</c> AppContext switch is set.
     /// </para>
     /// <para>
     /// Two anchors are held:
