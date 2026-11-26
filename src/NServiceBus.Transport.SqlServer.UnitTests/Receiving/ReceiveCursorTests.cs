@@ -244,6 +244,51 @@ public class ReceiveCursorTests
     }
 
     [Test]
+    public void WhenASweepReceiveSkipsALockedRow_AndThatRowRollsBackJustPastTheSweep_ThenTheSweepStaysBeforeIt()
+    {
+        var cursor = SweepAfterRow9();
+        var sweepSeek = cursor.GetAnchor(); // skips row 10, locked by another receive
+
+        cursor.RescanFrom(10); // rolled back while the sweep receive's query ran
+        cursor.Received(sweepSeek, 11);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(9));
+    }
+
+    [Test]
+    public void WhenASweepReceiveSkipsALockedRow_AndThatRowRollsBack_AndTheReceiveFindsNothing_ThenTheSweepContinues()
+    {
+        var cursor = SweepAfterRow9();
+        var sweepSeek = cursor.GetAnchor(); // skips row 10, locked by another receive
+
+        cursor.RescanFrom(10); // rolled back while the sweep receive's query ran
+        cursor.Received(sweepSeek, null);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(9));
+    }
+
+    [Test]
+    public void WhenASweepReceiveMissesALateRow_AndAPeekFindsItJustPastTheSweep_ThenTheSweepStaysBeforeIt()
+    {
+        var cursor = SweepAfterRow9();
+        var sweepSeek = cursor.GetAnchor(); // row 10 not committed yet
+
+        cursor.ApplyPeekResult(10); // committed while the sweep receive's query ran
+        cursor.Received(sweepSeek, 11);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(9));
+    }
+
+    static ReceiveCursor SweepAfterRow9()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedRow(100);
+        cursor.RescanFrom(9);
+        cursor.Received(cursor.GetAnchor(), 9);
+        return cursor;
+    }
+
+    [Test]
     public void WhenTheAnchorIsAtTheHead_AndSweepingFromTheHead_ThenNoSweepStarts()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
