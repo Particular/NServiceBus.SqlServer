@@ -279,6 +279,21 @@ public class ReceiveCursorTests
         Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(9));
     }
 
+    [Test]
+    public void WhenASweepMovesOn_AndARollbackLowersItBack_AndAReceiveFromTheEarlierSweepCompletes_ThenTheSweepStays()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedRow(10);
+        cursor.RescanFrom(4);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.Received(cursor.GetAnchor(), 4); // another receive takes row 4, so the sweep moves past it
+        cursor.RescanFrom(4); // row 4 rolls back, so the sweep anchor is back at the value the earlier receive read
+        cursor.Received(staleSeek, 11);
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(3));
+    }
+
     static ReceiveCursor SweepAfterRow9()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
