@@ -149,7 +149,7 @@ class PostgreSqlTransportInfrastructure(
             Logger.Warn($"The '{AppContextSwitches.DisableReceiveAnchoringSwitchName}' switch is set. Receives and peeks read from the head of the queue. This fallback will be removed in the next major version. If you depend on it, report why at https://github.com/Particular/NServiceBus.SqlServer/issues/1856.");
         }
 
-        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay, anchoringEnabled);
+        var queuePeeker = new QueuePeeker(connectionFactory, exceptionClassifier, queuePeekerOptions.Delay);
 
         var queueFactory = new Func<string, PostgreSqlTableBasedQueue>(queueName => new PostgreSqlTableBasedQueue(sqlConstants,
             addressTranslator.Parse(queueName).QualifiedTableName, queueName, true));
