@@ -173,21 +173,16 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
-            var peekSeekAfter = peekFromHead ? 0 : receiveCursor.GetHighestReceivedRowVersion();
-
             var peekResult = await queuePeeker
-                .Peek(inputQueue, peekSeekAfter, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
+                .Peek(inputQueue, peekAnchor.SeekAfter(receiveCursor), messageReceivingCircuitBreaker, messageReceivingCancellationToken)
                 .ConfigureAwait(false);
 
-            peekFromHead = peekResult.MessageCount == 0;
-            if (peekFromHead)
+            peekAnchor.Apply(peekResult, receiveCursor);
+            if (peekResult.MessageCount == 0)
             {
                 await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
                 return;
             }
-
-            receiveCursor.ApplyPeekResult(peekResult.LowestRowVersion);
 
             messageReceivingCancellationToken.ThrowIfCancellationRequested();
 
@@ -272,7 +267,7 @@ namespace NServiceBus.Transport.Sql.Shared
         readonly Lock lockObject = new();
         readonly ReceiveCursor receiveCursor = new(anchoringEnabled);
         readonly HeadSweepSchedule headSweepSchedule = new(headSweepInterval, timeProvider);
-        bool peekFromHead; // read and written only by the receive loop
+        readonly PeekAnchor peekAnchor = new();
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;
@@ -289,6 +284,26 @@ namespace NServiceBus.Transport.Sql.Shared
         public ISubscriptionManager Subscriptions { get; } = subscriptionManager;
         public string Id { get; } = receiverId;
         public string ReceiveAddress { get; } = receiveAddress;
+
+        /// <summary>
+        /// Where the receive loop's next peek seeks from. Used only by the receive loop, so it needs no lock.
+        /// </summary>
+        sealed class PeekAnchor
+        {
+            // An idle queue is cheap to peek in full, which finds rows stranded behind the anchor
+            public long SeekAfter(ReceiveCursor receiveCursor) => peekFromHead ? 0 : receiveCursor.GetHighestReceivedRowVersion();
+
+            public void Apply(PeekResult peekResult, ReceiveCursor receiveCursor)
+            {
+                peekFromHead = peekResult.MessageCount == 0;
+                if (!peekFromHead)
+                {
+                    receiveCursor.ApplyPeekResult(peekResult.LowestRowVersion);
+                }
+            }
+
+            bool peekFromHead;
+        }
 
         sealed class HeadSweepSchedule
         {
