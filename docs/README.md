@@ -18,6 +18,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 ## Architecture and design
 
 - [SQL Server transport transaction modes](https://docs.particular.net/transports/sql/transactions) — which operations share the receive transaction in each mode
+- [Receive models](../models/receive/README.md) — TLA+ models of competing receives, and which ways of discarding the receive anchor still deliver every message
 
 ## Guidelines
 
