@@ -38,6 +38,7 @@ NServiceBus.SqlServer provides transport support for Microsoft SQL Server and Po
 ## Decisions and rationale
 
 - [Architecture and design decisions](decisions/)
+- [Anchored receive](decisions/2026-11-27-anchored-receive.md) — why receives seek past the queue head, how sweeps recover stranded rows, and what the single anchor and batch limits cost
 
 ### Decisions recorded in pull requests
 
