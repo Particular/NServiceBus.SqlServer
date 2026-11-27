@@ -173,21 +173,17 @@ namespace NServiceBus.Transport.Sql.Shared
 
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
-            var previousBatchResult = batchActivity.BeginNextBatch();
-            var peekSeekAfter = receiveCursor.GetHighWaterAnchor();
-            if (previousBatchResult == LastBatchResult.LastBatchWasEmpty)
-            {
-                await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
-                // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
-                peekSeekAfter = 0;
-            }
+            // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
+            var peekSeekAfter = peekFromHead ? 0 : receiveCursor.GetHighWaterAnchor();
 
             var peekResult = await queuePeeker
                 .Peek(inputQueue, peekSeekAfter, messageReceivingCircuitBreaker, messageReceivingCancellationToken)
                 .ConfigureAwait(false);
 
-            if (peekResult.MessageCount == 0)
+            peekFromHead = peekResult.MessageCount == 0;
+            if (peekFromHead)
             {
+                await queuePeeker.WaitForPeekDelay(messageReceivingCancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -234,7 +230,7 @@ namespace NServiceBus.Transport.Sql.Shared
             using var latchSignaler = receiveLatch.GetSignaler();
             try
             {
-                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveCursor, batchActivity, latchSignaler, stopBatchCancellationTokenSource);
+                var receiveAttempt = new ReceiveAttempt(inputQueue, receiveCursor, latchSignaler, stopBatchCancellationTokenSource);
                 try
                 {
                     // We need to force the method to continue asynchronously because SqlConnection
@@ -275,8 +271,8 @@ namespace NServiceBus.Transport.Sql.Shared
         TableBasedQueue errorQueue;
         readonly Lock lockObject = new();
         readonly ReceiveCursor receiveCursor = new(anchoringEnabled);
-        readonly BatchActivity batchActivity = new();
         readonly HeadSweepSchedule headSweepSchedule = new(headSweepInterval, timeProvider);
+        bool peekFromHead; // read and written only by the receive loop
         volatile SemaphoreSlim concurrencyLimiter;
         CancellationTokenSource messageReceivingCancellationTokenSource;
         CancellationTokenSource messageProcessingCancellationTokenSource;

@@ -50,7 +50,7 @@ namespace NServiceBus
         /// Only used when <see cref="EnableReceiveAnchoring"/> is set
         /// </summary>
         /// <remarks>
-        /// After the peek delay, when the previous batch received nothing, the peek reads the whole queue
+        /// After a peek finds no messages, the next peek waits for the peek delay and reads the whole queue
         /// so rows left behind the anchor are still found.
         /// </remarks>
         public bool EnablePeekAnchoring { get; set; }
