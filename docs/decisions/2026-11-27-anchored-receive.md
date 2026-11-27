@@ -55,6 +55,8 @@ Without a limit, one batch can cover the whole backlog, so receives keep seeking
 
 A free-slot limit starts only as many receives per peek as there are idle processing slots. On Azure PostgreSQL, it raised 10 ms drain throughput at 8×32 from 2,309 to 4,520 msg/s. It cost 12.6% at 8×8 and 22% at 8×16 in the 10 ms drain, and 28% in a no-op drain of 50,000 messages at 8×8 (6,626 against 9,251 msg/s). On Azure SQL, no batch limit was faster than no limit in any workload. Where the rounds did not overlap, the limits were slower, by up to 22% in the no-op drain at 8×32 (2,327 against 2,969 msg/s). A batch still starts a receive for every message the peek found. A protective limit for PostgreSQL at high concurrency does not depend on the cursor and can be a separate change.
 
-### Public opt-in properties
+### Public setting to choose the mode
 
-`QueuePeekerOptions.EnableReceiveAnchoring` and `EnablePeekAnchoring` were removed before they shipped (#1857). Changing a public opt-out requires a rebuild, and the property must later be obsoleted. The AppContext switch can be set in `runtimeconfig.json` instead. One switch covers both, because peek anchoring has no effect without receive anchoring.
+`QueuePeekerOptions.EnableReceiveAnchoring` and `EnablePeekAnchoring` were removed before they shipped, and no public setting replaces them (#1857). A public setting would tell users that each mode suits some endpoints, and the documentation would have to explain the trade-off so they can choose. The benchmarks found no workload where that trade-off exists. In every workload measured on Azure and locally, anchoring delivered the same or higher throughput at the same or lower database cost (#1847). Anchoring is therefore the only supported mode.
+
+The `DisableAnchoring` AppContext switch is not part of the public API. It exists for a case the investigation did not cover, logs a warning at startup, and is removed in the next major version. #1856 collects reports from anyone who needs it. One switch covers receive and peek anchoring, because peek anchoring has no effect without receive anchoring.
