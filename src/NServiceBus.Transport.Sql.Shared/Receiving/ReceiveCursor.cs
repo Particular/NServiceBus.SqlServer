@@ -37,8 +37,10 @@ namespace NServiceBus.Transport.Sql.Shared
     /// next, until a receive finds nothing below the highest received row version and the sweep ends.
     /// </para>
     /// <para>
-    /// Every sweep request bumps a generation, even when the sweep anchor does not move. A sweep receive
-    /// that started under an older generation may have skipped the requested row, so it leaves the sweep as it is.
+    /// Every sweep request bumps a generation, even when the sweep anchor does not move, and the anchor a receive
+    /// reads carries it. A sweep receive that started under an older generation may have skipped the requested row,
+    /// so it leaves the sweep as it is. When the generation is unchanged, a sweep that is set now was already set when
+    /// the anchor was read, so the receive was a sweep receive; that is how the two kinds of receive are told apart.
     /// </para>
     /// </remarks>
     class ReceiveCursor(bool anchoringEnabled)
@@ -47,9 +49,7 @@ namespace NServiceBus.Transport.Sql.Shared
         {
             lock (stateLock)
             {
-                return sweepAnchor != NoSweep
-                    ? ReceiveAnchor.Sweep(sweepAnchor, sweepGeneration)
-                    : ReceiveAnchor.HighestReceived(highestReceivedRowVersion, sweepGeneration);
+                return new ReceiveAnchor(sweepAnchor != NoSweep ? sweepAnchor : highestReceivedRowVersion, sweepGeneration);
             }
         }
 
@@ -110,31 +110,23 @@ namespace NServiceBus.Transport.Sql.Shared
         /// Moves the anchor as soon as a receive returns, before the message is processed; the row is locked,
         /// so no other receive can take it, and a rollback calls <see cref="RescanFrom"/>.
         /// A received row above the highest received row version becomes the new highest. A sweep receive that
-        /// found a row below it carries on from that row; otherwise the sweep is over.
+        /// found a row below it carries on from that row; otherwise the sweep is over. A receive that read the anchor
+        /// under an older generation leaves the sweep alone, because a lower sweep was requested while it ran.
         /// </summary>
         public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
             lock (stateLock)
             {
-                if (usedAnchor.Kind == AnchorKind.Sweep)
+                var sweepReceive = sweepAnchor != NoSweep && usedAnchor.Generation == sweepGeneration;
+                if (sweepReceive)
                 {
-                    var foundStrandedRow = receivedRowVersion < highestReceivedRowVersion;
-                    if (usedAnchor.Generation == sweepGeneration)
+                    if (receivedRowVersion < highestReceivedRowVersion)
                     {
-                        if (foundStrandedRow)
-                        {
-                            MoveSweepPast(receivedRowVersion.Value);
-                        }
-                        else
-                        {
-                            sweepAnchor = NoSweep;
-                        }
-                    }
-
-                    if (foundStrandedRow)
-                    {
+                        MoveSweepPast(receivedRowVersion.Value);
                         return;
                     }
+
+                    sweepAnchor = NoSweep;
                 }
 
                 if (receivedRowVersion is { } rowVersion)
@@ -178,10 +170,8 @@ namespace NServiceBus.Transport.Sql.Shared
         long sweepGeneration;
     }
 
-    enum AnchorKind { HighestReceived, Sweep }
-    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind, long Generation = 0)
-    {
-        public static ReceiveAnchor HighestReceived(long seekAfter, long generation = 0) => new(seekAfter, AnchorKind.HighestReceived, generation);
-        public static ReceiveAnchor Sweep(long seekAfter, long generation = 0) => new(seekAfter, AnchorKind.Sweep, generation);
-    }
+    /// <summary>
+    /// Where a receive seeks from, and the sweep generation the cursor was at when it was read.
+    /// </summary>
+    readonly record struct ReceiveAnchor(long SeekAfter, long Generation = 0);
 }

@@ -4,8 +4,7 @@ using Sql.Shared;
 
 static class ReceiveCursorTestExtensions
 {
+    // A receive from the highest received row version: no sweep has been requested at generation 0
     public static void ReceivedRow(this ReceiveCursor cursor, long rowVersion) =>
-        cursor.Received(ReceiveAnchor.HighestReceived(0), rowVersion);
-
-    public static ReceiveAnchor WithoutGeneration(this ReceiveAnchor anchor) => anchor with { Generation = 0 };
+        cursor.Received(new ReceiveAnchor(0, Generation: 0), rowVersion);
 }
