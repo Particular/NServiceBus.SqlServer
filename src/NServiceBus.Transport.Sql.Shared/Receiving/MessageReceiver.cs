@@ -174,7 +174,7 @@ namespace NServiceBus.Transport.Sql.Shared
         async Task ReceiveMessages(CancellationToken messageReceivingCancellationToken)
         {
             // an idle queue is cheap to peek in full, which finds rows stranded behind the anchor
-            var peekSeekAfter = peekFromHead ? 0 : receiveCursor.GetHighWaterAnchor();
+            var peekSeekAfter = peekFromHead ? 0 : receiveCursor.GetHighestReceivedRowVersion();
 
             var peekResult = await queuePeeker
                 .Peek(inputQueue, peekSeekAfter, messageReceivingCircuitBreaker, messageReceivingCancellationToken)

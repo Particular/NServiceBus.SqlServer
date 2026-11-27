@@ -19,21 +19,22 @@ namespace NServiceBus.Transport.Sql.Shared
     /// <para>
     /// Two anchors are held:
     /// <list type="bullet">
-    /// <item>The high-water anchor: the highest sequence number received. It only moves forward.</item>
-    /// <item>The sweep anchor: set when an earlier row is found that the high-water anchor would
-    /// skip.</item>
+    /// <item>The highest received row version, or just before the lowest row a peek found if that is
+    /// higher. It only moves forward.</item>
+    /// <item>The sweep anchor: set when a row is found below the highest received row version, which
+    /// receives would otherwise skip.</item>
     /// </list>
     /// Rows can be missed because a transaction rolled back, or because messages finished
     /// sending in a different order to the one they started in, so an earlier row shows up late.
     /// The sweep anchor is set when:
     /// <list type="bullet">
     /// <item>a local receive rolls back;</item>
-    /// <item>the peek query finds an earlier row than the high-water anchor;</item>
+    /// <item>the peek query finds a row below the highest received row version;</item>
     /// <item><see cref="QueuePeekerOptions.HeadSweepInterval"/> elapses, which sweeps from the
     /// start of the queue to catch anything the peek could not see.</item>
     /// </list>
     /// While set, receives seek from the sweep anchor instead, hopping from one missed row to the
-    /// next, until a receive finds nothing behind the high-water anchor and the sweep ends.
+    /// next, until a receive finds nothing below the highest received row version and the sweep ends.
     /// </para>
     /// </remarks>
     class ReceiveCursor(bool anchoringEnabled)
@@ -43,46 +44,46 @@ namespace NServiceBus.Transport.Sql.Shared
             var sweep = Interlocked.Read(ref sweepAnchor);
             return sweep != NoSweep
                 ? ReceiveAnchor.Sweep(sweep)
-                : ReceiveAnchor.HighWater(Interlocked.Read(ref highWaterAnchor));
+                : ReceiveAnchor.HighestReceived(Interlocked.Read(ref highestReceivedRowVersion));
         }
 
-        public long GetHighWaterAnchor() => Interlocked.Read(ref highWaterAnchor);
+        public long GetHighestReceivedRowVersion() => Interlocked.Read(ref highestReceivedRowVersion);
 
         public void ApplyPeekResult(long lowestRowVersion)
         {
             var seekAfter = lowestRowVersion - 1;
-            if (seekAfter < Interlocked.Read(ref highWaterAnchor))
+            if (seekAfter < Interlocked.Read(ref highestReceivedRowVersion))
             {
                 StartOrLowerSweep(seekAfter);
             }
             else
             {
-                AdvanceAnchor(seekAfter);
+                AdvanceHighestReceived(seekAfter);
             }
         }
 
         /// <summary>
-        /// Sweeps from the start of the queue, finding rows stranded anywhere behind the high-water anchor
+        /// Sweeps from the start of the queue, finding rows stranded anywhere below the highest received row version
         /// </summary>
         public void SweepFromHead()
         {
-            if (Interlocked.Read(ref highWaterAnchor) > 0)
+            if (Interlocked.Read(ref highestReceivedRowVersion) > 0)
             {
                 StartOrLowerSweep(0);
             }
         }
 
-        void AdvanceAnchor(long rowVersion)
+        void AdvanceHighestReceived(long rowVersion)
         {
             if (!anchoringEnabled)
             {
                 return;
             }
 
-            var current = Interlocked.Read(ref highWaterAnchor);
+            var current = Interlocked.Read(ref highestReceivedRowVersion);
             while (rowVersion > current)
             {
-                var witnessed = Interlocked.CompareExchange(ref highWaterAnchor, rowVersion, current);
+                var witnessed = Interlocked.CompareExchange(ref highestReceivedRowVersion, rowVersion, current);
                 if (witnessed == current)
                 {
                     break;
@@ -98,7 +99,7 @@ namespace NServiceBus.Transport.Sql.Shared
         public void RescanFrom(long rowVersion)
         {
             var seekAfter = rowVersion - 1;
-            if (seekAfter < Interlocked.Read(ref highWaterAnchor))
+            if (seekAfter < Interlocked.Read(ref highestReceivedRowVersion))
             {
                 StartOrLowerSweep(seekAfter);
             }
@@ -107,14 +108,14 @@ namespace NServiceBus.Transport.Sql.Shared
         /// <summary>
         /// Moves the anchor as soon as a receive returns, before the message is processed; the row is locked,
         /// so no other receive can take it, and a rollback calls <see cref="RescanFrom"/>.
-        /// A received row past the high-water anchor advances it. A sweep receive that found a row left behind
-        /// the high-water anchor carries on from it; otherwise the sweep is over.
+        /// A received row above the highest received row version becomes the new highest. A sweep receive that
+        /// found a row below it carries on from that row; otherwise the sweep is over.
         /// </summary>
         public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
             if (usedAnchor.Kind == AnchorKind.Sweep)
             {
-                if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highWaterAnchor))
+                if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highestReceivedRowVersion))
                 {
                     MoveSweepPast(usedAnchor.SeekAfter, receivedRowVersion.Value);
                     return;
@@ -126,7 +127,7 @@ namespace NServiceBus.Transport.Sql.Shared
 
             if (receivedRowVersion is { } rowVersion)
             {
-                AdvanceAnchor(rowVersion);
+                AdvanceHighestReceived(rowVersion);
             }
 
         }
@@ -165,14 +166,14 @@ namespace NServiceBus.Transport.Sql.Shared
 
         const long NoSweep = long.MaxValue;
 
-        long highWaterAnchor;
+        long highestReceivedRowVersion;
         long sweepAnchor = NoSweep;
     }
 
-    enum AnchorKind { HighWater, Sweep }
+    enum AnchorKind { HighestReceived, Sweep }
     readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind)
     {
-        public static ReceiveAnchor HighWater(long seekAfter) => new(seekAfter, AnchorKind.HighWater);
+        public static ReceiveAnchor HighestReceived(long seekAfter) => new(seekAfter, AnchorKind.HighestReceived);
         public static ReceiveAnchor Sweep(long seekAfter) => new(seekAfter, AnchorKind.Sweep);
     }
 }
