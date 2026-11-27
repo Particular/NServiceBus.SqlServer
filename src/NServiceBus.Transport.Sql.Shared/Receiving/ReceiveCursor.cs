@@ -36,29 +36,44 @@ namespace NServiceBus.Transport.Sql.Shared
     /// While set, receives seek from the sweep anchor instead, hopping from one missed row to the
     /// next, until a receive finds nothing below the highest received row version and the sweep ends.
     /// </para>
+    /// <para>
+    /// Every sweep request bumps a generation, even when the sweep anchor does not move. A sweep receive
+    /// that started under an older generation may have skipped the requested row, so it leaves the sweep as it is.
+    /// </para>
     /// </remarks>
     class ReceiveCursor(bool anchoringEnabled)
     {
         public ReceiveAnchor GetAnchor()
         {
-            var sweep = Interlocked.Read(ref sweepAnchor);
-            return sweep != NoSweep
-                ? ReceiveAnchor.Sweep(sweep)
-                : ReceiveAnchor.HighestReceived(Interlocked.Read(ref highestReceivedRowVersion));
+            lock (stateLock)
+            {
+                return sweepAnchor != NoSweep
+                    ? ReceiveAnchor.Sweep(sweepAnchor, sweepGeneration)
+                    : ReceiveAnchor.HighestReceived(highestReceivedRowVersion, sweepGeneration);
+            }
         }
 
-        public long GetHighestReceivedRowVersion() => Interlocked.Read(ref highestReceivedRowVersion);
+        public long GetHighestReceivedRowVersion()
+        {
+            lock (stateLock)
+            {
+                return highestReceivedRowVersion;
+            }
+        }
 
         public void ApplyPeekResult(long lowestRowVersion)
         {
             var seekAfter = lowestRowVersion - 1;
-            if (seekAfter < Interlocked.Read(ref highestReceivedRowVersion))
+            lock (stateLock)
             {
-                StartOrLowerSweep(seekAfter);
-            }
-            else
-            {
-                AdvanceHighestReceived(seekAfter);
+                if (seekAfter < highestReceivedRowVersion)
+                {
+                    RequestSweep(seekAfter);
+                }
+                else
+                {
+                    AdvanceHighestReceived(seekAfter);
+                }
             }
         }
 
@@ -67,29 +82,12 @@ namespace NServiceBus.Transport.Sql.Shared
         /// </summary>
         public void SweepFromHead()
         {
-            if (Interlocked.Read(ref highestReceivedRowVersion) > 0)
+            lock (stateLock)
             {
-                StartOrLowerSweep(0);
-            }
-        }
-
-        void AdvanceHighestReceived(long rowVersion)
-        {
-            if (!anchoringEnabled)
-            {
-                return;
-            }
-
-            var current = Interlocked.Read(ref highestReceivedRowVersion);
-            while (rowVersion > current)
-            {
-                var witnessed = Interlocked.CompareExchange(ref highestReceivedRowVersion, rowVersion, current);
-                if (witnessed == current)
+                if (highestReceivedRowVersion > 0)
                 {
-                    break;
+                    RequestSweep(0);
                 }
-
-                current = witnessed;
             }
         }
 
@@ -99,9 +97,12 @@ namespace NServiceBus.Transport.Sql.Shared
         public void RescanFrom(long rowVersion)
         {
             var seekAfter = rowVersion - 1;
-            if (seekAfter < Interlocked.Read(ref highestReceivedRowVersion))
+            lock (stateLock)
             {
-                StartOrLowerSweep(seekAfter);
+                if (seekAfter < highestReceivedRowVersion)
+                {
+                    RequestSweep(seekAfter);
+                }
             }
         }
 
@@ -113,67 +114,74 @@ namespace NServiceBus.Transport.Sql.Shared
         /// </summary>
         public void Received(ReceiveAnchor usedAnchor, long? receivedRowVersion)
         {
-            if (usedAnchor.Kind == AnchorKind.Sweep)
+            lock (stateLock)
             {
-                if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highestReceivedRowVersion))
+                if (usedAnchor.Kind == AnchorKind.Sweep)
                 {
-                    MoveSweepPast(usedAnchor.SeekAfter, receivedRowVersion.Value);
-                    return;
+                    var foundStrandedRow = receivedRowVersion < highestReceivedRowVersion;
+                    if (usedAnchor.Generation == sweepGeneration)
+                    {
+                        if (foundStrandedRow)
+                        {
+                            MoveSweepPast(receivedRowVersion.Value);
+                        }
+                        else
+                        {
+                            sweepAnchor = NoSweep;
+                        }
+                    }
+
+                    if (foundStrandedRow)
+                    {
+                        return;
+                    }
                 }
 
-                // don't end a sweep that a rollback has moved further back since this receive started
-                _ = Interlocked.CompareExchange(ref sweepAnchor, NoSweep, usedAnchor.SeekAfter);
+                if (receivedRowVersion is { } rowVersion)
+                {
+                    AdvanceHighestReceived(rowVersion);
+                }
             }
-
-            if (receivedRowVersion is { } rowVersion)
-            {
-                AdvanceHighestReceived(rowVersion);
-            }
-
         }
 
-        void StartOrLowerSweep(long seekAfter)
+        void RequestSweep(long seekAfter)
         {
-            var current = Interlocked.Read(ref sweepAnchor);
-            while (seekAfter < current)
+            if (seekAfter < sweepAnchor)
             {
-                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, seekAfter, current);
-                if (witnessed == current)
-                {
-                    break;
-                }
-
-                current = witnessed;
+                sweepAnchor = seekAfter;
             }
+
+            sweepGeneration++;
         }
 
-        void MoveSweepPast(long seekAfter, long rowVersion)
+        void MoveSweepPast(long rowVersion)
         {
-            var current = Interlocked.Read(ref sweepAnchor);
-            // don't skip a sweep that a rollback or a head sweep has moved further back since this receive started
-            while (current != NoSweep && current >= seekAfter && rowVersion > current)
+            if (sweepAnchor != NoSweep && rowVersion > sweepAnchor)
             {
-                var witnessed = Interlocked.CompareExchange(ref sweepAnchor, rowVersion, current);
-                if (witnessed == current)
-                {
-                    break;
-                }
-
-                current = witnessed;
+                sweepAnchor = rowVersion;
             }
         }
 
+        void AdvanceHighestReceived(long rowVersion)
+        {
+            if (anchoringEnabled && rowVersion > highestReceivedRowVersion)
+            {
+                highestReceivedRowVersion = rowVersion;
+            }
+        }
 
         const long NoSweep = long.MaxValue;
 
+        readonly Lock stateLock = new();
         long highestReceivedRowVersion;
         long sweepAnchor = NoSweep;
+        long sweepGeneration;
     }
 
     enum AnchorKind { HighestReceived, Sweep }
-    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind)
+    readonly record struct ReceiveAnchor(long SeekAfter, AnchorKind Kind, long Generation = 0)
     {
-        public static ReceiveAnchor HighestReceived(long seekAfter) => new(seekAfter, AnchorKind.HighestReceived);
-        public static ReceiveAnchor Sweep(long seekAfter) => new(seekAfter, AnchorKind.Sweep);
+        public static ReceiveAnchor HighestReceived(long seekAfter, long generation = 0) => new(seekAfter, AnchorKind.HighestReceived, generation);
+        public static ReceiveAnchor Sweep(long seekAfter, long generation = 0) => new(seekAfter, AnchorKind.Sweep, generation);
     }
 }
