@@ -116,7 +116,7 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 if (receivedRowVersion is { } && receivedRowVersion < Interlocked.Read(ref highWaterAnchor))
                 {
-                    MoveSweepPast(receivedRowVersion.Value);
+                    MoveSweepPast(usedAnchor.SeekAfter, receivedRowVersion.Value);
                     return;
                 }
 
@@ -146,10 +146,11 @@ namespace NServiceBus.Transport.Sql.Shared
             }
         }
 
-        void MoveSweepPast(long rowVersion)
+        void MoveSweepPast(long seekAfter, long rowVersion)
         {
             var current = Interlocked.Read(ref sweepAnchor);
-            while (current != NoSweep && rowVersion > current)
+            // don't skip a sweep that a rollback or a head sweep has moved further back since this receive started
+            while (current != NoSweep && current >= seekAfter && rowVersion > current)
             {
                 var witnessed = Interlocked.CompareExchange(ref sweepAnchor, rowVersion, current);
                 if (witnessed == current)

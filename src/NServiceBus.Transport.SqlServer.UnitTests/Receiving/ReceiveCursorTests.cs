@@ -191,6 +191,20 @@ public class ReceiveCursorTests
     }
 
     [Test]
+    public void WhenASweepIsLowered_AndAReceiveFromTheEarlierSweepFindsAStrandedRow_ThenTheLoweredSweepContinues()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(7);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.RescanFrom(3); // rolled back while the earlier receive's query ran
+        cursor.Received(staleSeek, 8); // still behind the high-water anchor
+
+        Assert.That(cursor.GetAnchor().SeekAfter, Is.EqualTo(2));
+    }
+
+    [Test]
     public void WhenASweepStarts_AndAReceiveFromTheAnchorCompletes_ThenTheSweepIsUnchanged()
     {
         var cursor = new ReceiveCursor(anchoringEnabled: true);
@@ -211,6 +225,20 @@ public class ReceiveCursorTests
 
         cursor.SweepFromHead();
         cursor.ReceivedFromHighWater(20);
+
+        Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
+    }
+
+    [Test]
+    public void WhenSweepingFromTheHead_AndAReceiveFromTheEarlierSweepFindsAStrandedRow_ThenTheHeadSweepContinues()
+    {
+        var cursor = new ReceiveCursor(anchoringEnabled: true);
+        cursor.ReceivedFromHighWater(10);
+        cursor.RescanFrom(7);
+        var staleSeek = cursor.GetAnchor();
+
+        cursor.SweepFromHead(); // the sweep interval passed while the earlier receive's query ran
+        cursor.Received(staleSeek, 8); // still behind the high-water anchor
 
         Assert.That(cursor.GetAnchor(), Is.EqualTo(ReceiveAnchor.Sweep(0)));
     }
