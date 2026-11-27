@@ -6,7 +6,7 @@
     using System.Transactions;
     using Logging;
 
-    class QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay, bool peekAnchoringEnabled) : IPeekMessagesInQueue
+    class QueuePeeker(DbConnectionFactory connectionFactory, IExceptionClassifier exceptionClassifier, TimeSpan peekDelay) : IPeekMessagesInQueue
     {
         public async Task<PeekResult> Peek(TableBasedQueue inputQueue, long seekAfter, RepeatedFailuresOverTimeCircuitBreaker circuitBreaker, CancellationToken cancellationToken = default)
         {
@@ -19,7 +19,7 @@
                     var connection = await connectionFactory.OpenNewConnection(cancellationToken).ConfigureAwait(false);
                     await using (connection.ConfigureAwait(false))
                     {
-                        peekResult = await inputQueue.TryPeek(connection, null, peekAnchoringEnabled ? seekAfter : 0, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        peekResult = await inputQueue.TryPeek(connection, null, seekAfter, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                         scope.Complete();
                     }
