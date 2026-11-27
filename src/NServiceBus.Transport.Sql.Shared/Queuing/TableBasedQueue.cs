@@ -22,7 +22,7 @@ namespace NServiceBus.Transport.Sql.Shared
             this.isStreamSupported = isStreamSupported;
         }
 
-        public virtual async Task<int> TryPeek(DbConnection connection, DbTransaction transaction, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
+        public virtual async Task<PeekResult> TryPeek(DbConnection connection, DbTransaction transaction, long seekAfter, int? timeoutInSeconds = null, CancellationToken cancellationToken = default)
         {
             var command = connection.CreateCommand();
             await using var commandDisposer = command.ConfigureAwait(false);
@@ -30,20 +30,29 @@ namespace NServiceBus.Transport.Sql.Shared
             command.CommandType = CommandType.Text;
             command.Transaction = transaction;
             command.CommandText = peekCommand;
+            command.AddParameter("Anchor", DbType.Int64, seekAfter);
 
-            var numberOfMessages = await command.ExecuteScalarAsyncOrDefault<int>(nameof(peekCommand), msg => log.Warn(msg), cancellationToken).ConfigureAwait(false);
-            return numberOfMessages;
+            var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false);
+            await using var readerDisposer = reader.ConfigureAwait(false);
+            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                log.Warn($"{nameof(peekCommand)} returned no rows.");
+                return PeekResult.Empty;
+            }
+
+            return new PeekResult(reader.GetInt32(0), reader.GetInt64(1));
         }
 
         public void FormatPeekCommand() => peekCommand = Format(sqlConstants.PeekText, qualifiedTableName);
 
-        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken = default)
+        public virtual async Task<MessageReadResult> TryReceive(DbConnection connection, DbTransaction transaction, long seekAfter, CancellationToken cancellationToken = default)
         {
             var command = connection.CreateCommand();
             await using var commandDisposer = command.ConfigureAwait(false);
             command.CommandText = receiveCommand;
             command.Transaction = transaction;
             command.CommandType = CommandType.Text;
+            command.AddParameter("Anchor", DbType.Int64, seekAfter);
 
             return await ReadMessage(command, cancellationToken).ConfigureAwait(false);
         }

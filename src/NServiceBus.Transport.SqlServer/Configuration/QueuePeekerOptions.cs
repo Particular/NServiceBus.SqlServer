@@ -38,6 +38,22 @@ namespace NServiceBus
         } = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// Interval between receives sweeping the whole queue from its head, to pick up rows that are left behind the receive anchor.
+        /// Defaults to 5 seconds.
+        /// </summary>
+        /// <remarks>
+        /// Receives and peeks seek past the contended head of the queue, reducing database load with many competing receivers.
+        /// A row may be left behind if message handling has errors, because of commit delays, or other instances of the endpoint
+        /// commit out of order. Values below 1 second are clamped to 1 second. For best performance it should be higher than
+        /// <see cref="Delay"/>, we recommend 5-10x <see cref="Delay"/>, but no more than a few seconds.
+        /// </remarks>
+        public TimeSpan HeadSweepInterval
+        {
+            get;
+            set => field = value < MinimumHeadSweepInterval ? MinimumHeadSweepInterval : value;
+        } = TimeSpan.FromSeconds(5);
+
+        /// <summary>
         /// Maximal number of records to peek.
         /// </summary>
         [ObsoleteMetadata(
@@ -65,6 +81,7 @@ namespace NServiceBus
             }
         }
 
+        static readonly TimeSpan MinimumHeadSweepInterval = TimeSpan.FromSeconds(1);
         static ILog Logger = LogManager.GetLogger<QueuePeekerOptions>();
     }
 }

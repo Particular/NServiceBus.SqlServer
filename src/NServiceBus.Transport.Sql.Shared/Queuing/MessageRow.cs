@@ -37,25 +37,30 @@ namespace NServiceBus.Transport.Sql.Shared
             BodyParameter.Add(command, body);
         }
 
-        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken) =>
-            new()
+        static async Task<MessageRow> ReadRow(DbDataReader dataReader, bool isStreamSupported, CancellationToken cancellationToken)
+        {
+            var row = new MessageRow
             {
                 id = await dataReader.GetFieldValueAsync<Guid>(0, cancellationToken).ConfigureAwait(false),
                 expired = await dataReader.GetFieldValueAsync<int>(1, cancellationToken).ConfigureAwait(false) == 1,
                 headers = await GetHeaders(dataReader, 2, cancellationToken).ConfigureAwait(false),
-                body = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false)
+                body = await GetBody(dataReader, 3, isStreamSupported, cancellationToken).ConfigureAwait(false),
+                rowVersion = await dataReader.GetFieldValueAsync<long>(4, cancellationToken).ConfigureAwait(false)
             };
+
+            return row;
+        }
 
         MessageReadResult TryParse()
         {
             try
             {
-                return MessageReadResult.Success(new Message(id.ToString(), headers, body, expired));
+                return MessageReadResult.Success(new Message(id.ToString(), headers, body, expired), rowVersion);
             }
             catch (Exception ex)
             {
                 Logger.Error("Error receiving message. Probable message metadata corruption. Moving to error queue.", ex);
-                return MessageReadResult.Poison(this);
+                return MessageReadResult.Poison(this, rowVersion);
             }
         }
 
@@ -176,6 +181,7 @@ namespace NServiceBus.Transport.Sql.Shared
         int? timeToBeReceived;
         string headers;
         ReadOnlyMemory<byte> body;
+        long rowVersion;
 
         static ILog Logger = LogManager.GetLogger(typeof(MessageRow));
     }

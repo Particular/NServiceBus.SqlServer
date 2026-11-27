@@ -9,8 +9,7 @@ namespace NServiceBus.Transport.Sql.Shared
     class ProcessWithNoTransaction(DbConnectionFactory connectionFactory, FailureInfoStorage failureInfoStorage, TableBasedQueueCache tableBasedQueueCache, IExceptionClassifier exceptionClassifier)
         : ProcessStrategy(tableBasedQueueCache, exceptionClassifier, failureInfoStorage)
     {
-        public override async Task ProcessMessage(CancellationTokenSource stopBatchCancellationTokenSource,
-            ReceiveCountdownEvent.Signaler receiveCountdownEventSignaler, CancellationToken cancellationToken = default)
+        public override async Task<ProcessOutcome> ProcessMessage(ReceiveAttempt receiveAttempt, CancellationToken cancellationToken = default)
         {
             Message message = null;
             var context = new ContextBag();
@@ -21,13 +20,12 @@ namespace NServiceBus.Transport.Sql.Shared
             {
                 var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken).ConfigureAwait(false);
                 await using var transactionDisposer = transaction.ConfigureAwait(false);
-                var receiveResult = await InputQueue.TryReceive(connection, transaction, cancellationToken).ConfigureAwait(false);
-                receiveCountdownEventSignaler.Signal();
+                var receiveResult = await receiveAttempt.Receive(connection, transaction, cancellationToken)
+                    .ConfigureAwait(false);
 
                 if (receiveResult.IsEmpty)
                 {
-                    await stopBatchCancellationTokenSource.CancelAsync().ConfigureAwait(false);
-                    return;
+                    return ProcessOutcome.NoMessage;
                 }
 
                 if (receiveResult.IsPoison)
@@ -36,7 +34,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         .DeadLetter(receiveResult.PoisonMessage, connection, transaction, cancellationToken)
                         .ConfigureAwait(false);
                     await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-                    return;
+                    return ProcessOutcome.Committed;
                 }
 
                 message = receiveResult.Message;
@@ -45,7 +43,7 @@ namespace NServiceBus.Transport.Sql.Shared
                         cancellationToken).ConfigureAwait(false))
                 {
                     await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-                    return;
+                    return ProcessOutcome.Committed;
                 }
 
                 await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
@@ -57,7 +55,7 @@ namespace NServiceBus.Transport.Sql.Shared
                     throw;
                 }
                 failureInfoStorage.RecordFailureInfoForMessage(message.TransportId, ex, context);
-                return;
+                return ProcessOutcome.RolledBack;
             }
 
             var transportTransaction = TransportTransactions.NoTransaction(connection);
@@ -71,6 +69,8 @@ namespace NServiceBus.Transport.Sql.Shared
                 // Since this is TransactionMode.None, we don't care whether error handling says handled or retry. Message is gone either way.
                 _ = await HandleError(ex, message, transportTransaction, 1, context, cancellationToken).ConfigureAwait(false);
             }
+
+            return ProcessOutcome.Committed;
         }
 
         readonly FailureInfoStorage failureInfoStorage = failureInfoStorage;

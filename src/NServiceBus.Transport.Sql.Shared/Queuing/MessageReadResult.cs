@@ -2,10 +2,11 @@ namespace NServiceBus.Transport.Sql.Shared
 {
     readonly struct MessageReadResult
     {
-        MessageReadResult(Message message, MessageRow poisonMessage)
+        MessageReadResult(Message message, MessageRow poisonMessage, long rowVersion)
         {
             Message = message;
             PoisonMessage = poisonMessage;
+            RowVersion = rowVersion;
         }
 
         public static MessageReadResult NoMessage => default;
@@ -18,8 +19,13 @@ namespace NServiceBus.Transport.Sql.Shared
 
         public MessageRow PoisonMessage { get; }
 
-        public static MessageReadResult Poison(MessageRow messageRow) => new(null, messageRow);
+        /// <summary>
+        /// SqlServer's <c>RowVersion</c> or Postgres's <c>Seq</c>, used to optimize the receive query.
+        /// </summary>
+        public long RowVersion { get; }
 
-        public static MessageReadResult Success(Message message) => new(message, null);
+        public static MessageReadResult Poison(MessageRow messageRow, long rowVersion) => new(null, messageRow, rowVersion);
+
+        public static MessageReadResult Success(Message message, long rowVersion) => new(message, null, rowVersion);
     }
 }
